@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0a1208">
+<title>Idle Miner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#0a1208;color:#eafff0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#14532d 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#164e63 0%,transparent 55%),#0a1208}
+.hub{position:fixed;top:10px;left:10px;z-index:50;color:#86efac;text-decoration:none;font-weight:700;font-size:16px;background:rgba(15,40,20,.85);border:1px solid rgba(134,239,172,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(74,222,128,.25)}
+.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(134,239,172,.35);background:rgba(15,40,20,.85);color:#fff;cursor:pointer}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto}
+.screen.s-active{display:flex}
+.logo{font-size:72px;margin-bottom:6px;filter:drop-shadow(0 0 20px rgba(74,222,128,.6));animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.title{font-size:44px;font-weight:900;letter-spacing:2px;line-height:1.1;background:linear-gradient(90deg,#4ade80,#22d3ee,#facc15);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
+.sub{max-width:460px;font-size:15px;color:#9cd8b4;margin-bottom:18px;line-height:1.5}
+.best-box{font-size:16px;color:#9cd8b4;background:rgba(15,40,20,.7);border:1px solid #1d5c33;padding:10px 22px;border-radius:14px;margin-bottom:14px}
+.best-box b{color:#fbbf24}
+.tip{max-width:460px;font-size:13px;color:#6b9c7d;line-height:1.6;margin-bottom:16px}
+.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#16a34a,#0d9488);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(22,163,74,.4);transition:transform .12s,filter .12s;min-height:48px}
+.btn:active{transform:scale(.94);filter:brightness(1.2)}
+.btn-big{font-size:24px;padding:16px 44px;min-height:60px}
+.btn-ghost{background:transparent;border:2px solid #1d5c33;color:#9cd8b4;margin-top:12px}
+#s-game{padding:12px;justify-content:flex-start}
+.hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.hud-item{background:rgba(15,40,20,.75);border:1px solid #1d5c33;border-radius:12px;padding:8px 14px;font-size:15px;font-weight:800;min-width:60px}
+.hud-item span{color:#86efac}
+.game-grid{display:flex;flex-direction:column;gap:12px;width:100%;max-width:980px;flex:1;min-height:0}
+.dig-col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.rock-btn{width:150px;height:150px;border-radius:50%;font-size:76px;border:4px solid #4ade80;background:radial-gradient(circle at 35% 30%,#334155,#0f172a);cursor:pointer;box-shadow:0 0 44px rgba(74,222,128,.45),inset 0 0 30px rgba(0,0,0,.4);transition:transform .08s;touch-action:manipulation}
+.rock-btn:active{transform:scale(.88) rotate(-6deg)}
+.rock-btn.pop{animation:rockPop .22s}
+@keyframes rockPop{40%{transform:scale(1.12) rotate(6deg)}}
+.dig-label{font-size:13px;color:#6b9c7d;letter-spacing:2px;text-transform:uppercase}
+.depth-wrap{width:100%;max-width:320px;background:rgba(15,40,20,.6);border:1px solid #1d5c33;border-radius:14px;padding:10px;text-align:left}
+.depth-wrap .tier-nm{font-size:15px;font-weight:800;color:#86efac}
+.depth-wrap .tier-dp{font-size:13px;color:#6b9c7d;margin:2px 0 6px}
+.depth-bar-bg{height:10px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden}
+.depth-bar{height:100%;background:linear-gradient(90deg,#4ade80,#22d3ee);border-radius:6px;transition:width .2s linear}
+.dyna-btn{font-size:15px;padding:12px 20px;min-height:48px;background:linear-gradient(135deg,#ea580c,#dc2626)}
+.dyna-btn:disabled{opacity:.45;filter:grayscale(.6)}
+.prestige-btn{font-size:15px;padding:12px 20px;min-height:48px;background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+.prestige-btn:disabled{opacity:.45;filter:grayscale(.6)}
+.shop-col{flex:1;min-height:200px;overflow-y:auto;background:rgba(8,20,10,.5);border:1px solid #1d5c33;border-radius:16px;padding:8px;-webkit-overflow-scrolling:touch}
+.srow{display:flex;align-items:center;gap:8px;background:rgba(15,40,20,.6);border:1px solid #1d5c33;border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.srow .e{font-size:26px}
+.srow .info{flex:1;min-width:0;text-align:left}
+.srow .nm{font-size:15px;font-weight:800;color:#86efac}
+.srow .dt{font-size:12px;color:#6b9c7d}
+.srow .buy{font-size:13px;font-weight:800;color:#0a1208;background:linear-gradient(160deg,#4ade80,#16a34a);border:none;border-radius:10px;padding:10px 12px;cursor:pointer;min-height:42px;white-space:nowrap;touch-action:manipulation}
+.srow .buy:active{transform:scale(.94)}
+.srow .buy.no{filter:grayscale(.85);opacity:.55}
+.srow .lvl{font-size:14px;font-weight:900;color:#fbbf24;min-width:44px;text-align:center}
+.buy-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:8px;font-size:12px;color:#6b9c7d}
+.buy-amt{font-size:14px;padding:8px 14px;min-height:40px;background:rgba(15,40,20,.9);border:2px solid #1d5c33;color:#9cd8b4;border-radius:12px;cursor:pointer;font-weight:800;font-family:inherit}
+.buy-amt.sel{border-color:#4ade80;color:#86efac;background:linear-gradient(135deg,rgba(22,163,74,.35),rgba(13,148,136,.35))}
+.float{position:fixed;z-index:70;font-size:22px;font-weight:900;color:#86efac;text-shadow:0 0 12px rgba(74,222,128,.8);pointer-events:none;animation:floatUp 0.9s ease-out forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(10px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-64px) scale(1)}}
+.toast{position:fixed;top:16%;left:50%;transform:translateX(-50%);z-index:70;font-size:19px;font-weight:900;color:#86efac;background:rgba(15,40,20,.95);border:1px solid #4ade80;padding:10px 24px;border-radius:14px;pointer-events:none;animation:toastIn 1.8s ease-out forwards;box-shadow:0 0 24px rgba(74,222,128,.4)}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,-14px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+.pt{position:fixed;z-index:69;width:7px;height:7px;border-radius:2px;pointer-events:none}
+.dyna-bar-bg{height:8px;width:100%;max-width:320px;background:rgba(0,0,0,.45);border:1px solid #7c2d12;border-radius:6px;overflow:hidden;display:none}
+.dyna-bar{height:100%;width:100%;background:linear-gradient(90deg,#f97316,#facc15);border-radius:6px}
+.shake{animation:shakeK .4s}
+@keyframes shakeK{0%,100%{transform:translate(0,0)}20%{transform:translate(-6px,2px)}40%{transform:translate(6px,-2px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(4px,2px)}}
+.prestige-btn.ready{animation:pulseG 1.4s ease-in-out infinite}
+@keyframes pulseG{0%,100%{box-shadow:0 0 8px rgba(124,58,237,.35)}50%{box-shadow:0 0 26px rgba(167,139,250,.9)}}
+.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);padding:16px}
+.modal.open{display:flex}
+.modal-box{background:#0c1a10;border:2px solid #4ade80;border-radius:20px;padding:26px;max-width:380px;width:100%;text-align:center;box-shadow:0 0 50px rgba(74,222,128,.35)}
+.modal-box h2{font-size:26px;margin-bottom:12px;color:#86efac}
+.modal-box p{font-size:15px;color:#9cd8b4;margin-bottom:18px;line-height:1.5}
+.ps-title{font-size:30px;font-weight:900;color:#86efac;margin-bottom:6px}
+.ps-stats{width:100%;max-width:360px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
+.ps-row{display:flex;justify-content:space-between;background:rgba(15,40,20,.6);border:1px solid #1d5c33;border-radius:10px;padding:10px 14px;font-size:15px}
+.ps-row b{color:#fbbf24}
+@media (min-width:900px){
+  .game-grid{flex-direction:row;align-items:stretch}
+  .dig-col{flex:0 0 340px;justify-content:center}
+  .shop-col{max-height:none}
+  .title{font-size:56px}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<a class="hub" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn" aria-label="Mute">🔊</button>
+
+<div class="screen s-active" id="s-start">
+  <div class="logo">⛏️</div>
+  <h1 class="title">IDLE MINER</h1>
+  <p class="sub">Tap to dig deep! Upgrade your pickaxe, hire auto-miners, and blast with dynamite. Ore gets richer every tier you reach.</p>
+  <div class="best-box">💎 Gems: <b id="startGems">0</b> · Mining ×<b id="startMult">1</b><br>🏔️ Best depth: <b id="startBest">0m</b><br>🏅 Rank: <b id="startRank">⛏️ Digger</b></div>
+  <p class="tip">🪨 Stone → ⚫ Coal → ⚙️ Iron → 🪙 Gold → 💎 Diamond → 💚 Emerald → 🌀 Void · ✨ 1 gem per 1000m, +3% mining each · 📴 Offline: 50% rate, 8h cap · 💾 Auto-saves every 5 seconds</p>
+  <button class="btn btn-big" id="btnPlay">▶ Play</button>
+  <button class="btn btn-ghost" id="btnReset">New Run (keep gems)</button>
+</div>
+
+<div class="screen" id="s-game">
+  <div class="hud">
+    <div class="hud-item">🪨 <span id="stones">0</span></div>
+    <div class="hud-item">⚡ <span id="persec">0</span>/s</div>
+    <div class="hud-item">📍 <span id="depth">0m</span></div>
+    <div class="hud-item">💎 <span id="gems">0</span></div>
+  </div>
+  <div class="game-grid">
+    <div class="dig-col">
+      <button class="rock-btn" id="rockBtn">🪨</button>
+      <div class="dig-label">+<span id="tapVal">1</span> per tap</div>
+      <div class="dig-label" id="flowLabel"></div>
+      <div class="depth-wrap">
+        <div class="tier-nm" id="tierNm">🪨 Stone</div>
+        <div class="tier-dp" id="tierDp">Depth 0m · Next: Coal at 100m</div>
+        <div class="depth-bar-bg"><div class="depth-bar" id="depthBar"></div></div>
+      </div>
+      <div class="dyna-bar-bg" id="dynaWrap"><div class="dyna-bar" id="dynaBar"></div></div>
+      <button class="btn dyna-btn" id="btnDyna">🧨 Dynamite ×10</button>
+      <button class="btn prestige-btn" id="btnPrestige" disabled>💎 Prestige +0 gems</button>
+      <div class="dig-label" id="gemNext"></div>
+    </div>
+    <div class="shop-col" id="shop"></div>
+  </div>
+</div>
+
+<div class="screen" id="s-over">
+  <div class="logo">💎</div>
+  <h1 class="title">PRESTIGE!</h1>
+  <div class="ps-title" id="psGained">+0 💎</div>
+  <div class="ps-stats">
+    <div class="ps-row"><span>Stones this run</span><b id="psStones">0</b></div>
+    <div class="ps-row"><span>Depth reached</span><b id="psDepth">0m</b></div>
+    <div class="ps-row"><span>Total gems</span><b id="psGems">0</b></div>
+    <div class="ps-row"><span>New mining multiplier</span><b id="psMult">×1</b></div>
+  </div>
+  <p class="tip">Each gem gives +3% mining power forever. Dig deeper next time!</p>
+  <button class="btn btn-big" id="btnContinue">▶ Keep Digging</button>
+</div>
+
+<div class="modal" id="offlineModal">
+  <div class="modal-box">
+    <h2>⏳ Welcome back!</h2>
+    <p id="offlineMsg">While you were away…</p>
+    <button class="btn btn-big" id="btnOfflineOk">🪨 Collect</button>
+  </div>
+</div>
+
+<script>
+
+(function(){
+'use strict';
+var TIERS=[
+  {n:'Stone',min:0,v:1,e:'🪨'},
+  {n:'Coal',min:100,v:2,e:'⚫'},
+  {n:'Iron',min:250,v:4,e:'⚙️'},
+  {n:'Gold',min:500,v:8,e:'🪙'},
+  {n:'Diamond',min:1000,v:16,e:'💎'},
+  {n:'Emerald',min:2000,v:32,e:'💚'},
+  {n:'Void',min:5000,v:64,e:'🌀'}
+];
+var S={stones:0,lifetime:0,pick:1,miners:0,dynUses:0,dynT:0,miles:[false,false,false,false,false,false,false],gems:0,best:0,buy:1,up:[0,0,0,0],last:Date.now()};
+var GUPS=[
+  {n:'Eternal Pick',e:'⛏️',c:2,t:'Taps ×2'},
+  {n:'Deep Core',e:'🤖',c:3,t:'Miners ×2'},
+  {n:'TNT Pack',e:'🧨',c:2,t:'Dynamite 35s'},
+  {n:'Prospector',e:'🔭',c:5,t:'Gem every 800m'}
+];
+var RANKS=[
+  {m:0,n:'⛏️ Digger'},
+  {m:250,n:'🌿 Prospector'},
+  {m:750,n:'⚒️ Excavator'},
+  {m:1500,n:'🦾 Driller'},
+  {m:3000,n:'💎 Dark Miner'},
+  {m:6000,n:'🌌 Void Runner'}
+];
+function rankIdx(){var b=S.best,i;for(i=RANKS.length-1;i>=0;i--){if(b>=RANKS[i].m){return i;}}return 0;}
+var loopId=null,saveId=null,lastTick=0,lastRank=-1;
+var lastDigT=0,flow=0,flowMile=10;
+var AC=null,muted=localStorage.getItem('im_muted')==='1';
+function $(id){return document.getElementById(id);}
+function show(id){var i,s=document.querySelectorAll('.screen');for(i=0;i<s.length;i++){s[i].classList.remove('s-active');}$(id).classList.add('s-active');}
+function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
+function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+const SFXMAP={dig:'hit',buy:'tap',dyna:'boom',mile:'levelup',prestige:'win',error:'buzz'};
+function sfx(n){
+  if(muted){return;}
+  var m=SFXMAP[n]||n,a=SFXP[m];
+  if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
+  if(n==='dig'){tone(140+Math.random()*80,0.07,'square',0.08);}
+  else if(n==='buy'){tone(523.25,0.09,'triangle',0.14);tone(659.25,0.09,'triangle',0.14,0.07);tone(783.99,0.14,'triangle',0.14,0.14);}
+  else if(n==='dyna'){tone(90,0.5,'sawtooth',0.2);tone(50,0.6,'sawtooth',0.18,0.05);}
+  else if(n==='mile'){tone(659.25,0.12,'triangle',0.15);tone(880,0.12,'triangle',0.15,0.1);tone(1046.5,0.2,'triangle',0.15,0.2);}
+  else if(n==='prestige'){tone(392,0.14,'triangle',0.16);tone(523.25,0.14,'triangle',0.16,0.12);tone(659.25,0.14,'triangle',0.16,0.24);tone(783.99,0.14,'triangle',0.16,0.36);tone(1046.5,0.4,'triangle',0.16,0.48);}
+  else if(n==='error'){tone(150,0.2,'sawtooth',0.1);}
+}
+var toastEl=null,toastTimer=0;
+function toast(txt){
+  if(!toastEl){toastEl=document.createElement('div');toastEl.className='toast';document.body.appendChild(toastEl);}
+  else if(!toastEl.parentNode){document.body.appendChild(toastEl);}
+  toastEl.textContent=txt;
+  toastEl.style.animation='none';void toastEl.offsetWidth;toastEl.style.animation='';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){if(toastEl.parentNode){toastEl.parentNode.removeChild(toastEl);}},1900);
+}
+function fmt(n){
+  if(!isFinite(n)){return '∞';}
+  if(n<1000){return Math.floor(n).toString();}
+  var u=['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'],i=-1;
+  while(n>=1000&&i<u.length-1){n/=1000;i++;}
+  var s;
+  if(n>=100){s=n.toFixed(0);}
+  else if(n>=10){s=n.toFixed(1);}
+  else{s=n.toFixed(2);}
+  return s+u[i];
+}
+function fmtRate(n){
+  if(!isFinite(n)){return '∞';}
+  if(n<1000){
+    if(n%1!==0){
+      if(n<10){return (Math.round(n*100)/100).toString();}
+      return (Math.round(n*10)/10).toString();
+    }
+    return Math.floor(n).toString();
+  }
+  return fmt(n);
+}
+function fmtTime(sec){
+  sec=Math.floor(sec);
+  var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60);
+  if(h>0){return h+'h '+m+'m';}
+  if(m>0){return m+'m';}
+  return sec+'s';
+}
+function depth(){return S.lifetime*0.1;}
+function tierIdx(){
+  var d=depth(),i=0;
+  for(i=TIERS.length-1;i>=0;i--){if(d>=TIERS[i].min){return i;}}
+  return 0;
+}
+function mileMult(){
+  var m=1,i;
+  for(i=0;i<TIERS.length;i++){if(S.miles[i]){m*=2;}}
+  return m;
+}
+function prestigeMult(){return Math.pow(1.03,S.gems);}
+function dynMult(){return S.dynT>0?10:1;}
+function dynaDur(){return S.up[2]?35:20;}
+function tapValue(){return S.pick*TIERS[tierIdx()].v*mileMult()*prestigeMult()*dynMult()*(S.up[0]?2:1);}
+function minerRate(){return S.miners*0.5*TIERS[tierIdx()].v*mileMult()*prestigeMult()*(S.up[1]?2:1);}
+function pickCost(){return 10*Math.pow(1.6,S.pick-1);}
+function minerCostAmt(n){return 50*Math.pow(1.5,S.miners)*(Math.pow(1.5,n)-1)/0.5;}
+function maxAfford(){
+  var c0=50*Math.pow(1.5,S.miners);
+  if(S.stones<c0){return 0;}
+  var n=Math.floor(Math.log(S.stones*0.5/c0+1)/Math.log(1.5));
+  if(n<1){n=1;}
+  while(n>1&&minerCostAmt(n)>S.stones){n--;}
+  while(minerCostAmt(n+1)<=S.stones){n++;}
+  return n;
+}
+function dynaCost(){return 100*Math.pow(1.6,S.dynUses);}
+function gemsGain(){return Math.floor(depth()/(S.up[3]?800:1000));}
+function save(){
+  S.last=Date.now();
+  try{localStorage.setItem('im_state',JSON.stringify(S));}catch(e){}
+}
+function num(v,def){v=Number(v);return isFinite(v)?v:def;}
+function load(){
+  try{
+    var raw=localStorage.getItem('im_state');
+    if(raw){
+      var d=JSON.parse(raw),i;
+      S.stones=Math.max(0,num(d.stones,0));S.lifetime=Math.max(0,num(d.lifetime,0));S.pick=Math.max(1,Math.floor(num(d.pick,1)));S.miners=Math.max(0,Math.floor(num(d.miners,0)));S.dynUses=Math.max(0,Math.floor(num(d.dynUses,0)));S.dynT=Math.max(0,num(d.dynT,0));S.gems=Math.max(0,Math.floor(num(d.gems,0)));S.buy=(d.buy===1||d.buy===10||d.buy===-1)?d.buy:1;S.best=Math.max(0,num(d.best,0));S.last=num(d.last,Date.now());
+      var du=Array.isArray(d.up)?d.up:[];
+      for(i=0;i<GUPS.length;i++){S.up[i]=du[i]?1:0;}
+      for(i=0;i<TIERS.length;i++){S.miles[i]=!!(i>0&&Array.isArray(d.miles)&&d.miles[i]===true);}
+    }
+  }catch(e){}
+}
+function offlineProgress(){
+  var away=(Date.now()-S.last)/1000;
+  if(away<=60){return;}
+  S.dynT=0;
+  var capped=Math.min(away,8*3600);
+  var gain=minerRate()*0.5*capped;
+  if(gain<=0){return;}
+  S.stones+=gain;S.lifetime+=gain;
+  checkMilestones();
+  save();
+  $('offlineMsg').innerHTML='You were away for <b>'+fmtTime(away)+'</b>'+(away>capped?' <b>(8h cap)</b>':'')+'.<br>Your miners dug <b>'+fmt(gain)+'</b> stones at 50% rate ('+fmt(minerRate()*0.5)+'/s).';
+  $('btnOfflineOk').textContent='🪨 Collect '+fmt(gain);
+  $('offlineModal').classList.add('open');
+}
+function checkMilestones(){
+  var d=depth(),i;
+  for(i=1;i<TIERS.length;i++){
+    if(d>=TIERS[i].min&&!S.miles[i]){
+      S.miles[i]=true;
+      toast('⭐ '+TIERS[i].e+' '+TIERS[i].n+' reached at '+TIERS[i].min+'m! Mining ×2');
+      sfx('mile');
+    }
+  }
+}
+var PCOLS=['#9ca3af','#6b7280','#cbd5e1','#facc15','#22d3ee','#34d399','#a78bfa'];
+var ptPool=[],ptFree=[],PTMAX=60;
+function burst(x,y,ti){
+  var c=PCOLS[ti]||PCOLS[0],i,p,ang,dist,dx,dy,an;
+  for(i=0;i<5;i++){
+    p=ptFree.pop();
+    if(!p){
+      if(ptPool.length>=PTMAX){continue;}
+      p=document.createElement('div');
+      p.className='pt';
+      document.body.appendChild(p);
+      ptPool.push(p);
+    }
+    p.style.background=c;
+    p.style.left=x+'px';
+    p.style.top=y+'px';
+    ang=Math.random()*Math.PI*2;dist=30+Math.random()*55;
+    dx=Math.cos(ang)*dist;dy=Math.sin(ang)*dist*0.6+42;
+    an=p.animate(
+      [{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) scale(.2)',opacity:0}],
+      {duration:420+Math.random()*260,easing:'cubic-bezier(.2,.7,.4,1)'}
+    );
+    (function(p){var seq=(p._seq=(p._seq||0)+1);an.onfinish=function(){if(p._seq===seq){ptFree.push(p);}};})(p);
+  }
+}
+var FP=[],FPi=0;
+function floater(x,y,txt){
+  var f;
+  if(FP.length<12){f=document.createElement('div');f.className='float';document.body.appendChild(f);FP.push(f);}
+  else{f=FP[FPi];FPi=(FPi+1)%FP.length;}
+  f.textContent=txt;
+  f.style.left=(x-16)+'px';
+  f.style.top=(y-30)+'px';
+  f.style.animation='none';void f.offsetWidth;f.style.animation='';
+}
+function dig(e){
+  var v=tapValue();
+  var crit=Math.random()<0.06;
+  if(crit){v*=5;}
+  S.stones+=v;S.lifetime+=v;
+  var nt=Date.now();
+  if(nt-lastDigT<=1200){flow++;}else{flow=1;}
+  lastDigT=nt;
+  if(flow>=flowMile){
+    var fb=S.pick*5;
+    S.stones+=fb;S.lifetime+=fb;
+    toast('⚡ FLOW ×'+flow+'! +'+fmt(fb)+' stones');
+    sfx('mile');
+    flowMile+=10;
+  }
+  setTxt(E.flowLabel,flow>=2?('⚡ Flow ×'+flow):'');
+  var rb=$('rockBtn');
+  rb.classList.remove('pop');
+  void rb.offsetWidth;
+  rb.classList.add('pop');
+  rb.textContent=TIERS[tierIdx()].e;
+  sfx(crit?'boom':'dig');
+  if(e&&e.clientX!==undefined){
+    floater(e.clientX+Math.random()*32,e.clientY,(crit?'CRIT ':'')+'+'+fmt(v));
+    burst(e.clientX,e.clientY,crit?4:tierIdx());
+  }
+  checkMilestones();
+  updateHud();
+}
+function buyPick(){
+  var c=pickCost();
+  if(S.stones<c){sfx('error');return;}
+  S.stones-=c;S.pick++;
+  sfx('buy');
+  toast('⛏️ Pickaxe Lv '+S.pick+'!');
+  updateHud();
+}
+function buyMiner(){
+  var n=S.buy===-1?maxAfford():S.buy;
+  if(n<1){sfx('error');return;}
+  var c=minerCostAmt(n);
+  if(S.stones<c){sfx('error');return;}
+  var first=S.miners===0;
+  S.stones-=c;S.miners+=n;
+  sfx('buy');
+  if(first){toast('🤖 Auto-Miner hired!');}
+  updateHud();
+}
+function buyDyna(){
+  var c=dynaCost();
+  if(S.stones<c||S.dynT>0){sfx('error');return;}
+  S.stones-=c;S.dynUses++;
+  S.dynT=dynaDur();
+  sfx('dyna');
+  toast('🧨 BOOM! ×10 mining for '+dynaDur()+'s');
+  if(!digColEl){digColEl=document.querySelector('.dig-col');}
+  digColEl.classList.remove('shake');
+  void digColEl.offsetWidth;
+  digColEl.classList.add('shake');
+  updateHud();
+}
+function buyGemUp(i){
+  var u=GUPS[i];
+  if(S.up[i]||S.gems<u.c){sfx('error');return;}
+  S.gems-=u.c;S.up[i]=1;
+  sfx('mile');
+  toast('💎 '+u.n+': '+u.t);
+  save();
+  updateHud();
+}
+function doPrestige(){
+  var g=gemsGain();
+  if(g<1){sfx('error');return;}
+  sfx('prestige');
+  $('psGained').textContent='+'+fmt(g)+' 💎';
+  $('psStones').textContent=fmt(S.lifetime);
+  $('psDepth').textContent=Math.floor(depth())+'m';
+  S.gems+=g;
+  $('psGems').textContent=fmt(S.gems);
+  $('psMult').textContent='×'+prestigeMult().toFixed(2);
+  S.stones=0;S.lifetime=0;S.pick=1;S.miners=0;S.dynUses=0;S.dynT=0;
+  flow=0;flowMile=10;
+  var i;
+  for(i=0;i<TIERS.length;i++){S.miles[i]=false;}
+  save();
+  show('s-over');
+  updateHud();
+}
+var E=null,digColEl=null,shopR=null;
+function cacheEls(){
+  E={stones:$('stones'),persec:$('persec'),gems:$('gems'),tapVal:$('tapVal'),depth:$('depth'),tierNm:$('tierNm'),tierDp:$('tierDp'),depthBar:$('depthBar'),pb:$('btnPrestige'),gemNext:$('gemNext'),db:$('btnDyna'),dynaWrap:$('dynaWrap'),dynaBar:$('dynaBar'),rockBtn:$('rockBtn'),flowLabel:$('flowLabel')};
+}
+function setTxt(el,v){if(el.textContent!==v){el.textContent=v;}}
+var lastDepthTxt='',lastTierTxt='',lastTierDp='',lastDepthW='';
+function updateDepth(){
+  var d=depth(),ti=tierIdx(),s,nxt,w;
+  if(d>S.best){S.best=d;}
+  var ri=rankIdx();
+  if(ri!==lastRank){
+    if(lastRank>=0&&ri>lastRank){toast('🏅 RANK UP: '+RANKS[ri].n+'!');sfx('mile');}
+    lastRank=ri;
+    setTxt($('startRank'),RANKS[ri].n);
+  }
+  s=Math.floor(d)+'m';
+  if(s!==lastDepthTxt){lastDepthTxt=s;setTxt(E.depth,s);}
+  s=TIERS[ti].e+' '+TIERS[ti].n;
+  if(s!==lastTierTxt){lastTierTxt=s;setTxt(E.tierNm,s);}
+  nxt=ti<TIERS.length-1?TIERS[ti+1]:null;
+  if(nxt){
+    var pct=Math.min(100,((d-TIERS[ti].min)/(nxt.min-TIERS[ti].min))*100);
+    w=Math.max(0,pct).toFixed(1)+'%';
+    if(w!==lastDepthW){lastDepthW=w;E.depthBar.style.width=w;}
+    s='Depth '+Math.floor(d)+'m · Next: '+nxt.e+' '+nxt.n+' at '+nxt.min+'m';
+  }else{
+    if(lastDepthW!=='100%'){lastDepthW='100%';E.depthBar.style.width='100%';}
+    s='Depth '+Math.floor(d)+'m · The void goes on forever…';
+  }
+  if(s!==lastTierDp){lastTierDp=s;setTxt(E.tierDp,s);}
+}
+var lastReady=null,lastDynWrap='';
+function updateHud(){
+  setTxt(E.stones,fmt(S.stones));
+  setTxt(E.persec,fmt(minerRate()*dynMult()));
+  setTxt(E.gems,fmt(S.gems));
+  setTxt(E.tapVal,fmt(tapValue()));
+  var g=gemsGain(),dis,s;
+  setTxt(E.pb,'💎 Prestige +'+fmt(g)+' gems');
+  dis=g<1;
+  if(E.pb.disabled!==dis){E.pb.disabled=dis;}
+  if(g>=1){if(lastReady!==true){lastReady=true;E.pb.classList.add('ready');}}
+  else{if(lastReady!==false){lastReady=false;E.pb.classList.remove('ready');}}
+  setTxt(E.gemNext,g>=1?('Prestige now: ×'+prestigeMult().toFixed(2)+' → ×'+Math.pow(1.03,S.gems+g).toFixed(2)):('Next 💎 at '+((g+1)*(S.up[3]?800:1000))+'m depth'));
+  var db=E.db;
+  if(S.dynT>0){
+    s='🧨 ×10 active ('+Math.ceil(S.dynT)+'s)';
+    if(db.textContent!==s){db.textContent=s;}
+    if(!db.disabled){db.disabled=true;}
+    if(lastDynWrap!=='block'){lastDynWrap='block';E.dynaWrap.style.display='block';}
+    var dw=Math.max(0,S.dynT/dynaDur()*100).toFixed(1)+'%';
+    if(E.dynaBar.style.width!==dw){E.dynaBar.style.width=dw;}
+  }else{
+    s='🧨 Dynamite ×10 · '+fmt(dynaCost());
+    if(db.textContent!==s){db.textContent=s;}
+    dis=S.stones<dynaCost();
+    if(db.disabled!==dis){db.disabled=dis;}
+    if(lastDynWrap!=='none'){lastDynWrap='none';E.dynaWrap.style.display='none';}
+  }
+  setTxt(E.rockBtn,TIERS[tierIdx()].e);
+  updateDepth();
+  updateShop();
+  updateMiles();
+}
+function updateShop(){
+  if(!shopR){return;}
+  var pc=pickCost(),s,ok,n,mc;
+  s='Next level: '+fmt(pc)+' stones · Cost ×1.6';
+  setTxt(shopR.pickDt,s);
+  s='Lv '+S.pick;
+  setTxt(shopR.pickLvl,s);
+  ok=S.stones>=pc;
+  if(ok&&shopR.pickNo){shopR.pickNo=false;shopR.pickBtn.classList.remove('no');}
+  else if(!ok&&!shopR.pickNo){shopR.pickNo=true;shopR.pickBtn.classList.add('no');}
+  n=S.buy===-1?Math.max(1,maxAfford()):S.buy;
+  mc=minerCostAmt(n);
+  setTxt(shopR.minerDt,'0.5/s each · Cost ×1.5');
+  setTxt(shopR.minerLvl,'×'+S.miners);
+  s=(S.buy===-1?'MAX×':'×')+n+' · '+fmt(mc);
+  setTxt(shopR.minerBtn,s);
+  ok=S.stones>=mc;
+  if(ok&&shopR.minerNo){shopR.minerNo=false;shopR.minerBtn.classList.remove('no');}
+  else if(!ok&&!shopR.minerNo){shopR.minerNo=true;shopR.minerBtn.classList.add('no');}
+  var k,b,u,ok2,got=0;
+  for(k=0;k<GUPS.length;k++){
+    u=GUPS[k];b=GUpBtns[k];
+    if(!b){continue;}
+    if(S.up[k]){b.textContent='✓';b.classList.add('no');b.title=u.n+' (bought)';got++;}
+    else{
+      b.textContent=u.e+' '+u.c+'💎';
+      b.title=u.n+' ('+u.t+')';
+      ok2=S.gems>=u.c;
+      if(ok2&&b.no){b.no=false;b.classList.remove('no');}
+      else if(!ok2&&!b.no){b.no=true;b.classList.add('no');}
+    }
+  }
+  setTxt(shopR.gemUpCount,got+'/4');
+}
+var GUpBtns=[];
+var shopBuilt=false;
+function renderShop(){
+  if(shopBuilt){return;}
+  shopBuilt=true;
+  var sc=$('shop');sc.innerHTML='';
+  var row1=document.createElement('div');
+  row1.className='srow';
+  row1.innerHTML='<div class="lvl">Lv '+S.pick+'</div><div class="info"><div class="nm">⛏️ Pickaxe</div><div class="dt"></div></div><button class="buy" id="btnPick">Upgrade</button>';
+  sc.appendChild(row1);
+  var bar=document.createElement('div');
+  bar.className='buy-row';
+  var cap=document.createElement('span');
+  cap.textContent='Hire:';
+  bar.appendChild(cap);
+  var amts=[['1','×1'],['10','×10'],['max','MAX']],k;
+  for(k=0;k<amts.length;k++){
+    (function(v,lab){
+      var b=document.createElement('button');
+      b.className='buy-amt'+(((v==='max'?-1:parseInt(v,10))===S.buy)?' sel':'');
+      b.textContent=lab;
+      b.addEventListener('click',function(){
+        S.buy=v==='max'?-1:parseInt(v,10);
+        var all=document.querySelectorAll('.buy-amt'),j;
+        for(j=0;j<all.length;j++){all[j].classList.remove('sel');}
+        this.classList.add('sel');
+        sfx('tap');
+        updateShop();
+      });
+      bar.appendChild(b);
+    })(amts[k][0],amts[k][1]);
+  }
+  sc.appendChild(bar);
+  var row2=document.createElement('div');
+  row2.className='srow';
+  row2.innerHTML='<div class="lvl">×'+S.miners+'</div><div class="info"><div class="nm">🤖 Auto-Miner</div><div class="dt"></div></div><button class="buy" id="btnMiner">Hire</button>';
+  sc.appendChild(row2);
+  var row3=document.createElement('div');
+  row3.className='srow';
+  row3.innerHTML='<div class="lvl">🏆</div><div class="info"><div class="nm">Depth Milestones</div><div class="dt" id="mileList">Reach each ore tier to double mining power</div></div><div class="lvl" id="mileCount">×'+mileMult()+'</div>';
+  sc.appendChild(row3);
+  var row4=document.createElement('div');
+  row4.className='srow';
+  row4.innerHTML='<div class="lvl">💎</div><div class="info"><div class="nm">Gem Upgrades</div><div class="dt" id="gemUpDt">Spend gems on permanent boosts</div><div class="buy-row" id="gemUpRow"></div></div><div class="lvl" id="gemUpCount">0/4</div>';
+  sc.appendChild(row4);
+  var gur=$('gemUpRow'),k2;
+  GUpBtns=[];
+  for(k2=0;k2<GUPS.length;k2++){
+    (function(k2){
+      var b=document.createElement('button');
+      b.className='buy-amt';
+      b.textContent=GUPS[k2].e+' '+GUPS[k2].c+'💎';
+      b.title=GUPS[k2].n;
+      b.addEventListener('click',function(){buyGemUp(k2);});
+      gur.appendChild(b);
+      GUpBtns[k2]=b;
+    })(k2);
+  }
+  var pk=$('btnPick'),mi=$('btnMiner');
+  shopR={
+    pickBtn:pk,pickDt:pk.closest('.srow').querySelector('.dt'),pickLvl:pk.closest('.srow').querySelector('.lvl'),pickNo:false,
+    minerBtn:mi,minerDt:mi.closest('.srow').querySelector('.dt'),minerLvl:mi.closest('.srow').querySelector('.lvl'),minerNo:false,
+    mileList:$('mileList'),mileCount:$('mileCount'),gemUpCount:$('gemUpCount')
+  };
+  pk.addEventListener('click',buyPick);
+  mi.addEventListener('click',buyMiner);
+}
+function updateMiles(){
+  if(!shopR){return;}
+  var txt='',i,got=0,s;
+  for(i=1;i<TIERS.length;i++){
+    if(S.miles[i]){txt+=TIERS[i].e+' ✓ ';got++;}
+  }
+  s=txt?('Unlocked: '+txt):'Reach each ore tier to double mining power';
+  setTxt(shopR.mileList,s);
+  setTxt(shopR.mileCount,'×'+mileMult());
+}
+var running=false,uiAcc=0;
+function step(){
+  var nowT=Date.now(),dt=(nowT-lastTick)/1000;
+  lastTick=nowT;
+  if(dt>0){
+    if(running){
+      var away=dt>2;
+      if(dt>8*3600){dt=8*3600;}
+      if(S.dynT>0&&!away){
+        S.dynT-=dt;
+        if(S.dynT<=0){S.dynT=0;toast('🧨 Dynamite fizzled out');}
+      }
+      if(flow>0&&Date.now()-lastDigT>1400){flow=0;flowMile=10;setTxt(E.flowLabel,'');}
+      var rate=minerRate()*dynMult()*(away?0.5:1);
+      if(rate>0){
+        S.stones+=rate*dt;
+        S.lifetime+=rate*dt;
+      }
+      checkMilestones();
+    }
+    if(running){
+      uiAcc+=dt;
+      if(uiAcc>=0.1){uiAcc=0;updateHud();}
+    }
+  }
+  requestAnimationFrame(step);
+}
+function startGame(){
+  show('s-game');
+  renderShop();
+  updateHud();
+  running=true;
+  lastTick=Date.now();
+}
+function init(){
+  load();
+  $('startGems').textContent=fmt(S.gems);
+  $('startMult').textContent=prestigeMult().toFixed(2);
+  $('startBest').textContent=Math.floor(S.best)+'m';
+  lastRank=rankIdx();
+  $('startRank').textContent=RANKS[lastRank].n;
+  var hasSave=false;
+  try{hasSave=!!localStorage.getItem('im_state');}catch(e){}
+  $('btnPlay').textContent=hasSave?'▶ Continue':'▶ Play';
+  $('btnPlay').addEventListener('click',function(){sfx('prestige');startGame();});
+  $('btnReset').addEventListener('click',function(){
+    S.stones=0;S.lifetime=0;S.pick=1;S.miners=0;S.dynUses=0;S.dynT=0;S.last=Date.now();
+    var i;
+    for(i=0;i<TIERS.length;i++){S.miles[i]=false;}
+    save();
+    $('startGems').textContent=fmt(S.gems);
+    $('startBest').textContent=Math.floor(S.best)+'m';
+    startGame();
+  });
+  $('btnContinue').addEventListener('click',function(){sfx('buy');startGame();});
+  $('btnPrestige').addEventListener('click',doPrestige);
+  $('btnDyna').addEventListener('click',buyDyna);
+  $('btnOfflineOk').addEventListener('click',function(){
+    $('offlineModal').classList.remove('open');
+    sfx('prestige');
+    startGame();
+  });
+  $('rockBtn').addEventListener('click',function(e){dig(e);});
+  $('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('im_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';});
+  $('muteBtn').textContent=muted?'🔇':'🔊';
+  saveId=setInterval(save,5000);
+  window.addEventListener('beforeunload',save);
+  document.addEventListener('visibilitychange',function(){if(document.hidden){save();}});
+  offlineProgress();
+  cacheEls();
+  lastTick=Date.now();
+  requestAnimationFrame(step);
+}
+init();
+})();
+</script>
+</body>
+</html>

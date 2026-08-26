@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Farm Idle Tycoon</title>
+<style>
+  :root{
+    --bg1:#0a120f; --bg2:#14231a; --card:#1c3223; --card2:#27452f;
+    --txt:#ecffe9; --dim:#a4c7a8; --accent:#8dff9b; --gold:#ffd86b;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    background:radial-gradient(120% 100% at 50% 0%, var(--bg2) 0%, var(--bg1) 60%, #050b07 100%);
+    color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  }
+  #app{max-width:620px; margin:0 auto; padding:8px 10px 30px; min-height:100%;}
+  a.hub{display:inline-block; color:var(--dim); text-decoration:none; font-size:14px; margin:2px 0 6px;}
+  .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.16);
+    border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
+  /* HUD */
+  #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
+  .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
+  .stat small{display:block; color:var(--dim); font-size:11px; font-weight:500;}
+  #coins{display:inline-block;}
+  #coins.pop{animation:coinPop .22s ease-out;}
+  @keyframes coinPop{0%{transform:scale(1);}40%{transform:scale(1.35); color:#fff;}100%{transform:scale(1);}}
+  .iconBtn{background:var(--card2); border:1px solid rgba(141,255,155,.25); color:var(--txt);
+    border-radius:10px; min-width:48px; min-height:48px; font-size:20px; cursor:pointer;}
+  /* tractor */
+  #tapArea{display:flex; justify-content:center; margin:6px 0 10px;}
+  #tractor{width:150px; height:150px; border-radius:50%; font-size:72px; cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #3c7a48, #1c3a22); border:3px solid var(--accent);
+    box-shadow:0 0 28px rgba(141,255,155,.55), inset 0 0 18px rgba(0,0,0,.35);
+    transition:transform .06s;}
+  #tractor:active{transform:scale(.92);}
+  #clickBurst{text-align:center; min-height:22px; color:var(--gold); font-weight:800; font-size:18px; transition:opacity .25s;}
+  /* buy qty */
+  #qtyRow{display:flex; gap:8px; padding:8px; margin-bottom:8px; justify-content:center;}
+  .qty{flex:1; background:var(--card2); border:2px solid transparent; color:var(--txt); border-radius:10px;
+    min-height:48px; font-weight:800; font-size:15px; cursor:pointer;}
+  .qty.sel{border-color:var(--accent); background:#2c6a3c; box-shadow:0 0 10px rgba(141,255,155,.5);}
+  /* buildings */
+  #bList{display:flex; flex-direction:column; gap:6px; max-height:44vh; overflow-y:auto; margin-bottom:8px; padding:2px;}
+  .bRow{display:flex; align-items:center; gap:10px; padding:9px 12px;}
+  .bRow .ic{font-size:30px;}
+  .bRow .info{flex:1; min-width:0;}
+  .bRow .name{font-weight:700; font-size:14px;}
+  .bRow .sub{color:var(--dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bRow .cnt{font-weight:800; font-size:16px; min-width:40px; text-align:right;}
+  .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
+    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;}
+  .buyBtn:disabled{opacity:.4; cursor:not-allowed;}
+  /* prestige */
+  #prestige{padding:12px; text-align:center;}
+  #prestige .lp{font-size:26px; font-weight:800; color:var(--gold); text-shadow:0 0 12px rgba(255,216,107,.5);}
+  .btn{display:block; width:100%; background:linear-gradient(180deg,#b8860b,#7a5c06); color:#fff; border:1px solid var(--gold);
+    border-radius:12px; min-height:52px; font-size:17px; font-weight:800; cursor:pointer; margin:8px 0 0; box-shadow:0 4px 14px rgba(184,134,11,.4);}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  /* overlay */
+  .overlay{position:fixed; inset:0; background:rgba(4,12,6,.94); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .overlay .box{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.3);
+    border-radius:18px; padding:24px; max-width:400px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  .big{font-size:58px; margin-bottom:6px;}
+  h1{margin:0 0 4px; font-size:30px; text-shadow:0 0 18px rgba(141,255,155,.6);}
+  .sub{color:var(--dim); margin:0 0 16px; font-size:14px;}
+  .btn.green{background:linear-gradient(180deg,#35a04f,#1f6b34); border-color:var(--accent);}
+  .btn.alt{background:linear-gradient(180deg,#4a5560,#2b343c); border-color:#7a8a96;}
+  .hidden{display:none !important;}
+  #fx{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
+  .fxFloat{position:absolute; transform:translate(-50%,-50%); font-weight:800; font-size:16px; color:var(--gold);
+    text-shadow:0 0 10px rgba(255,216,107,.9); white-space:nowrap; animation:fxUp .9s ease-out forwards;}
+  @keyframes fxUp{0%{opacity:0; margin-top:8px;}15%{opacity:1;}100%{opacity:0; margin-top:-46px;}}
+  .fxPart{position:absolute; transform:translate(-50%,-50%); font-size:15px;
+    text-shadow:0 0 8px rgba(141,255,155,.6); transition:transform .7s cubic-bezier(.2,.7,.3,1), opacity .7s ease-out;}
+  #toast{position:fixed; left:50%; bottom:18px; transform:translate(-50%,80px); max-width:90%;
+    background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.35);
+    color:var(--txt); padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600;
+    box-shadow:0 6px 24px rgba(0,0,0,.5); opacity:0; transition:transform .3s, opacity .3s; z-index:70; pointer-events:none;}
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+  #bfly{position:fixed;z-index:30;width:64px;height:64px;font-size:46px;cursor:pointer;left:-70px;top:32vh;
+    pointer-events:auto;filter:drop-shadow(0 0 10px rgba(141,255,155,.6));animation:bflyfly 7s linear forwards}
+  @keyframes bflyfly{0%{left:-70px;top:32vh}10%{left:6vw;top:27vh}20%{left:16vw;top:36vh}30%{left:28vw;top:28vh}
+    40%{left:40vw;top:34vh}50%{left:52vw;top:26vh}60%{left:64vw;top:33vh}70%{left:76vw;top:27vh}
+    80%{left:88vw;top:32vh}92%{left:100vw;top:29vh}100%{left:110vw;top:32vh}}
+</style>
+</head>
+<body>
+<div id="app">
+  <a class="hub" href="../index.html">← Hub</a>
+  <div id="hud" class="panel">
+    <div class="stat">🪙 <span id="coins">0</span><small>coins</small></div>
+    <div class="stat">⏱ <span id="cps">0</span>/s<small>income</small></div>
+    <div class="stat">🚜 <span id="cp">1</span><small>click power</small></div>
+    <div class="stat">🏆 <span id="lp">0</span><small>legacy</small></div>
+    <div class="stat">🦋 <span id="bf">0</span><small>caught</small></div>
+    <button class="iconBtn" id="muteBtn">🔊</button>
+    <button class="iconBtn" id="achBtn" title="Achievements">🏅 0</button>
+  </div>
+
+  <div id="tapArea"><button id="tractor">🚜</button></div>
+  <div id="clickBurst"></div>
+
+  <div id="qtyRow" class="panel">
+    <button class="qty sel" data-q="1">×1</button>
+    <button class="qty" data-q="10">×10</button>
+    <button class="qty" data-q="25">×25</button>
+  </div>
+
+  <div id="bList"></div>
+
+  <div id="wheel" class="panel" style="padding:12px;text-align:center;margin-bottom:8px;">
+    <div class="lp" id="wheelTitle">🎰 Farm Market</div>
+    <div class="sub" id="wheelDesc" style="margin:4px 0 0;"></div>
+    <button class="btn" id="wheelBtn">🎰 Spin</button>
+  </div>
+
+  <div id="prestige" class="panel">
+    <div class="lp" id="lpGain">+0 Legacy Points</div>
+    <div class="sub" id="lpDesc" style="margin:4px 0 0;">New Farm+ grants +10% income each</div>
+    <button class="btn" id="prestigeBtn">🌟 New Farm+</button>
+  </div>
+</div>
+
+<div id="startScreen" class="overlay">
+  <div class="box">
+    <div class="big">🚜</div>
+    <h1>Farm Idle Tycoon</h1>
+    <p class="sub">Tap the tractor, buy buildings, and grow an endless farming empire!</p>
+    <button class="btn green" id="playBtn">▶ Play</button>
+    <p class="sub" style="margin:10px 0 0;">Best Legacy: <span id="startBest">0</span></p>
+  </div>
+</div>
+
+<div id="achScreen" class="overlay hidden">
+  <div class="box">
+    <h1 style="font-size:24px;">🏅 Achievements</h1>
+    <div id="achList" style="max-height:44vh; overflow-y:auto; text-align:left; margin:12px 0;"></div>
+    <button class="btn alt" id="achCloseBtn">Close</button>
+  </div>
+</div>
+
+<div id="menuScreen" class="overlay hidden">
+  <div class="box">
+    <h1>⚙️ Menu</h1>
+    <button class="btn green" id="resumeBtn">▶ Resume</button>
+    <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
+    <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
+  </div>
+</div>
+
+<script>
+
+(function(){
+  "use strict";
+  var BUILDINGS = [
+    {id:"wheat",  name:"Wheat Field",    emoji:"🌾", baseCost:15,      baseIncome:0.5},
+    {id:"chicken",name:"Chicken Coop",   emoji:"🐔", baseCost:100,     baseIncome:2.5},
+    {id:"cow",    name:"Cow Barn",       emoji:"🐄", baseCost:1100,    baseIncome:7},
+    {id:"apple",  name:"Apple Orchard",  emoji:"🍎", baseCost:12000,   baseIncome:60},
+    {id:"bee",    name:"Bee Hive",       emoji:"🐝", baseCost:130000,  baseIncome:400},
+    {id:"tractor",name:"Tractor Fleet",  emoji:"🚜", baseCost:1.4e6,   baseIncome:3000},
+    {id:"green",  name:"Greenhouse",     emoji:"🌿", baseCost:2e7,     baseIncome:20000},
+    {id:"dairy",  name:"Dairy Factory",  emoji:"🥛", baseCost:3.3e8,   baseIncome:130000},
+    {id:"wine",   name:"Wine Cellar",    emoji:"🍷", baseCost:5.1e9,   baseIncome:850000},
+    {id:"mega",   name:"Mega Farm",      emoji:"🏰", baseCost:7.5e10,  baseIncome:5.5e6}
+  ];
+  var SAVE_KEY = "farmIdleSave_v1";
+  var OFFLINE_CAP = 8 * 3600;
+  var OFFLINE_RATE = 0.5;
+  var LEGACY_BONUS = 0.10;
+
+  function defaultState(){
+    var owned = {};
+    BUILDINGS.forEach(function(b){ owned[b.id] = 0; });
+    return {coins:0, lifetime:0, clickPower:1, legacy:0, buyQty:1, butterflies:0, muted:false, lastSave:Date.now(), owned:owned};
+  }
+  var state = defaultState();
+
+  var $ = function(id){ return document.getElementById(id); };
+  var coinsEl=$("coins"), cpsEl=$("cps"), cpEl=$("cp"), lpEl=$("lp");
+
+  function fmt(n){
+    if(!isFinite(n)) return "∞";
+    if(n < 1000) return n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n).toString();
+    var u = 0, units = ["","K","M","B","T"];
+    while(n >= 1000 && u < units.length - 1){ n /= 1000; u++; }
+    var d = n < 10 ? 2 : (n < 100 ? 1 : 0);
+    return n.toFixed(d) + units[u];
+  }
+
+  // ---- Audio ----
+  var AC = null;
+  function ac(){
+    if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(AC.state === "suspended") AC.resume();
+    return AC;
+  }
+  function beep(freq, dur, type, vol, slide){
+    if(state.muted) return;
+    try{
+      var c = ac();
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      if(slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime + dur);
+      g.gain.setValueAtTime(vol || 0.15, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime + dur);
+    }catch(e){}
+  }
+  const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+  const SFXMAP={click:'tap',buy:'tap',prestige:'win',deny:'buzz'};
+  function sfx(t){
+    if(state.muted) return;
+    var m=SFXMAP[t]||t,a=SFXP[m];
+    if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
+    if(t==="click") beep(300,0.06,"triangle",0.12);
+    else if(t==="buy"){ beep(520,0.1,"triangle",0.2); setTimeout(function(){ beep(780,0.14,"triangle",0.2); },60); }
+    else if(t==="prestige"){ beep(660,0.14,"triangle",0.2); beep(880,0.18,"triangle",0.2); beep(1100,0.24,"triangle",0.2); }
+    else if(t==="deny") beep(180,0.15,"sawtooth",0.14);
+  }
+
+  // ---- Economy ----
+  function milestoneMult(count){
+    var m = 1;
+    if(count >= 25) m *= 2;
+    if(count >= 50) m *= 2;
+    if(count >= 100) m *= 2;
+    return m;
+  }
+  function prestigeMult(){ return 1 + state.legacy * LEGACY_BONUS; }
+  function buildingIncome(b){
+    var owned = state.owned[b.id];
+    if(owned === 0) return 0;
+    return owned * b.baseIncome * milestoneMult(owned) * prestigeMult();
+  }
+  function totalIncome(){
+    var s = 0;
+    BUILDINGS.forEach(function(b){ s += buildingIncome(b); });
+    return s;
+  }
+  function currentClickPower(){
+    return state.clickPower + state.legacy;
+  }
+  function buildingCost(b){
+    return b.baseCost * Math.pow(1.15, state.owned[b.id]);
+  }
+  function bulkCost(b, n){
+    var owned = state.owned[b.id];
+    var first = b.baseCost * Math.pow(1.15, owned);
+    return first * (Math.pow(1.15, n) - 1) / 0.15;
+  }
+  function maxAffordable(b, qty){
+    var owned = state.owned[b.id];
+    var first = b.baseCost * Math.pow(1.15, owned);
+    var n = 0;
+    var coins = state.coins;
+    var cost = first;
+    while(n < qty && coins >= cost){
+      coins -= cost;
+      n++;
+      cost *= 1.15;
+    }
+    return n;
+  }
+
+  // ---- Click combo ----
+  var combo = 0, comboT = 0, lastComboMult = 1;
+  function comboMult(){
+    return combo >= 25 ? 8 : combo >= 12 ? 5 : combo >= 5 ? 3 : combo >= 2 ? 2 : 1;
+  }
+
+  // ---- Actions ----
+  function popCoins(){
+    coinsEl.classList.remove("pop");
+    void coinsEl.offsetWidth;
+    coinsEl.classList.add("pop");
+  }
+  function doClick(){
+    var pw = currentClickPower();
+    state.coins += pw; state.lifetime += pw;
+    combo++; comboT = Date.now();
+    var m = comboMult();
+    if(m > 1){
+      var bonus = pw * (m - 1);
+      state.coins += bonus; state.lifetime += bonus;
+      if(m > lastComboMult){ lastComboMult = m; sfx("levelup"); }
+    } else { lastComboMult = 1; }
+    popCoins();
+    burst("+" + fmt(pw) + (m > 1 ? " ×" + m : ""));
+    var c0 = centerOf($("tractor"));
+    floatText(c0.x, c0.y - 40, "+" + fmt(pw * m) + " 🪙");
+    partBurst(c0.x, c0.y, ["🌾","🪙","✨"], 4, 26);
+    try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+    sfx("click");
+    render();
+  }
+  function buyBuilding(b){
+    var n = maxAffordable(b, state.buyQty);
+    if(n === 0){ sfx("deny"); return; }
+    var cost = bulkCost(b, n);
+    state.coins = Math.max(0, state.coins - cost);
+    state.owned[b.id] += n;
+    popCoins();
+    sfx("buy");
+    try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
+    render();
+  }
+  function prestige(){
+    var gain = Math.floor(Math.sqrt(state.lifetime / 1e6));
+    if(gain < 1){ sfx("deny"); return; }
+    state.legacy += gain;
+    state.coins = 0;
+    state.lifetime = 0;
+    state.clickPower = 1;
+    BUILDINGS.forEach(function(b){ state.owned[b.id] = 0; });
+    sfx("prestige");
+    save();
+    render();
+  }
+
+  // ---- Farm Market gamble ----
+  var elWheelBtn = $("wheelBtn"), elWheelDesc = $("wheelDesc");
+  function wheelStake(){ return Math.max(1000, state.coins * 0.05); }
+  function spinWheel(){
+    if(state.coins < 1000){ sfx("deny"); showToast("🎰 Farm Market: need at least 1K coins"); return; }
+    var stake = Math.max(1000, state.coins * 0.05);
+    state.coins -= stake;
+    var roll = Math.random(), win = 0, label;
+    if(roll < 0.10){ win = 0; label = "Crop rot!"; sfx("deny"); }
+    else if(roll < 0.40){ win = stake; label = "Stake back"; sfx("tick"); }
+    else if(roll < 0.75){ win = stake * 1.5; label = "×1.5 win!"; sfx("levelup"); }
+    else if(roll < 0.93){ win = stake * 2; label = "×2 JACKPOT!"; sfx("levelup"); }
+    else if(roll < 0.99){ win = stake * 4; label = "×4 GOLD!"; sfx("win"); }
+    else { win = stake * 15; label = "×15 MEGA!"; sfx("win"); }
+    if(win > 0){
+      state.coins += win;
+      showToast("🎰 " + label + " (+" + fmt(win) + " 🪙)");
+    } else {
+      showToast("🎰 " + label + " (-" + fmt(stake) + " 🪙)");
+    }
+    render();
+  }
+  $("wheelBtn").addEventListener("click", spinWheel);
+
+  // ---- Butterfly event ----
+  var bflyT = 20 + Math.random() * 30, bflyEl = null, bflyTm = 0;
+  function spawnBfly(){
+    if(bflyEl) return;
+    if($("startScreen").className.indexOf("hidden") !== -1){ bflyT = 8 + Math.random() * 12; return; }
+    bflyEl = document.createElement("div");
+    bflyEl.id = "bfly";
+    bflyEl.textContent = "\ud83e\udd8b";
+    bflyEl.addEventListener("pointerdown", catchBfly);
+    document.body.appendChild(bflyEl);
+    clearTimeout(bflyTm);
+    bflyTm = setTimeout(function(){ if(bflyEl){ bflyEl.remove(); bflyEl = null; } }, 7600);
+  }
+  function catchBfly(e){
+    e.preventDefault();
+    if(!bflyEl) return;
+    var c0 = centerOf($("tractor"));
+    var gift = Math.max(20, totalIncome() * 3);
+    state.coins += gift;
+    state.butterflies = (state.butterflies || 0) + 1;
+    partBurst(c0.x, c0.y, ["\ud83e\udd8b","\u2728"], 5, 30);
+    if(state.butterflies % 10 === 0){
+      var bonus = totalIncome() * 30;
+      if(bonus > 0) state.coins += bonus;
+      showToast("\ud83e\udd8b Butterfly parade! +" + fmt(gift + bonus) + " \ud83e\udef6");
+      sfx("levelup");
+    } else {
+      showToast("\ud83e\udd8b Caught! +" + fmt(gift) + " \ud83e\udef6");
+      sfx("coin");
+    }
+    clearTimeout(bflyTm);
+    bflyEl.remove(); bflyEl = null;
+    bflyT = 45 + Math.random() * 45;
+    render();
+  }
+
+  // ---- Achievements ----
+  var ACH_INFO = [
+    {id:"harvest",  name:"First Harvest",     icon:"🌱", desc:"Earn 1K lifetime coins", test:function(){return state.lifetime >= 1e3;}},
+    {id:"million",  name:"Millionaire",       icon:"💰", desc:"Earn 1M lifetime coins", test:function(){return state.lifetime >= 1e6;}},
+    {id:"billion",  name:"Agro Giant",        icon:"💵", desc:"Earn 1B lifetime coins", test:function(){return state.lifetime >= 1e9;}},
+    {id:"milestone",name:"Milestone Mover",   icon:"🏗", desc:"Own 25 of a single building", test:function(){
+      for(var i=0;i<BUILDINGS.length;i++){ if(state.owned[BUILDINGS[i].id] >= 25) return true; }
+      return false;
+    }},
+    {id:"empire",   name:"Empire Builder",    icon:"🏰", desc:"Own 100 buildings total", test:function(){
+      var n=0; for(var i=0;i<BUILDINGS.length;i++){ n += state.owned[BUILDINGS[i].id]; }
+      return n >= 100;
+    }},
+    {id:"income",   name:"Cash Flow",         icon:"🏦", desc:"Reach 10K coins/s income", test:function(){return totalIncome() >= 1e4;}},
+    {id:"legacy",   name:"New Farm+",         icon:"🌟", desc:"Prestige at least once", test:function(){return state.legacy >= 1;}},
+    {id:"legend",   name:"Legacy Legend",     icon:"👑", desc:"Hold 15 Legacy Points", test:function(){return state.legacy >= 15;}},
+    {id:"mega",     name:"Mega Owner",        icon:"🚀", desc:"Buy a Mega Farm", test:function(){return state.owned.mega >= 1;}}
+  ];
+  var ACH_KEY = "farmIdleAch_v1";
+  var achUnlocked = {};
+  var achRefs = [];
+  function loadAch(){
+    try{ var raw = localStorage.getItem(ACH_KEY); if(raw){ var a = JSON.parse(raw); if(a && typeof a === "object") achUnlocked = a; } }catch(e){}
+  }
+  function saveAch(){ try{ localStorage.setItem(ACH_KEY, JSON.stringify(achUnlocked)); }catch(e){} }
+  function achCount(){ var n=0; for(var k in achUnlocked){ if(achUnlocked[k]) n++; } return n; }
+  function buildAchList(){
+    if(achRefs.length) return;
+    var l = $("achList");
+    ACH_INFO.forEach(function(a){
+      var row = document.createElement("div");
+      row.className = "bRow panel";
+      row.style.margin = "5px 0";
+      row.innerHTML = '<div class="ic">' + a.icon + '</div>' +
+        '<div class="info"><div class="name">' + a.name + '</div><div class="sub">' + a.desc + '</div></div>';
+      var s = document.createElement("div");
+      s.className = "cnt";
+      row.appendChild(s);
+      l.appendChild(row);
+      achRefs.push(s);
+    });
+  }
+  function renderAchList(){
+    for(var i=0;i<ACH_INFO.length;i++){
+      if(achRefs[i]) achRefs[i].textContent = achUnlocked[ACH_INFO[i].id] ? "✅" : "🔒";
+    }
+  }
+  function checkAch(){
+    var fresh = false;
+    ACH_INFO.forEach(function(a){
+      if(!achUnlocked[a.id] && a.test()){
+        achUnlocked[a.id] = true;
+        showToast(a.icon + " Unlocked: " + a.name);
+        sfx("levelup");
+        fresh = true;
+      }
+    });
+    if(fresh){ saveAch(); renderAchList(); }
+  }
+
+  // ---- Burst ----
+  var burstTimer = null;
+  function burst(txt){
+    var el = $("clickBurst");
+    el.textContent = txt;
+    el.style.opacity = "1";
+    if(burstTimer) clearTimeout(burstTimer);
+    burstTimer = setTimeout(function(){ el.style.opacity = "0"; }, 500);
+  }
+  var fxLayer = null, fxTotal = 0, FXMAX = 40, fPool = [], pPool = [];
+  function fx(){
+    if(!fxLayer){ fxLayer = document.createElement("div"); fxLayer.id = "fx"; document.body.appendChild(fxLayer); }
+    return fxLayer;
+  }
+  function floatText(x, y, txt){
+    var s = fPool.pop();
+    if(!s){
+      if(fxTotal >= FXMAX) return;
+      s = document.createElement("span");
+      s.className = "fxFloat";
+      fx().appendChild(s);
+      fxTotal++;
+    }
+    s.textContent = txt;
+    s.style.left = x + "px"; s.style.top = y + "px";
+    s.style.animation = "none"; void s.offsetWidth; s.style.animation = "";
+    var seq = (s._seq = (s._seq || 0) + 1);
+    setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
+  }
+  function partBurst(x, y, chars, n, spread){
+    for(var i=0;i<n;i++){
+      var s = pPool.pop();
+      if(!s){
+        if(fxTotal >= FXMAX) return;
+        s = document.createElement("span");
+        s.className = "fxPart";
+        fx().appendChild(s);
+        fxTotal++;
+      }
+      s.textContent = chars[(Math.random()*chars.length)|0];
+      s.style.left = x + "px"; s.style.top = y + "px";
+      s.style.transition = "none";
+      s.style.transform = "translate(-50%,-50%)";
+      s.style.opacity = "1";
+      void s.offsetWidth;
+      s.style.transition = "";
+      var dx = (Math.random()*2-1)*spread;
+      var dy = -(12 + Math.random()*spread*1.2);
+      (function(s, dx, dy){
+        var seq = (s._seq = (s._seq || 0) + 1);
+        requestAnimationFrame(function(){
+          if(s._seq !== seq) return;
+          s.style.transform = "translate(" + dx + "px," + dy + "px) scale(.3)";
+          s.style.opacity = "0";
+        });
+        setTimeout(function(){ if(s._seq === seq) pPool.push(s); }, 750);
+      })(s, dx, dy);
+    }
+  }
+  var tractorC = {x:0, y:0}, tractorDirty = true;
+  function invalidateTractor(){ tractorDirty = true; }
+  window.addEventListener("resize", invalidateTractor);
+  window.addEventListener("scroll", invalidateTractor, true);
+  function centerOf(el){
+    if(tractorDirty){
+      var r = el.getBoundingClientRect();
+      tractorC.x = r.left + r.width/2;
+      tractorC.y = r.top + r.height/2;
+      tractorDirty = false;
+    }
+    return tractorC;
+  }
+
+  // ---- Render ----
+  var rowRefs = [];
+  function buildList(){
+    var list = $("bList");
+    list.innerHTML = "";
+    rowRefs = [];
+    BUILDINGS.forEach(function(b){
+      var row = document.createElement("div");
+      row.className = "bRow panel";
+      row.innerHTML =
+        '<div class="ic">' + b.emoji + '</div>' +
+        '<div class="info"><div class="name">' + b.name + '</div>' +
+        '<div class="sub"></div></div>' +
+        '<div class="cnt">0</div>';
+      var btn = document.createElement("button");
+      btn.className = "buyBtn";
+      btn.addEventListener("click", function(){ buyBuilding(b); });
+      row.appendChild(btn);
+      list.appendChild(row);
+      rowRefs.push({sub: row.querySelector(".sub"), cnt: row.querySelector(".cnt"), btn: btn, s:"", c:"", b:"", d:null});
+    });
+  }
+  function renderList(){
+    BUILDINGS.forEach(function(b, i){
+      var r = rowRefs[i];
+      if(!r) return;
+      var cost = bulkCost(b, state.buyQty);
+      var dis = !(state.coins >= cost);
+      var s = fmt(buildingIncome(b)) + "/s · each " + fmt(b.baseIncome) + "/s";
+      if(r.s !== s){ r.s = s; r.sub.textContent = s; }
+      var c = String(state.owned[b.id]);
+      if(r.c !== c){ r.c = c; r.cnt.textContent = c; }
+      var bt = "🪙 " + fmt(cost);
+      if(r.b !== bt){ r.b = bt; r.btn.textContent = bt; }
+      if(r.d !== dis){ r.d = dis; r.btn.disabled = dis; }
+    });
+  }
+  var elStartBest=$("startBest"), elLpGain=$("lpGain"), elPrestigeBtn=$("prestigeBtn"), elMute=$("muteBtn"), elAch=$("achBtn"), elBf=$("bf");
+  var lastQty=-1, lastMuteIcon="";
+  function setTxt(el, v){ if(el.textContent !== v) el.textContent = v; }
+  function render(){
+    setTxt(coinsEl, fmt(state.coins));
+    setTxt(cpsEl, fmt(totalIncome()));
+    setTxt(cpEl, fmt(currentClickPower()));
+    setTxt(lpEl, fmt(state.legacy));
+    setTxt(elStartBest, fmt(state.legacy));
+    setTxt(elAch, "🏅 " + achCount() + "/" + ACH_INFO.length);
+    setTxt(elBf, String(state.butterflies || 0));
+
+    var gain = Math.floor(Math.sqrt(state.lifetime / 1e6));
+    setTxt(elLpGain, "+" + fmt(gain) + " Legacy Points");
+    var dis = gain < 1;
+    if(elPrestigeBtn.disabled !== dis) elPrestigeBtn.disabled = dis;
+
+    setTxt(elWheelDesc, "Stake: " + fmt(wheelStake()) + " 🪙 (5% of coins, min 1K)");
+    var wDis = state.coins < 1000;
+    if(elWheelBtn.disabled !== wDis) elWheelBtn.disabled = wDis;
+
+    if(lastQty !== state.buyQty){
+      lastQty = state.buyQty;
+      document.querySelectorAll(".qty").forEach(function(q){
+        q.classList.toggle("sel", parseInt(q.dataset.q, 10) === state.buyQty);
+      });
+    }
+    var mi = state.muted ? "🔇" : "🔊";
+    if(lastMuteIcon !== mi){ lastMuteIcon = mi; elMute.textContent = mi; }
+    renderList();
+  }
+
+  // ---- Loop ----
+  var lastTick = Date.now(), uiAcc = 0, achAcc = 0;
+  function frame(){
+    var now = Date.now();
+    var dt = (now - lastTick) / 1000;
+    lastTick = now;
+    if(combo > 0 && now - comboT > 1600){ combo = 0; comboT = 0; lastComboMult = 1; }
+    if(dt > 0){
+      if(dt > OFFLINE_CAP) dt = OFFLINE_CAP;
+      var inc = totalIncome();
+      if(inc > 0){
+        var gain = inc * dt;
+        state.coins += gain; state.lifetime += gain;
+      }
+      uiAcc += dt;
+      if(uiAcc >= 0.1){ uiAcc = 0; render(); }
+      achAcc += dt;
+      if(achAcc >= 1){ achAcc = 0; checkAch(); }
+      if(bflyT > 0) bflyT -= dt;
+      else { bflyT = 45 + Math.random() * 45; spawnBfly(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---- Save / Load / Offline ----
+  function save(){
+    state.lastSave = Date.now();
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function showToast(msg){
+    var t = $("toast");
+    if(!t){ t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._tm);
+    showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 3500);
+  }
+  function applyOffline(){
+    var now = Date.now();
+    var elapsed = (now - state.lastSave) / 1000;
+    if(elapsed <= 0) return;
+    elapsed = Math.min(elapsed, OFFLINE_CAP);
+    var gain = totalIncome() * elapsed * OFFLINE_RATE;
+    if(gain > 0){ state.coins += gain; state.lifetime += gain; }
+    if(elapsed >= 15 && gain > 0){
+      var mins = Math.floor(elapsed/60);
+      showToast("⏰ Away " + (mins >= 1 ? mins + "m" : Math.floor(elapsed) + "s") + ": +" + fmt(gain) + " coins");
+    }
+  }
+  function num(v, d){ v = Number(v); return isFinite(v) ? v : d; }
+  function sanitize(){
+    state.coins = Math.max(0, num(state.coins, 0));
+    state.lifetime = Math.max(0, num(state.lifetime, 0));
+    state.clickPower = Math.max(1, num(state.clickPower, 1));
+    state.legacy = Math.max(0, num(state.legacy, 0));
+    state.butterflies = Math.max(0, Math.floor(num(state.butterflies, 0)));
+    state.lastSave = num(state.lastSave, Date.now());
+    state.muted = !!state.muted;
+    if([1,10,25].indexOf(state.buyQty) < 0) state.buyQty = 1;
+    BUILDINGS.forEach(function(b){
+      var v = Math.floor(num(state.owned[b.id], 0));
+      state.owned[b.id] = v > 0 ? v : 0;
+    });
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && typeof s === "object"){
+          state = Object.assign(defaultState(), s);
+          state.owned = Object.assign(defaultState().owned, s.owned || {});
+          sanitize();
+        }
+      }
+    }catch(e){}
+    applyOffline();
+    save();
+  }
+
+  // ---- Events ----
+  $("playBtn").addEventListener("click", function(){ $("startScreen").classList.add("hidden"); render(); sfx("click"); });
+  $("tractor").addEventListener("click", doClick);
+  document.querySelectorAll(".qty").forEach(function(q){
+    q.addEventListener("click", function(){
+      state.buyQty = parseInt(q.dataset.q, 10);
+      sfx("click"); render();
+    });
+  });
+  $("prestigeBtn").addEventListener("click", prestige);
+  $("achBtn").addEventListener("click", function(){ buildAchList(); renderAchList(); $("achScreen").classList.remove("hidden"); sfx("click"); });
+  $("achCloseBtn").addEventListener("click", function(){ $("achScreen").classList.add("hidden"); sfx("click"); });
+  $("muteBtn").addEventListener("click", function(){ state.muted = !state.muted; save(); render(); });
+  $("resumeBtn").addEventListener("click", function(){ $("menuScreen").classList.add("hidden"); sfx("click"); });
+  $("toggleMuteBtn").addEventListener("click", function(){
+    state.muted = !state.muted;
+    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
+    save(); render();
+  });
+  $("resetBtn").addEventListener("click", function(){
+    if(confirm("Reset your farm and lose all progress?")){
+      state = defaultState();
+      save(); render();
+      $("menuScreen").classList.add("hidden");
+    }
+  });
+  var menuBtn = document.createElement("button");
+  menuBtn.className = "iconBtn";
+  menuBtn.id = "menuBtn";
+  menuBtn.textContent = "⚙️";
+  menuBtn.addEventListener("click", function(){
+    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
+    $("menuScreen").classList.remove("hidden");
+    sfx("click");
+  });
+  $("hud").appendChild(menuBtn);
+
+  // ---- Init ----
+  load();
+  loadAch();
+  buildList();
+  render();
+  if(state.lifetime === 0){
+    var hb = $("clickBurst");
+    hb.textContent = "👆 Tap the tractor to earn coins!";
+    hb.style.opacity = "1";
+  }
+  setInterval(save, 5000);
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
+  lastTick = Date.now();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Stack Ball</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#070a16; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  body { position:fixed; inset:0; overscroll-behavior:none; }
+  canvas { position:fixed; inset:0; display:block; touch-action:none; }
+  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:10; text-align:center; padding:24px; background:radial-gradient(120% 120% at 50% 20%, rgba(40,22,10,.92), rgba(7,10,22,.97)); }
+  .hidden { display:none !important; }
+  h1 { font-size:clamp(34px,8vw,64px); font-weight:900; letter-spacing:1px; background:linear-gradient(180deg,#fff,#fcd34d); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 18px rgba(251,191,36,.55)); }
+  .sub { color:#9aa3c7; font-size:clamp(14px,3.4vw,18px); max-width:440px; line-height:1.5; }
+  .sub b { color:#fcd34d; }
+  button { font-size:clamp(22px,5vw,30px); font-weight:800; padding:16px 44px; border:none; border-radius:18px; cursor:pointer; color:#1c1204; background:linear-gradient(180deg,#fcd34d,#d97706); box-shadow:0 0 26px rgba(251,191,36,.55), inset 0 2px 0 rgba(255,255,255,.35); transition:transform .08s; }
+  button:active { transform:scale(.94); }
+  .score-big { font-size:clamp(40px,10vw,72px); font-weight:900; color:#fff; text-shadow:0 0 24px rgba(251,191,36,.9); }
+  .best { color:#4ade80; font-size:clamp(16px,4vw,22px); font-weight:700; }
+  .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
+  .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fef3c7; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(251,191,36,.3); }
+  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
+  .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(251,191,36,.4); background:rgba(10,12,26,.65); color:#fef3c7; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(251,191,36,.3); }
+  #hub { position:fixed; top:14px; left:16px; z-index:20; color:#fde68a; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); }
+  @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud hidden" id="hud">
+  <div class="pill"><small>Score</small><span id="score">0</span></div>
+  <div class="pill"><small>Depth</small><span id="depth">0</span></div>
+  <div class="pill"><small>Best</small><span id="best">0</span></div>
+</div>
+<div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
+<a id="hub" href="../index.html">← Hub</a>
+<div class="overlay" id="start">
+  <h1>STACK BALL</h1>
+  <div class="sub">Tap to <b>smash down</b> through the rotating platforms — tap again mid-air to <b>slam</b> faster! Land on a <b style="color:#0a0a0f;background:#fff;padding:0 4px;border-radius:4px">black</b> segment = game over. Dodge the gaps & collect 💎 gems!</div>
+  <div class="sub" style="margin:-4px 0 0">🔥 Best slam streak: <b id="chainBestVal">0</b> · chain slams for +5 bonuses</div>
+  <button id="playBtn">▶ PLAY</button>
+</div>
+<div class="overlay hidden" id="gameover">
+  <h1>CRACKED!</h1>
+  <div class="score-big" id="finalScore">0</div>
+  <div class="best" id="finalBest">Best: 0</div>
+  <div class="best" id="finalChain">🔥 Best slam streak: 0</div>
+  <button id="restartBtn">↻ PLAY AGAIN</button>
+</div>
+<script>
+
+'use strict';
+const KEY = 'stack-ball-best';
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const $ = id => document.getElementById(id);
+let W = 0, H = 0, DPR = 1, bgCan = null;
+function buildBg() {
+  bgCan = document.createElement('canvas');
+  bgCan.width = Math.max(1, Math.round(W * DPR));
+  bgCan.height = Math.max(1, Math.round(H * DPR));
+  const b = bgCan.getContext('2d');
+  b.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = b.createRadialGradient(W / 2, H * 0.4, 10, W / 2, H * 0.4, Math.max(W, H) * 0.8);
+  g.addColorStop(0, '#2a1c0c'); g.addColorStop(1, '#070a16');
+  b.fillStyle = g; b.fillRect(0, 0, W, H);
+}
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  layout();
+  buildBg();
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 80));
+
+let audioCtx = null, muted = false;
+try { muted = localStorage.getItem(KEY + '-mute') === '1'; } catch (e) {}
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, vol, slideTo) {
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + dur);
+  g.gain.setValueAtTime(vol || 0.2, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur);
+}
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+
+const TAU = Math.PI * 2, SEGS = 8;
+const BLACK = '#0e1017';
+const SAFE = ['#22d3ee', '#a855f7', '#f472b6', '#facc15', '#34d399', '#38bdf8'];
+let GAP, rx, ry, ballR, cx, desired;
+let ballSpr = null, gemSpr = null, eliteSpr = null;
+function buildBallSprite() {
+  const pad = 26, S = Math.ceil((ballR + pad) * 2);
+  ballSpr = document.createElement('canvas');
+  ballSpr.width = S; ballSpr.height = S;
+  const x = ballSpr.getContext('2d');
+  const g = x.createRadialGradient(S / 2 - ballR * 0.3, S / 2 - ballR * 0.3, ballR * 0.1, S / 2, S / 2, ballR);
+  g.addColorStop(0, '#e0f2fe'); g.addColorStop(0.55, '#38bdf8'); g.addColorStop(1, '#0369a1');
+  x.shadowColor = '#38bdf8'; x.shadowBlur = 18;
+  x.fillStyle = g;
+  x.beginPath(); x.arc(S / 2, S / 2, ballR, 0, TAU); x.fill();
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(255,255,255,.75)';
+  x.beginPath(); x.arc(S / 2 - ballR * 0.35, S / 2 - ballR * 0.4, ballR * 0.24, 0, TAU); x.fill();
+}
+function buildGemSprite() {
+  const pad = 20, S = (10 + pad) * 2;
+  gemSpr = document.createElement('canvas');
+  gemSpr.width = S; gemSpr.height = S;
+  const x = gemSpr.getContext('2d');
+  x.shadowColor = '#22d3ee'; x.shadowBlur = 14;
+  x.fillStyle = '#22d3ee';
+  x.beginPath(); x.moveTo(S / 2, S / 2 - 10); x.lineTo(S / 2 + 6, S / 2); x.lineTo(S / 2, S / 2 + 10); x.lineTo(S / 2 - 6, S / 2); x.closePath(); x.fill();
+}
+function buildEliteSprite() {
+  const pad = 20, S = (14 + pad) * 2;
+  eliteSpr = document.createElement('canvas');
+  eliteSpr.width = S; eliteSpr.height = S;
+  const x = eliteSpr.getContext('2d');
+  x.shadowColor = '#fcd34d'; x.shadowBlur = 16;
+  x.fillStyle = '#fcd34d';
+  x.beginPath(); x.moveTo(S / 2, S / 2 - 14); x.lineTo(S / 2 + 9, S / 2); x.lineTo(S / 2, S / 2 + 14); x.lineTo(S / 2 - 9, S / 2); x.closePath(); x.fill();
+  x.shadowBlur = 0;
+  x.fillStyle = 'rgba(255,255,255,.9)';
+  x.beginPath(); x.arc(S / 2 - 4, S / 2 - 6, 2.2, 0, TAU); x.fill();
+}
+function layout() {
+  GAP = Math.min(W, H) * 0.19;
+  rx = Math.min(W, H) * 0.42;
+  ry = Math.min(W, H) * 0.09;
+  ballR = Math.min(W, H) * 0.075;
+  cx = W / 2;
+  desired = H * 0.30;
+  buildBallSprite();
+  buildGemSprite();
+  buildEliteSprite();
+}
+
+let platforms = [], gems = [], particles = [], floaters = [], trail = [], rings = [], visBuf = [];
+let cur = 0, score = 0, best = 0, camY = 0;
+let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
+let squash = 0, shake = 0, tGlobal = 0, slam = false, slamChain = 0, slamChainBest = 0;
+
+try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+try { slamChainBest = parseInt(localStorage.getItem('stack-ball-chain') || '0', 10) || 0; } catch (e) {}
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function py(i) { return i * GAP - camY; }
+function ballRestY(i) { return i * GAP - ry - ballR; }
+const PMAX = 220, FMAX = 16, pFree = [], fFree = [];
+function burst(x, y, color, n, speed) {
+  for (let i = 0; i < n; i++) {
+    let p = pFree.pop();
+    if (!p) { if (particles.length >= PMAX) return; p = {}; }
+    const a = Math.random() * TAU, s = rand(speed * 0.3, speed);
+    p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s;
+    p.life = rand(0.3, 0.7); p.t = 0; p.r = rand(2, 5); p.color = color;
+    particles.push(p);
+  }
+}
+function addFloater(text, x, y, color) {
+  let f = fFree.pop();
+  if (!f) { if (floaters.length >= FMAX) return; f = {}; }
+  f.text = text; f.x = x; f.y = y; f.t = 0; f.life = 0.9; f.color = color;
+  floaters.push(f);
+}
+
+function makeSegs(i) {
+  const seg = [];
+  let dead = 0;
+  if (i >= 2) dead = Math.min(5, 1 + Math.floor((i - 1) / 2));
+  for (let k = 0; k < SEGS; k++) seg.push(SAFE[(Math.random() * SAFE.length) | 0]);
+  for (let n = 0; n < dead; n++) seg[(Math.random() * SEGS) | 0] = BLACK;
+  return seg;
+}
+function makePlatform(i) {
+  const gap = i > 2 && Math.random() < 0.09;
+  const ramp = 1 + Math.min(i, 90) / 140;
+  return { i, rot: Math.random() * TAU, rs: rand(0.4, 1.0) * ramp * (Math.random() < 0.5 ? -1 : 1), gap, broken: false, segs: gap ? [] : makeSegs(i) };
+}
+function topColor(p) {
+  const seg = TAU / SEGS;
+  let a = (-Math.PI / 2 - p.rot) % TAU; if (a < 0) a += TAU;
+  return p.segs[Math.floor(a / seg) % SEGS];
+}
+function platAt(i) { return platforms.length ? platforms[i - platforms[0].i] : undefined; }
+function trimWorld() {
+  while (platforms.length && platforms[0].i < cur - 24) platforms.shift();
+  while (gems.length && gems[0].i < cur - 24) gems.shift();
+}
+function nextSolid(i) { for (;;) { ensureWorld(i + 1); const p = platAt(i); if (p && !p.gap) return i; i++; } }
+
+function initWorld() {
+  platforms = []; gems = []; particles = []; floaters = [];
+  for (let i = 0; i < 90; i++) platforms.push(makePlatform(i));
+  for (let i = 1; i < 90; i++) {
+    if (Math.random() < 0.32) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+  }
+  for (let i = 15; i < 90; i += 15) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false, elite: true });
+}
+function ensureWorld(n) {
+  while (platforms.length && platforms[platforms.length - 1].i <= n) {
+    const i = platforms[platforms.length - 1].i + 1;
+    platforms.push(makePlatform(i));
+    if (Math.random() < 0.32) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+    if (i % 15 === 0) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false, elite: true });
+  }
+}
+function startGame() {
+  initWorld();
+  trail = []; rings = []; slam = false;
+  cur = 0; score = 0; squash = 0; shake = 0; vy = 0; slamChain = 0;
+  by = ballRestY(0); camY = by - desired;
+  phase = 'resting';
+  updateHUD();
+  $('hud').classList.remove('hidden');
+  $('topbtns').classList.remove('hidden');
+  $('start').classList.add('hidden');
+  $('gameover').classList.add('hidden');
+  floaters.push({ text: 'TAP TO SMASH!', x: cx, y: desired - ballR - 26, t: 0, life: 2.4, color: '#fcd34d' });
+}
+function updateHUD() {
+  $('score').textContent = score;
+  $('depth').textContent = cur;
+  $('best').textContent = best;
+}
+function endGame() {
+  const nb = score > best;
+  if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
+  $('finalScore').textContent = score;
+  $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
+  $('finalChain').textContent = '🔥 Best slam streak: ' + slamChainBest;
+  try { localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
+  $('gameover').classList.remove('hidden');
+}
+function die() {
+  if (phase === 'dying') return;
+  phase = 'dying';
+  const sy = by - camY;
+  burst(cx, sy, '#fca5a5', 26, 380);
+  burst(cx, sy, '#e2e8f0', 18, 260);
+  shake = 16;
+  buzz(60);
+  sfx('lose');
+  setTimeout(endGame, 520);
+}
+function shatter(i) {
+  const p = platAt(i); if (!p || p.broken) return;
+  p.broken = true;
+  const sy = py(i);
+  for (let n = 0; n < 16; n++) {
+    let q = pFree.pop();
+    if (!q) { if (particles.length >= PMAX) break; q = {}; }
+    const a = Math.random() * TAU;
+    q.x = cx + Math.cos(a) * rx * Math.random();
+    q.y = sy - ry + Math.random() * ry * 2;
+    q.vx = Math.cos(a) * rand(60, 280);
+    q.vy = Math.sin(a) * rand(60, 280) - 60;
+    q.life = rand(0.3, 0.65); q.t = 0; q.r = rand(2, 6);
+    q.color = p.segs[(Math.random() * SEGS) | 0] || '#64748b';
+    particles.push(q);
+  }
+  shake = Math.max(shake, 4);
+}
+function resolveLanding() {
+  ensureWorld(fallTarget + 20);
+  const p = platAt(fallTarget);
+  const c = topColor(p);
+  if (c === BLACK) { die(); return; }
+  score += 1;
+  addFloater('+1', cx, by - camY - 34, '#fde68a');
+  sfx('hit');
+  buzz(12);
+  cur = fallTarget;
+  if (slam) { shake = Math.max(shake, 7); sfx('boom'); burst(cx, by - camY + ballR, '#fb923c', 14, 260); rings.push({ y: by - camY + ballR, t: 0 }); }
+  if (slam) {
+    slamChain++;
+    if (slamChain > slamChainBest) slamChainBest = slamChain;
+    if (slamChain % 5 === 0) {
+      score += 5;
+      addFloater('🔥 ' + slamChain + ' SLAM STREAK! +5', cx, desired - 96, '#fbbf24');
+      sfx('levelup');
+      shake = Math.max(shake, 5);
+    }
+  } else {
+    slamChain = 0;
+  }
+  slam = false;
+  phase = 'resting';
+  vy = 0;
+  squash = 1;
+  trail = [];
+  burst(cx, by - camY + ballR, '#fcd34d', 10, 180);
+  rings.push({ y: by - camY + ballR, t: 0, col: '#fcd34d' });
+  shake = Math.max(shake, 2);
+  if (cur > 0 && cur % 10 === 0) {
+    addFloater('DEPTH ' + cur + '!', cx, desired - 60, '#fbbf24');
+    sfx('levelup');
+    shake = Math.max(shake, 5);
+  }
+  updateHUD();
+}
+
+function update(dt) {
+  tGlobal += dt;
+  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+  if (squash > 0) squash = Math.max(0, squash - 6 * dt);
+  for (const p of platforms) { if (!p.broken && !p.gap) p.rot += p.rs * dt; }
+
+  if (phase === 'resting') {
+    trimWorld();
+    by = ballRestY(cur);
+    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+  } else if (phase === 'falling') {
+    vy += GAP * 34 * dt;
+    by += vy * dt;
+    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+    trail.push(by);
+    if (trail.length > 12) trail.shift();
+    if (by + ballR >= fallTarget * GAP - ry) {
+      by = fallTarget * GAP - ry - ballR;
+      resolveLanding();
+    }
+  }
+
+  if (phase === 'resting' || phase === 'falling') {
+    for (const gm of gems) {
+      if (gm.collected) continue;
+      const gwy = gm.i * GAP - ry - ballR * 0.5;
+      if (Math.hypot(gm.off, gwy - by) < ballR + 14) {
+        gm.collected = true;
+        score += 3;
+        const gx = cx + gm.off, gsy = gwy - camY;
+        addFloater('+3 💎', gx, gsy, '#67e8f9');
+        sfx('coin');
+        buzz(14);
+        burst(gx, gsy, '#67e8f9', 10, 180);
+        rings.push({ y: gsy, t: 0, col: '#67e8f9' });
+        if (gm.elite) {
+          score += 15;
+          addFloater('+15 ✨', gx, gsy - 30, '#fcd34d');
+          sfx('boom');
+          burst(gx, gsy, '#fcd34d', 16, 260);
+          rings.push({ y: gsy, t: 0, col: '#fcd34d' });
+        }
+        updateHUD();
+      }
+    }
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 520 * dt; p.vx *= 0.98;
+    if (p.t >= p.life) { pFree.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); }
+  }
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.t += dt; f.y -= 42 * dt;
+    if (f.t >= f.life) { fFree.push(f); floaters[i] = floaters[floaters.length - 1]; floaters.pop(); }
+  }
+  for (let i = rings.length - 1; i >= 0; i--) {
+    rings[i].t += dt;
+    if (rings[i].t > 0.34) rings.splice(i, 1);
+  }
+}
+
+function drawPlatform(p, sy) {
+  const seg = TAU / SEGS;
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(cx, sy + ry * 0.18, rx, ry, 0, 0, TAU); ctx.fill();
+  for (let k = 0; k < SEGS; k++) {
+    const col = p.segs[k];
+    const a0 = p.rot + k * seg, a1 = p.rot + (k + 1) * seg;
+    if (col !== BLACK) {
+      ctx.globalAlpha = 0.3; ctx.fillStyle = col;
+      ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx + 6, ry + 6, 0, a0, a1); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx, ry, 0, a0, a1); ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(cx, sy, rx, ry, 0, 0, TAU); ctx.stroke();
+}
+function drawGem(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tGlobal * 1.5);
+  ctx.drawImage(gemSpr, -gemSpr.width / 2, -gemSpr.height / 2);
+  ctx.restore();
+}
+function drawEliteGem(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tGlobal * 2.2);
+  const k = 1 + Math.sin(tGlobal * 5) * 0.08;
+  ctx.scale(k, k);
+  ctx.drawImage(eliteSpr, -eliteSpr.width / 2, -eliteSpr.height / 2);
+  ctx.restore();
+}
+function drawBall() {
+  let sy = by - camY;
+  if (phase === 'resting') sy += Math.sin(tGlobal * 7) * 2.5;
+  if (phase === 'falling') {
+    for (let i = 0; i < trail.length; i++) {
+      const a = (i + 1) / trail.length;
+      ctx.globalAlpha = a * 0.18;
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath(); ctx.arc(cx, trail[i] - camY, ballR * (0.4 + 0.5 * a), 0, TAU); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.save();
+  ctx.translate(cx, sy);
+  let sx = 1 + squash * 0.3, syy = 1 - squash * 0.35;
+  if (phase === 'falling') { const k = Math.min(0.22, Math.max(0, vy) / (GAP * 16)); sx -= k; syy += k; }
+  ctx.scale(sx, syy);
+  ctx.drawImage(ballSpr, -ballSpr.width / 2, -ballSpr.height / 2);
+  ctx.restore();
+}
+function draw() {
+  ctx.drawImage(bgCan, 0, 0, W, H);
+  ctx.fillStyle = 'rgba(251,191,36,.05)';
+  ctx.fillRect(cx - rx - 18, 0, 12, H);
+  ctx.fillRect(cx + rx + 6, 0, 12, H);
+
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
+
+  visBuf.length = 0;
+  for (const p of platforms) { if (p.broken || p.gap) continue; const sy = py(p.i); if (sy > -3 * GAP && sy < H + 3 * GAP) visBuf.push({ p, sy }); }
+  visBuf.sort((a, b) => a.sy - b.sy);
+  for (const v of visBuf) drawPlatform(v.p, v.sy);
+
+  for (const gm of gems) {
+    if (gm.collected) continue;
+    const sy = gm.i * GAP - ry - ballR * 0.5 - camY;
+    if (sy > -60 && sy < H + 60) {
+      if (gm.elite) drawEliteGem(cx + gm.off, sy + Math.sin(tGlobal * 3) * 3);
+      else drawGem(cx + gm.off, sy);
+    }
+  }
+
+  if (phase !== 'dying') drawBall();
+
+  for (const rg of rings) {
+    const k = rg.t / 0.34;
+    ctx.globalAlpha = (1 - k) * 0.7;
+    ctx.strokeStyle = rg.col || '#fb923c'; ctx.lineWidth = 3 * (1 - k) + 1;
+    ctx.beginPath(); ctx.ellipse(cx, rg.y, rx * (0.3 + 0.9 * k), ry * (0.3 + 0.9 * k), 0, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const p of particles) {
+    const a = 1 - p.t / p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.t / p.life), 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  for (const f of floaters) {
+    ctx.globalAlpha = 1 - f.t / f.life;
+    ctx.fillStyle = f.color;
+    ctx.font = '800 24px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+let last = 0;
+function loop(ts) {
+  const dt = Math.min(0.04, (ts - last) / 1000 || 0.016);
+  last = ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function tap(e) {
+  e.preventDefault();
+  ensureAudio();
+  if (phase === 'resting') {
+    shatter(cur);
+    sfx('hit');
+    buzz(8);
+    fallTarget = nextSolid(cur + 1);
+    vy = 0;
+    slam = false;
+    phase = 'falling';
+  } else if (phase === 'falling' && !slam) {
+    slam = true;
+    vy = Math.max(vy, GAP * 13);
+    sfx('whoosh');
+    buzz(10);
+  }
+}
+canvas.addEventListener('touchstart', tap, { passive: false });
+canvas.addEventListener('mousedown', tap);
+
+$('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
+$('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
+$('mute').addEventListener('click', () => { ensureAudio(); muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} });
+
+resize();
+initWorld();
+by = ballRestY(0); camY = by - desired;
+$('mute').textContent = muted ? '🔇' : '🔊';
+updateHUD();
+$('chainBestVal').textContent = slamChainBest;
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

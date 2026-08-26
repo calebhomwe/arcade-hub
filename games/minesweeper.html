@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Minesweeper</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(900px 600px at 50% -20%,#334155,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.mute{position:fixed;top:10px;right:12px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:#1e293b;font-size:20px;cursor:pointer;color:#fff}
+.mute:active{transform:scale(.92)}
+h1{font-size:26px;font-weight:900;letter-spacing:-1px}
+.bar{display:flex;align-items:center;justify-content:space-between;width:min(92vw,400px,calc(100vh - 190px));background:#1e293b;border-radius:12px;padding:8px 16px;font-weight:900;font-size:18px}
+.counter{color:#f87171}
+.smiley{font-size:26px;cursor:pointer;background:none;border:none}
+#grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;width:min(92vw,400px,calc(100vh - 190px));touch-action:manipulation;contain:layout paint}
+.c{aspect-ratio:1;border:none;border-radius:8px;background:#2b3b57;font-size:clamp(14px,4.6vw,20px);font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);color:#fff}
+.c:active{scale:.9}
+.c.rev{background:#17233c;box-shadow:none}
+.c.flag{font-size:clamp(12px,4vw,17px)}
+.c.mine{background:#7f1d1d}
+.c.wrong{background:#7f1d1d;opacity:.6}
+.c.boom{background:#ef4444;animation:boom .3s ease}
+@keyframes boom{0%{scale:1.3}100%{scale:1}}
+.n1{color:#60a5fa}.n2{color:#4ade80}.n3{color:#f87171}.n4{color:#a78bfa}.n5{color:#fbbf24}.n6{color:#22d3ee}.n7{color:#f472b6}.n8{color:#e2e8f0}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
+.ov h1{font-size:40px}
+.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#34d399,#38bdf8);color:#06281c;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(52,211,153,.35)}
+.btn:active{transform:scale(.94)}
+.hidden{display:none}
+.hint{color:#94a3b8;font-size:12px}
+.flagmode{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:8px 14px;cursor:pointer}
+.flagmode.on{background:#f87171;color:#2b0808}
+.achtoast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);border:2px solid #38bdf8;color:#e2e8f0;font-weight:900;font-size:15px;padding:10px 18px;border-radius:12px;z-index:50;pointer-events:none;animation:achin .4s ease}
+@keyframes achin{0%{opacity:0;translate:0 -12px;scale:.7}100%{opacity:1;translate:0 0;scale:1}}
+.badges{display:flex;gap:8px;font-weight:800;font-size:13px}
+.badges span{background:#1e293b;padding:6px 12px;border-radius:10px;color:#cbd5e1}
+@media (max-height:480px){
+body{gap:8px}
+h1{font-size:20px}
+.bar{padding:6px 10px;font-size:14px}
+.smiley{font-size:20px}
+.hint{display:none}
+.badges{display:none}
+.c{font-size:clamp(11px,2.6vh,16px)}
+.c.flag{font-size:clamp(9px,2.2vh,13px)}
+}
+</style>
+</head>
+<body>
+<a class="back" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn">🔊</button>
+<h1>Minesweeper</h1>
+<div class="bar"><span class="counter">💣 <b id="mineCnt">10</b></span><button class="smiley" id="face">🙂</button><span>⏱ <b id="time">0</b></span><span>🏆 <b id="best">–</b></span></div>
+<div class="badges"><span id="bWins">🏆 0</span><span id="bStreak">🔥 0</span><span id="bFast">⚡ 0</span><span id="bStars">⭐ 0</span><span id="bPure">🧭 0</span><span id="bRank">🎖 Rookie</span></div>
+<div id="grid"></div>
+<div class="hint">Tap to reveal · Hold / right-click to flag · Tap a number to chord</div>
+<button class="flagmode" id="flagBtn">🚩 Flag mode: OFF</button>
+<button class="flagmode" id="pureBtn">🧭 Pure mode: OFF</button>
+<div class="ov hidden" id="over">
+  <h1 id="overTitle">💥 Boom!</h1>
+  <div style="font-size:16px">Time: <b id="finTime">0</b>s</div>
+  <div style="font-size:14px;color:#94a3b8">Best: <b id="finBest">–</b> <span id="newBest" class="hidden" style="color:#facc15;font-weight:900">New best!</span></div>
+  <div style="font-size:14px;color:#fbbf24" id="accLine"></div>
+  <div style="font-size:14px;color:#facc15" id="starLine"></div>
+  <div style="font-size:14px;color:#94a3b8" id="pureLine"></div>
+  <div style="font-size:14px;color:#94a3b8" id="rankLine"></div>
+  <div style="font-size:14px;color:#38bdf8" id="achLine"></div>
+  <button class="btn" id="againBtn">Play Again</button>
+</div>
+<script>
+
+const S=9,MINES=10;
+let grid=[],started=false,dead=false,won=false,secs=0,timer=null,flags=0,revealed=0,firstClick=true,flagMode=false;
+let muted=localStorage.getItem('minesMute')==='1',lastLong=0;
+let wins=+localStorage.getItem('minesWins')||0,streak=+localStorage.getItem('minesStreak')||0,fast=+localStorage.getItem('minesFast')||0;
+let stars=+localStorage.getItem('minesStars')||0;
+let pureMode=localStorage.getItem('minesPure')==='1',pureWins=+localStorage.getItem('minesPureWins')||0;
+let flagTotal=0,flagRight=0;
+const RANKS=['Rookie','Sweeper','Sapper','Deminer','Veteran','Master','Grandmaster'],RANK_MIN=[0,1,5,10,25,50,100];
+function rankName(){let r=0;for(let i=RANKS.length-1;i>=0;i--)if(wins>=RANK_MIN[i]){r=i;break;}return RANKS[r];}
+function updRank(){const n=rankName();document.getElementById('bRank').textContent='🎖 '+n;document.getElementById('rankLine').textContent='🎖 Rank: '+n+' ('+wins+' wins)';}
+let ach=[];try{ach=JSON.parse(localStorage.getItem('minesAch')||'[]')||[];}catch(e){ach=[];}
+const ACH=[['rookie','Fresh Rookie',function(){return wins>=1;}],['vet','Seasoned Veteran',function(){return wins>=5;}],['pro','Demining Pro',function(){return wins>=10;}],['streak3','On Fire x3',function(){return streak>=3;}],['fast3','Speed Runner',function(){return fast>=3;}],['shot','Sharpshooter',function(){return flagRight>0&&flagRight===flagTotal;}],['blitz','Under 10 Seconds',function(){return won&&secs>0&&secs<=10;}]];
+function achToast(t){const d=document.createElement('div');d.className='achtoast';d.textContent='🏅 '+t+'!';document.body.appendChild(d);setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);},2400);}
+function checkAch(){let hit=false;for(let i=0;i<ACH.length;i++){const a=ACH[i];if(ach.indexOf(a[0])===-1&&a[2]()){ach.push(a[0]);hit=true;achToast(a[1]);}}
+if(hit){try{localStorage.setItem('minesAch',JSON.stringify(ach));}catch(e){}}
+document.getElementById('achLine').textContent='🏅 '+ach.length+'/'+ACH.length+' achievements';}
+function updBadges(){document.getElementById('bWins').textContent='🏆 '+wins;document.getElementById('bStreak').textContent='🔥 '+streak;document.getElementById('bFast').textContent='⚡ '+fast;document.getElementById('bStars').textContent='⭐ '+stars;document.getElementById('bPure').textContent='🧭 '+pureWins;updRank();}
+let AC;
+function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}}
+function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function snd(n){if(n==='rev')sfx('tap');else if(n==='flag')sfx('hit');else if(n==='boom')sfx('boom');else if(n==='win')sfx('win');}
+function newGame(){
+grid=[];started=false;dead=false;won=false;secs=0;flags=0;revealed=0;firstClick=true;flagTotal=0;flagRight=0;
+clearInterval(timer);
+document.getElementById('time').textContent='0';document.getElementById('mineCnt').textContent=MINES;
+const pb0=+localStorage.getItem('minesBest');document.getElementById('best').textContent=pb0?pb0+'s':'–';
+document.getElementById('face').textContent='🙂';document.getElementById('over').classList.add('hidden');
+for(let i=0;i<S*S;i++)grid.push({mine:false,adj:0,rev:false,flag:false});
+render();
+}
+function plantMines(safe){
+const safeSet=new Set([safe]);const sr=Math.floor(safe/S),sc=safe%S;
+for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+const r=sr+dr,c=sc+dc;if(r>=0&&r<S&&c>=0&&c<S)safeSet.add(r*S+c);
+}
+const candidates=[];for(let i=0;i<S*S;i++)if(!safeSet.has(i))candidates.push(i);
+const mines=shuffle(candidates).slice(0,MINES);
+for(const m of mines)grid[m].mine=true;
+for(let i=0;i<S*S;i++){
+if(grid[i].mine)continue;
+const r=Math.floor(i/S),c=i%S;
+for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+const nr=r+dr,nc=c+dc;if(nr>=0&&nr<S&&nc>=0&&nc<S&&grid[nr*S+nc].mine)grid[i].adj++;
+}
+}
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const cellEls=[];
+function buildUI(){
+const g=document.getElementById('grid');
+for(let i=0;i<S*S;i++){const b=document.createElement('button');b.className='c';b.dataset.i=i;g.appendChild(b);cellEls.push(b);}
+g.addEventListener('pointerdown',e=>{
+const b=e.target.closest('.c');if(!b)return;
+e.stopPropagation();holdStart(+b.dataset.i,b,e);
+});
+g.addEventListener('contextmenu',e=>{
+e.preventDefault();
+const b=e.target.closest('.c');if(!b)return;
+if(Date.now()-lastLong>800)toggleFlag(+b.dataset.i);
+});
+}
+function render(){
+grid.forEach((cell,i)=>{
+const b=cellEls[i];
+let cls='c',txt='';
+if(cell.rev){
+cls+=' rev';
+if(cell.mine)txt='💣';
+else if(cell.adj){txt=String(cell.adj);cls+=' n'+cell.adj;}
+}else if(cell.flag){cls+=' flag';txt='🚩';}
+if(b.className!==cls)b.className=cls;
+if(b.textContent!==txt)b.textContent=txt;
+});
+document.getElementById('mineCnt').textContent=MINES-flags;
+}
+function holdStart(i,b,e){
+if(dead||won||e.button===2)return;
+let longFired=false;
+const holdTimer=setTimeout(()=>{longFired=true;lastLong=Date.now();toggleFlag(i);navigator.vibrate&&navigator.vibrate(20);},400);
+const clear=()=>{clearTimeout(holdTimer);b.removeEventListener('pointerup',clear);b.removeEventListener('pointercancel',clear);b.removeEventListener('pointerleave',clear);
+if(!longFired){if(flagMode&&!pureMode&&!grid[i].rev)toggleFlag(i);else reveal(i);}};
+b.addEventListener('pointerup',clear);
+b.addEventListener('pointercancel',clear);
+b.addEventListener('pointerleave',()=>{clearTimeout(holdTimer);b.removeEventListener('pointerup',clear);b.removeEventListener('pointercancel',clear);b.removeEventListener('pointerleave',clear);});
+}
+function toggleFlag(i){
+if(pureMode||grid[i].rev||dead||won)return;
+initAudio();
+grid[i].flag=!grid[i].flag;
+if(grid[i].flag){flagTotal++;if(grid[i].mine)flagRight++;}else{flagTotal--;if(grid[i].mine)flagRight--;}
+flags+=grid[i].flag?1:-1;snd('flag');render();
+}
+function chord(i){
+const cell=grid[i];
+if(!cell.rev||!cell.adj||dead||won)return;
+const r=Math.floor(i/S),c=i%S;let cnt=0;const nbrs=[];
+for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+if(!dr&&!dc)continue;
+const nr=r+dr,nc=c+dc;
+if(nr>=0&&nr<S&&nc>=0&&nc<S){const n=grid[nr*S+nc];
+if(n.flag)cnt++;else if(!n.rev)nbrs.push(nr*S+nc);}
+}
+if(cnt!==cell.adj||!nbrs.length)return;
+for(const n of nbrs){if(dead||won)break;reveal(n);}
+}
+function reveal(i){
+initAudio();
+const cell=grid[i];
+if(dead||won)return;
+if(cell.rev){chord(i);return;}
+if(cell.flag)return;
+if(firstClick){firstClick=false;plantMines(i);startTimer();}
+if(cell.mine){cell.rev=true;cell.boom=true;dead=true;snd('rev');lose(i);return;}
+flood(i);snd('rev');
+if(revealed===S*S-MINES)win();
+render();
+}
+function flood(i){
+const cell=grid[i];
+if(cell.rev||cell.flag||cell.mine)return;
+cell.rev=true;revealed++;
+if(cell.adj===0){
+const r=Math.floor(i/S),c=i%S;
+for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+const nr=r+dr,nc=c+dc;
+if(nr>=0&&nr<S&&nc>=0&&nc<S)flood(nr*S+nc);
+}
+}
+}
+function startTimer(){clearInterval(timer);started=true;timer=setInterval(()=>{secs++;document.getElementById('time').textContent=secs;},1000);}
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden){clearInterval(timer);timer=null;}
+else if(started&&!dead&&!won)startTimer();
+});
+function lose(i){
+clearInterval(timer);timer=null;
+snd('boom');document.getElementById('face').textContent='😵';
+grid.forEach((cell,k)=>{
+if(cell.mine&&!cell.flag)cell.rev=true;
+if(cell.flag&&!cell.mine)cell.wrong=true;
+if(k===i)cell.boom=true;
+});
+render();
+document.getElementById('overTitle').textContent='💥 Boom!';
+document.getElementById('finTime').textContent=secs;
+const pb1=+localStorage.getItem('minesBest');
+document.getElementById('finBest').textContent=pb1?pb1+'s':'–';
+document.getElementById('newBest').classList.add('hidden');
+document.getElementById('accLine').textContent=flagTotal?('🎯 '+flagRight+'/'+flagTotal+(flagRight===flagTotal?' ✨ Perfect flags!':'')):'';
+document.getElementById('starLine').textContent='⭐ All-time: '+stars;
+document.getElementById('pureLine').textContent='🧭 Pure wins: '+pureWins;
+streak=0;localStorage.setItem('minesStreak',streak);updBadges();checkAch();
+setTimeout(()=>document.getElementById('over').classList.remove('hidden'),700);
+}
+function win(){
+won=true;clearInterval(timer);timer=null;snd('win');
+const prevBest=+localStorage.getItem('minesBest')||0;
+const isNewBest=!prevBest||secs<prevBest;
+if(isNewBest)localStorage.setItem('minesBest',secs);
+document.getElementById('finBest').textContent=(isNewBest?secs:prevBest)+'s';
+document.getElementById('newBest').classList.toggle('hidden',!isNewBest);
+document.getElementById('face').textContent='😎';
+grid.forEach(c=>{if(c.mine)c.flag=true;});
+render();
+document.getElementById('overTitle').textContent='🎉 Cleared!';
+document.getElementById('finTime').textContent=secs;
+document.getElementById('mineCnt').textContent=0;
+const pb0=+localStorage.getItem('minesBest');document.getElementById('best').textContent=pb0?pb0+'s':'–';
+document.getElementById('accLine').textContent=flagTotal?('🎯 '+flagRight+'/'+flagTotal+(flagRight===flagTotal?' ✨ Perfect flags!':'')):'';
+wins++;streak++;if(secs<45)fast++;
+if(pureMode){pureWins++;localStorage.setItem('minesPureWins',pureWins);}
+document.getElementById('pureLine').textContent='🧭 Pure wins: '+pureWins;
+const st=secs<45?3:secs<90?2:1;
+stars+=st;localStorage.setItem('minesStars',stars);
+document.getElementById('starLine').textContent='⭐ '+st+' star'+(st>1?'s':'')+'! · All-time: '+stars;
+localStorage.setItem('minesWins',wins);localStorage.setItem('minesStreak',streak);localStorage.setItem('minesFast',fast);
+updBadges();checkAch();
+setTimeout(()=>document.getElementById('over').classList.remove('hidden'),700);
+}
+document.getElementById('againBtn').addEventListener('pointerdown',newGame);
+document.getElementById('face').addEventListener('pointerdown',newGame);
+const muteBtn=document.getElementById('muteBtn');
+function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
+muteBtn.addEventListener('pointerdown',()=>{muted=!muted;localStorage.setItem('minesMute',muted?'1':'0');updMute();});
+updMute();
+const flagBtn=document.getElementById('flagBtn');
+function updFlagBtn(){flagBtn.textContent='🚩 Flag mode: '+(flagMode?'ON':'OFF');flagBtn.classList.toggle('on',flagMode);}
+flagBtn.addEventListener('pointerdown',()=>{flagMode=!flagMode;updFlagBtn();});
+updFlagBtn();
+const pureBtn=document.getElementById('pureBtn');
+function updPureBtn(){pureBtn.textContent='🧭 Pure mode: '+(pureMode?'ON':'OFF');pureBtn.classList.toggle('on',pureMode);}
+pureBtn.addEventListener('pointerdown',()=>{pureMode=!pureMode;localStorage.setItem('minesPure',pureMode?'1':'0');updPureBtn();});
+updPureBtn();
+updBadges();
+document.getElementById('achLine').textContent='🏅 '+ach.length+'/'+ACH.length+' achievements';
+window.addEventListener('contextmenu',e=>{if(e.target.closest('#grid'))e.preventDefault();});
+buildUI();
+newGame();
+</script>
+</body>
+</html>

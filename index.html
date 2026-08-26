@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f23">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<title>Arcade Hub</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 800px at 50% -10%, #312e81 0%, #0f0f23 45%, #07070f 100%);
+    min-height: 100vh; color: #e5e7eb; display: flex; flex-direction: column; align-items: center;
+    padding: 24px 16px 48px; overflow-x: hidden; }
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: clamp(2rem, 7vw, 3.2rem); font-weight: 900; letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f472b6, #fb923c, #facc15, #4ade80, #38bdf8, #a78bfa);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 0 40px rgba(167, 139, 250, 0.35); }
+  header p { margin-top: 8px; color: #94a3b8; font-size: 0.95rem; }
+  main { width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .cat { width: 100%; max-width: 760px; margin: 18px 0 10px; font-size: 0.8rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.14em; color: #64748b; display: flex; align-items: center; gap: 9px; }
+  .cat::before { content: ""; flex: none; width: 18px; height: 3px; border-radius: 2px;
+    background: linear-gradient(90deg, #a78bfa, #38bdf8); box-shadow: 0 0 8px rgba(56, 189, 248, 0.7); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; width: 100%; max-width: 760px; }
+  .card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    padding: 18px 10px; border-radius: 18px; text-decoration: none; color: #e5e7eb;
+    background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease; user-select: none; -webkit-user-select: none; }
+  .card:active { transform: scale(0.94); }
+  .card:hover { border-color: rgba(167, 139, 250, 0.45);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 18px rgba(167,139,250,0.22); }
+  .card:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+  .icon { font-size: 2.6rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+  .name { font-weight: 800; font-size: 1.02rem; text-align: center; }
+  .play { margin-top: 2px; font-size: 0.8rem; font-weight: 700; color: #0f0f23;
+    background: linear-gradient(90deg, #4ade80, #38bdf8); padding: 7px 18px; border-radius: 999px; }
+  footer { margin-top: 32px; color: #64748b; font-size: 0.8rem; text-align: center; line-height: 1.6; max-width: 560px; }
+</style>
+</head>
+<body>
+  <header><h1>ARCADE HUB</h1><p>37 games &middot; tap to play &middot; works on any phone</p></header>
+
+  <main>
+  <div class="cat">Arcade</div>
+  <section class="grid">
+    <a class="card" href="games/flappy-flight.html"><span class="icon">🐦</span><span class="name">Flappy Flight</span><span class="play">Play</span></a>
+    <a class="card" href="games/dino-dash.html"><span class="icon">🦖</span><span class="name">Dino Dash</span><span class="play">Play</span></a>
+    <a class="card" href="games/color-switch.html"><span class="icon">🎨</span><span class="name">Color Switch</span><span class="play">Play</span></a>
+    <a class="card" href="games/brick-breaker.html"><span class="icon">🧱</span><span class="name">Brick Breaker</span><span class="play">Play</span></a>
+    <a class="card" href="games/survivor-wave.html"><span class="icon">🧟</span><span class="name">Survivor Wave</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Puzzle</div>
+  <section class="grid">
+    <a class="card" href="games/game-2048.html"><span class="icon">🎮</span><span class="name">2048</span><span class="play">Play</span></a>
+    <a class="card" href="games/memory-match.html"><span class="icon">🃏</span><span class="name">Memory Match</span><span class="play">Play</span></a>
+    <a class="card" href="games/sudoku.html"><span class="icon">🔢</span><span class="name">Sudoku</span><span class="play">Play</span></a>
+    <a class="card" href="games/block-blast.html"><span class="icon">🧊</span><span class="name">Block Blast</span><span class="play">Play</span></a>
+    <a class="card" href="games/minesweeper.html"><span class="icon">💣</span><span class="name">Minesweeper</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Classic</div>
+  <section class="grid">
+    <a class="card" href="games/tower-stack.html"><span class="icon">🏗️</span><span class="name">Tower Stack</span><span class="play">Play</span></a>
+    <a class="card" href="games/connect-four.html"><span class="icon">🔴</span><span class="name">Connect Four</span><span class="play">Play</span></a>
+    <a class="card" href="games/chess.html"><span class="icon">♟️</span><span class="name">Chess Juice</span><span class="play">Play</span></a>
+    <a class="card" href="games/tic-tac-toe.html"><span class="icon">⭕</span><span class="name">Tic Tac Toe</span><span class="play">Play</span></a>
+    <a class="card" href="games/simon-says.html"><span class="icon">🔆</span><span class="name">Simon Says</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Casual</div>
+  <section class="grid">
+    <a class="card" href="games/snake.html"><span class="icon">🐍</span><span class="name">Snake</span><span class="play">Play</span></a>
+    <a class="card" href="games/whack-a-mole.html"><span class="icon">🔨</span><span class="name">Whack-a-Mole</span><span class="play">Play</span></a>
+    <a class="card" href="games/bubble-pop.html"><span class="icon">🫧</span><span class="name">Bubble Pop</span><span class="play">Play</span></a>
+    <a class="card" href="games/merge-blocks.html"><span class="icon">🧩</span><span class="name">Merge Blocks</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Spelling</div>
+  <section class="grid">
+    <a class="card" href="games/word-scramble.html"><span class="icon">🔤</span><span class="name">Word Scramble</span><span class="play">Play</span></a>
+    <a class="card" href="games/hangman.html"><span class="icon">🪢</span><span class="name">Hangman</span><span class="play">Play</span></a>
+    <a class="card" href="games/missing-letter.html"><span class="icon">❓</span><span class="name">Missing Letter</span><span class="play">Play</span></a>
+    <a class="card" href="games/spell-and-say.html"><span class="icon">🗣️</span><span class="name">Spell &amp; Say</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Math (learn &amp; grind)</div>
+  <section class="grid">
+    <a class="card" href="games/math-blast.html"><span class="icon">➗</span><span class="name">Math Blast</span><span class="play">Play</span></a>
+    <a class="card" href="games/math-run.html"><span class="icon">🏃</span><span class="name">Math Run</span><span class="play">Play</span></a>
+    <a class="card" href="games/math-snake.html"><span class="icon">🐍</span><span class="name">Math Snake</span><span class="play">Play</span></a>
+    <a class="card" href="games/math-battle.html"><span class="icon">⚔️</span><span class="name">Math Battle</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Idle / Tycoon</div>
+  <section class="grid">
+    <a class="card" href="games/idle-empire.html"><span class="icon">🪙</span><span class="name">Idle Empire</span><span class="play">Play</span></a>
+    <a class="card" href="games/tap-monsters.html"><span class="icon">👾</span><span class="name">Tap Monsters</span><span class="play">Play</span></a>
+    <a class="card" href="games/idle-miner.html"><span class="icon">⛏️</span><span class="name">Idle Miner</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Farming</div>
+  <section class="grid">
+    <a class="card" href="games/farm-harvest.html"><span class="icon">🌽</span><span class="name">Farm Harvest</span><span class="play">Play</span></a>
+    <a class="card" href="games/farm-idle.html"><span class="icon">🚜</span><span class="name">Farm Idle</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Hyper-Casual</div>
+  <section class="grid">
+    <a class="card" href="games/hole-swallow.html"><span class="icon">🕳️</span><span class="name">Hole Swallow</span><span class="play">Play</span></a>
+    <a class="card" href="games/knife-hit.html"><span class="icon">🔪</span><span class="name">Knife Hit</span><span class="play">Play</span></a>
+    <a class="card" href="games/helix-smash.html"><span class="icon">🌀</span><span class="name">Helix Smash</span><span class="play">Play</span></a>
+    <a class="card" href="games/stack-ball.html"><span class="icon">⬇️</span><span class="name">Stack Ball</span><span class="play">Play</span></a>
+  </section>
+
+  <div class="cat">Cozy Life (Animal Crossing-style)</div>
+  <section class="grid">
+    <a class="card" href="games/isle-of-bells.html"><span class="icon">🏝️</span><span class="name">Isle of Bells</span><span class="play">Play</span></a>
+  </section>
+  </main>
+
+  <footer>
+    Tip: run <b>npx serve</b> in this folder, then open <b>http://&lt;your-IP&gt;:3000</b> on your phone (same Wi-Fi).
+    On Android use "Add to Home screen" for an app-like feel.
+  </footer>
+</body>
+</html>

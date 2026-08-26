@@ -1,0 +1,89 @@
+{
+  "pack": "The Essential Retro Video Game Sound Effects Collection [512 sounds] by Juhani Junkala (SubspaceAudio), format: WAV (original extension kept)",
+  "files": {
+    "tap": {
+      "file": "tap.wav",
+      "original": "General Sounds/Buttons/sfx_sounds_button11.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "pop": {
+      "file": "pop.wav",
+      "original": "General Sounds/Interactions/sfx_sounds_interaction9.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "coin": {
+      "file": "coin.wav",
+      "original": "General Sounds/Coins/sfx_coin_single2.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "hit": {
+      "file": "hit.wav",
+      "original": "General Sounds/Impacts/sfx_sounds_impact2.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "boom": {
+      "file": "boom.wav",
+      "original": "Explosions/Short/sfx_exp_short_hard4.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "jump": {
+      "file": "jump.wav",
+      "original": "Movement/Jumping and Landing/sfx_movement_jump1.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "whoosh": {
+      "file": "whoosh.wav",
+      "original": "Weapons/Melee/sfx_wpn_sword1.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "win": {
+      "file": "win.wav",
+      "original": "General Sounds/Fanfares/sfx_sounds_fanfare2.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "lose": {
+      "file": "lose.wav",
+      "original": "General Sounds/Negative Sounds/sfx_sounds_negative2.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "buzz": {
+      "file": "buzz.wav",
+      "original": "General Sounds/Negative Sounds/sfx_sounds_error1.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "levelup": {
+      "file": "levelup.wav",
+      "original": "General Sounds/Positive Sounds/sfx_sounds_powerup1.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    },
+    "tick": {
+      "file": "tick.wav",
+      "original": "General Sounds/Simple Bleeps/sfx_sounds_Blip1.wav",
+      "source_url": "https://opengameart.org/content/512-sound-effects-8-bit-style",
+      "license": "CC0",
+      "attribution": "Juhani Junkala / SubspaceAudio - The Essential Retro Video Game Sound Effects Collection [512 sounds] - CC0 - https://opengameart.org/content/512-sound-effects-8-bit-style"
+    }
+  }
+}

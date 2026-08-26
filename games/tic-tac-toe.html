@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tic Tac Toe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(900px 600px at 50% -20%,#0d9488,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+h1{font-size:26px;font-weight:900;letter-spacing:-1px}
+.hud{display:flex;gap:14px;align-items:center;font-weight:900;font-size:15px}
+.hud .p1{color:#38bdf8}.hud .p2{color:#f472b6}
+.turn{font-size:14px;color:#94a3b8;font-weight:700}
+#wrap{position:relative;width:min(88vw,340px,calc(100dvh - 184px))}
+#board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));aspect-ratio:1;gap:10px;width:100%;touch-action:manipulation;contain:layout paint}
+.cell{aspect-ratio:1;background:#1e293b;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(40px,13vw,60px);font-weight:900;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);transition:background .15s}
+.cell:active{scale:.94}
+.cell.x{color:#38bdf8;text-shadow:0 0 18px rgba(56,189,248,.6)}
+.cell.o{color:#f472b6;text-shadow:0 0 18px rgba(244,114,182,.6)}
+.cell.win{animation:winpulse .5s ease infinite;background:#0f766e}
+.cell.appear{animation:appear .25s ease}
+@keyframes appear{0%{scale:0;opacity:0}100%{scale:1;opacity:1}}
+@keyframes winpulse{0%,100%{scale:1}50%{scale:1.08}}
+.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#34d399,#38bdf8);color:#06281c;font-size:18px;font-weight:900;padding:13px 34px;border-radius:999px;box-shadow:0 8px 24px rgba(52,211,153,.35);min-height:48px}
+.btn:active{transform:scale(.94)}
+.mbtn.big{font-size:16px;padding:13px 28px}
+.mute{position:fixed;top:10px;right:12px;z-index:40;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;background:#1e293b;color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.mute:active{transform:scale(.92)}
+.streak{font-size:12px;color:#6ee7b7;font-weight:800;letter-spacing:.02em}
+#winline{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:visible}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
+.ov h1{font-size:40px}
+.modes{display:flex;gap:8px;margin-top:4px}
+.mbtn{border:none;border-radius:999px;background:#1e293b;color:#cbd5e1;font-size:14px;font-weight:800;padding:10px 20px;cursor:pointer;min-height:48px}
+.mbtn:active{scale:.94}
+.banner{position:fixed;top:18%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,.95);border:2px solid #334155;padding:14px 30px;border-radius:16px;font-size:22px;font-weight:900;z-index:30;animation:appear .3s ease}
+@keyframes winboom{0%,100%{transform:translate(0,0)}20%{transform:translate(-4px,2px)}45%{transform:translate(4px,-2px)}70%{transform:translate(-2px,1px)}}
+#wrap.boom{animation:winboom .35s ease}
+.hidden{display:none}
+.confetti{position:fixed;left:50%;top:35%;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:60;transition:transform .9s cubic-bezier(.15,.8,.3,1),opacity .9s ease-in;will-change:transform,opacity}
+</style>
+</head>
+<body>
+<a class="back" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
+<h1>Tic Tac Toe</h1>
+<div class="hud">
+  <span class="p1" id="s1">X: 0</span>
+  <span class="turn" id="turn"></span>
+  <span class="p2" id="s2">O: 0</span>
+</div>
+<div class="streak" id="streak">Streak: 0 &bull; Best: 0</div>
+<div class="streak" id="meta">🏆 0 · 💀 0 · 🤝 0</div>
+<div id="wrap"><div id="board"></div></div>
+<button class="btn" id="newBtn">🔄 New Round</button>
+<div class="ov" id="start">
+  <h1>Tic Tac Toe</h1>
+  <div style="color:#cbd5e1;font-size:15px">Choose mode:</div>
+  <div class="modes">
+    <button class="mbtn big" data-m="pvp">👥 2 Players</button>
+    <button class="mbtn big" data-m="ai">🤖 vs Computer</button>
+  </div>
+</div>
+<div class="ov hidden" id="over">
+  <h1 id="overTitle">You win! 🎉</h1>
+  <div style="color:#cbd5e1;font-size:16px" id="overSub"></div>
+  <button class="btn" id="nextBtn">▶ Next Round</button>
+  <button class="mbtn big" id="modeBtn">Change Mode</button>
+</div>
+<script>
+
+let board=[],turn=1,mode='ai',scores=[0,0],winner=0,locked=false,overTimer=null,roundToken=0;
+let streak=0,lastWinner=0,best=+localStorage.getItem('tttBest')||0;
+let recW=+localStorage.getItem('tttRecW')||0,recL=+localStorage.getItem('tttRecL')||0,recD=+localStorage.getItem('tttRecD')||0,nextBadge=+localStorage.getItem('tttBadge')||5;
+let fastRound=+localStorage.getItem('tttFastRound')||0,roundT0=0;
+let muted=localStorage.getItem('tttMuted')==='1';
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let AC;
+function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function snd(n){if(muted)return;if(n==='place')sfx('pop');if(n==='win')sfx('win');if(n==='lose')sfx('lose');if(n==='draw')sfx('tick');if(n==='badge')sfx('levelup');}
+function confetti(){const cols=['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.background=cols[i%cols.length];document.body.appendChild(d);const a=Math.random()*Math.PI*2,s=90+Math.random()*240,dx=Math.cos(a)*s,dy=Math.sin(a)*s-140,rot=(Math.random()*720-360)|0;requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)';d.style.opacity='0';}));setTimeout(()=>d.remove(),1000);}}
+const muteBtn=document.getElementById('muteBtn');
+function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
+muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('tttMuted',muted?'1':'0');renderMute();});
+renderMute();
+function updStreak(){document.getElementById('streak').textContent='Streak: '+streak+' \u2022 Best: '+best;}
+updStreak();
+function updMeta(){document.getElementById('meta').textContent='🏆 '+recW+' \u2022 💀 '+recL+' \u2022 🤝 '+recD+(fastRound?' \u2022 ⚡ '+(fastRound/1000).toFixed(1)+'s':'');}
+function recordRound(){if(mode!=='ai')return;const ms=performance.now()-roundT0;if(!fastRound||ms<fastRound){fastRound=Math.round(ms);localStorage.setItem('tttFastRound',fastRound);bannerP('⚡ FASTEST '+((fastRound/1000).toFixed(1))+'s!');}updMeta();}
+function bannerP(txt){const bn=document.createElement('div');bn.className='banner';bn.id='pBanner';bn.textContent=txt;document.body.appendChild(bn);snd('badge');setTimeout(()=>{const b=document.getElementById('pBanner');if(b)b.remove();},1600);}
+function checkBadge(){if(recW>=nextBadge){bannerP('🏅 '+nextBadge+' WINS BADGE!');nextBadge*=2;localStorage.setItem('tttBadge',nextBadge);}}
+function recordResult(r){if(r===1)recW++;else if(r===2)recL++;else recD++;localStorage.setItem('tttRecW',recW);localStorage.setItem('tttRecL',recL);localStorage.setItem('tttRecD',recD);updMeta();checkBadge();}
+function newRound(){
+  clearTimeout(overTimer);
+  roundToken++;
+  document.getElementById('over').classList.add('hidden');
+  board=Array(9).fill(0);turn=1;winner=0;locked=false;
+  roundT0=performance.now();
+document.getElementById('banner')?.remove();
+document.getElementById('winline')?.remove();
+render();updateTurn();
+}
+function updateTurn(){
+const t=document.getElementById('turn');
+if(winner)t.textContent='';
+else t.textContent=mode==='ai'?(turn===1?'Your turn (X)':'CPU thinking... (O)'):turn===1?'P1 (X)':'P2 (O)';
+}
+const boardEl=document.getElementById('board');
+const cellEls=[];
+function buildUI(){
+for(let i=0;i<9;i++){const d=document.createElement('div');d.className='cell';d.dataset.i=i;boardEl.appendChild(d);cellEls.push(d);}
+boardEl.addEventListener('pointerdown',e=>{
+const d=e.target.closest('.cell');if(!d)return;
+place(+d.dataset.i);
+},{passive:true});
+}
+function render(){
+board.forEach((v,i)=>{
+const d=cellEls[i];
+const cls='cell'+(v===1?' x':v===2?' o':'');
+if(d._cls!==cls){d._cls=cls;d.className=cls;}
+const t=v===1?'X':v===2?'O':'';
+if(d.textContent!==t)d.textContent=t;
+d.style.animationDelay='';
+});
+}
+function place(i,isAI){
+if(board[i]||winner||locked)return;
+if(!isAI&&mode==='ai'&&turn===2)return;
+initAudio();
+board[i]=turn;snd('place');
+const b=document.getElementById('board');
+b.children[i].textContent=turn===1?'X':'O';
+b.children[i].classList.add(turn===1?'x':'o','appear');
+  const line=checkWin(turn);
+  if(line){
+    winner=turn;line.forEach((k,i)=>{b.children[k].classList.add('win');b.children[k].style.animationDelay=(i*80)+'ms';});
+    const wEl=document.getElementById('wrap');wEl.classList.remove('boom');void wEl.offsetWidth;wEl.classList.add('boom');
+scores[turn-1]++;
+document.getElementById('s1').textContent='X: '+scores[0];
+document.getElementById('s2').textContent=(mode==='ai'?'CPU: ':'O: ')+scores[1];
+if(turn===lastWinner)streak++;else{streak=1;lastWinner=turn;}
+if(streak>best){best=streak;localStorage.setItem('tttBest',best);}
+updStreak();
+recordResult(turn);
+recordRound();
+snd(mode==='ai'&&turn===2?'lose':'win');
+confetti();
+drawWinLine(line);
+const title=mode==='ai'?(turn===1?'You win! 🎉':'CPU wins! 🤖'):(turn===1?'P1 wins! 🎉':'P2 wins! 🎉');
+const bn=document.createElement('div');bn.className='banner';bn.id='banner';
+bn.textContent=title;
+document.body.appendChild(bn);
+locked=true;updateTurn();
+showOver(title,'Score '+scores[0]+' : '+scores[1]);
+return;
+}
+if(!board.includes(0)){
+snd('draw');streak=0;lastWinner=0;updStreak();recordResult(0);recordRound();
+const bn=document.createElement('div');bn.className='banner';bn.id='banner';bn.textContent='Draw! 🤝';
+document.body.appendChild(bn);
+locked=true;updateTurn();
+showOver('Draw! 🤝','Score '+scores[0]+' : '+scores[1]);
+return;
+}
+turn=turn===1?2:1;
+updateTurn();
+  if(mode==='ai'&&turn===2&&!winner){locked=true;const tk=roundToken;const delay=420+Math.random()*380;setTimeout(()=>{if(tk!==roundToken)return;locked=false;aiMove();},delay);}
+}
+function showOver(title,sub){
+clearTimeout(overTimer);
+overTimer=setTimeout(()=>{
+const bn=document.getElementById('banner');if(bn)bn.remove();
+document.getElementById('overTitle').textContent=title;
+document.getElementById('overSub').textContent=sub;
+document.getElementById('over').classList.remove('hidden');
+},1200);
+}
+function drawWinLine(line){
+const wrap=document.getElementById('wrap');
+const wr=wrap.getBoundingClientRect();
+const cells=document.getElementById('board').children;
+const a=cells[line[0]].getBoundingClientRect(),c=cells[line[2]].getBoundingClientRect();
+const x1=a.left+a.width/2-wr.left,y1=a.top+a.height/2-wr.top;
+const x2=c.left+c.width/2-wr.left,y2=c.top+c.height/2-wr.top;
+const col=winner===1?'56,189,248':'244,114,182';
+const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+svg.id='winline';
+svg.setAttribute('viewBox','0 0 '+wr.width+' '+wr.height);
+const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+ln.setAttribute('x1',x1);ln.setAttribute('y1',y1);
+ln.setAttribute('x2',x2);ln.setAttribute('y2',y2);
+ln.setAttribute('stroke','rgba('+col+',.95)');
+ln.setAttribute('stroke-width','7');
+ln.setAttribute('stroke-linecap','round');
+ln.style.filter='drop-shadow(0 0 12px rgba('+col+',.95))';
+const len=Math.hypot(x2-x1,y2-y1);
+ln.style.strokeDasharray=len;ln.style.strokeDashoffset=len;
+ln.style.transition='stroke-dashoffset .45s ease .15s';
+svg.appendChild(ln);wrap.appendChild(svg);
+requestAnimationFrame(()=>requestAnimationFrame(()=>{ln.style.strokeDashoffset='0';}));
+}
+function checkWin(p){
+return LINES.find(l=>l.every(i=>board[i]===p))||null;
+}
+function aiMove(){
+if(winner)return;
+let bestScore=-Infinity,cands=[];
+for(let i=0;i<9;i++){
+if(!board[i]){
+board[i]=2;
+const s=minimax(false,1);
+board[i]=0;
+if(s>bestScore){bestScore=s;cands=[i];}
+else if(s===bestScore)cands.push(i);
+}
+}
+if(cands.length)place(cands[(Math.random()*cands.length)|0],true);
+}
+function minimax(isMax,depth){
+const w2=checkWin(2);if(w2)return 10-depth;
+const w1=checkWin(1);if(w1)return depth-10;
+if(!board.includes(0))return 0;
+let best=isMax?-Infinity:Infinity;
+for(let i=0;i<9;i++){
+if(!board[i]){
+board[i]=isMax?2:1;
+const s=minimax(!isMax,depth+1);
+board[i]=0;
+if(isMax){if(s>best)best=s;}else{if(s<best)best=s;}
+}
+}
+return best;
+}
+document.querySelectorAll('.modes .mbtn').forEach(b=>b.addEventListener('pointerdown',()=>{
+mode=b.dataset.m;scores=[0,0];
+document.getElementById('s1').textContent='X: 0';
+document.getElementById('s2').textContent=mode==='ai'?'CPU: 0':'O: 0';
+document.getElementById('start').classList.add('hidden');
+newRound();
+}));
+document.getElementById('newBtn').addEventListener('pointerdown',newRound);
+document.getElementById('nextBtn').addEventListener('pointerdown',newRound);
+document.getElementById('modeBtn').addEventListener('pointerdown',()=>{
+clearTimeout(overTimer);
+document.getElementById('over').classList.add('hidden');
+document.getElementById('start').classList.remove('hidden');
+});
+buildUI();
+newRound();
+document.getElementById('start').classList.remove('hidden');
+</script>
+</body>
+</html>

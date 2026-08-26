@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#120a24">
+<title>Hangman</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#120a24;color:#f3ecff;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1000px 700px at 50% -10%,#3b1d6e 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#1d4a6e 0%,transparent 55%),#120a24}
+.hub{position:fixed;top:10px;left:10px;z-index:50;color:#c4b5fd;text-decoration:none;font-weight:700;font-size:16px;background:rgba(30,20,60,.85);border:1px solid rgba(196,181,253,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(167,139,250,.25)}
+.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(196,181,253,.35);background:rgba(30,20,60,.85);color:#fff;cursor:pointer}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden}
+.screen.s-active{display:flex}
+.logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(167,139,250,.6));animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.title{font-size:46px;font-weight:900;letter-spacing:3px;line-height:1.1;background:linear-gradient(90deg,#c4b5fd,#f0abfc,#fda4af);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
+.sub{max-width:460px;font-size:15px;color:#b7a6e0;margin-bottom:18px;line-height:1.5}
+.cat-label{font-size:13px;letter-spacing:3px;color:#c4b5fd;margin-bottom:10px;text-transform:uppercase}
+.cat-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;max-width:520px}
+.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(124,58,237,.4);transition:transform .12s,filter .12s;min-height:48px}
+.btn:active{transform:scale(.94);filter:brightness(1.2)}
+.cat-btn{background:rgba(40,28,80,.9);border:2px solid #4a3a7e;font-size:16px}
+.cat-btn:hover{border-color:#a78bfa}
+.best-box{font-size:16px;color:#b7a6e0;background:rgba(40,28,80,.7);border:1px solid #4a3a7e;padding:10px 22px;border-radius:14px;margin-bottom:14px}
+.best-box b{color:#fbbf24}
+.tip{max-width:460px;font-size:13px;color:#8a76b8;line-height:1.6;margin-bottom:16px}
+#s-game{padding-top:20px;justify-content:flex-start}
+.hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:12px 0 8px}
+.hud-item{background:rgba(40,28,80,.75);border:1px solid #4a3a7e;border-radius:12px;padding:8px 14px;font-size:15px;font-weight:800;min-width:60px}
+.hud-item span{color:#c4b5fd}
+.hud-item .dots{color:#fda4af;letter-spacing:2px}
+.play-grid{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%;max-width:900px}
+.canvas-box{background:rgba(20,14,45,.6);border:1px solid #3b2a6e;border-radius:16px;padding:8px;box-shadow:0 0 22px rgba(124,58,237,.25)}
+canvas{display:block;width:150px;height:210px}
+.right-col{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:280px;flex:1;max-width:560px}
+.word-box{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:6px 0;min-height:44px}
+.lbl{width:36px;height:46px;border-bottom:3px solid #8a76b8;display:flex;align-items:flex-end;justify-content:center;font-size:30px;font-weight:900;color:#f0abfc;animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.15)}}
+.lbl.lost{color:#fb7185;border-color:#fb7185}
+.lbl.gold{color:#fbbf24;border-color:#fbbf24;text-shadow:0 0 8px rgba(251,191,36,.6)}
+.keyboard{display:flex;flex-direction:column;gap:6px;width:100%;max-width:520px}
+.krow{display:flex;gap:5px;justify-content:center}
+.key{flex:1;max-width:46px;height:44px;font-size:19px;font-weight:800;color:#f3ecff;background:linear-gradient(160deg,#312e81,#701a75);border:1px solid #5b4a9e;border-radius:10px;cursor:pointer;transition:transform .1s,opacity .15s;touch-action:manipulation}
+.key:active{transform:scale(.88)}
+.key.hit{background:linear-gradient(160deg,#065f46,#0f766e);border-color:#34d399;opacity:.9}
+.key.miss{background:linear-gradient(160deg,#7f1d1d,#9f1239);border-color:#fb7185;opacity:.55;pointer-events:none}
+.key:disabled{opacity:.3;pointer-events:none}
+.ctrl-row{display:flex;gap:12px;margin:12px 0 20px}
+.ctrl{font-size:16px;padding:12px 20px;background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+.toast{position:fixed;top:18%;left:50%;transform:translateX(-50%);z-index:60;font-size:20px;font-weight:900;color:#f0abfc;background:rgba(40,28,80,.95);border:1px solid #a78bfa;padding:10px 24px;border-radius:14px;pointer-events:none;animation:toastIn 1.6s ease-out forwards;box-shadow:0 0 24px rgba(167,139,250,.4)}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,-14px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+.shake{animation:shakeX .5s}
+@keyframes shakeX{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.score-big{font-size:64px;font-weight:900;color:#34d399;text-shadow:0 0 26px rgba(52,211,153,.7);margin:6px 0}
+.btn-big{font-size:24px;padding:16px 44px;min-height:60px}
+.btn-ghost{background:transparent;border:2px solid #4a3a7e;color:#b7a6e0;margin-top:12px}
+@media (min-width:700px){.title{font-size:56px}.key{max-width:52px;height:48px}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<a class="hub" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn" aria-label="Mute">🔊</button>
+
+<div class="screen s-active" id="s-start">
+  <div class="logo">🪢</div>
+  <h1 class="title">HANGMAN</h1>
+  <p class="sub">Guess the hidden word letter by letter. 7 wrong guesses and the hangman is complete! Fewer mistakes = more points.</p>
+  <div class="cat-label">Choose a category</div>
+  <div class="cat-row">
+    <button class="btn cat-btn" data-cat="animals">🐾 Animals</button>
+    <button class="btn cat-btn" data-cat="food">🍕 Food</button>
+    <button class="btn cat-btn" data-cat="sports">⚽ Sports</button>
+    <button class="btn cat-btn" data-cat="tech">💻 Tech</button>
+  </div>
+  <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best streak: <b id="startStreak">0</b></div>
+  <p class="tip">5 words per game · 💡 Hint costs 15 pts · ⏭ Skip reveals the word (no points) · Win streak multiplies your bonus · Type letters on a physical keyboard too!</p>
+</div>
+
+<div class="screen" id="s-game">
+  <div class="hud">
+    <div class="hud-item">⭐ <span id="score">0</span></div>
+    <div class="hud-item">🔥 <span id="streak">0</span></div>
+    <div class="hud-item">🎯 <span id="round">1/5</span></div>
+    <div class="hud-item">💯 <span id="perfect">0</span></div>
+    <div class="hud-item" id="catBox">🐾 Animals</div>
+    <div class="hud-item">🏆 <span id="best">0</span></div>
+  </div>
+  <div class="hud-item" style="margin-bottom:8px"><span class="dots" id="mistakes">○○○○○○○</span></div>
+  <div class="play-grid">
+    <div class="canvas-box"><canvas id="canvas" width="160" height="220"></canvas></div>
+    <div class="right-col">
+      <div class="word-box" id="wordBox"></div>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="ctrl-row">
+        <button class="btn ctrl" id="btnHint">💡 Hint −15</button>
+        <button class="btn ctrl" id="btnSkip">⏭ Skip</button>
+        <button class="btn ctrl" id="btnMenu2">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="s-over">
+  <div class="logo">🏁</div>
+  <h1 class="title">GAME OVER</h1>
+  <div class="score-big" id="finalScore">0</div>
+  <div class="best-box">🏆 Best score: <b id="overBest">0</b> · 🔥 Best streak: <b id="overStreak">0</b> · 💯 Perfect run: <b id="overPerfect">0</b></div>
+  <p class="tip" id="overMsg"></p>
+  <button class="btn btn-big" id="btnAgain">▶ Play Again</button>
+  <button class="btn btn-ghost" id="btnMenu">Change Category</button>
+</div>
+
+<script>
+
+(function(){
+'use strict';
+var WORDS={
+  animals:'cat dog elephant tiger lion zebra giraffe monkey dolphin penguin kangaroo panda rabbit fox wolf bear horse cow sheep snake eagle owl shark whale camel deer mouse turkey donkey'.split(' '),
+  food:'pizza burger pasta salad apple banana orange grape strawberry watermelon carrot tomato potato cheese bread rice noodle soup cake cookie chocolate egg bacon corn lemon peach'.split(' '),
+  sports:'soccer tennis basketball baseball football hockey golf cricket boxing swimming running cycling skiing surfing volleyball rugby karate judo bowling racing archery'.split(' '),
+  tech:'computer keyboard internet software hardware robot battery camera phone tablet laptop server network coding python java router screen printer speaker gadget drone'.split(' ')
+};
+var CATS={animals:'🐾 Animals',food:'🍕 Food',sports:'⚽ Sports',tech:'💻 Tech'};
+var ROUNDS=5;
+var cat='animals',score=0,streak=0,best=0,bestStreak=0,mistakes=0,roundIdx=0,word='',guessed=[],busy=false,usedWords=[],missOnce=false;
+var perfectRun=0,bestPerfect=0,goldIdx=-1,firstGuess=true;
+var keyEls={};
+var AC=null,muted=localStorage.getItem('hg_muted')==='1';
+var elScore,elStreak,elRound,elPerfect,elBest,elMistakes,elWordBox,elCtx,elGameScr,lblEls=[],stageSprites=[];
+var screenEls=null;
+function $(id){return document.getElementById(id);}
+function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
+function loadBest(){best=parseInt(localStorage.getItem('hg_best')||'0',10)||0;bestStreak=parseInt(localStorage.getItem('hg_beststreak')||'0',10)||0;bestPerfect=parseInt(localStorage.getItem('hg_bestperfect')||'0',10)||0;}
+function saveBest(){localStorage.setItem('hg_best',String(best));}
+function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('hg_beststreak',String(bestStreak));}}
+function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
+function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function toast(txt){var t=document.createElement('div');t.className='toast';t.textContent=txt;document.body.appendChild(t);setTimeout(function(){if(t.parentNode){t.parentNode.removeChild(t);}},1700);}
+function drawStage(x,m){var H=220;
+  x.beginPath();x.moveTo(25,H-15);x.lineTo(25,25);x.lineTo(105,25);x.lineTo(105,55);x.stroke();
+  if(m>=1){x.beginPath();x.moveTo(105,55);x.lineTo(105,72);x.stroke();}
+  if(m>=2){x.beginPath();x.arc(105,87,15,0,Math.PI*2);x.stroke();}
+  if(m>=3){x.beginPath();x.moveTo(105,102);x.lineTo(105,145);x.stroke();}
+  if(m>=4){x.beginPath();x.moveTo(105,112);x.lineTo(84,132);x.stroke();}
+  if(m>=5){x.beginPath();x.moveTo(105,112);x.lineTo(126,132);x.stroke();}
+  if(m>=6){x.beginPath();x.moveTo(105,145);x.lineTo(84,172);x.stroke();}
+  if(m>=7){x.beginPath();x.moveTo(105,145);x.lineTo(126,172);x.stroke();}
+}
+function buildHangmanSprites(){var st,c,x;for(st=0;st<8;st++){c=document.createElement('canvas');c.width=160;c.height=220;x=c.getContext('2d');x.strokeStyle='#c4b5fd';x.lineWidth=4;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(167,139,250,.8)';x.shadowBlur=8;drawStage(x,st);stageSprites.push(c);}}
+function drawHangman(){elCtx.clearRect(0,0,160,220);elCtx.drawImage(stageSprites[mistakes],0,0);}
+function renderWord(){
+  var i,n=word.length,d,ch;
+  while(lblEls.length<n){d=document.createElement('div');elWordBox.appendChild(d);lblEls.push(d);}
+  for(i=0;i<lblEls.length;i++){
+    d=lblEls[i];
+    if(i<n){
+      d.style.display='';
+      d.className='';
+      ch=word[i];
+      d.textContent=guessed.indexOf(ch)!==-1?ch.toUpperCase():'\u00a0';
+    }else{d.style.display='none';}
+  }
+  void elWordBox.offsetWidth;
+  for(i=0;i<n;i++){lblEls[i].className='lbl';}
+  if(goldIdx>=0&&goldIdx<n){lblEls[goldIdx].className='lbl gold';}
+}
+function buildKeyboard(){
+  var kb=$('keyboard');
+  var rows=['qwertyuiop','asdfghjkl','zxcvbnm'];
+  var r,i;
+  for(r=0;r<rows.length;r++){
+    var row=document.createElement('div');row.className='krow';
+    for(i=0;i<rows[r].length;i++){
+      var ch=rows[r][i];
+      var b=document.createElement('button');
+      b.className='key';b.textContent=ch.toUpperCase();b.dataset.ch=ch;
+      row.appendChild(b);
+      keyEls[ch]=b;
+    }
+    kb.appendChild(row);
+  }
+  kb.addEventListener('click',function(e){var t=e.target;if(t&&t.classList.contains('key')&&t.dataset.ch){guess(t.dataset.ch);}});
+}
+function resetKeyboard(){var ch;for(ch in keyEls){keyEls[ch].classList.remove('hit','miss');}}
+function newRound(){
+  if(roundIdx>=ROUNDS){gameOver();return;}
+  var pool=WORDS[cat].slice().sort(function(a,b){return a.length-b.length;});
+  var cut=Math.min(pool.length-2,Math.round(pool.length*roundIdx/ROUNDS));
+  if(cut>0){pool=pool.slice(cut);}
+  var w,avail=0,i2;
+  for(i2=0;i2<pool.length;i2++){if(usedWords.indexOf(pool[i2])===-1){avail++;}}
+  do{w=pool[(Math.random()*pool.length)|0];}while(usedWords.indexOf(w)!==-1&&avail>0);
+  usedWords.push(w);
+  if(roundIdx===2){toast('📈 Words get longer each round!');}
+  word=w;guessed=[];mistakes=0;busy=false;missOnce=false;
+  var seen={},uniq=[],ui;
+  for(ui=0;ui<w.length;ui++){if(!seen[w[ui]]){seen[w[ui]]=true;uniq.push(ui);}}
+  goldIdx=uniq.length?(uniq[(Math.random()*uniq.length)|0]):-1;
+  firstGuess=true;
+  renderWord();drawHangman();resetKeyboard();
+  elMistakes.textContent='●●●●●●●'.slice(0,mistakes)+'○○○○○○○'.slice(0,7-mistakes);
+  updateHud();
+}
+function updateHud(){
+  elScore.textContent=score;
+  elStreak.textContent=streak;
+  elPerfect.textContent=perfectRun;
+  elRound.textContent=(roundIdx+1)+'/'+ROUNDS;
+  elBest.textContent=best;
+}
+function guess(ch){
+  if(busy){return;}
+  var b=keyEls[ch];
+  if(!b||b.classList.contains('hit')||b.classList.contains('miss')){return;}
+  if(word.indexOf(ch)!==-1){
+    b.classList.add('hit');
+    guessed.push(ch);
+    renderWord();
+    sfx('coin');
+    if(firstGuess){firstGuess=false;if(goldIdx>=0&&ch===word[goldIdx]){score+=2;updateHud();sfx('levelup');toast('✨ Gold letter +2!');}}
+    if(winCheck()){
+      busy=true;
+      var gain=10+(7-mistakes)*8+Math.min(streak,5)*5;
+      score+=gain;bumpStreak();
+      trackPerfectWin();
+      if(score>best){best=score;saveBest();}
+      sfx('win');
+      toast('Solved! +'+gain+' pts');
+      if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
+      updateHud();
+      roundIdx++;
+      setTimeout(newRound,1100);
+    }
+  }else{
+    b.classList.add('miss');
+    mistakes++;missOnce=true;
+    elMistakes.textContent='●'.repeat(mistakes)+'○'.repeat(7-mistakes);
+    drawHangman();
+    sfx('buzz');
+    if(mistakes>=7){
+      busy=true;streak=0;perfectRun=0;
+      sfx('lose');
+      var i;
+      for(i=0;i<word.length;i++){lblEls[i].textContent=word[i].toUpperCase();lblEls[i].classList.add('lost');}
+      toast('It was "'+word.toUpperCase()+'"');
+      updateHud();
+      roundIdx++;
+      setTimeout(newRound,1600);
+    }
+  }
+}
+function winCheck(){
+  var i;
+  for(i=0;i<word.length;i++){if(guessed.indexOf(word[i])===-1){return false;}}
+  return true;
+}
+function useHint(){
+  if(busy){return;}
+  if(score<15){toast('Need 15 pts for a hint!');sfx('buzz');return;}
+  var hidden=[],i;
+  for(i=0;i<word.length;i++){if(guessed.indexOf(word[i])===-1){hidden.push(word[i]);}}
+  if(hidden.length===0){return;}
+  score-=15;
+  var ch=hidden[(Math.random()*hidden.length)|0];
+  guessed.push(ch);
+  var b=keyEls[ch];
+  if(b){b.classList.add('hit');}
+  sfx('whoosh');
+  renderWord();
+  updateHud();
+  if(winCheck()){
+    busy=true;
+    var gain=10+(7-mistakes)*8+Math.min(streak,5)*5;
+      score+=gain;bumpStreak();
+      trackPerfectWin();
+      if(!missOnce){score+=5;sfx('levelup');toast('💯 PERFECT! +5');}
+    if(score>best){best=score;saveBest();}
+    sfx('win');
+    toast('Solved! +'+gain+' pts');
+    if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
+    updateHud();
+    roundIdx++;
+    setTimeout(newRound,1100);
+  }
+}
+function trackPerfectWin(){
+  if(mistakes===0){perfectRun++;if(perfectRun>bestPerfect){bestPerfect=perfectRun;try{localStorage.setItem('hg_bestperfect',String(bestPerfect));}catch(e){}}}
+  else{perfectRun=0;}
+}
+function skipWord(){
+  if(busy){return;}
+  busy=true;streak=0;perfectRun=0;
+  sfx('buzz');
+  var i;
+  for(i=0;i<word.length;i++){lblEls[i].textContent=word[i].toUpperCase();lblEls[i].classList.add('lost');}
+  toast('Skipped — it was "'+word.toUpperCase()+'"');
+  updateHud();
+  roundIdx++;
+  setTimeout(newRound,1400);
+}
+function gameOver(){
+  sfx('lose');
+  $('finalScore').textContent=score;
+  $('overBest').textContent=best;
+  $('overStreak').textContent=bestStreak;
+  $('overPerfect').textContent=bestPerfect;
+  var msg;
+  if(score===best&&score>0){msg='New personal best! 🎉';}
+  else if(score<=0){msg='Better luck with the next category!';}
+  else{msg='Fewer mistakes = bigger bonuses. Try again!';}
+  $('overMsg').textContent=msg;
+  show('s-over');
+}
+function startGame(c){
+  cat=c;score=0;streak=0;roundIdx=0;usedWords=[];perfectRun=0;
+  $('catBox').textContent=CATS[cat];
+  loadBest();
+  show('s-game');
+  updateHud();
+  newRound();
+}
+function init(){
+  elScore=$('score');elStreak=$('streak');elRound=$('round');elPerfect=$('perfect');elBest=$('best');elMistakes=$('mistakes');elWordBox=$('wordBox');elGameScr=$('s-game');
+  elCtx=$('canvas').getContext('2d');
+  buildHangmanSprites();
+  buildKeyboard();
+  loadBest();
+  $('startBest').textContent=best;
+  $('startStreak').textContent=bestStreak;
+  var cbs=document.querySelectorAll('.cat-btn'),i;
+  for(i=0;i<cbs.length;i++){
+    cbs[i].addEventListener('click',function(){sfx('coin');startGame(this.getAttribute('data-cat'));});
+  }
+  $('btnAgain').addEventListener('click',function(){sfx('coin');startGame(cat);});
+  $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
+  $('btnMenu2').addEventListener('click',function(){sfx('tap');show('s-start');});
+  $('btnHint').addEventListener('click',useHint);
+  $('btnSkip').addEventListener('click',skipWord);
+  $('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('hg_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';});
+  $('muteBtn').textContent=muted?'🔇':'🔊';
+  document.addEventListener('keydown',function(e){
+    if(!elGameScr.classList.contains('s-active')){return;}
+    var k=e.key;
+    if(/^[a-zA-Z]$/.test(k)){guess(k.toLowerCase());}
+  });
+}
+init();
+})();
+</script>
+</body>
+</html>

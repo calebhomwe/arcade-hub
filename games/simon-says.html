@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Simon Says</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(900px 600px at 50% -20%,#7f1d1d,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+h1{font-size:26px;font-weight:900;letter-spacing:-1px}
+.hud{display:flex;gap:14px;font-weight:800;font-size:15px}
+.hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
+#board{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:min(86vw,360px,calc(100dvh - 104px));touch-action:manipulation;contain:layout}
+.pad{aspect-ratio:1;border-radius:24px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 -6px 0 rgba(0,0,0,.3);transition:filter .1s,box-shadow .1s,scale .1s;position:relative}
+.pad:active{scale:.95}
+.pad.on{filter:brightness(1.75) saturate(1.3);box-shadow:0 0 30px 6px currentColor,inset 0 -6px 0 rgba(0,0,0,.3);scale:1.05}
+.pad.err{box-shadow:0 0 30px 8px #ef4444,inset 0 -6px 0 rgba(0,0,0,.3);animation:padshake .4s}
+@keyframes padshake{0%,100%{translate:0 0}20%{translate:-8px 0}40%{translate:8px 0}60%{translate:-6px 0}80%{translate:5px 0}}
+.p0{background:linear-gradient(145deg,#f87171,#b91c1c);color:#f87171}
+.p1{background:linear-gradient(145deg,#4ade80,#15803d);color:#4ade80}
+.p2{background:linear-gradient(145deg,#60a5fa,#1d4ed8);color:#60a5fa}
+.p3{background:linear-gradient(145deg,#facc15,#ca8a04);color:#facc15}
+.label{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:12px;font-weight:900;color:rgba(255,255,255,.55);letter-spacing:.1em}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
+.ov h1{font-size:40px}
+.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#f87171,#facc15);color:#1c1024;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(248,113,113,.35)}
+.btn:active{transform:scale(.94)}
+.best{color:#4ade80;font-weight:800}
+.roundflash{position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,.95);border:2px solid #334155;padding:14px 30px;border-radius:16px;font-size:22px;font-weight:900;z-index:30;pointer-events:none;animation:rflash .55s ease forwards}
+@keyframes rflash{0%{scale:.6;opacity:0}25%{scale:1;opacity:1}75%{opacity:1}100%{opacity:0}}
+.mute{position:fixed;top:10px;right:12px;z-index:40;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;background:#1e293b;color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.mute:active{transform:scale(.92)}
+.hidden{display:none}
+.confetti{position:fixed;left:50%;top:35%;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:60;transition:transform .9s cubic-bezier(.15,.8,.3,1),opacity .9s ease-in}
+@keyframes roundpop{0%{scale:1}45%{scale:1.5}100%{scale:1}}
+.roundpop{animation:roundpop .35s ease}
+.hintbtn{border:none;border-radius:12px;background:#1e293b;color:#facc15;font-size:14px;font-weight:800;padding:10px 18px;cursor:pointer}
+.hintbtn:active{transform:scale(.94)}
+.hintbtn.used{opacity:.35;color:#94a3b8}
+</style>
+</head>
+<body>
+<a class="back" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
+<h1>Simon Says</h1>
+<div class="hud"><span>🎯 Round <b id="round">0</b></span><span>⭐ <b id="score">0</b></span><span>💎 <b id="medals">0</b>/4</span><span>🔥 <b id="run">0</b></span><span>Best: <b class="best" id="best">0</b></span></div>
+<button class="hintbtn" id="hintBtn">💡 Replay (1x)</button>
+<div id="board">
+  <div class="pad p0" data-i="0"><span class="label">RED</span></div>
+  <div class="pad p1" data-i="1"><span class="label">GREEN</span></div>
+  <div class="pad p2" data-i="2"><span class="label">BLUE</span></div>
+  <div class="pad p3" data-i="3"><span class="label">YELLOW</span></div>
+</div>
+<div class="ov" id="start">
+  <h1>Simon Says</h1>
+  <div style="color:#cbd5e1;font-size:15px;line-height:1.5">Watch the sequence of colors,<br>then repeat it back!</div>
+  <button class="hintbtn" id="mirrorBtn">🪞 Mirror mode: OFF</button>
+  <button class="hintbtn" id="gambitBtn">💥 Gambit: OFF</button>
+  <button class="btn" id="playBtn">▶ Start</button>
+</div>
+<div class="ov hidden" id="over">
+  <h1>Game Over</h1>
+  <div style="font-size:16px">You reached round <b id="finRound">0</b></div>
+  <div style="font-size:16px">Score: <b class="best" id="finScore">0</b> · Best: <b class="best" id="finBest">0</b></div>
+  <div style="font-size:15px;color:#fbbf24;display:none" id="finGambit"></div>
+  <div style="font-size:15px;color:#94a3b8" id="finMedals"></div>
+  <div style="font-size:15px;color:#fbbf24" id="finRun"></div>
+  <button class="btn" id="againBtn">Play Again</button>
+</div>
+<script>
+
+const FREQS=[329.6,415.3,493.9,659.3];
+let seq=[],step=0,listening=false,round=0,best=+localStorage.getItem('simonBest')||0,token=0;
+let score=0,bestScore=+localStorage.getItem('simonScore')||0,hintUsed=false;
+let mirrorMode=false,gambit=false,gambitPts=0;
+let medals=[];try{medals=JSON.parse(localStorage.getItem('simonMedals')||'[]')||[];}catch(e){medals=[];}
+const PAD_EMOJI=['🟥','🟩','🟦','🟨'];
+let runStreak=+localStorage.getItem('simonRun')||0;
+let muted=localStorage.getItem('simonMuted')==='1';
+document.getElementById('best').textContent=best;
+document.getElementById('medals').textContent=medals.length;
+document.getElementById('run').textContent=runStreak;
+const pads=document.querySelectorAll('.pad');
+let AC;
+function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();}
+function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.25,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function confetti(){const cols=['#f87171','#4ade80','#60a5fa','#facc15'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.background=cols[i%cols.length];document.body.appendChild(d);const a=Math.random()*Math.PI*2,s=90+Math.random()*240,dx=Math.cos(a)*s,dy=Math.sin(a)*s-140,rot=(Math.random()*720-360)|0;requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)';d.style.opacity='0';}));setTimeout(()=>d.remove(),1000);}}
+const muteBtn=document.getElementById('muteBtn');
+function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
+muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('simonMuted',muted?'1':'0');renderMute();});
+renderMute();
+function padMs(){return Math.round(210+250*Math.pow(.93,round-1));}
+function flash(i,ms){
+const p=pads[i];
+p.classList.add('on');
+sfx('tap');
+setTimeout(()=>p.classList.remove('on'),ms*.75);
+}
+function startGame(){
+token++;
+seq=[];round=0;listening=false;
+score=0;document.getElementById('score').textContent=0;
+hintUsed=false;const hb=document.getElementById('hintBtn');hb.classList.remove('used');hb.textContent='💡 Replay (1x)';
+gambitPts=0;
+document.getElementById('round').textContent=0;
+document.getElementById('start').classList.add('hidden');
+document.getElementById('over').classList.add('hidden');
+nextRound();
+}
+function nextRound(){
+listening=false;step=0;
+seq.push(Math.floor(Math.random()*4));
+round=seq.length;
+document.getElementById('round').textContent=round;
+const rf=document.createElement('div');rf.className='roundflash';rf.textContent='Round '+round;
+document.body.appendChild(rf);setTimeout(()=>rf.remove(),600);
+const tk=token;setTimeout(()=>{if(tk===token)playSeq(0);},650);
+}
+function playSeq(i){
+if(i>=seq.length){listening=true;return;}
+const ms=padMs();
+flash(seq[i],ms);
+setTimeout(()=>playSeq(i+1),ms);
+}
+function mirror(i){return mirrorMode?3-i:i;}
+function press(i){
+initAudio();
+if(!listening)return;
+flash(i,180);
+  if(mirror(i)===seq[step]){
+    step++;
+    if(step===seq.length){
+      listening=false;
+      sfx('win');
+      const rEl=document.getElementById('round');rEl.classList.remove('roundpop');void rEl.offsetWidth;rEl.classList.add('roundpop');
+      score+=10*round;document.getElementById('score').textContent=score;
+      if(gambit)gambitPts+=5*round;
+      let got=0;
+      seq.forEach(c=>{if(medals.indexOf(c)===-1){medals.push(c);got++;}});
+      if(got){
+        document.getElementById('medals').textContent=medals.length;
+        try{localStorage.setItem('simonMedals',JSON.stringify(medals));}catch(e){}
+        sfx('levelup');
+        const mf=document.createElement('div');mf.className='roundflash';mf.textContent='💎 '+PAD_EMOJI[medals[medals.length-1]]+' COLLECTED! '+medals.length+'/4';
+        document.body.appendChild(mf);setTimeout(()=>mf.remove(),600);
+      }
+      const tk=token;setTimeout(()=>{if(tk===token)nextRound();},750);
+    }
+}else{
+listening=false;
+sfx('buzz');
+const p=pads[i];p.classList.add('err');
+setTimeout(()=>p.classList.remove('err'),500);
+const nb=round>best;
+if(nb){best=round;localStorage.setItem('simonBest',best);document.getElementById('best').textContent=best;}
+const ns=score>bestScore;
+if(ns){bestScore=score;localStorage.setItem('simonScore',bestScore);}
+document.getElementById('finScore').textContent=score;
+document.getElementById('finRound').textContent=round;
+document.getElementById('finBest').textContent=best+(nb?' NEW!':'');
+if(round>=4){runStreak++;}else{runStreak=0;}
+localStorage.setItem('simonRun',runStreak);
+document.getElementById('run').textContent=runStreak;
+document.getElementById('finMedals').textContent='💎 '+medals.length+'/4 pads collected';
+document.getElementById('finRun').textContent='🔥 Golden runs: '+runStreak+' (clear rounds 1-3 in a row)';
+const gWon=gambit&&round>=3;
+const gEl=document.getElementById('finGambit');
+if(gEl){if(gambit){gEl.style.display='';gEl.textContent=gWon?('⚔ Gambit bonus: +'+gambitPts+' · Total: '+(score+gambitPts)):'💀 Gambit lost — died before round 3!';}else{gEl.style.display='none';}}
+if(nb)confetti();
+const tk=token;
+setTimeout(()=>{if(tk===token)sfx('lose');},450);
+setTimeout(()=>{if(tk===token)document.getElementById('over').classList.remove('hidden');},800);
+}
+}
+const hintBtn=document.getElementById('hintBtn');
+function replayHint(){
+if(hintUsed||!listening||step>=seq.length)return;
+initAudio();hintUsed=true;listening=false;
+hintBtn.classList.add('used');hintBtn.textContent='💡 Used';
+sfx('whoosh');
+const tk=token;setTimeout(()=>{if(tk===token)playSeq(0);},120);
+}
+hintBtn.addEventListener('pointerdown',e=>{e.stopPropagation();replayHint();});
+const mirrorBtn=document.getElementById('mirrorBtn');
+function updMirrorBtn(){mirrorBtn.textContent='🪞 Mirror mode: '+(mirrorMode?'ON':'OFF');}
+mirrorBtn.addEventListener('pointerdown',e=>{e.stopPropagation();mirrorMode=!mirrorMode;updMirrorBtn();});
+updMirrorBtn();
+const gambitBtn=document.getElementById('gambitBtn');
+function updGambitBtn(){gambitBtn.textContent='💥 Gambit: '+(gambit?'ON':'OFF');}
+gambitBtn.addEventListener('pointerdown',e=>{e.stopPropagation();gambit=!gambit;updGambitBtn();});
+updGambitBtn();
+pads.forEach(p=>{
+p.addEventListener('pointerdown',()=>press(+p.dataset.i),{passive:true});
+});
+document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();startGame();});
+document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
+</script>
+</body>
+</html>

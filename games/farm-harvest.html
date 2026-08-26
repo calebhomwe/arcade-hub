@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Farm Harvest</title>
+<style>
+  :root{
+    --bg1:#0c1f12; --bg2:#12311c; --card:#1b4426; --card2:#245a33;
+    --txt:#e8ffe9; --dim:#9fc8a4; --accent:#7dff8a; --gold:#ffd86b;
+    --ready:#fff0a8; --water:#7dd0ff; --danger:#ff7d7d;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    background:radial-gradient(120% 100% at 50% 0%, var(--bg2) 0%, var(--bg1) 60%, #08150d 100%);
+    color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  }
+  #app{max-width:620px; margin:0 auto; padding:8px 10px 90px; min-height:100%;}
+  a.hub{display:inline-block; color:var(--dim); text-decoration:none; font-size:14px; margin:2px 0 6px;}
+  .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.18);
+    border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
+  #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
+  .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
+  .stat small{display:block; color:var(--dim); font-size:11px; font-weight:500;}
+  .iconBtn{background:var(--card2); border:1px solid rgba(125,255,138,.25); color:var(--txt);
+    border-radius:10px; min-width:48px; min-height:48px; font-size:20px; cursor:pointer;}
+  #cropBar{display:flex; gap:6px; padding:8px; margin-bottom:8px; overflow-x:auto;}
+  .crop{flex:0 0 auto; background:var(--card2); border:2px solid transparent; color:var(--txt);
+    border-radius:12px; padding:8px 10px; min-height:48px; cursor:pointer; text-align:center; font-size:13px;}
+  .crop .e{font-size:24px; display:block;}
+  .crop.sel{border-color:var(--accent); box-shadow:0 0 12px rgba(125,255,138,.5); background:#2c6a3c;}
+  .crop.poor{opacity:.45;}
+  #plotGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px;}
+  .plot{aspect-ratio:1/1; background:linear-gradient(180deg,#1a3a22,#14301b);
+    border:2px dashed rgba(125,255,138,.28); border-radius:14px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; padding:6px; position:relative; transition:transform .08s;}
+  .plot:active{transform:scale(.94);}
+  .plot .emoji{font-size:34px; line-height:1;}
+  .plot .emoji.pop{animation:readyPop .4s ease-out;}
+  .plot .emptyHint{font-size:28px; color:var(--dim); opacity:.5;}
+  .plot .label{font-size:11px; color:var(--dim);}
+  .bar{width:80%; height:6px; background:rgba(0,0,0,.4); border-radius:4px; overflow:hidden;}
+  .fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--gold)); width:0%; border-radius:4px; transition:width .2s linear;}
+  .plot.ready{border:2px solid var(--ready); box-shadow:0 0 16px rgba(255,240,168,.7); animation:pulse 1s infinite;}
+  .plot.ready .emoji{filter:drop-shadow(0 0 8px rgba(255,240,168,.95));}
+  .plot.watered{border-color:var(--water); box-shadow:0 0 12px rgba(125,208,255,.5);}
+  .tag{position:absolute; top:3px; right:5px; font-size:14px; animation:pop .3s;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.03);}}
+  @keyframes pop{from{transform:scale(0);}to{transform:scale(1);}}
+  @keyframes readyPop{0%{transform:scale(.6);}55%{transform:scale(1.3);}100%{transform:scale(1);}}
+  #shopTitle{font-size:15px; font-weight:700; color:var(--gold); margin:6px 2px 6px;}
+  #shop{display:flex; flex-direction:column; gap:6px;}
+  .shopItem{display:flex; align-items:center; gap:10px; padding:10px 12px;}
+  .shopItem .ic{font-size:28px;}
+  .shopItem .info{flex:1;}
+  .shopItem .name{font-weight:700; font-size:14px;}
+  .shopItem .desc{color:var(--dim); font-size:11px;}
+  .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
+    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;}
+  .buyBtn:disabled{opacity:.4; cursor:not-allowed;}
+  .buyBtn.flash{animation:buyFlash .35s ease-out;}
+  @keyframes buyFlash{0%{transform:scale(.9); box-shadow:0 0 16px rgba(125,255,138,.9);}100%{transform:scale(1);}}
+  .overlay{position:fixed; inset:0; background:rgba(5,15,8,.92); display:flex; align-items:center; justify-content:center;
+    z-index:50; padding:20px;}
+  .overlay .box{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.3);
+    border-radius:18px; padding:24px; max-width:400px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  .big{font-size:56px; margin-bottom:6px;}
+  h1{margin:0 0 4px; font-size:30px; text-shadow:0 0 18px rgba(125,255,138,.6);}
+  .sub{color:var(--dim); margin:0 0 16px; font-size:14px;}
+  .btn{display:block; width:100%; background:linear-gradient(180deg,#35a04f,#1f6b34); color:#fff; border:1px solid var(--accent);
+    border-radius:12px; min-height:52px; font-size:18px; font-weight:800; cursor:pointer; margin:6px 0; box-shadow:0 4px 14px rgba(53,160,79,.5);}
+  .btn.alt{background:linear-gradient(180deg,#4a5560,#2b343c); border-color:#7a8a96;}
+  .hidden{display:none !important;}
+  #fx{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
+  .fxFloat{position:absolute; transform:translate(-50%,-50%); font-weight:800; font-size:16px; color:var(--gold);
+    text-shadow:0 0 10px rgba(255,216,107,.9); white-space:nowrap; animation:fxUp .9s ease-out forwards;}
+  @keyframes fxUp{0%{opacity:0; margin-top:8px;}15%{opacity:1;}100%{opacity:0; margin-top:-46px;}}
+  .fxPart{position:absolute; transform:translate(-50%,-50%); font-size:15px;
+    text-shadow:0 0 8px rgba(125,255,138,.6); transition:transform .7s cubic-bezier(.2,.7,.3,1), opacity .7s ease-out;}
+  #toast{position:fixed; left:50%; bottom:18px; transform:translate(-50%,80px); max-width:90%;
+    background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.35);
+    color:var(--txt); padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600;
+    box-shadow:0 6px 24px rgba(0,0,0,.5); opacity:0; transition:transform .3s, opacity .3s; z-index:70; pointer-events:none;}
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+  @media (orientation:landscape) and (max-width:820px){ #plotGrid{grid-template-columns:repeat(6,1fr);} }
+  @media (min-width:700px){ #plotGrid{grid-template-columns:repeat(6,1fr);} }
+</style>
+</head>
+<body>
+<div id="app">
+  <a class="hub" href="../index.html">← Hub</a>
+  <div id="hud" class="panel">
+    <div class="stat">🪙 <span id="coins">0</span><small>coins</small></div>
+    <div class="stat">⏱ <span id="cps">0</span>/s<small>income</small></div>
+    <div class="stat">🏆 <span id="best">0</span><small>lifetime</small></div>
+    <div class="stat">🌱 <span id="seeds">0</span><small>seeds</small></div>
+    <button class="iconBtn" id="muteBtn">🔊</button>
+    <button class="iconBtn" id="menuBtn">⚙️</button>
+  </div>
+  <div id="cropBar" class="panel"></div>
+  <div id="plotGrid"></div>
+  <div id="shopTitle">🏪 SHOP</div>
+  <div id="shop"></div>
+</div>
+
+<div id="startScreen" class="overlay">
+  <div class="box">
+    <div class="big">🌾</div>
+    <h1>Farm Harvest</h1>
+    <p class="sub">Plant · Water · Harvest. Build helpers &amp; grow your fortune!</p>
+    <button class="btn" id="playBtn">▶ Play</button>
+    <p class="sub" style="margin:10px 0 0;">Best: <span id="startBest">0</span> coins earned</p>
+  </div>
+</div>
+
+<div id="menuScreen" class="overlay hidden">
+  <div class="box">
+    <h1>⚙️ Menu</h1>
+    <button class="btn" id="resumeBtn">▶ Resume</button>
+    <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
+    <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
+  </div>
+</div>
+
+<script>
+
+(function(){
+  "use strict";
+  var CROPS = {
+    carrot:  {emoji:"🥕", name:"Carrot",  growTime:10, cost:5,   value:10},
+    tomato:  {emoji:"🍅", name:"Tomato",  growTime:20, cost:15,  value:34},
+    corn:    {emoji:"🌽", name:"Corn",    growTime:35, cost:40,  value:95},
+    pumpkin: {emoji:"🎃", name:"Pumpkin", growTime:60, cost:100, value:260}
+  };
+  var CROP_IDS = ["carrot","tomato","corn","pumpkin"];
+  var PLOT_MAX = 12;
+  var PLOT_COSTS = [0,0,0,0,0,0,0,0,400,800,1600,3200];
+  var WATER_MS = 6000;
+  var OFFLINE_CAP = 7200;
+  var MASTERY_BONUS = 0.06;
+  var SAVE_KEY = "farmHarvestSave_v1";
+  var CHICKEN_PER_LEVEL = 2;
+
+  function emptyPlot(){ return {crop:null, progress:0, waterUntil:0}; }
+  function defaultState(){
+    var plots = []; for(var i=0;i<8;i++) plots.push(emptyPlot());
+    return {
+      coins:10, earned:0, unlocked:8, selected:"carrot",
+      mastery:{carrot:0,tomato:0,corn:0,pumpkin:0},
+      seeds:{carrot:0,tomato:0,corn:0,pumpkin:0}, seedBadge:false,
+      sprinkler:false, harvester:false, chicken:0,
+      muted:false, lastSave:Date.now(), plots:plots
+    };
+  }
+  var state = defaultState();
+  var plotRefs = [], wasReady = [], cropBtnRefs = [];
+  var shopRefs = null, dispCoins = 0, pendingToast = null;
+  var lastCps = "", lastBest = "", lastMute = null, lastSeeds = -1;
+  var MILES = [100,500,1000,5000,10000,50000,100000,500000,1000000,5000000,10000000];
+  var mileIdx = 0;
+  var comboN = 0, comboT = 0;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var coinsEl=$("coins"), cpsEl=$("cps"), bestEl=$("best"), startBestEl=$("startBest");
+
+  function num(v, d){ return (typeof v === "number" && isFinite(v)) ? v : d; }
+  function fmt(n){
+    if(!isFinite(n)) return "0";
+    if(n < 1000) return Math.floor(n).toString();
+    var u = 0, units = ["","K","M","B","T"];
+    while(n >= 1000 && u < units.length-1){ n/=1000; u++; }
+    var s = n<10 ? (Math.round(n*100)/100).toString() : (n<100 ? (Math.round(n*10)/10).toString() : Math.floor(n).toString());
+    return s + units[u];
+  }
+  function fmtTime(s){
+    s = Math.max(0, Math.floor(s));
+    var h = (s/3600)|0, m = ((s%3600)/60)|0, ss = s%60;
+    if(h > 0) return h + "h " + m + "m";
+    if(m > 0) return m + "m " + ss + "s";
+    return ss + "s";
+  }
+
+  var AC = null;
+  function ac(){
+    if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(AC.state === "suspended") AC.resume();
+    return AC;
+  }
+  function beep(freq, dur, type, vol, slide, delay){
+    if(state.muted) return;
+    try{
+      var c = ac(), t0 = c.currentTime + (delay || 0);
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, t0);
+      if(slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
+      g.gain.setValueAtTime(vol || 0.15, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0 + dur);
+    }catch(e){}
+  }
+  const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+  const SFXMAP={plant:'pop',water:'whoosh',harvest:'coin',ready:'pop',buy:'tap',deny:'buzz',click:'tap'};
+  function sfx(t){
+    if(state.muted) return;
+    var m=SFXMAP[t]||t,a=SFXP[m];
+    if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
+    if(t==="plant") beep(260,0.1,"triangle",0.18,360);
+    else if(t==="water") beep(700,0.16,"sine",0.13,320);
+    else if(t==="harvest"){ beep(660,0.09,"triangle",0.18); beep(880,0.09,"triangle",0.16,0,0.06); beep(1175,0.14,"triangle",0.15,0,0.12); }
+    else if(t==="ready"){ beep(523,0.09,"sine",0.11); beep(784,0.12,"sine",0.11,0,0.08); }
+    else if(t==="buy"){ beep(520,0.09,"triangle",0.2); beep(780,0.13,"triangle",0.18,0,0.07); }
+    else if(t==="deny") beep(150,0.16,"sawtooth",0.12,90);
+    else if(t==="click") beep(240,0.05,"triangle",0.1);
+  }
+
+  var fxLayer = null, fxTotal = 0, FXMAX = 40, fPool = [], pPool = [];
+  function fx(){
+    if(!fxLayer){ fxLayer = document.createElement("div"); fxLayer.id = "fx"; document.body.appendChild(fxLayer); }
+    return fxLayer;
+  }
+  function floatText(x, y, txt){
+    var s = fPool.pop();
+    if(!s){
+      if(fxTotal >= FXMAX) return;
+      s = document.createElement("span");
+      s.className = "fxFloat";
+      fx().appendChild(s);
+      fxTotal++;
+    }
+    s.textContent = txt;
+    s.style.left = x + "px"; s.style.top = y + "px";
+    s.style.animation = "none"; void s.offsetWidth; s.style.animation = "";
+    var seq = (s._seq = (s._seq || 0) + 1);
+    setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
+  }
+  function burst(x, y, chars, n, spread, up){
+    for(var i=0;i<n;i++){
+      var s = pPool.pop();
+      if(!s){
+        if(fxTotal >= FXMAX) return;
+        s = document.createElement("span");
+        s.className = "fxPart";
+        fx().appendChild(s);
+        fxTotal++;
+      }
+      s.textContent = chars[(Math.random()*chars.length)|0];
+      s.style.left = x + "px"; s.style.top = y + "px";
+      s.style.transition = "none";
+      s.style.transform = "translate(-50%,-50%)";
+      s.style.opacity = "1";
+      void s.offsetWidth;
+      s.style.transition = "";
+      var dx = (Math.random()*2-1)*spread;
+      var dy = up ? -(12 + Math.random()*spread*1.2) : (8 + Math.random()*22);
+      (function(s, dx, dy){
+        var seq = (s._seq = (s._seq || 0) + 1);
+        requestAnimationFrame(function(){
+          if(s._seq !== seq) return;
+          s.style.transform = "translate(" + dx + "px," + dy + "px) scale(.3)";
+          s.style.opacity = "0";
+        });
+        setTimeout(function(){ if(s._seq === seq) pPool.push(s); }, 750);
+      })(s, dx, dy);
+    }
+  }
+  var centersDirty = true, tmpC = {x:0, y:0};
+  function invalidateCenters(){ centersDirty = true; }
+  window.addEventListener("resize", invalidateCenters);
+  window.addEventListener("scroll", invalidateCenters, true);
+  function plotCenter(i){
+    if(centersDirty){
+      for(var j=0;j<plotRefs.length;j++){
+        var r = plotRefs[j].root.getBoundingClientRect();
+        plotRefs[j].cx = r.left + r.width/2;
+        plotRefs[j].cy = r.top + r.height/2;
+      }
+      centersDirty = false;
+    }
+    var R = plotRefs[i];
+    tmpC.x = R.cx; tmpC.y = R.cy;
+    return tmpC;
+  }
+  var toastEl = null, toastTimer = 0;
+  function toast(msg){
+    if(!toastEl){ toastEl = document.createElement("div"); toastEl.id = "toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
+  }
+  function flash(btn){
+    if(!btn) return;
+    btn.classList.remove("flash");
+    void btn.offsetWidth;
+    btn.classList.add("flash");
+  }
+  function checkMiles(){
+    if(mileIdx >= MILES.length) return;
+    var fired = -1;
+    while(mileIdx < MILES.length && state.earned >= MILES[mileIdx]) fired = mileIdx++;
+    if(fired < 0) return;
+    var v = MILES[fired];
+    toast("🏆 Milestone: " + fmt(v) + " coins earned!");
+    sfx("levelup");
+    var r = coinsEl.getBoundingClientRect();
+    burst(r.left + r.width/2, r.top + r.height/2, ["🪙","✨"], 8, 30, true);
+  }
+
+  function growTime(cropId){ return CROPS[cropId].growTime; }
+  function cropValue(cropId){ return Math.round(CROPS[cropId].value * (1 + state.mastery[cropId]*MASTERY_BONUS)); }
+  function chickenIncome(){ return state.chicken * CHICKEN_PER_LEVEL; }
+  function coinsPerSec(){ return chickenIncome(); }
+
+  function plant(i){
+    var id = state.selected, c = CROPS[id];
+    if(state.coins < c.cost){ sfx("deny"); return; }
+    state.coins -= c.cost;
+    var p = state.plots[i];
+    p.crop = id; p.progress = 0; p.waterUntil = 0;
+    wasReady[i] = false;
+    sfx("plant");
+    if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y, ["🌱","✨"], 3, 18, true); }
+    render();
+  }
+  function water(i){
+    var p = state.plots[i];
+    if(p.waterUntil > Date.now()) return;
+    p.waterUntil = Date.now() + WATER_MS;
+    sfx("water");
+    if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y - 8, ["💧"], 4, 22, false); }
+    render();
+  }
+  function harvest(i, silent, skipRender){
+    var p = state.plots[i];
+    if(!p.crop) return;
+    var id = p.crop, val = cropValue(id);
+    state.coins += val; state.earned += val;
+    state.mastery[id]++;
+    p.crop = null; p.progress = 0; p.waterUntil = 0;
+    wasReady[i] = false;
+    if(!silent){
+      var cnow = Date.now();
+      if(cnow - comboT < 2000) comboN++; else comboN = 1;
+      comboT = cnow;
+      sfx("harvest");
+      if(plotRefs[i]){
+        var c0 = plotCenter(i);
+        floatText(c0.x, c0.y - 10, "+" + fmt(val) + " 🪙");
+        if(comboN >= 3){ sfx("levelup"); floatText(c0.x, c0.y - 36, "COMBO x" + comboN + "!"); }
+        burst(c0.x, c0.y, ["✨","🪙",CROPS[id].emoji], 7, 34, true);
+        if(Math.random() < 0.08){
+          state.seeds[id] = (state.seeds[id] || 0) + 1;
+          sfx("coin");
+          floatText(c0.x, c0.y - 58, "+🌱 Seed");
+          if(!state.seedBadge && state.seeds.carrot >= 10 && state.seeds.tomato >= 10 &&
+             state.seeds.corn >= 10 && state.seeds.pumpkin >= 10){
+            state.seedBadge = true;
+            toast("🌻 Seed Album complete!");
+            sfx("levelup");
+          }
+        }
+      }
+      try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
+    }
+    if(!skipRender) render();
+  }
+  function onPlotTap(i){
+    var p = state.plots[i];
+    if(!p.crop){ plant(i); }
+    else if(p.progress >= growTime(p.crop)){ harvest(i, false); }
+    else { water(i); }
+  }
+  function collectReady(replant){
+    for(var k=0;k<state.unlocked;k++){
+      var r = state.plots[k];
+      if(r.crop && r.progress >= growTime(r.crop)){
+        harvest(k, true, true);
+        if(replant){
+          var sel = CROPS[state.selected];
+          if(state.coins >= sel.cost){
+            state.coins -= sel.cost;
+            r.crop = state.selected; r.progress = 0; r.waterUntil = 0;
+            wasReady[k] = false;
+          }
+        }
+      }
+    }
+  }
+
+  function buyPlot(){
+    var n = state.unlocked;
+    if(n >= PLOT_MAX){ sfx("deny"); return; }
+    var cost = PLOT_COSTS[n];
+    if(state.coins < cost){ sfx("deny"); return; }
+    state.coins -= cost;
+    state.plots.push(emptyPlot());
+    state.unlocked++;
+    buildGrid();
+    sfx("buy");
+    if(shopRefs) flash(shopRefs.plot.btn);
+    toast("Plot unlocked! " + state.unlocked + "/" + PLOT_MAX);
+    render();
+  }
+  function buySprinkler(){
+    if(state.sprinkler){ sfx("deny"); return; }
+    var cost = 1200;
+    if(state.coins < cost){ sfx("deny"); return; }
+    state.coins -= cost; state.sprinkler = true;
+    sfx("buy");
+    if(shopRefs) flash(shopRefs.spr.btn);
+    toast("Sprinkler built! All crops grow 2× faster");
+    render();
+  }
+  function buyHarvester(){
+    if(state.harvester){ sfx("deny"); return; }
+    var cost = 3000;
+    if(state.coins < cost){ sfx("deny"); return; }
+    state.coins -= cost; state.harvester = true;
+    sfx("buy");
+    if(shopRefs) flash(shopRefs.harv.btn);
+    toast("Harvester built! Auto-harvests & re-plants");
+    render();
+  }
+  function buyChicken(){
+    var cost = Math.round(150 * Math.pow(1.5, state.chicken));
+    if(state.coins < cost){ sfx("deny"); return; }
+    state.coins -= cost; state.chicken++;
+    sfx("buy");
+    if(shopRefs) flash(shopRefs.chick.btn);
+    render();
+  }
+  function buyMarket(){
+    var cost = 250;
+    if(state.coins < cost){ sfx("deny"); return; }
+    state.coins -= cost;
+    var roll = Math.random(), win = 0;
+    if(roll < 0.15){ /* crop rot */ }
+    else if(roll < 0.50) win = 300;
+    else if(roll < 0.80) win = 400;
+    else if(roll < 0.95) win = 750;
+    else if(roll < 0.99) win = 1500;
+    else win = 5000;
+    if(win > 0){
+      state.coins += win;
+      sfx("coin");
+      toast("\ud83c\udfb2 Market deal: +" + fmt(win) + " \ud83e\udef6");
+    } else {
+      sfx("deny");
+      toast("\ud83c\udfb2 Market deal: crop rot! -250 \ud83e\udef6");
+    }
+    if(shopRefs) flash(shopRefs.mkt.btn);
+    render();
+  }
+
+  var gridDelegated = false;
+  function buildGrid(){
+    var grid = $("plotGrid");
+    grid.innerHTML = "";
+    plotRefs = []; wasReady = [];
+    centersDirty = true;
+    if(!gridDelegated){
+      gridDelegated = true;
+      grid.addEventListener("click", function(e){
+        var el = e.target;
+        while(el && el !== grid && !(el.classList && el.classList.contains("plot"))) el = el.parentNode;
+        if(!el || el === grid) return;
+        onPlotTap(parseInt(el.dataset.i, 10));
+      });
+    }
+    for(var i=0;i<state.unlocked;i++){
+      (function(i){
+        var el = document.createElement("div");
+        el.className = "plot";
+        el.dataset.i = i;
+        var hint = document.createElement("span"); hint.className = "emptyHint"; hint.textContent = "＋";
+        var emo = document.createElement("div"); emo.className = "emoji"; emo.style.display = "none";
+        var bar = document.createElement("div"); bar.className = "bar"; bar.style.display = "none";
+        var fill = document.createElement("div"); fill.className = "fill";
+        bar.appendChild(fill);
+        var tag = document.createElement("div"); tag.className = "tag"; tag.style.display = "none";
+        var label = document.createElement("span"); label.className = "label"; label.textContent = "Plant";
+        el.appendChild(hint); el.appendChild(emo); el.appendChild(bar); el.appendChild(tag); el.appendChild(label);
+        grid.appendChild(el);
+        plotRefs.push({root:el, hint:hint, emo:emo, bar:bar, fill:fill, tag:tag, label:label,
+          mode:"", cls:"", crop:"", pct:-1, tagTxt:"", lbl:"", cx:0, cy:0});
+        wasReady.push(false);
+      })(i);
+    }
+    renderPlots();
+  }
+  var lastChime = 0;
+  function onReady(i){
+    var R = plotRefs[i];
+    if(R){
+      R.emo.classList.add("pop");
+      setTimeout(function(){ R.emo.classList.remove("pop"); }, 450);
+    }
+    var now = Date.now();
+    if(now - lastChime > 900){ sfx("ready"); lastChime = now; }
+  }
+  function renderPlots(){
+    var now = Date.now();
+    for(var i=0;i<state.unlocked;i++){
+      var p = state.plots[i], R = plotRefs[i];
+      if(!R) continue;
+      if(!p.crop){
+        if(R.mode !== "empty"){
+          R.mode = "empty"; R.cls = "plot"; R.crop = ""; R.pct = -1; R.tagTxt = ""; R.lbl = "";
+          R.root.className = "plot";
+          R.hint.style.display = ""; R.label.style.display = ""; R.label.textContent = "Plant";
+          R.emo.style.display = "none"; R.bar.style.display = "none"; R.tag.style.display = "none";
+        }
+        continue;
+      }
+      var c = CROPS[p.crop], gt = c.growTime;
+      var ready = p.progress >= gt;
+      var pct = ready ? 100 : Math.min(100, (p.progress/gt)*100);
+      var watered = !ready && (now < p.waterUntil);
+      if(R.mode !== "grow"){
+        R.mode = "grow";
+        R.hint.style.display = "none"; R.label.style.display = "";
+        R.emo.style.display = ""; R.bar.style.display = "";
+      }
+      var cls = "plot" + (ready ? " ready" : " growing") + (watered ? " watered" : "");
+      if(R.cls !== cls){ R.cls = cls; R.root.className = cls; }
+      var stageEmo = ready ? c.emoji : (pct < 34 ? "🌱" : (pct < 67 ? "🌿" : c.emoji));
+      var emoKey = p.crop + stageEmo;
+      if(R.crop !== emoKey){ R.crop = emoKey; R.emo.textContent = stageEmo; }
+      var rp = Math.round(pct);
+      if(R.pct !== rp){
+        R.pct = rp;
+        R.fill.style.width = rp + "%";
+        R.emo.style.transform = "scale(" + (0.55 + 0.45*rp/100).toFixed(2) + ")";
+      }
+      var tagTxt = ready ? "✅" : (watered ? "💧" : "");
+      if(R.tagTxt !== tagTxt){
+        R.tagTxt = tagTxt;
+        if(tagTxt){ R.tag.textContent = tagTxt; R.tag.style.display = ""; }
+        else R.tag.style.display = "none";
+      }
+      var lbl = ready ? "Harvest!" : (watered ? "Growing…" : "Water 💧");
+      if(R.lbl !== lbl){ R.lbl = lbl; R.label.textContent = lbl; }
+    }
+  }
+  function buildCropBar(){
+    var bar = $("cropBar");
+    bar.innerHTML = "";
+    cropBtnRefs = [];
+    CROP_IDS.forEach(function(id){
+      var c = CROPS[id];
+      var b = document.createElement("button");
+      b.className = "crop";
+      b.addEventListener("click", function(){
+        state.selected = id; sfx("click"); render();
+      });
+      bar.appendChild(b);
+      cropBtnRefs.push({btn:b, html:"", sel:null, poor:null});
+    });
+  }
+  function addShopItem(ic, name, onClick){
+    var row = document.createElement("div");
+    row.className = "shopItem panel";
+    row.innerHTML =
+      '<div class="ic">' + ic + '</div>' +
+      '<div class="info"><div class="name">' + name + '</div><div class="desc"></div></div>';
+    var btn = document.createElement("button");
+    btn.className = "buyBtn";
+    btn.addEventListener("click", onClick);
+    row.appendChild(btn);
+    $("shop").appendChild(row);
+    return {btn:btn, desc:row.querySelector(".desc"), d:""};
+  }
+  function buildShop(){
+    $("shop").innerHTML = "";
+    shopRefs = {
+      plot: addShopItem("🧺", "Unlock Plot", buyPlot),
+      spr: addShopItem("💧", "Sprinkler", buySprinkler),
+      harv: addShopItem("🤖", "Harvester", buyHarvester),
+      chick: addShopItem("🐔", "Chicken Coop", buyChicken),
+      mkt: addShopItem("🎲", "Rice Market", buyMarket)
+    };
+  }
+  function setBtn(r, txt, dis){
+    if(r.btn.textContent !== txt) r.btn.textContent = txt;
+    if(r.btn.disabled !== dis) r.btn.disabled = dis;
+  }
+  function setDesc(r, txt){
+    if(r.d !== txt){ r.d = txt; if(r.desc) r.desc.textContent = txt; }
+  }
+  function renderShop(){
+    if(!shopRefs) return;
+    var R = shopRefs, pc;
+    if(state.unlocked >= PLOT_MAX){
+      setDesc(R.plot, "All " + PLOT_MAX + " plots unlocked!");
+      setBtn(R.plot, "✔", true);
+    } else {
+      pc = PLOT_COSTS[state.unlocked];
+      setDesc(R.plot, "Unlock plot #" + (state.unlocked+1) + " · " + state.unlocked + "/" + PLOT_MAX + " plots");
+      setBtn(R.plot, "🪙 " + fmt(pc), state.coins < pc);
+    }
+    if(state.sprinkler){
+      setDesc(R.spr, "Auto-waters all crops (2× speed). Owned!");
+      setBtn(R.spr, "✔", true);
+    } else {
+      setDesc(R.spr, "Auto-waters all crops for 2× speed.");
+      setBtn(R.spr, "🪙 " + fmt(1200), state.coins < 1200);
+    }
+    if(state.harvester){
+      setDesc(R.harv, "Auto-collects & re-plants crops. Owned!");
+      setBtn(R.harv, "✔", true);
+    } else {
+      setDesc(R.harv, "Auto-collects ready crops and re-plants them.");
+      setBtn(R.harv, "🪙 " + fmt(3000), state.coins < 3000);
+    }
+    var chickCost = Math.round(150 * Math.pow(1.5, state.chicken));
+    setDesc(R.chick, "Passive egg income · Lv " + state.chicken + " → " + chickenIncome() + "/s");
+    setBtn(R.chick, "🪙 " + fmt(chickCost), state.coins < chickCost);
+    setDesc(R.mkt, "Gamble 250 coins: 15% rot, up to 5000 on a golden delivery.");
+    setBtn(R.mkt, "🎲 250", state.coins < 250);
+  }
+  function renderHud(){
+    var cs = fmt(coinsPerSec());
+    if(lastCps !== cs){ lastCps = cs; cpsEl.textContent = cs; }
+    var bs = fmt(state.earned);
+    if(lastBest !== bs){ lastBest = bs; bestEl.textContent = bs; startBestEl.textContent = bs; }
+    var seedTotal = 0;
+    for(var si=0; si<CROP_IDS.length; si++) seedTotal += (state.seeds[CROP_IDS[si]] || 0);
+    if(lastSeeds !== seedTotal){ lastSeeds = seedTotal; $("seeds").textContent = seedTotal; }
+    var mt = state.muted ? "🔇" : "🔊";
+    if(lastMute !== mt){ lastMute = mt; $("muteBtn").textContent = mt; }
+    for(var idx=0; idx<CROP_IDS.length; idx++){
+      var id = CROP_IDS[idx], r = cropBtnRefs[idx];
+      if(!r) continue;
+      var sel = state.selected === id;
+      if(r.sel !== sel){ r.sel = sel; r.btn.classList.toggle("sel", sel); }
+      var poor = state.coins < CROPS[id].cost;
+      if(r.poor !== poor){ r.poor = poor; r.btn.classList.toggle("poor", poor); }
+      var html = '<span class="e">' + CROPS[id].emoji + '</span>' + CROPS[id].name +
+        '<br>🌱' + CROPS[id].cost + ' · 💰' + cropValue(id) + ' · ✨' + (state.seeds[id] || 0);
+      if(r.html !== html){ r.html = html; r.btn.innerHTML = html; }
+    }
+    checkMiles();
+  }
+  function render(){
+    renderHud();
+    renderPlots();
+    renderShop();
+  }
+
+  var lastTick = Date.now(), uiAcc = 0;
+  function tickDt(dt, now){
+    for(var i=0;i<state.unlocked;i++){
+      var p = state.plots[i];
+      if(!p.crop) continue;
+      var gt = growTime(p.crop);
+      if(p.progress < gt){
+        var rate = (now < p.waterUntil) ? 2 : 1;
+        p.progress += dt * rate;
+        if(p.progress >= gt) p.progress = gt;
+      }
+      if(p.progress >= gt && !wasReady[i]){ wasReady[i] = true; onReady(i); }
+    }
+    if(state.sprinkler){
+      for(var j=0;j<state.unlocked;j++){
+        var q = state.plots[j];
+        if(q.crop && q.progress < growTime(q.crop) && now >= q.waterUntil){
+          q.waterUntil = now + WATER_MS;
+        }
+      }
+    }
+    if(state.harvester) collectReady(true);
+    if(chickenIncome() > 0){
+      var gain = chickenIncome() * dt;
+      state.coins += gain; state.earned += gain;
+    }
+  }
+  function frame(){
+    var now = Date.now();
+    var dt = (now - lastTick) / 1000;
+    lastTick = now;
+    if(dt > 0 && isFinite(dt)){
+      if(dt > OFFLINE_CAP) dt = OFFLINE_CAP;
+      if(dt <= 1){
+        tickDt(dt, now);
+      } else {
+        var steps = Math.ceil(dt), sdt = dt / steps, k;
+        for(k = 0; k < steps; k++){
+          tickDt(sdt, now - (dt - sdt * (k + 1)) * 1000);
+        }
+      }
+      dispCoins += (state.coins - dispCoins) * Math.min(1, dt*10 + 0.16);
+      if(Math.abs(state.coins - dispCoins) < 0.6) dispCoins = state.coins;
+      var cTxt = fmt(dispCoins);
+      if(coinsEl.textContent !== cTxt) coinsEl.textContent = cTxt;
+      uiAcc += dt;
+      if(uiAcc >= 0.1){ uiAcc = 0; render(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function save(){
+    state.lastSave = Date.now();
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function applyOffline(){
+    var now = Date.now();
+    var elapsed = (now - state.lastSave) / 1000;
+    if(!isFinite(elapsed) || elapsed <= 5) return null;
+    elapsed = Math.min(elapsed, OFFLINE_CAP);
+    var e0 = state.earned, grown = 0;
+    for(var i=0;i<state.unlocked;i++){
+      var p = state.plots[i];
+      if(p.crop && p.progress < growTime(p.crop)){
+        p.progress = Math.min(growTime(p.crop), p.progress + elapsed * (state.sprinkler ? 2 : 1));
+        if(p.progress >= growTime(p.crop)) grown++;
+      }
+    }
+    if(chickenIncome() > 0){
+      var gain = chickenIncome() * elapsed;
+      state.coins += gain; state.earned += gain;
+    }
+    if(state.harvester) collectReady(true);
+    return {secs:elapsed, gain:state.earned - e0, grown:grown};
+  }
+  function mergeSave(s){
+    state = defaultState();
+    state.coins = Math.max(0, num(s.coins, 0));
+    state.earned = Math.max(0, num(s.earned, 0));
+    state.unlocked = Math.min(PLOT_MAX, Math.max(1, Math.floor(num(s.unlocked, 8))));
+    state.selected = (CROP_IDS.indexOf(s.selected) >= 0) ? s.selected : "carrot";
+    state.sprinkler = s.sprinkler === true;
+    state.harvester = s.harvester === true;
+    state.muted = s.muted === true;
+    state.chicken = Math.max(0, Math.floor(num(s.chicken, 0)));
+    state.lastSave = num(s.lastSave, Date.now());
+    var m = (s.mastery && typeof s.mastery === "object") ? s.mastery : {};
+    CROP_IDS.forEach(function(id){
+      state.mastery[id] = Math.max(0, Math.floor(num(m[id], 0)));
+    });
+    var sd = (s.seeds && typeof s.seeds === "object") ? s.seeds : {};
+    CROP_IDS.forEach(function(id){
+      state.seeds[id] = Math.max(0, Math.floor(num(sd[id], 0)));
+    });
+    state.seedBadge = s.seedBadge === true;
+    var sp = Array.isArray(s.plots) ? s.plots : [];
+    state.plots = [];
+    for(var i=0;i<state.unlocked;i++){
+      var q = sp[i], p = emptyPlot();
+      if(q && typeof q === "object"){
+        if(q.crop && CROPS[q.crop]) p.crop = q.crop;
+        if(p.crop) p.progress = Math.min(growTime(p.crop), Math.max(0, num(q.progress, 0)));
+        p.waterUntil = num(q.waterUntil, 0);
+      }
+      state.plots.push(p);
+    }
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY);
+      if(raw){
+        var s = JSON.parse(raw);
+        if(s && typeof s === "object") mergeSave(s);
+      }
+    }catch(e){ state = defaultState(); }
+    var away = applyOffline();
+    if(away && (away.gain >= 1 || away.grown > 0)){
+      pendingToast = "While away (" + fmtTime(away.secs) + "): +" + fmt(away.gain) + " 🪙" +
+        (away.grown ? " · " + away.grown + " crop" + (away.grown > 1 ? "s" : "") + " ready" : "");
+    }
+    save();
+  }
+
+  function startGame(){
+    $("startScreen").classList.add("hidden");
+    buildGrid();
+    render();
+    sfx("click");
+    if(pendingToast){
+      var t = pendingToast; pendingToast = null;
+      setTimeout(function(){ toast(t); }, 400);
+    }
+  }
+  $("playBtn").addEventListener("click", startGame);
+  $("resumeBtn").addEventListener("click", function(){
+    $("menuScreen").classList.add("hidden"); sfx("click");
+  });
+  $("menuBtn").addEventListener("click", function(){
+    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
+    $("menuScreen").classList.remove("hidden"); sfx("click");
+  });
+  $("toggleMuteBtn").addEventListener("click", function(){
+    state.muted = !state.muted;
+    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
+    save(); render();
+  });
+  $("muteBtn").addEventListener("click", function(){
+    state.muted = !state.muted; save(); render();
+  });
+  $("resetBtn").addEventListener("click", function(){
+    if(confirm("Reset your farm and lose all progress?")){
+      state = defaultState();
+      mileIdx = 0;
+      dispCoins = state.coins;
+      lastCps = ""; lastBest = ""; lastMute = null;
+      for(var i=0;i<cropBtnRefs.length;i++){ cropBtnRefs[i].html = ""; cropBtnRefs[i].sel = null; cropBtnRefs[i].poor = null; }
+      save(); buildGrid(); render();
+      $("menuScreen").classList.add("hidden");
+      toast("Farm reset. Fresh start!");
+    }
+  });
+
+  load();
+  while(mileIdx < MILES.length && state.earned >= MILES[mileIdx]) mileIdx++;
+  buildCropBar();
+  buildGrid();
+  buildShop();
+  render();
+  dispCoins = state.coins;
+  setInterval(save, 5000);
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
+  lastTick = Date.now();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

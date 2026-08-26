@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Isle of Bells — Cozy Life</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:#0e0a14;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#ffe9c7;
+    overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  .back{position:fixed;top:10px;left:12px;z-index:60;color:#cbb8d9;text-decoration:none;font-size:13px;
+    font-weight:800;background:rgba(0,0,0,.35);padding:6px 12px;border-radius:10px;backdrop-filter:blur(4px)}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 0%,#123, #0c1520 70%)}
+  #game{display:block;position:absolute;max-width:none;max-height:none;touch-action:none}
+  #hud{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:7px;padding:8px 10px;
+    pointer-events:none;z-index:50;flex-wrap:wrap;justify-content:center}
+  .stat{background:rgba(20,14,28,.74);border:1px solid rgba(255,233,199,.16);border-radius:12px;padding:4px 10px;
+    font-weight:800;font-size:13px;color:#ffe9c7;display:flex;gap:5px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+  .stat small{color:#b9a3c9;font-weight:600;font-size:10px}
+  #toolbar{position:fixed;left:0;right:0;bottom:6px;display:flex;gap:6px;justify-content:center;z-index:50;
+    padding:0 8px;flex-wrap:nowrap;overflow-x:auto}
+  .tool,.iconbtn{background:rgba(20,14,28,.82);border:2px solid rgba(255,233,199,.14);border-radius:13px;
+    min-width:46px;min-height:46px;font-size:23px;cursor:pointer;color:#ffe9c7;flex:0 0 auto;
+    box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  .tool:active,.iconbtn:active{transform:scale(.9)}
+  .tool.on{border-color:#ffd86b;box-shadow:0 0 14px rgba(255,216,107,.6);background:#4a3450}
+  .tool.not{opacity:.35}
+  #speech{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:70;max-width:88vw;
+    background:linear-gradient(180deg,#fff6e3,#ffe6bd);border:3px solid #fff;border-radius:20px;padding:11px 16px;
+    color:#4a2f1f;font-weight:700;font-size:14px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.5);
+    pointer-events:none;opacity:0;transition:opacity .25s}
+  #speech.show{opacity:1}
+  #toastWrap{position:fixed;left:0;right:0;top:64px;display:flex;flex-direction:column;align-items:center;
+    z-index:78;pointer-events:none;gap:4px}
+  .toast{background:linear-gradient(180deg,#fff6e3,#ffe6bd);color:#4a2f1f;font-weight:800;font-size:13px;
+    border-radius:14px;padding:7px 15px;box-shadow:0 6px 20px rgba(0,0,0,.5);animation:toastIn .3s ease-out;
+    max-width:92vw}
+  @keyframes toastIn{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+  #muteBtn{position:fixed;bottom:10px;right:10px;z-index:55;border-radius:50%}
+  #help{position:fixed;right:10px;top:58px;z-index:56;border-radius:50%;min-width:42px;min-height:42px;
+    font-size:18px;background:rgba(20,14,28,.82);border:1px solid rgba(255,233,199,.16);color:#ffe9c7;cursor:pointer}
+  .ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:80;
+    background:rgba(10,6,15,.8);backdrop-filter:blur(5px);padding:16px;overflow:auto}
+  .ov.hidden{display:none}
+  .box{background:linear-gradient(180deg,#2b2033,#3a2c44);border:1px solid rgba(255,216,107,.28);
+    border-radius:20px;padding:20px;max-width:470px;width:100%;text-align:center;box-shadow:0 16px 60px rgba(0,0,0,.7);
+    max-height:92vh;overflow:auto}
+  .big{font-size:56px;line-height:1.1}
+  .title{font-size:30px;font-weight:900;color:#ffd86b;text-shadow:0 0 22px rgba(255,216,107,.5)}
+  .sub{color:#b9a3c9;margin:6px 0 14px;font-size:14px;line-height:1.5}
+  .btn{display:block;width:100%;background:linear-gradient(180deg,#ffb347,#e8881f);color:#3a1d02;border:none;
+    border-radius:14px;min-height:52px;font-size:17px;font-weight:900;cursor:pointer;margin:8px 0;
+    box-shadow:0 5px 16px rgba(255,160,60,.4)}
+  .btn.alt{background:linear-gradient(180deg,#5a4a6b,#3a2c44);color:#ffe9c7;box-shadow:none}
+  .btn:active{transform:scale(.96)}
+  .row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .chip{background:#2b2033;border:2px solid rgba(255,233,199,.14);border-radius:12px;padding:8px 12px;font-size:22px;
+    cursor:pointer;min-height:44px}
+  .chip.on{border-color:#ffd86b;background:#4a3450;box-shadow:0 0 12px rgba(255,216,107,.5)}
+  input[type=text]{width:100%;background:#1a1322;border:2px solid rgba(255,233,199,.25);border-radius:12px;
+    color:#ffe9c7;font-size:18px;font-weight:700;padding:12px;text-align:center;outline:none}
+  .chead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .chead h2{font-size:19px;color:#ffd86b;text-align:left}
+  .x{background:rgba(255,255,255,.12);border:none;color:#ffe9c7;border-radius:10px;width:40px;height:40px;font-size:18px;
+    cursor:pointer;font-weight:900}
+  .list{display:flex;flex-direction:column;gap:6px;text-align:left;margin:6px 0}
+  .li{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 10px}
+  .li .e{font-size:24px;flex:none}
+  .li .n{flex:1;font-weight:700;font-size:13px}
+  .li .n small{display:block;color:#b9a3c9;font-weight:600;font-size:11px}
+  .li .p{font-weight:800;color:#ffd86b;font-size:13px;white-space:nowrap}
+  .li .a{background:linear-gradient(180deg,#ffb347,#e8881f);color:#3a1d02;border:none;border-radius:10px;min-height:40px;
+    padding:0 14px;font-weight:900;cursor:pointer;font-size:13px;flex:none}
+  .li .a.gray{background:#4a3a55;color:#ffe9c7}
+  .bagnote{font-size:12px;color:#b9a3c9;font-weight:600}
+  .mini{font-size:11px;color:#8d7a9c}
+  .hint{font-size:12px;color:#b9a3c9;font-weight:600;background:rgba(255,255,255,.07);border-radius:10px;padding:6px 10px}
+  .jrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700}
+  .jrow span{color:#b9a3c9;font-weight:600}
+  .jrow b{color:#ffd86b}
+  .jsection{font-size:11px;color:#8d7a9c;font-weight:800;text-transform:uppercase;letter-spacing:.14em;margin:10px 0 4px;text-align:left}
+  .jback{width:100%;background:#1a1322;border:2px solid rgba(255,233,199,.25);border-radius:12px;color:#ffe9c7;font-size:12px;font-weight:600;padding:8px;text-align:center;outline:none;margin:6px 0;box-sizing:border-box;min-height:60px}
+  .jspl{display:flex;gap:8px;margin-top:6px}
+  .jspl .btn{flex:1;margin:0 0 4px}
+</style>
+</head>
+<body>
+<a class="back" href="../index.html">← Hub</a>
+<div id="stage"><canvas id="game"></canvas></div>
+
+<div id="hud">
+  <div class="stat">🕐<span id="clock">00:00</span><small id="wDay"></small></div>
+  <div class="stat">💰<span id="bells">0</span></div>
+  <div class="stat">🏡<span id="vibe">0</span></div>
+  <div class="stat">🎒<span id="bagCount">0</span></div>
+  <div class="stat" id="questChip" style="display:none"></div>
+</div>
+
+<div id="toolbar">
+  <button class="tool not" data-t="axe"  id="t_axe">🪓</button>
+  <button class="tool"    data-t="net"   id="t_net">🪡</button>
+  <button class="tool not" data-t="rod"  id="t_rod">🎣</button>
+  <button class="tool"    data-t="shovel" id="t_shovel">⛏️</button>
+  <button class="tool"    data-t="can"   id="t_can">🚿</button>
+  <button class="tool not" data-t="sling" id="t_sling">🪃</button>
+  <button class="iconbtn" id="bagBtn">🎒</button>
+  <button class="iconbtn" id="shopBtn">🏪</button>
+  <button class="iconbtn" id="musBtn">🏛️</button>
+  <button class="iconbtn" id="jBtn" title="Islander's Journal">📔</button>
+</div>
+
+<div id="speech"></div>
+<div id="toastWrap"></div>
+<button class="iconbtn" id="muteBtn">🔊</button>
+<button id="help">❔</button>
+
+<div class="ov" id="ovIntro">
+  <div class="box">
+    <div class="big">🏝️</div>
+    <div class="title">Isle of Bells</div>
+    <p class="sub">A cozy island where fish bite, bugs buzz, trees giggle when shaken and four fuzzy villagers need a friend. Fish · bug · dig · farm · decorate — make it yours.</p>
+    <input type="text" id="nameIn" maxlength="10" placeholder="Your name, islander?">
+    <div class="bagnote" style="margin:10px 0 4px">pick your look</div>
+    <div class="row" id="avatarRow"></div>
+    <div class="bagnote" style="margin:8px 0 2px">pick your thread</div>
+    <div class="row" id="shirtRow"></div>
+    <button class="btn" id="playBtn">🌅 Set Sail →</button>
+    <p class="mini">Autosaves on this device. Best with sound on.</p>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovHelp">
+  <div class="box">
+    <div class="chead"><h2>❔ How to Island</h2><button class="x" data-close="ovHelp">✕</button></div>
+    <div class="list">
+      <div class="li"><span class="e">🕹️</span><span class="n">Move <small>WASD / arrows · or drag anywhere (touch = joystick)</small></span></div>
+      <div class="li"><span class="e">👆</span><span class="n">Tap <small>tap an object to walk to it &amp; act · tap water to fish</small></span></div>
+      <div class="li"><span class="e">␣</span><span class="n">Act <small>Space / E does the nearest thing</small></span></div>
+      <div class="li"><span class="e">🔢</span><span class="n">Tools <small>1–6 or tap the bar. Net=bugs, rod=fish, ⛏️=dig/rocks, 🚿=water crops, 🪓=chop, 🪃=balloons</small></span></div>
+      <div class="li"><span class="e">🗯️</span><span class="n">Villagers <small>Do their quests for bells &amp; furniture!</small></span></div>
+      <div class="li"><span class="e">🎈</span><span class="n">Balloon party <small>pop with slingshot → presents</small></span></div>
+      <div class="li"><span class="e">⭐</span><span class="n">Sparkle spots <small>dig for fossils &amp; treasure</small></span></div>
+    </div>
+    <button class="btn alt" data-close="ovHelp">Gotcha!</button>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovShop">
+  <div class="box">
+    <div class="chead"><h2>🏪 Nook &amp; Bell Co.</h2><button class="x" data-close="ovShop">✕</button></div>
+    <div class="row">
+      <button class="btn alt shopTab" id="tabBuy" style="flex:1">🛍️ Buy</button>
+      <button class="btn alt shopTab" id="tabSell" style="flex:1">💸 Sell</button>
+    </div>
+    <div id="shopBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovBag">
+  <div class="box">
+    <div class="chead"><h2>🎒 Pockets</h2><button class="x" data-close="ovBag">✕</button></div>
+    <div id="bagBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovMus">
+  <div class="box">
+    <div class="chead"><h2>🏛️ Island Museum</h2><button class="x" data-close="ovMus">✕</button></div>
+    <div id="musTabs" class="row"></div>
+    <div id="musBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovHome">
+  <div class="box">
+    <div class="chead"><h2 id="homeTitle">🏠 Home</h2><button class="x" data-close="ovHome">✕</button></div>
+    <div id="homeBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovQuest">
+  <div class="box">
+    <div class="chead"><h2 id="qTitle">📋 Request</h2><button class="x" data-close="ovQuest">✕</button></div>
+    <div id="qBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ovJrn">
+  <div class="box">
+    <div class="chead"><h2>📔 Islander's Journal</h2><button class="x" data-close="ovJrn">✕</button></div>
+    <div id="jBody"></div>
+    <div class="jsection" style="margin-top:14px">💾 Save backup</div>
+    <textarea class="jback" id="jBackup" rows="3" spellcheck="false" placeholder="export a backup, or paste one here to restore…"></textarea>
+    <div class="jspl">
+      <button class="btn alt" id="jExportBtn" style="letter-spacing:.4px">📤 Export</button>
+      <button class="btn alt" id="jImportBtn" style="letter-spacing:.4px">📥 Import</button>
+    </div>
+    <div class="mini" id="jBackupMsg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var JKEY='isleOfBells_v1';
+  function jId(id){return document.getElementById(id);}
+  var JSFXP={};
+  try{['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;JSFXP[n]=a;});}catch(e){}
+  function jMuted(){try{var d=JSON.parse(localStorage.getItem(JKEY)||'null');return !!(d&&d.muted);}catch(e){return false;}}
+  function jsfx(n){if(jMuted())return;var a=JSFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+  function fmtN(n){n=Math.max(0,Math.floor(n)||0);if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e4)return (n/1e3).toFixed(1)+'K';return ''+n;}
+  function jopen(){
+    var b=jId('jBody');if(!b)return;
+    var d=null;try{d=JSON.parse(localStorage.getItem(JKEY)||'null');}catch(e){}
+    var h='';
+    if(!d||typeof d!=='object'||typeof d.name!=='string'){
+      h='<div class="sub" style="margin:4px 0">No island yet. Set sail and the story will write itself.</div>';
+    }else{
+      var st=(d.stats&&typeof d.stats==='object')?d.stats:{};
+      var mu=(d.museum&&typeof d.museum==='object')?d.museum:{};
+      var tu=0;['fish','bug','shell','fossil'].forEach(function(c){var x=mu[c];if(x&&typeof x==='object')tu+=Object.keys(x).length;});
+      var furn=(d.furn||[]).length,bag=(d.bag||[]).length,placed=(d.placed||[]).length;
+      h+='<div class="jsection">Islander</div>';
+      h+='<div class="li"><span class="e">👤</span><span class="n">'+d.name+'<small>Day '+(d.day||1)+' · exploring the isle</small></span></div>';
+      h+='<div class="jsection">Passing days</div>';
+      h+='<div class="jrow"><span>💰 Bells</span><b>'+fmtN(d.bells)+'</b></div>';
+      h+='<div class="jrow"><span>🏡 Vibe</span><b>'+fmtN(d.vibe)+'</b></div>';
+      h+='<div class="jrow"><span>🎒 In pockets</span><b>'+bag+'</b></div>';
+      h+='<div class="jrow"><span>🏠 Furniture owned</span><b>'+furn+'</b></div>';
+      h+='<div class="jrow"><span>🏡 Decor placed</span><b>'+placed+'</b></div>';
+      h+='<div class="jrow"><span>🖼️ Museum donations</span><b>'+tu+'</b></div>';
+      if(d.quest&&d.quest.t){
+        h+='<div class="jsection">Request</div>';
+        h+='<div class="li"><span class="e">🗯️</span><span class="n">'+d.quest.vill+'<small>'+(d.quest.finished?'Done! '+d.quest.text:d.quest.text+' ('+(d.quest.prog||0)+'/'+(d.quest.goal||'-')+')')+'</small></span></div>';
+      }
+      h+='<div class="jsection">All-time deeds</div>';
+      h+='<div class="jrow"><span>🪲 Bugs caught</span><b>'+fmtN(st.bugs)+'</b></div>';
+      h+='<div class="jrow"><span>🐟 Fish caught</span><b>'+fmtN(st.fish)+'</b></div>';
+      h+='<div class="jrow"><span>⛏️ Digs done</span><b>'+fmtN(st.digs)+'</b></div>';
+      h+='<div class="jrow"><span>🚿 Crops watered</span><b>'+fmtN(st.harvests)+'</b></div>';
+      h+='<div class="jrow"><span>🌳 Trees shook</span><b>'+fmtN(st.shakes)+'</b></div>';
+      h+='<div class="jrow"><span>💰 Bells earned</span><b>'+fmtN(st.bellsEarned)+'</b></div>';
+      h+='<div class="jrow"><span>🏠 Placed ever</span><b>'+fmtN(st.placed)+'</b></div>';
+    }
+    b.innerHTML=h;
+  }
+  var jb=jId('jBtn');
+  if(jb)jb.addEventListener('click',function(){jopen();jId('ovJrn').classList.remove('hidden');jsfx('tap');});
+  var jbox=jId('ovJrn');
+  if(jbox)jbox.addEventListener('click',function(e){if(e.target===jbox)jbox.classList.add('hidden');});
+  function jMsgSet(t){var m=jId('jBackupMsg');if(m)m.textContent=t;}
+  var jExp=jId('jExportBtn'),jImp=jId('jImportBtn'),jTxt=jId('jBackup');
+  if(jExp)jExp.addEventListener('click',function(){
+    var raw=null;try{raw=localStorage.getItem(JKEY);}catch(e){}
+    if(!raw){jMsgSet('Nothing to export yet — play a little first!');return;}
+    var b=null;try{b=btoa(unescape(encodeURIComponent(raw)));}catch(e){}
+    if(!b){jMsgSet('Could not encode backup.');return;}
+    if(jTxt){jTxt.value=b;if(jTxt.select)jTxt.select();
+      if(typeof document.execCommand==='function'){try{document.execCommand('copy');}catch(e){}}
+    }
+    jMsgSet('Backup copied — keep it safe somewhere!');
+    jsfx('coin');
+  });
+  if(jImp)jImp.addEventListener('click',function(){
+    if(!jTxt||!jTxt.value){jMsgSet('Paste a backup first.');return;}
+    var raw=null;
+    try{raw=decodeURIComponent(unescape(atob(jTxt.value.trim())));}catch(e){}
+    if(!raw){try{raw=atob(jTxt.value.trim());}catch(e){raw=null;}}
+    if(!raw){jMsgSet('That does not look like a backup.');return;}
+    var d=null;try{d=JSON.parse(raw);}catch(e){}
+    if(!d||typeof d!=='object'||typeof d.name!=='string'){jMsgSet('Backup looks corrupted — no island data found.');return;}
+    try{localStorage.setItem(JKEY,raw);jMsgSet('Island restored! Reloading…');jsfx('levelup');}catch(e){jMsgSet('Could not write backup (storage full?).');return;}
+    if(typeof location!=='undefined'&&location){try{location.reload();}catch(e){}}
+  });
+})();
+</script>
+<script src="isle-of-bells-data.js"></script>
+<script src="isle-of-bells.js"></script>
+</body>
+</html>

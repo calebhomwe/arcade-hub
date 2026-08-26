@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Knife Hit</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#070a16; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  body { position:fixed; inset:0; overscroll-behavior:none; }
+  canvas { position:fixed; inset:0; display:block; touch-action:none; }
+  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:10; text-align:center; padding:24px; background:radial-gradient(120% 120% at 50% 20%, rgba(45,16,20,.92), rgba(7,10,22,.97)); }
+  .hidden { display:none !important; }
+  h1 { font-size:clamp(34px,8vw,64px); font-weight:900; letter-spacing:1px; background:linear-gradient(180deg,#fff,#fda4af); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 18px rgba(251,113,133,.5)); }
+  .sub { color:#9aa3c7; font-size:clamp(14px,3.4vw,18px); max-width:440px; line-height:1.5; }
+  button { font-size:clamp(22px,5vw,30px); font-weight:800; padding:16px 44px; border:none; border-radius:18px; cursor:pointer; color:#1a0808; background:linear-gradient(180deg,#fda4af,#e11d48); box-shadow:0 0 26px rgba(225,29,72,.6), inset 0 2px 0 rgba(255,255,255,.35); transition:transform .08s; }
+  button:active { transform:scale(.94); }
+  .score-big { font-size:clamp(40px,10vw,72px); font-weight:900; color:#fff; text-shadow:0 0 24px rgba(251,113,133,.9); }
+  .best { color:#fbbf24; font-size:clamp(16px,4vw,22px); font-weight:700; }
+  .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
+  .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,113,133,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fde9ec; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(225,29,72,.3); }
+  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
+  .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(251,113,133,.4); background:rgba(10,12,26,.65); color:#fde9ec; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(225,29,72,.3); }
+  #hub { position:fixed; top:14px; left:16px; z-index:20; color:#fecdd3; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(251,113,133,.35); }
+  @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud hidden" id="hud">
+  <div class="pill"><small>Score</small><span id="score">0</span></div>
+  <div class="pill"><small>Left</small><span id="left">0</span></div>
+  <div class="pill"><small>Level</small><span id="level">1</span></div>
+  <div class="pill"><small>Best</small><span id="best">0</span></div>
+</div>
+<div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
+<a id="hub" href="../index.html">← Hub</a>
+<div class="overlay" id="start">
+  <h1>KNIFE HIT</h1>
+  <div class="sub">Tap to throw a knife into the spinning log. Don't hit a stuck knife! Slice golden apples for +5. Clear the level to speed things up.</div>
+  <div class="best" id="emRow" style="min-height:22px"></div>
+  <div class="best" id="appleRow" style="min-height:22px"></div>
+  <div class="best" id="perfRow" style="min-height:22px"></div>
+  <button id="playBtn">▶ PLAY</button>
+</div>
+<div class="overlay hidden" id="gameover">
+  <h1>CLASH!</h1>
+  <div class="score-big" id="finalScore">0</div>
+  <div class="best" id="finalBest">Best: 0</div>
+  <div class="best" id="emRowGo" style="min-height:22px;font-size:15px"></div>
+  <button id="restartBtn">↻ PLAY AGAIN</button>
+</div>
+<script>
+
+'use strict';
+const KEY = 'knife-hit-best';
+const EKEY = 'knife-hit-em';
+const EM_LEVELS = [3, 6, 9, 12];
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const $ = id => document.getElementById(id);
+let W = 0, H = 0, DPR = 1, bgCan = null;
+function buildBg() {
+  bgCan = document.createElement('canvas');
+  bgCan.width = Math.max(1, Math.round(W * DPR));
+  bgCan.height = Math.max(1, Math.round(H * DPR));
+  const b = bgCan.getContext('2d');
+  b.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = b.createRadialGradient(W/2, H*0.4, 10, W/2, H*0.4, Math.max(W, H) * 0.8);
+  g.addColorStop(0, '#2a1220'); g.addColorStop(1, '#070a16');
+  b.fillStyle = g; b.fillRect(0, 0, W, H);
+}
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  layout();
+  buildBg();
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 80));
+
+let audioCtx = null, muted = false;
+try { muted = localStorage.getItem(KEY + '-mute') === '1'; } catch (e) {}
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, vol, slideTo) {
+  if (muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + dur);
+  g.gain.setValueAtTime(vol || 0.2, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur);
+}
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+
+const TAU = Math.PI * 2;
+function norm(a) { a = a % TAU; if (a < 0) a += TAU; return a; }
+function angDiff(a, b) { let d = norm(a - b); if (d > Math.PI) d = TAU - d; return d; }
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+const log = { x: 0, y: 0, R: 0, angle: 0, omega: 1.4, segs: 6, dir: 1, pulse: 0, squash: 0 };
+let knives = [], flying = null, apple = null, pieces = [], particles = [], floaters = [];
+let level = 1, score = 0, best = 0, target = 6, thrown = 0, boss = false, running = false, exploding = false, explodeT = 0, shake = 0;
+let flowStreak = 0, lastLandT = 0;
+const APT = [10, 25, 50, 100, 250, 500];
+let appleTot = 0, appleTier = 0;
+try { appleTot = parseInt(localStorage.getItem('knife-hit-apples') || '0', 10) || 0; appleTier = parseInt(localStorage.getItem('knife-hit-tier') || '0', 10) || 0; } catch (e) {}
+const PFT = [5, 15, 30, 60];
+let lvlApples = 0, perfectTot = 0, perfectTier = 0;
+try { perfectTot = parseInt(localStorage.getItem('knife-hit-perfect') || '0', 10) || 0; perfectTier = parseInt(localStorage.getItem('knife-hit-ptier') || '0', 10) || 0; } catch (e) {}
+
+try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+
+let emblems = [];
+function loadEmblems() { try { emblems = JSON.parse(localStorage.getItem(EKEY) || '[]'); if (!Array.isArray(emblems)) emblems = []; } catch (e) { emblems = []; } }
+function saveEmblems() { try { localStorage.setItem(EKEY, JSON.stringify(emblems)); } catch (e) {} }
+function renderEmblems() {
+  const txt = emblems.length ? '🏅 ' + emblems.join('  ') : '';
+  const s = $('emRow'); if (s) s.textContent = txt;
+  const g = $('emRowGo'); if (g) g.textContent = txt;
+}
+function renderApples() {
+  const s = $('appleRow'); if (!s) return;
+  let txt = '🍎 ' + appleTot;
+  if (appleTier > 0) txt += ' · 🏅 ×' + appleTier;
+  s.textContent = txt;
+}
+function renderPerfect() {
+  const s = $('perfRow'); if (!s) return;
+  let txt = '✨ ' + perfectTot + (perfectTier > 0 ? ' · 🏅 ×' + perfectTier : '');
+  s.textContent = txt;
+}
+function earnEmblem(lv) {
+  if (EM_LEVELS.indexOf(lv) < 0 || emblems.indexOf('L' + lv) >= 0) return;
+  emblems.push('L' + lv);
+  saveEmblems();
+  renderEmblems();
+  addFloater('🏅 EMBLEM L' + lv + '!', log.x, log.y - log.R - 34, '#fbbf24');
+  sfx('levelup');
+  buzz(25);
+}
+
+let logGlow = null;
+function layout() {
+  log.x = W / 2; log.y = H * 0.42; log.R = Math.min(W, H) * 0.30;
+  const pad = 32, S = Math.ceil(log.R + pad) * 2;
+  logGlow = document.createElement('canvas');
+  logGlow.width = S; logGlow.height = S;
+  const x = logGlow.getContext('2d');
+  x.shadowColor = '#f43f5e'; x.shadowBlur = 24;
+  x.fillStyle = '#5b3a1e';
+  x.beginPath(); x.arc(S / 2, S / 2, log.R, 0, TAU); x.fill();
+}
+const PMAX = 220, KMAX = 60, FMAX = 16, pFree = [], kFree = [], fFree = [];
+function burst(x, y, color, n, speed) {
+  for (let i = 0; i < n; i++) {
+    let p = pFree.pop();
+    if (!p) { if (particles.length >= PMAX) return; p = {}; }
+    const a = Math.random() * TAU, s = rand(speed * 0.3, speed);
+    p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s;
+    p.life = rand(0.3, 0.7); p.t = 0; p.r = rand(2, 5); p.color = color;
+    particles.push(p);
+  }
+}
+function addPiece(o) {
+  let p = kFree.pop();
+  if (!p) { if (pieces.length >= KMAX) return; p = {}; }
+  p.x = o.x; p.y = o.y; p.ang = o.ang; p.vx = o.vx; p.vy = o.vy; p.rot = o.rot;
+  p.r = o.r; p.life = o.life; p.t = 0; p.hue = o.hue; p.blade = o.blade || false;
+  pieces.push(p);
+}
+function addFloater(text, x, y, color) {
+  let f = fFree.pop();
+  if (!f) { if (floaters.length >= FMAX) return; f = {}; }
+  f.text = text; f.x = x; f.y = y; f.t = 0; f.life = 0.9; f.color = color;
+  floaters.push(f);
+}
+
+function setupLevel() {
+  knives = []; flying = null; apple = null;
+  log.segs = 5 + Math.min(4, level - 1) + ((Math.random() * 3) | 0);
+  log.omega = (1.2 + level * 0.16) * log.dir;
+  lvlApples = 0;
+  target = 5 + ((Math.random() * 6) | 0);
+  if (level >= 2 && Math.random() < 0.5) log.dir *= -1;
+}
+function spawnApple() {
+  let a = Math.random() * TAU, ok = false;
+  for (let tries = 0; tries < 30 && !ok; tries++) {
+    a = Math.random() * TAU; ok = true;
+    for (const k of knives) if (angDiff(a, k.angle) < 0.4) { ok = false; break; }
+  }
+  apple = { angle: a, born: 0 };
+}
+
+function startGame() {
+  level = 1; score = 0; shake = 0; exploding = false;
+  flowStreak = 0; lastLandT = 0;
+  particles = []; pieces = []; floaters = [];
+  log.dir = 1; log.angle = 0;
+  setupLevel();
+  spawnApple();
+  running = true;
+  $('hud').classList.remove('hidden');
+  $('topbtns').classList.remove('hidden');
+  $('start').classList.add('hidden');
+  $('gameover').classList.add('hidden');
+  $('score').textContent = '0';
+  $('level').textContent = '1';
+  $('best').textContent = best;
+  floaters.push({ text: 'TAP TO THROW!', x: W / 2, y: H * 0.78, t: 0, life: 2.4, color: '#fda4af' });
+}
+function endGame() {
+  running = false;
+  $('finalScore').textContent = score;
+  const nb = score > best;
+  if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
+  $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
+  renderEmblems();
+  $('gameover').classList.remove('hidden');
+}
+
+function throwKnife() {
+  if (!running || exploding || flying) return;
+  ensureAudio();
+  flying = { y: H + 30, ang: 0 };
+  sfx('whoosh');
+}
+function landKnife() {
+  const a = norm(Math.PI / 2 - log.angle);
+  for (const k of knives) {
+    if (angDiff(a, k.angle) < Math.min(0.24, 8 / log.R + 0.12)) {
+      gameOver(); return;
+    }
+  }
+  if (apple && angDiff(a, apple.angle) < 0.2) {
+    score += 5;
+    addFloater('+5 🍎', log.x + Math.cos(log.angle + apple.angle) * log.R, log.y + Math.sin(log.angle + apple.angle) * log.R - 20, '#fde047');
+    burst(log.x + Math.cos(log.angle + apple.angle) * log.R, log.y + Math.sin(log.angle + apple.angle) * log.R, '#fde047', 16, 220);
+    sfx('coin');
+    buzz(18);
+    apple = null;
+    lvlApples++;
+    appleTot++;
+    try { localStorage.setItem('knife-hit-apples', String(appleTot)); } catch (e) {}
+    while (appleTier < APT.length && appleTot >= APT[appleTier]) {
+      appleTier++;
+      addFloater('🏅 ' + APT[appleTier - 1] + ' APPLES!', log.x, log.y - log.R - 58, '#fde047');
+      sfx('levelup');
+      buzz(25);
+    }
+    try { localStorage.setItem('knife-hit-tier', String(appleTier)); } catch (e) {}
+  }
+  knives.push({ angle: a });
+  score += 1;
+  sfx('hit');
+  buzz(12);
+  const tNow = Date.now();
+  flowStreak = (lastLandT && tNow - lastLandT <= 500) ? flowStreak + 1 : 1;
+  lastLandT = tNow;
+  if (flowStreak === 5 || flowStreak === 10 || flowStreak === 15 || flowStreak === 20) {
+    addFloater('FLOW ×' + flowStreak + '!', log.x, log.y - log.R - 34, '#a5b4fc');
+    sfx('whoosh');
+    buzz(15);
+  }
+  const ex = log.x + Math.cos(a) * (log.R - 4);
+  const ey = log.y + Math.sin(a) * (log.R - 4);
+  burst(ex, ey, '#fda4af', 5, 140);
+  burst(ex, ey, '#ffffff', 2, 220);
+  shake = Math.max(shake, 3);
+  log.pulse = 1;
+  log.squash = 1;
+  $('score').textContent = score;
+  if (knives.length >= target) levelUp();
+}
+function levelUp() {
+  exploding = true; explodeT = 0;
+  const cx = log.x, cy = log.y;
+  for (let i = 0; i < log.segs; i++) {
+    const a = (i / log.segs) * TAU + log.angle;
+    const sp = rand(120, 360);
+    addPiece({ x: cx, y: cy, ang: a, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, rot: rand(-6, 6), r: log.R * rand(0.4, 0.75), life: 0.8, hue: i % 2 ? '#8b5a2b' : '#6b4423' });
+  }
+  burst(cx, cy, '#fbbf24', 40, 380);
+  shake = 14;
+  buzz(35);
+  sfx('boom');
+  knives = []; flying = null; apple = null;
+}
+function gameOver() {
+  running = false;
+  for (const k of knives) {
+    const a = log.angle + k.angle;
+    addPiece({ x: log.x + Math.cos(a) * log.R, y: log.y + Math.sin(a) * log.R, ang: a, vx: Math.cos(a) * rand(200, 420), vy: Math.sin(a) * rand(200, 420), rot: rand(-8, 8), r: log.R * 0.3, life: 1.1, hue: '#d8dcec', blade: true });
+  }
+  burst(log.x, log.y, '#fb7185', 40, 420);
+  shake = 18;
+  buzz(70);
+  sfx('lose');
+  setTimeout(endGame, 350);
+}
+
+function update(dt) {
+  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+  if (log.pulse > 0) log.pulse = Math.max(0, log.pulse - 3.5 * dt);
+  if (log.squash > 0) log.squash = Math.max(0, log.squash - 5 * dt);
+  for (let i = pieces.length - 1; i >= 0; i--) {
+    const p = pieces[i];
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 700 * dt; p.ang += p.rot * dt;
+    if (p.t >= p.life) { kFree.push(p); pieces[i] = pieces[pieces.length - 1]; pieces.pop(); }
+  }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.96; p.vy *= 0.96;
+    if (p.t >= p.life) { pFree.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); }
+  }
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.t += dt; f.y -= 40 * dt;
+    if (f.t >= f.life) { fFree.push(f); floaters[i] = floaters[floaters.length - 1]; floaters.pop(); }
+  }
+  if (!running) return;
+  if (exploding) {
+    explodeT += dt;
+    if (explodeT > 0.7) {
+      exploding = false;
+      level++;
+      if (lvlApples === 0) {
+        perfectTot++;
+        try { localStorage.setItem('knife-hit-perfect', String(perfectTot)); } catch (e) {}
+        while (perfectTier < PFT.length && perfectTot >= PFT[perfectTier]) {
+          perfectTier++;
+          addFloater('🏅 PERFECT ×' + PFT[perfectTier - 1] + '!', log.x, log.y - log.R - 58, '#a7f3d0');
+          sfx('levelup');
+          buzz(25);
+        }
+        try { localStorage.setItem('knife-hit-ptier', String(perfectTier)); } catch (e) {}
+        addFloater('✨ PERFECT LEVEL!', log.x, log.y - log.R - 34, '#6ee7b7');
+      }
+      log.dir = Math.random() < 0.55 ? 1 : -1;
+      setupLevel();
+      spawnApple();
+      $('level').textContent = level;
+      earnEmblem(level);
+      addFloater('LEVEL ' + level, log.x, log.y, '#fde047');
+    }
+  } else {
+    log.angle += log.omega * dt;
+    if (apple) apple.born += dt;
+    if (flying) {
+      const targetY = log.y + log.R - 4;
+      const dist = (H + 30) - targetY;
+      flying.y -= (dist / 0.18) * dt;
+      if (flying.y <= targetY) { flying = null; landKnife(); }
+    }
+    if (!apple && knives.length < target - 1 && Math.random() < 0.24 * dt) spawnApple();
+  }
+}
+
+function drawKnife(x, y, ang, len) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  ctx.fillStyle = '#d8dcec';
+  ctx.beginPath();
+  ctx.moveTo(0, -2.6); ctx.lineTo(len * 0.62, 0); ctx.lineTo(0, 2.6); ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#7c3aed';
+  ctx.fillRect(-len * 0.38, -3.4, len * 0.38, 6.8);
+  ctx.restore();
+}
+function drawLog() {
+  const { x, y, R } = log;
+  ctx.save();
+  if (log.squash > 0) {
+    const s = log.squash;
+    ctx.translate(x, y);
+    ctx.scale(1 + s * 0.07, 1 - s * 0.06);
+    ctx.translate(-x, -y);
+  }
+  if (logGlow) ctx.drawImage(logGlow, x - logGlow.width / 2, y - logGlow.height / 2);
+  const seg = TAU / log.segs;
+  for (let i = 0; i < log.segs; i++) {
+    const a0 = log.angle + i * seg;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, R, a0, a0 + seg);
+    ctx.closePath();
+    ctx.fillStyle = i % 2 ? '#7a4c22' : '#5b3a1e';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(x, y, R, 0, TAU);
+  ctx.strokeStyle = '#4c3317'; ctx.lineWidth = 6; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, R - 4, 0, TAU);
+  ctx.strokeStyle = 'rgba(253,164,175,.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (log.pulse > 0) {
+    ctx.save();
+    const pr = R + 4 + 7 * (1 - log.pulse);
+    ctx.globalAlpha = log.pulse * 0.4;
+    ctx.strokeStyle = '#fb7185';
+    ctx.lineWidth = 3 + 5 * log.pulse + 7;
+    ctx.beginPath(); ctx.arc(x, y, pr, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = log.pulse * 0.85;
+    ctx.strokeStyle = '#fda4af';
+    ctx.lineWidth = 3 + 5 * log.pulse;
+    ctx.beginPath(); ctx.arc(x, y, pr, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+let appleSpr = null;
+function buildAppleSprite() {
+  const pad = 22, S = (11 + pad) * 2;
+  appleSpr = document.createElement('canvas');
+  appleSpr.width = S; appleSpr.height = S;
+  const x = appleSpr.getContext('2d');
+  x.shadowColor = '#fde047'; x.shadowBlur = 16;
+  x.fillStyle = '#fde047';
+  x.beginPath(); x.arc(S / 2, S / 2, 11, 0, TAU); x.fill();
+  x.shadowBlur = 0;
+  x.fillStyle = '#854d0e';
+  x.fillRect(S / 2 - 2, S / 2 - 14, 4, 6);
+}
+function drawApple() {
+  if (!apple) return;
+  const a = log.angle + apple.angle;
+  const ax = log.x + Math.cos(a) * (log.R - 12);
+  const ay = log.y + Math.sin(a) * (log.R - 12);
+  ctx.save();
+  ctx.translate(ax, ay);
+  ctx.rotate(a + Math.PI / 2);
+  ctx.drawImage(appleSpr, -appleSpr.width / 2, -appleSpr.height / 2);
+  ctx.restore();
+}
+
+function draw() {
+  ctx.drawImage(bgCan, 0, 0, W, H);
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
+
+  if (!exploding) {
+    drawLog();
+    drawApple();
+    for (const k of knives) {
+      const a = log.angle + k.angle;
+      const kx = log.x + Math.cos(a) * (log.R - 4);
+      const ky = log.y + Math.sin(a) * (log.R - 4);
+      drawKnife(kx, ky, a, log.R * 0.5);
+    }
+    if (flying) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      drawKnife(log.x, flying.y, -Math.PI / 2, log.R * 0.5);
+      ctx.restore();
+    }
+  }
+  for (const p of pieces) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.ang);
+    if (p.blade) {
+      ctx.fillStyle = p.hue;
+      ctx.beginPath();
+      ctx.moveTo(0, -3); ctx.lineTo(p.r * 0.6, 0); ctx.lineTo(0, 3); ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillStyle = p.hue;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, p.r, -0.35, 0.35); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  for (const p of particles) {
+    const a = 1 - p.t / p.life;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.t / p.life), 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.font = '800 22px system-ui';
+  ctx.textAlign = 'center';
+  for (const f of floaters) {
+    ctx.globalAlpha = 1 - f.t / f.life;
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+let last = 0;
+function loop(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
+  last = ts;
+  update(dt);
+  if (running || pieces.length || particles.length || floaters.length) draw();
+  requestAnimationFrame(loop);
+}
+
+function tap(e) { e.preventDefault(); ensureAudio(); throwKnife(); }
+canvas.addEventListener('touchstart', tap, { passive: false });
+canvas.addEventListener('mousedown', tap);
+
+$('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
+$('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
+$('mute').addEventListener('click', () => { ensureAudio(); muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} });
+
+resize();
+buildAppleSprite();
+loadEmblems();
+renderEmblems();
+renderApples();
+renderPerfect();
+$('mute').textContent = muted ? '🔇' : '🔊';
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

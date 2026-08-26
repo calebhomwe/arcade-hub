@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Battle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(1000px 700px at 50% -10%,#7c2d12,#0f0f23 55%,#07070f);display:flex;flex-direction:column;align-items:center;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.back{position:fixed;top:12px;left:14px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40}
+#muteBtn{position:fixed;top:10px;right:12px;z-index:40;background:#1e293b;border:none;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+#wrap{width:100%;max-width:520px;flex:1;display:flex;flex-direction:column;padding:40px 12px 12px;gap:10px;min-height:0;overflow:hidden auto}
+h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;text-align:center;background:linear-gradient(90deg,#fb923c,#facc15,#4ade80);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar-wrap{background:#1e293b;border-radius:14px;padding:10px 12px;position:relative}
+.prow{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px}
+.prow b{font-size:14px}
+.bar{height:14px;background:#0f172a;border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px;transition:width .25s ease}
+.hpfill{background:linear-gradient(90deg,#f87171,#4ade80)}
+.xpfill{background:linear-gradient(90deg,#a78bfa,#38bdf8)}
+.gold{color:#facc15;font-weight:800}
+#mstage{text-align:center;position:relative}
+#memoji{font-size:clamp(56px,18vw,90px);line-height:1;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
+#mname{font-weight:900;font-size:18px;margin:2px 0 6px}
+.monster.bar{height:16px}
+#question{text-align:center;font-size:clamp(30px,8vw,44px);font-weight:900;letter-spacing:1px;text-shadow:0 0 20px rgba(251,146,60,.5)}
+#combo{text-align:center;font-weight:900;color:#facc15;font-size:18px;min-height:24px}
+#answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ans{border:2px solid #334155;background:linear-gradient(160deg,#1e293b,#0f172a);color:#fff;font-size:26px;font-weight:900;padding:0;min-height:56px;border-radius:16px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4);transition:transform .08s ease}
+.ans:active{transform:scale(.95)}
+.ans.good{background:linear-gradient(160deg,#14532d,#052e16);border-color:#4ade80}
+.ans.bad{background:linear-gradient(160deg,#7f1d1d,#450a0a);border-color:#f87171}
+#shopBtn{align-self:center;border:none;cursor:pointer;background:linear-gradient(90deg,#facc15,#fb923c);color:#1c1917;font-size:18px;font-weight:900;padding:12px 34px;border-radius:999px;min-height:52px;box-shadow:0 8px 22px rgba(250,204,21,.35)}
+#shopBtn:active{transform:scale(.94)}
+#trophyBtn{align-self:center;border:none;cursor:pointer;background:#1e293b;color:#facc15;font-size:14px;font-weight:900;padding:9px 22px;border-radius:999px;min-height:38px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+#trophyBtn:active{transform:scale(.94)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
+@keyframes hitflash{0%{filter:brightness(2.8) drop-shadow(0 0 24px #fff)}100%{filter:brightness(1) drop-shadow(0 6px 18px rgba(0,0,0,.6))}}
+.hitflash{animation:hitflash .28s}
+@keyframes spawnin{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
+.spawn{animation:spawnin .42s ease}
+.float{position:fixed;font-weight:900;font-size:26px;pointer-events:none;z-index:70;text-shadow:0 2px 6px rgba(0,0,0,.8);animation:floatup .8s ease forwards}
+@keyframes floatup{0%{opacity:1;translate:0 0;scale:1}100%{opacity:0;translate:0 -70px;scale:1.3}}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.88);backdrop-filter:blur(6px);z-index:60;text-align:center;padding:20px}
+.ov h1{font-size:36px;font-weight:900}
+.ov p{color:#cbd5e1;font-size:15px;line-height:1.6;max-width:420px}
+.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#fb923c,#facc15);color:#1c1917;font-size:22px;font-weight:900;padding:16px 44px;border-radius:999px;box-shadow:0 8px 26px rgba(251,146,60,.4);min-height:56px}
+.btn:active{transform:scale(.94)}
+.best{color:#4ade80;font-weight:800}
+.hidden{display:none!important}
+.shopitem{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1e293b;border-radius:14px;padding:12px;width:min(92vw,420px);text-align:left}
+.shopitem .info{flex:1}
+.shopitem .nm{font-weight:800}
+.shopitem .ds{font-size:12px;color:#94a3b8}
+.buy{border:none;cursor:pointer;background:#4ade80;color:#04240f;font-weight:900;font-size:15px;padding:12px 18px;border-radius:12px;min-height:48px}
+.buy:disabled{background:#334155;color:#94a3b8;cursor:not-allowed}
+@media (max-height:430px){#wrap{padding-top:30px;gap:6px}h1.title{font-size:16px}.bar-wrap{padding:6px 10px}#memoji{font-size:40px}#mname{font-size:14px;margin:0 0 4px}#question{font-size:26px}#combo{min-height:16px;font-size:14px}.ans{min-height:44px;font-size:20px}#shopBtn{min-height:40px;padding:8px 26px;font-size:15px}.ov{gap:8px;padding:10px}.ov h1{font-size:26px}.ov p{font-size:13px;line-height:1.35}.btn{min-height:44px;padding:10px 36px;font-size:18px}}
+</style>
+</head>
+<body>
+<a class="back" href="../index.html">← Hub</a>
+<button id="muteBtn">🔊</button>
+<div id="wrap">
+  <h1 class="title">⚔️ MATH BATTLE</h1>
+  <div class="bar-wrap" id="pstage">
+    <div class="prow"><span>🧑 <b>You</b> · Lv <b id="lvl">1</b></span><span>❤️ <b id="php">50</b>/<b id="pmax">50</b></span><span class="gold">💰 <b id="gold">0</b></span></div>
+    <div class="bar"><div class="fill hpfill" id="phpbar" style="width:100%"></div></div>
+    <div class="bar" style="height:8px;margin-top:6px"><div class="fill xpfill" id="xpbar" style="width:0%"></div></div>
+  </div>
+  <div class="bar-wrap" id="mstage">
+    <div id="memoji">👾</div>
+    <div id="mname">Slime</div>
+    <div class="bar monster"><div class="fill hpfill" id="mhpbar" style="width:100%"></div></div>
+    <div class="prow" style="justify-content:center;gap:6px;margin-top:6px"><span>❤️ <b id="mhp">20</b>/<b id="mmax">20</b></span><span>Kills <b id="kills">0</b></span></div>
+  </div>
+  <div id="question">4 + 5 = ?</div>
+  <div id="combo"></div>
+  <div id="answers"></div>
+  <button id="shopBtn">🛒 Shop</button>
+  <button id="trophyBtn">🏆 Hunting Log</button>
+  <button id="medalBtn">🎖 War Medals</button>
+</div>
+<div class="ov hidden" id="trophy">
+  <h1>🏆 Hunting Log</h1>
+  <div id="trophyBody" style="display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:56vh;width:min(92vw,420px)"></div>
+  <button class="btn" id="trophyClose">Back to Fight</button>
+</div>
+<div class="ov hidden" id="medal">
+  <h1>🎖 War Medals</h1>
+  <div id="medalBody" style="display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:56vh;width:min(92vw,420px)"></div>
+  <button class="btn" id="medalClose">Back to Fight</button>
+</div>
+<div class="ov" id="start">
+  <h1>⚔️ Math Battle</h1>
+  <p>Answer right to <b>attack</b>! Chain combos up to ×3, land crits, earn gold &amp; XP, and defeat bosses every 5 kills. Gear up in the shop!</p>
+  <div class="best" id="startBest"></div>
+  <button class="btn" id="playBtn">▶ Start Adventure</button>
+</div>
+<div class="ov hidden" id="shop">
+  <h1>🛒 Shop</h1>
+  <div class="shopitem"><div class="info"><div class="nm">🗡️ Sword +2 dmg</div><div class="ds">Cost <b id="swordCost">40</b>g · now Lv <b id="swordLv">0</b></div></div><button class="buy" id="buySword">Buy</button></div>
+  <div class="shopitem"><div class="info"><div class="nm">🛡️ Shield +10 HP</div><div class="ds">Cost <b id="shieldCost">40</b>g · now Lv <b id="shieldLv">0</b></div></div><button class="buy" id="buyShield">Buy</button></div>
+  <div class="shopitem"><div class="info"><div class="nm">🧪 Potion (full heal)</div><div class="ds">Cost <b id="potionCost">30</b>g</div></div><button class="buy" id="buyPotion">Buy</button></div>
+  <button class="btn" id="shopClose">Back to Fight</button>
+</div>
+<div class="ov hidden" id="over">
+  <h1>💀 Defeated!</h1>
+  <div style="font-size:18px">You reached <b id="finKills">0</b> kills</div>
+  <div style="font-size:15px;color:#94a3b8">Level <b id="finLvl">1</b> · Gold <b class="best" id="finGold">0</b></div>
+  <div style="font-size:15px;color:#94a3b8">🏆 Best: <b class="best" id="finBest">0</b> kills</div>
+  <button class="btn" id="reviveBtn">❤️ Revive</button>
+</div>
+<script>
+
+const DIFF={easy:{add:[1,9],sub:[2,9],mul:[2,5],div:[2,5]},medium:{add:[4,20],sub:[4,20],mul:[3,9],div:[3,9]},hard:{add:[10,50],sub:[10,50],mul:[6,12],div:[6,12]}};
+const MONSTERS=['👾 Slime','🐀 Rat','🦇 Bat','🐺 Wolf','🕷️ Spider','💀 Skeleton','👹 Goblin','🐢 Snapper'];
+const BOSSES=['🐲 Dragon Pup','🗿 Golem Boss','👑 Shadow King','🦖 Mega Ogre','🔥 Fire Demon'];
+let P={level:1,xp:0,hp:50,gold:0,sword:0,shield:0};
+let kills=0,bestKills=+localStorage.getItem('mathBattleBest')||0,combo=0,state='ready',currentAns=0,lock=false,reviveCost=0;
+let qStart=0,quickStreak=0,runWrong=0,sharp=0;
+try{sharp=+localStorage.getItem('mathBattleSharp')||0;}catch(e){}
+const TKEY='mathBattleTrophies';
+function loadTrophies(){try{const d=JSON.parse(localStorage.getItem(TKEY));return d&&typeof d==='object'?d:{};}catch(e){return{};}}
+function saveTrophies(t){try{localStorage.setItem(TKEY,JSON.stringify(t));}catch(e){}}
+function bumpTrophy(name){
+  const t=loadTrophies(),key=name||'???';
+  const was=!!t[key];
+  t[key]=(t[key]||0)+1;saveTrophies(t);
+  if(!was){floatText('🏆 First '+(key.split(' ')[1]||key),EL.mstage,'#facc15');sfx('levelup');}
+}
+function renderTrophies(){
+  const t=loadTrophies(),names=Object.keys(t).sort((a,b)=>t[b]-t[a]);
+  let html='<div style="font-size:13px;color:#94a3b8;margin-bottom:2px">'+names.length+' of '+MONSTERS.length+' monsters spotted</div>';
+  names.forEach(n=>{html+='<div class="shopitem"><div class="info"><div class="nm">'+n+'</div><div class="ds">defeated</div></div><button class="buy" disabled>×'+t[n]+'</button></div>';});
+  document.getElementById('trophyBody').innerHTML=html||'<div style="color:#94a3b8;font-size:14px">No kills yet. Womp womp.</div>';
+}
+const MKEY='mathBattleMedals';
+const MEDALS=[
+  ['k10','💀 10 KILLS',function(){return medAll.k>=10;},function(){return medAll.k+'/10';}],
+  ['k25','💀 25 KILLS',function(){return medAll.k>=25;},function(){return medAll.k+'/25';}],
+  ['k50','💀 50 KILLS',function(){return medAll.k>=50;},function(){return medAll.k+'/50';}],
+  ['k100','💀 100 KILLS',function(){return medAll.k>=100;},function(){return medAll.k+'/100';}],
+  ['k250','💀 250 KILLS',function(){return medAll.k>=250;},function(){return medAll.k+'/250';}],
+  ['lv5','🪜 LEVEL 5',function(){return medAll.lv>=5;},function(){return 'Lv '+Math.min(medAll.lv,5)+'/5';}],
+  ['lv8','🪜 LEVEL 8',function(){return medAll.lv>=8;},function(){return 'Lv '+Math.min(medAll.lv,8)+'/8';}],
+  ['lv12','🪜 LEVEL 12',function(){return medAll.lv>=12;},function(){return 'Lv '+Math.min(medAll.lv,12)+'/12';}],
+  ['lv16','🪜 LEVEL 16',function(){return medAll.lv>=16;},function(){return 'Lv '+Math.min(medAll.lv,16)+'/16';}],
+  ['b1','👑 1 BOSS',function(){return medAll.b>=1;},function(){return medAll.b+'/1';}],
+  ['b3','👑 3 BOSSES',function(){return medAll.b>=3;},function(){return medAll.b+'/3';}],
+  ['b5','👑 5 BOSSES',function(){return medAll.b>=5;},function(){return medAll.b+'/5';}],
+  ['b10','👑 10 BOSSES',function(){return medAll.b>=10;},function(){return medAll.b+'/10';}]
+];
+let medAll={k:0,b:0,lv:1,got:{}};
+function loadMedAll(){try{const d=JSON.parse(localStorage.getItem(MKEY));if(d&&typeof d==='object'){medAll.k=Math.max(0,Math.floor(+d.k)||0);medAll.b=Math.max(0,Math.floor(+d.b)||0);medAll.lv=Math.max(1,Math.floor(+d.lv)||1);medAll.got=d.got&&typeof d.got==='object'?d.got:{};}}catch(e){}}
+function saveMedAll(){try{localStorage.setItem(MKEY,JSON.stringify(medAll));}catch(e){}}
+function runMedalCheck(){
+  if(!medAll)loadMedAll();
+  medAll.k++;if(M.boss)medAll.b++;if(P.level>medAll.lv)medAll.lv=P.level;
+  for(let i=0;i<MEDALS.length;i++){const m=MEDALS[i];if(!medAll.got[m[0]]&&m[2]()){medAll.got[m[0]]=1;floatText('🎖 '+m[1]+'!',EL.mstage,'#facc15');sfx('levelup');}}
+  saveMedAll();
+}
+function renderMedals(){
+  if(!medAll)loadMedAll();
+  let got=0;
+  for(let i=0;i<MEDALS.length;i++){if(medAll.got[MEDALS[i][0]])got++;}
+  let html='<div style="font-size:13px;color:#94a3b8;margin-bottom:2px">Lifetime · '+medAll.k+' kills · '+medAll.b+' bosses · Lv '+medAll.lv+' — '+got+'/'+MEDALS.length+' medals</div>';
+  for(let i=0;i<MEDALS.length;i++){const m=MEDALS[i];const on=medAll.got[m[0]];
+    html+='<div class="shopitem"><div class="info"><div class="nm">'+m[1]+'</div><div class="ds">'+m[3]()+'</div></div><button class="buy" disabled>'+(on?'✓':'🔒')+'</button></div>';}
+  document.getElementById('medalBody').innerHTML=html;
+}
+let M={name:'Slime',hp:20,maxHP:20,atk:4,boss:false};
+
+let AC,muted=localStorage.getItem('mathBattleMuted')==='1';
+function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
+function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function attack(){return 5+P.sword*2+(P.level-1)*2;}
+function maxHP(){return 50+P.shield*10+(P.level-1)*8;}
+function xpNeed(){return 30+(P.level-1)*18;}
+function lvFor(){return P.level<=2?'easy':P.level<=4?'medium':'hard';}
+function genProblem(){
+  const ops=['+','-','×','÷'],op=ops[rnd(0,3)],lv=DIFF[lvFor()];
+  let a,b,ans,sym;
+  if(op==='+'){a=rnd(lv.add[0],lv.add[1]);b=rnd(lv.add[0],lv.add[1]);ans=a+b;sym='+';}
+  else if(op==='-'){a=rnd(lv.sub[0],lv.sub[1]);b=rnd(0,a);ans=a-b;sym='−';}
+  else if(op==='×'){a=rnd(lv.mul[0],lv.mul[1]);b=rnd(lv.mul[0],lv.mul[1]);ans=a*b;sym='×';}
+  else{b=rnd(lv.div[0],lv.div[1]);const q=rnd(lv.div[0],lv.div[1]);a=b*q;ans=q;sym='÷';}
+  return {text:a+' '+sym+' '+b,ans};
+}
+function genOptions(ans,n){
+  const set=new Set([ans]);let guard=0;
+  const spread=Math.max(3,Math.round(Math.abs(ans)*0.25)+2);
+  while(set.size<n&&guard++<300){const d=rnd(1,spread);let v=ans+(Math.random()<.5?-d:d);if(v<0)v=ans+d;set.add(v);}
+  for(let v=ans+1;set.size<n;v++)set.add(v);
+  const arr=[...set];
+  for(let i=arr.length-1;i>0;i--){const j=rnd(0,i);[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+const ansBox=document.getElementById('answers');
+const ansBtns=[];
+for(let i=0;i<4;i++){const b=document.createElement('button');b.className='ans';b.addEventListener('pointerdown',e=>{e.stopPropagation();answer(+b.textContent);});ansBox.appendChild(b);ansBtns.push(b);}
+const EL={};
+['php','pmax','phpbar','xpbar','lvl','gold','memoji','mname','mhp','mmax','mhpbar','kills','combo','question','pstage','mstage','startBest','finKills','finLvl','finGold','finBest','reviveBtn','swordCost','shieldCost','potionCost','swordLv','shieldLv','buySword','buyShield','buyPotion','start','over','shop','muteBtn'].forEach(id=>{EL[id]=document.getElementById(id);});
+let rectP=null,rectM=null;
+function cacheRects(){rectP=EL.pstage.getBoundingClientRect();rectM=EL.mstage.getBoundingClientRect();}
+window.addEventListener('resize',cacheRects);
+function newQuestion(){
+  const p=genProblem(),opts=genOptions(p.ans,4);
+  currentAns=p.ans;EL.question.textContent=p.text+' = ?';
+  for(let i=0;i<4;i++){ansBtns[i].textContent=opts[i];ansBtns[i].classList.remove('good','bad');}
+  qStart=Date.now();
+}
+const floatPool=[];
+function floatText(txt,el,color){
+  const r=(el===EL.mstage&&rectM)?rectM:rectP;
+  let d=floatPool.pop();
+  if(!d){d=document.createElement('div');d.className='float';}
+  d.textContent=txt;
+  d.style.left=(r.left+r.width/2-16+rnd(-30,30))+'px';d.style.top=(r.top+rnd(0,10))+'px';d.style.color=color;
+  if(!d.parentNode)document.body.appendChild(d);
+  d.style.animation='none';void d.offsetWidth;d.style.animation='';
+  setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);floatPool.push(d);},800);
+}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+function flashMonster(){EL.memoji.classList.remove('hitflash');void EL.memoji.offsetWidth;EL.memoji.classList.add('hitflash');}
+function renderAll(){
+  EL.php.textContent=Math.max(0,P.hp);EL.pmax.textContent=maxHP();
+  EL.phpbar.style.width=Math.max(0,P.hp/maxHP()*100)+'%';
+  EL.xpbar.style.width=Math.min(100,P.xp/xpNeed()*100)+'%';
+  EL.lvl.textContent=P.level;
+  EL.gold.textContent=P.gold;
+  const sp=M.name.indexOf(' ');
+  EL.memoji.textContent=sp===-1?M.name:M.name.slice(0,sp);
+  EL.mname.textContent=sp===-1?M.name:M.name.slice(sp+1);
+  EL.mhp.textContent=Math.max(0,M.hp);
+  EL.mmax.textContent=M.maxHP;
+  EL.mhpbar.style.width=Math.max(0,M.hp/M.maxHP*100)+'%';
+  EL.kills.textContent=kills;
+  EL.combo.textContent=combo>1?('⚡ COMBO ×'+combo):(combo===1?'⚡ ×1':'');
+}
+function spawnMonster(){
+  const boss=kills>0&&kills%5===0;
+  const base=20+kills*10+(P.level-1)*8;
+  const hp=boss?Math.round(base*2.6):base;
+  const atk=Math.round((3+kills*1.5+(P.level-1)*1.5)*(boss?1.4:1));
+  const nm=boss?BOSSES[rnd(0,BOSSES.length-1)]:MONSTERS[rnd(0,MONSTERS.length-1)];
+  M={name:nm,hp,maxHP:hp,atk,boss};
+  EL.memoji.classList.remove('spawn');void EL.memoji.offsetWidth;EL.memoji.classList.add('spawn');
+}
+function onCorrect(){
+  if(qStart&&Date.now()-qStart<=1200)quickStreak++;else quickStreak=0;
+  if(quickStreak===3||quickStreak===5||quickStreak===8||quickStreak===12){floatText('🔥 QUICK ×'+quickStreak+'!',EL.pstage,'#fb923c');sfx('levelup');}
+  combo=Math.min(combo+1,3);
+  if(combo===3)floatText('⚡ COMBO ×3!',EL.pstage,'#facc15');
+  const crit=Math.random()<0.18;
+  let dmg=attack()*combo;
+  if(crit)dmg*=2;
+  M.hp-=dmg;
+  const ms=EL.mstage;
+  floatText((crit?'CRIT! -':'-')+dmg,ms,crit?'#facc15':'#f87171');
+  flashMonster();
+  if(crit){sfx('boom');shake(ms);}else{sfx('hit');if(combo===3)sfx('whoosh');}
+  if(M.hp<=0){onKill();return;}
+  renderAll();
+  setTimeout(()=>{newQuestion();lock=false;},200);
+}
+function onWrong(){
+  runWrong++;
+  combo=0;
+  const dmg=Math.max(1,M.atk+rnd(-2,2));
+  P.hp-=dmg;
+  const ps=EL.pstage;
+  floatText('-'+dmg,ps,'#f87171');shake(ps);sfx('hit');
+  renderAll();
+  if(P.hp<=0){onDeath();return;}
+  setTimeout(()=>{newQuestion();lock=false;},160);
+}
+function onKill(){
+  kills++;
+  bumpTrophy(M.name);
+  const boss=M.boss;
+  const gold=boss?rnd(40,70):rnd(8,20);
+  const xp=(boss?rnd(50,80):rnd(15,30))+(P.level-1)*4;
+  P.gold+=gold;P.xp+=xp;P.hp=Math.min(maxHP(),P.hp+2);
+  sfx('coin');shake(EL.mstage);
+  floatText('+'+gold+'💰',EL.mstage,'#facc15');
+  checkLevelUp();
+  combo=0;save();
+  runMedalCheck();
+  if(runWrong===0&&kills%10===0){
+    sharp++;try{localStorage.setItem('mathBattleSharp',String(sharp));}catch(e){}
+    floatText('🎯 SHARP ×'+kills+'!',EL.pstage,'#4ade80');sfx('levelup');
+  }
+  setTimeout(()=>{spawnMonster();renderAll();newQuestion();lock=false;},boss?600:380);
+}
+function checkLevelUp(){
+  while(P.xp>=xpNeed()){
+    P.xp-=xpNeed();P.level++;
+    P.hp=maxHP();
+    floatText('LEVEL UP! 🎉',EL.pstage,'#4ade80');
+    sfx('levelup');
+  }
+}
+function onDeath(){
+  state='over';sfx('lose');lock=false;
+  EL.shop.classList.add('hidden');
+  if(kills>bestKills){bestKills=kills;try{localStorage.setItem('mathBattleBest',bestKills);}catch(e){}}
+  reviveCost=Math.floor(P.gold/2);
+  EL.reviveBtn.textContent=reviveCost>0?('❤️ Revive (-'+reviveCost+'g)'):'❤️ Revive';
+  EL.finKills.textContent=kills;
+  EL.finLvl.textContent=P.level;
+  EL.finGold.textContent=P.gold;
+  EL.finBest.textContent=bestKills;
+  setTimeout(()=>EL.over.classList.remove('hidden'),500);
+}
+function answer(v){
+  if(state!=='play'||lock)return;
+  lock=true;
+  for(let i=0;i<4;i++){if(+ansBtns[i].textContent===currentAns)ansBtns[i].classList.add('good');}
+  if(v===currentAns){onCorrect();}
+  else{
+    for(let i=0;i<4;i++){if(+ansBtns[i].textContent===v)ansBtns[i].classList.add('bad');}
+    setTimeout(()=>onWrong(),180);
+  }
+}
+function save(){try{localStorage.setItem('mathBattleSave',JSON.stringify({P,kills}));}catch(e){}}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('mathBattleSave'));
+    if(d&&d.P){
+      const s=d.P;
+      P.level=Math.min(100,Math.max(1,Math.floor(+s.level)||1));
+      P.sword=Math.max(0,Math.floor(+s.sword)||0);
+      P.shield=Math.max(0,Math.floor(+s.shield)||0);
+      P.gold=Math.max(0,Math.floor(+s.gold)||0);
+      P.xp=Math.max(0,Math.floor(+s.xp)||0);
+      const hp=+s.hp;
+      P.hp=isFinite(hp)?Math.min(Math.max(1,Math.floor(hp)),maxHP()):maxHP();
+      kills=Math.max(0,Math.floor(+d.kills)||0);
+    }
+  }catch(e){}
+}
+function startGame(){
+  state='play';combo=0;lock=false;quickStreak=0;qStart=0;runWrong=0;
+  EL.start.classList.add('hidden');
+  EL.over.classList.add('hidden');
+  EL.shop.classList.add('hidden');
+  spawnMonster();renderAll();newQuestion();
+}
+function buy(item){
+  if(state!=='shop')return;
+  if(item==='sword'){const c=40+P.sword*30;if(P.gold>=c){P.gold-=c;P.sword++;sfx('coin');}}
+  else if(item==='shield'){const c=40+P.shield*30;if(P.gold>=c){P.gold-=c;P.shield++;sfx('coin');}}
+  else if(item==='potion'){const c=30+P.level*5;if(P.gold>=c&&P.hp<maxHP()){P.gold-=c;P.hp=maxHP();sfx('coin');}}
+  save();renderShop();renderAll();
+}
+function renderShop(){
+  EL.swordCost.textContent=40+P.sword*30;
+  EL.shieldCost.textContent=40+P.shield*30;
+  EL.potionCost.textContent=30+P.level*5;
+  EL.swordLv.textContent=P.sword;
+  EL.shieldLv.textContent=P.shield;
+  EL.buySword.disabled=P.gold<(40+P.sword*30);
+  EL.buyShield.disabled=P.gold<(40+P.shield*30);
+  EL.buyPotion.disabled=P.gold<(30+P.level*5)||P.hp>=maxHP();
+}
+function revive(){
+  if(state!=='over')return;
+  P.gold-=reviveCost;P.hp=maxHP();combo=0;lock=false;save();
+  EL.over.classList.add('hidden');
+  spawnMonster();renderAll();newQuestion();state='play';
+}
+EL.muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('mathBattleMuted',muted?'1':'0');EL.muteBtn.textContent=muted?'🔇':'🔊';});
+EL.muteBtn.textContent=muted?'🔇':'🔊';
+document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();startGame();});
+EL.reviveBtn.addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();revive();});
+document.getElementById('shopBtn').addEventListener('pointerdown',e=>{e.stopPropagation();if(state!=='play')return;state='shop';renderShop();EL.shop.classList.remove('hidden');});
+document.getElementById('shopClose').addEventListener('pointerdown',e=>{e.stopPropagation();if(state!=='shop')return;state='play';EL.shop.classList.add('hidden');});
+document.getElementById('trophyBtn').addEventListener('pointerdown',e=>{e.stopPropagation();renderTrophies();document.getElementById('trophy').classList.remove('hidden');sfx('tap');});
+document.getElementById('trophyClose').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('trophy').classList.add('hidden');sfx('tap');});
+document.getElementById('medalBtn').addEventListener('pointerdown',e=>{e.stopPropagation();renderMedals();document.getElementById('medal').classList.remove('hidden');sfx('tap');});
+document.getElementById('medalClose').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('medal').classList.add('hidden');sfx('tap');});
+EL.buySword.addEventListener('pointerdown',e=>{e.stopPropagation();buy('sword');});
+EL.buyShield.addEventListener('pointerdown',e=>{e.stopPropagation();buy('shield');});
+EL.buyPotion.addEventListener('pointerdown',e=>{e.stopPropagation();buy('potion');});
+window.addEventListener('keydown',e=>{
+  if(state!=='play'||lock)return;
+  const n=+e.key;
+  if(n>=1&&n<=4){answer(+ansBtns[n-1].textContent);}
+});
+load();loadMedAll();cacheRects();renderAll();newQuestion();
+EL.startBest.textContent=bestKills?('🏆 Best: '+bestKills+' kills'):'';
+let mgot=0;for(let i=0;i<MEDALS.length;i++){if(medAll.got[MEDALS[i][0]])mgot++;}
+if(mgot>0)EL.startBest.textContent+=' · 🎖 '+mgot+' medals';
+if(sharp>0)EL.startBest.textContent+=' · 🎯 Sharp runs: '+sharp;
+</script>
+</body>
+</html>
