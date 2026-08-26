@@ -50,6 +50,13 @@ canvas{display:block;width:150px;height:210px}
 .key:disabled{opacity:.3;pointer-events:none}
 .ctrl-row{display:flex;gap:12px;margin:12px 0 20px}
 .ctrl{font-size:16px;padding:12px 20px;background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+.jflash{position:fixed;inset:0;pointer-events:none;z-index:80;opacity:0;transition:opacity .22s ease-out}
+.confetti{position:fixed;top:-14px;width:9px;height:14px;z-index:55;pointer-events:none;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{100%{transform:translateY(106vh) rotate(680deg)}}
+.float{position:fixed;top:36%;left:45%;z-index:60;font-size:28px;font-weight:900;color:#34d399;text-shadow:0 0 14px rgba(52,211,153,.8);pointer-events:none;animation:floatUp 1.05s ease-out forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(14px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-70px) scale(1)}}
+.hud-item.jpop{animation:jpopk .32s ease}
+@keyframes jpopk{40%{transform:scale(1.18)}}
 .toast{position:fixed;top:18%;left:50%;transform:translateX(-50%);z-index:60;font-size:20px;font-weight:900;color:#f0abfc;background:rgba(40,28,80,.95);border:1px solid #a78bfa;padding:10px 24px;border-radius:14px;pointer-events:none;animation:toastIn 1.6s ease-out forwards;box-shadow:0 0 24px rgba(167,139,250,.4)}
 @keyframes toastIn{0%{opacity:0;transform:translate(-50%,-14px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
 .shake{animation:shakeX .5s}
@@ -142,6 +149,11 @@ function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOsci
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function toast(txt){var t=document.createElement('div');t.className='toast';t.textContent=txt;document.body.appendChild(t);setTimeout(function(){if(t.parentNode){t.parentNode.removeChild(t);}},1700);}
+function confetti(n){var cols=['#c4b5fd','#f0abfc','#fda4af','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
+var jflashEl=null;
+function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function drawStage(x,m){var H=220;
   x.beginPath();x.moveTo(25,H-15);x.lineTo(25,25);x.lineTo(105,25);x.lineTo(105,55);x.stroke();
   if(m>=1){x.beginPath();x.moveTo(105,55);x.lineTo(105,72);x.stroke();}
@@ -229,9 +241,10 @@ function guess(ch){
       var gain=10+(7-mistakes)*8+Math.min(streak,5)*5;
       score+=gain;bumpStreak();
       trackPerfectWin();
-      if(score>best){best=score;saveBest();}
-      sfx('win');
-      toast('Solved! +'+gain+' pts');
+    if(score>best){best=score;saveBest();}
+    sfx('win');
+    jflash('#34d399');confetti(26);floatText('+'+gain);jpop(elScore.parentNode);
+    toast('Solved! +'+gain+' pts');
       if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
       updateHud();
       roundIdx++;
@@ -243,6 +256,8 @@ function guess(ch){
     elMistakes.textContent='●'.repeat(mistakes)+'○'.repeat(7-mistakes);
     drawHangman();
     sfx('buzz');
+    jflash('#fb7185');
+    elWordBox.classList.remove('shake');void elWordBox.offsetWidth;elWordBox.classList.add('shake');
     if(mistakes>=7){
       busy=true;streak=0;perfectRun=0;
       sfx('lose');
@@ -282,6 +297,7 @@ function useHint(){
       if(!missOnce){score+=5;sfx('levelup');toast('💯 PERFECT! +5');}
     if(score>best){best=score;saveBest();}
     sfx('win');
+    jflash('#34d399');confetti(26);floatText('+'+gain);jpop(elScore.parentNode);
     toast('Solved! +'+gain+' pts');
     if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
     updateHud();

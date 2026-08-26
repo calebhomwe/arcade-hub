@@ -60,6 +60,13 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .hrow .buy{font-size:13px;font-weight:800;color:#fff;background:linear-gradient(160deg,#e11d48,#9f1239);border:none;border-radius:10px;padding:10px 12px;cursor:pointer;min-height:42px;white-space:nowrap;touch-action:manipulation}
 .hrow .buy:active{transform:scale(.94);filter:brightness(1.25)}
 .hrow .buy.no{filter:grayscale(.85);opacity:.5}
+.hrow .buy.afford{animation:affordPulse .5s}
+@keyframes affordPulse{40%{transform:scale(1.1);filter:brightness(1.4)}}
+.hrow.flash{animation:rowFlash .4s}
+@keyframes rowFlash{30%{background:rgba(251,113,133,.3);border-color:#fb7185;box-shadow:0 0 16px rgba(251,113,133,.5)}}
+#critFlash{position:fixed;inset:0;z-index:60;background:#fde68a;opacity:0;pointer-events:none}
+#critFlash.on{animation:critF .18s ease-out}
+@keyframes critF{0%{opacity:.22}100%{opacity:0}}
 .hrow .lvl{font-size:14px;font-weight:900;color:#fbbf24;min-width:44px;text-align:center}
 .buy-row{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
 .buy-amt{font-size:14px;padding:8px 14px;min-height:40px;background:rgba(60,15,25,.9);border:2px solid #7c2535;color:#e09aa5;border-radius:12px;cursor:pointer;font-weight:800;font-family:inherit}
@@ -333,6 +340,31 @@ function floater(cls,x,y,txt){
   f.style.top=y+'px';
   f.style.animation='none';void f.offsetWidth;f.style.animation='';
 }
+function confetti(){
+  var i,p,an,vw=window.innerWidth,vh=window.innerHeight;
+  for(i=0;i<28;i++){
+    p=ptFree.pop();
+    if(!p){
+      if(ptPool.length>=PTMAX){continue;}
+      p=document.createElement('div');
+      p.className='pt';
+      document.body.appendChild(p);
+      ptPool.push(p);
+    }
+    p.style.background=PCOLS[i%PCOLS.length];
+    p.style.left=(Math.random()*vw)+'px';
+    p.style.top='-12px';
+    if(p.animate){
+      an=p.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+((Math.random()*2-1)*70)+'px,'+(vh+40)+'px) rotate('+((Math.random()*540)|0)+'deg)',opacity:.2}],{duration:900+Math.random()*700,easing:'cubic-bezier(.2,.6,.4,1)'});
+      (function(p){var seq=(p._seq=(p._seq||0)+1);an.onfinish=function(){if(p._seq===seq){ptFree.push(p);}};})(p);
+    }
+  }
+}
+var cfEl=null;
+function flashCrit(){
+  if(!cfEl){cfEl=document.createElement('div');cfEl.id='critFlash';document.body.appendChild(cfEl);}
+  cfEl.classList.remove('on');void cfEl.offsetWidth;cfEl.classList.add('on');
+}
 var monRect=null;
 function cacheMonRect(){try{monRect=$('monZone').getBoundingClientRect();}catch(e){monRect=null;}}
 function newMonster(){
@@ -394,7 +426,7 @@ function tapMon(e){
   if(dying){return;}
   var crit=Math.random()<0.1;
   var dmg=tapDmg()*(crit?3:1);
-  if(crit){S.crits++;checkBadges();}
+  if(crit){S.crits++;checkBadges();flashCrit();}
   S.hp-=dmg;
   sfx(crit?'crit':'hit');
   vib(crit?25:8);
@@ -453,7 +485,7 @@ function renderHeroes(){
       inf.appendChild(nm);inf.appendChild(dt);
       row.appendChild(lvl);row.appendChild(inf);row.appendChild(buy);
       hc.appendChild(row);
-      rows.push({lvl:lvl,dt:dt,buy:buy,no:false});
+      rows.push({row:row,lvl:lvl,dt:dt,buy:buy,no:false});
     })(i);
   }
 }
@@ -470,7 +502,7 @@ function updateRows(){
     s=(S.buy===-1?'MAX×':'×')+n+' · '+fmt(c)+' 🪙';
     if(r.buy.textContent!==s){r.buy.textContent=s;}
     ok=S.gold>=c;
-    if(ok&&r.no){r.no=false;r.buy.classList.remove('no');}
+    if(ok&&r.no){r.no=false;r.buy.classList.remove('no');r.buy.classList.remove('afford');void r.buy.offsetWidth;r.buy.classList.add('afford');}
     else if(!ok&&!r.no){r.no=true;r.buy.classList.add('no');}
   }
 }
@@ -484,6 +516,11 @@ function buyHero(i){
   S.heroes[i]+=n;
   sfx('buy');
   vib(15);
+  var r=rows[i];
+  if(r&&r.row){
+    r.row.classList.remove('flash');void r.row.offsetWidth;r.row.classList.add('flash');
+    try{var rc=r.row.getBoundingClientRect();burst(rc.left+rc.width/2,rc.top+rc.height/2,first?10:5);}catch(e){}
+  }
   if(first){toast(HEROES[i].e+' '+HEROES[i].n+' joined the party!');}
   updateRows();
   updateHud();
@@ -493,6 +530,7 @@ function doAscend(){
   if(g<1){sfx('error');return;}
   sfx('ascend');
   vib([40,60,40,60,120]);
+  confetti();
   $('psGained').textContent='+'+g+' 👻';
   $('psGold').textContent=fmt(S.gold);
   $('psTotal').textContent=fmt(S.total);

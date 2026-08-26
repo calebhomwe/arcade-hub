@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#070a14">
+<title>Rhyme Time</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#070a14;color:#e9edff;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#15305e 0%,transparent 60%),radial-gradient(800px 600px at 105% 110%,#4a1663 0%,transparent 55%),#070a14}
+.hub{position:fixed;top:10px;left:10px;z-index:50;color:#7dd3fc;text-decoration:none;font-weight:700;font-size:16px;background:rgba(13,20,40,.85);border:1px solid rgba(125,211,252,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(34,211,238,.25)}
+.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(125,211,252,.35);background:rgba(13,20,40,.85);color:#fff;cursor:pointer}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden}
+.screen.s-active{display:flex}
+.logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(232,121,249,.6));animation:bob 2.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.title{font-size:44px;font-weight:900;letter-spacing:2px;line-height:1.1;background:linear-gradient(90deg,#e879f9,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-shadow:0 0 30px rgba(232,121,249,.3)}
+.sub{max-width:460px;font-size:15px;color:#9fb3d9;margin-bottom:18px;line-height:1.5}
+.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#c026d3,#6366f1);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(192,38,211,.35);transition:transform .12s,filter .12s;min-height:48px}
+.btn:active{transform:scale(.94);filter:brightness(1.2)}
+.beat-box{background:rgba(20,30,60,.75);border:1px solid #2a3a66;border-radius:16px;padding:14px 18px;margin-bottom:14px;max-width:440px;width:100%}
+.beat-label{font-size:13px;letter-spacing:3px;color:#e879f9;margin-bottom:10px;text-transform:uppercase}
+.beat-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+.beat-btn{background:rgba(20,30,60,.9);border:2px solid #334;font-size:15px;padding:10px 16px;min-height:44px}
+.beat-btn.sel{border-color:#e879f9;background:linear-gradient(135deg,rgba(192,38,211,.35),rgba(99,102,241,.35));box-shadow:0 0 16px rgba(232,121,249,.4)}
+.track-name{font-size:13px;color:#67e8f9;margin-top:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bpm-row{display:flex;align-items:center;gap:12px;justify-content:center;font-size:15px;font-weight:800;color:#9fb3d9}
+.bpm-row input[type=range]{width:180px;accent-color:#e879f9}
+.bpm-val{color:#e879f9;min-width:64px;text-align:left}
+.best-box{font-size:16px;color:#9fb3d9;background:rgba(20,30,60,.7);border:1px solid #2a3a66;padding:10px 22px;border-radius:14px;margin-bottom:14px}
+.best-box b{color:#fbbf24}
+.tip{max-width:440px;font-size:13px;color:#6b7fa3;line-height:1.6;margin-bottom:16px}
+.bar-wrap{position:absolute;top:0;left:0;right:0;height:12px;background:rgba(255,255,255,.06);z-index:5}
+.bar{height:100%;width:100%;background:linear-gradient(90deg,#e879f9,#a78bfa);border-radius:0 8px 8px 0;transition:width .1s linear;box-shadow:0 0 14px rgba(232,121,249,.5)}
+.bar.low{background:linear-gradient(90deg,#fb7185,#f59e0b);box-shadow:0 0 14px rgba(251,113,133,.6)}
+.bar.flash{animation:barFlash .45s ease-in-out 2}
+@keyframes barFlash{50%{filter:brightness(2)}}
+#s-game{padding-top:26px;justify-content:flex-start}
+.hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0 10px}
+.hud-item{background:rgba(20,30,60,.75);border:1px solid #2a3a66;border-radius:12px;padding:8px 14px;font-size:16px;font-weight:800;min-width:64px}
+.hud-item span{color:#22d3ee}
+.hud-item .hearts{color:#fb7185;letter-spacing:1px}
+.beat-strip{display:flex;align-items:center;gap:12px;justify-content:center;margin:2px 0 10px;font-size:14px;font-weight:800;color:#6b7fa3}
+.beat-dot{width:18px;height:18px;border-radius:50%;background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,.7);transition:transform .07s,background .07s}
+.beat-dot.on{transform:scale(1.7);background:#e879f9;box-shadow:0 0 18px rgba(232,121,249,.9)}
+.seed-label{font-size:13px;letter-spacing:3px;color:#67e8f9;text-transform:uppercase;margin-bottom:4px}
+.seed{font-size:52px;font-weight:900;color:#fff;text-shadow:0 0 24px rgba(34,211,238,.55);letter-spacing:2px;margin:6px 0 14px;text-transform:uppercase;min-height:62px}
+.seed.pop{animation:seedPop .38s ease}
+@keyframes seedPop{0%{opacity:0;transform:translateY(20px) scale(.5)}65%{transform:translateY(-3px) scale(1.08)}100%{opacity:1;transform:none}}
+.in-row{display:flex;gap:10px;width:100%;max-width:440px;margin:6px 0 12px}
+#rhymeInput{flex:1;min-width:0;font-family:inherit;font-size:22px;font-weight:800;text-align:center;letter-spacing:1px;color:#fff;background:rgba(20,30,60,.85);border:2px solid #334;border-radius:14px;padding:12px 10px;outline:none;text-transform:lowercase;user-select:text;-webkit-user-select:text}
+#rhymeInput:focus{border-color:#22d3ee;box-shadow:0 0 14px rgba(34,211,238,.35)}
+#rhymeInput.shake{animation:shakeX .4s}
+#btnDrop{min-width:110px}
+@keyframes shakeX{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.last-line{min-height:22px;font-size:14px;font-weight:700;color:#9fb3d9;margin-bottom:4px}
+.last-line.bad{color:#fb7185}
+.last-line.good{color:#34d399}
+.ctrl-row{display:flex;gap:12px;margin:8px 0 20px}
+.ctrl{font-size:15px;padding:10px 18px;background:rgba(20,30,60,.9);border:2px solid #334;box-shadow:none}
+.confetti{position:fixed;top:-14px;width:9px;height:14px;z-index:55;pointer-events:none;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{100%{transform:translateY(106vh) rotate(680deg)}}
+.float{position:fixed;top:38%;left:45%;z-index:60;font-size:28px;font-weight:900;color:#34d399;text-shadow:0 0 14px rgba(52,211,153,.8);pointer-events:none;animation:floatUp 1.05s ease-out forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(14px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-70px) scale(1)}}
+.jflash{position:fixed;inset:0;pointer-events:none;z-index:80;opacity:0;transition:opacity .22s ease-out}
+.score-big{font-size:64px;font-weight:900;color:#34d399;text-shadow:0 0 26px rgba(52,211,153,.7);margin:6px 0}
+.btn-big{font-size:24px;padding:16px 44px;min-height:60px}
+.btn-ghost{background:transparent;border:2px solid #334;color:#9fb3d9;margin-top:12px}
+@media (min-width:700px){.title{font-size:56px}.seed{font-size:64px}}
+@media (max-height:430px){.logo{display:none}.title{font-size:26px;margin-bottom:4px}.sub{font-size:12px;margin-bottom:8px}.beat-box{padding:8px 12px;margin-bottom:8px}.best-box{padding:6px 14px;font-size:13px;margin-bottom:8px}.tip{font-size:11px;margin-bottom:8px}.btn{padding:9px 16px;font-size:15px;min-height:38px}.btn-big{font-size:18px;padding:10px 28px;min-height:44px}.btn-ghost{margin-top:6px}.score-big{font-size:40px;margin:2px 0}#s-game{padding-top:18px}.hud{margin:6px 0 4px;gap:6px}.hud-item{padding:4px 10px;font-size:13px;min-width:52px}.seed{font-size:34px;margin:2px 0 8px;min-height:40px}.in-row{margin:4px 0 8px}#rhymeInput{font-size:17px;padding:8px 8px}.ctrl-row{margin:4px 0 10px}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<a class="hub" href="../index.html">← Hub</a>
+<button class="mute" id="muteBtn" aria-label="Mute">🔊</button>
+
+<div class="screen s-active" id="s-start">
+  <div class="logo">🎤</div>
+  <h1 class="title">RHYME<br>TIME</h1>
+  <p class="sub">A word appears — type a word that RHYMES with it before the bar empties. Keep the chain alive on the beat.</p>
+  <div class="beat-box">
+    <div class="beat-label">🎧 The Beat</div>
+    <div class="beat-row">
+      <button class="btn beat-btn sel" id="btnBuiltin">🥁 Built-in beat</button>
+      <button class="btn beat-btn" id="btnTrack">🎵 Load your beat</button>
+    </div>
+    <div class="bpm-row" id="bpmRow">
+      <span>BPM</span>
+      <input type="range" id="bpmSlider" min="70" max="140" step="1" value="92">
+      <span class="bpm-val" id="bpmVal">92</span>
+    </div>
+    <div class="track-name" id="trackName"></div>
+    <input type="file" id="beatFile" accept="audio/*" style="display:none">
+  </div>
+  <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best chain: <b id="startStreak">0</b> · 🎤 Deepest round: <b id="startRound">0</b></div>
+  <button class="btn btn-big" id="btnStart">▶ START RAPPING</button>
+  <p class="tip">💡 Type any word that rhymes and hit DROP · ⏭ Skip saves your life but kills the chain · ❤️ 3 misses and the mic drops · 🔥 Chain multiplier up to +30 · 🚫 No repeats allowed</p>
+</div>
+
+<div class="screen" id="s-game">
+  <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+  <div class="hud">
+    <div class="hud-item">⭐ <span id="score">0</span></div>
+    <div class="hud-item">🔥 <span id="streak">0</span></div>
+    <div class="hud-item"><span class="hearts" id="lives">♥♥♥</span></div>
+    <div class="hud-item">🏆 <span id="best">0</span></div>
+  </div>
+  <div class="beat-strip"><span class="beat-dot" id="beatDot"></span><span id="beatInfo">BUILT-IN · 92 BPM</span><span>ROUND <span id="round">1</span></span></div>
+  <div class="seed-label">Rhyme with</div>
+  <div class="seed" id="seed">CAT</div>
+  <div class="in-row">
+    <input type="text" id="rhymeInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" placeholder="your rhyme...">
+    <button class="btn" id="btnDrop">🎤 DROP</button>
+  </div>
+  <div class="last-line" id="lastLine">&nbsp;</div>
+  <div class="ctrl-row">
+    <button class="btn ctrl" id="btnSkip">⏭ Pass (breaks chain)</button>
+  </div>
+</div>
+
+<div class="screen" id="s-over">
+  <div class="logo">🏁</div>
+  <h1 class="title">MIC DROP</h1>
+  <div class="score-big" id="finalScore">0</div>
+  <div class="best-box">🏆 Best: <b id="overBest">0</b> · 🔥 Best chain: <b id="overStreak">0</b> · 🎤 Rounds: <b id="overRounds">0</b></div>
+  <p class="tip" id="overMsg"></p>
+  <button class="btn btn-big" id="btnAgain">▶ RUN IT BACK</button>
+  <button class="btn btn-ghost" id="btnMenu">Change Beat</button>
+</div>
+
+<script>
+
+(function(){
+'use strict';
+var EASY='cat dog sun hat ball cake map ice pen box cup car bus fox run top zip net bed pie jam rat bat mat king star door fish frog hand jump kite lion milk moon nest pear rain ship snow tree wind ball book boot chip drum duck farm fire flag fork gift gold hill hook lamp leaf lock mail mask nail park pine ring road rock rope sail sand seat seed shoe sock song soup tail tent town wash wave'.split(' ');
+var MID='apple bear bird clock cloud crown dance dream earth fairy fruit ghost grape green heart honey horse house juice knife lemon light magic money mouse music night ocean paint party pizza plant plate queen radio river robot salad sheep shelf shirt smile snake spoon storm sugar table tiger toast train truck watch water whale wheel white world candy beach happy'.split(' ');
+var HARD='animal answer banana basket bottle bridge bubble butter camera candle castle cheese cherry circle cookie cotton crayon donkey dragon energy family feather flower forest friend garden gentle guitar hammer helmet island jacket jungle ladder letter magnet marble market mirror monkey muffin nature needle number orange panda parrot peanut pencil person picnic pillow pirate planet pocket potato prince purple rabbit rocket rubber school season secret shadow silver singer spider sponge square statue street summer sunset temple tennis thread ticket tomato tongue tower travel tunnel turtle valley violin wallet window winter wonder yellow'.split(' ');
+var FAMS=[
+'day play way say may ray stay pay pray tray grey they weigh eight great break steak wait late date gate plate state fate mate hate weight straight freight',
+'you blue do who two too true glue shoe new knew grew flew blew view due crew through brew chew hue sue zoo flu',
+'moon soon spoon tune noon june boom zoom room bloom groom broom',
+'see sea be bee key free tree three me we he she knee plea tea agree degree flee',
+'kite bite white quite write site night light right sight tight fight flight might bright slight invite excite despite tonight',
+'time climb rhyme dime crime lime mime chime prime slime grime',
+'sun fun run gun one won none done son bun ton spun stun hun',
+'love glove dove above shove',
+'there their care hair bear wear where fair pair stare rare square dare pear swear chair prayer share',
+'go so no know snow show blow grow flow low throw glow though toe dough sew',
+'top pop stop hop drop shop mop chop',
+'hot lot got shot pot dot rot knot not',
+'more door floor pour before explore roar score shore',
+'boy toy joy enjoy annoy deploy',
+'ball call wall fall tall hall small crawl',
+'face place space race chase base case grace trace',
+'rain train brain plain pain chain gain main',
+'cool pool school fool tool rule jewel',
+'mind find kind blind behind grind remind',
+'car star far bar jar guitar',
+'fly try sky cry dry why high eye bye tie dye',
+'boat coat float goat note wrote throat'
+];
+var FAMIDX={};
+(function(){var i,j,w;for(i=0;i<FAMS.length;i++){var f=FAMS[i].split(' ');for(j=0;j<f.length;j++){w=f[j];if(!FAMIDX[w]){FAMIDX[w]=i;}}}})();
+var VOWELS='aeiouy';
+var AC=null,noiseBuf=null,beatGain=null,schedId=null,nextBeatTime=0,beatIdx=0,lastPulseBeat=-1;
+var mode='builtin',bpm=92,trackEl=null,trackURL=null,trackTitle='';
+var playing=false,paused=false,busy=false;
+var score=0,streak=0,lives=3,round=0,best=0,bestStreak=0,bestRound=0;
+var seed='',timeLeft=0,timeTotal=14;
+var used={};
+var rafId=null,lastT=0;
+var muted=localStorage.getItem('rt_muted')==='1';
+var screenEls=null,jflashEl=null;
+var elScore,elStreak,elLives,elBest,elBar,elSeed,elInput,elRound,elBeatInfo,elBeatDot,elLast;
+function $(id){return document.getElementById(id);}
+function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
+function shuffle(a){var i,j,t;for(i=a.length-1;i>0;i--){j=(Math.random()*(i+1))|0;t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function loadBest(){best=parseInt(localStorage.getItem('rt_best')||'0',10)||0;bestStreak=parseInt(localStorage.getItem('rt_beststreak')||'0',10)||0;bestRound=parseInt(localStorage.getItem('rt_bestround')||'0',10)||0;}
+function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('rt_beststreak',String(bestStreak));}}
+function ac(){try{if(!AC){var W=window;var C=W.AudioContext||W.webkitAudioContext;if(!C){return null;}AC=new C();beatGain=AC.createGain();beatGain.gain.value=0.85;beatGain.connect(AC.destination);var len=(AC.sampleRate*0.25)|0;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);var d=noiseBuf.getChannelData(0),i;for(i=0;i<len;i++){d[i]=Math.random()*2-1;}}if(AC.state==='suspended'){AC.resume();}return AC;}catch(e){return null;}}
+function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac();if(!a){return;}var o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
+var SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a;}catch(e){}});
+function sfx(n){if(muted){return;}var a=SFXP[n];if(!a){return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}
+function kick(t){var a=AC,o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+0.16);g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.28);o.connect(g);g.connect(beatGain);o.start(t);o.stop(t+0.3);}
+function snare(t){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=1900;f.Q.value=0.8;g.gain.setValueAtTime(0.38,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t);s.stop(t+0.2);var o=a.createOscillator(),g2=a.createGain();o.type='triangle';o.frequency.value=190;g2.gain.setValueAtTime(0.25,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);o.connect(g2);g2.connect(beatGain);o.start(t);o.stop(t+0.1);}
+function hat(t,v){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='highpass';f.frequency.value=7500;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t);s.stop(t+0.06);}
+function scheduleBeat(i,t){var bar=i%4;var spb=60/bpm;if(bar===0||bar===2){kick(t);}if(bar===1||bar===3){snare(t);}hat(t,0.16);hat(t+spb/2,0.08);}
+function scheduler(){var a=AC;if(!a||!playing||paused||mode!=='builtin'){return;}while(nextBeatTime<a.currentTime+0.12){scheduleBeat(beatIdx,nextBeatTime);nextBeatTime+=60/bpm;beatIdx++;}}
+function startBeat(){var a=ac();if(mode==='builtin'){if(a){nextBeatTime=a.currentTime+0.1;beatIdx=0;}}else if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
+function stopBeat(){if(trackEl){try{trackEl.pause();}catch(e){}}}
+function beatPulse(){var b=-1;if(mode==='builtin'){if(AC){var spb=60/bpm;var ph=(AC.currentTime-(nextBeatTime-spb*1))/spb;b=Math.floor(ph);}}else if(trackEl&&!trackEl.paused){b=Math.floor(trackEl.currentTime*2);}if(b!==lastPulseBeat){lastPulseBeat=b;elBeatDot.classList.add('on');setTimeout(function(){elBeatDot.classList.remove('on');},110);}}
+function clean(s){return s.toLowerCase().replace(/[^a-z]/g,'');}
+function rhymeKey(w){
+if(w.length>3&&w.charAt(w.length-1)==='s'){w=w.slice(0,-1);}
+if(w.length>3&&w.slice(-2)==='es'&&'sxzho'.indexOf(w.charAt(w.length-3))!==-1){w=w.slice(0,-2);}
+var core=w;
+if(core.length>3&&core.charAt(core.length-1)==='e'&&VOWELS.indexOf(core.charAt(core.length-2))===-1){core=core.slice(0,-1);}
+if(core.length>3&&core.slice(-2)==='mb'){core=core.slice(0,-1);}
+if(core.length>3&&core.slice(-2)==='gh'){core=core.slice(0,-2);}
+var i=core.length-1;
+while(i>=0&&VOWELS.indexOf(core.charAt(i))===-1){i--;}
+if(i<0){return core;}
+return core.slice(i);
+}
+function isRhyme(a,b){
+if(a===b){return false;}
+var fa=FAMIDX[a],fb=FAMIDX[b];
+if(fa!==undefined&&fa===fb){return true;}
+var ka=rhymeKey(a),kb=rhymeKey(b);
+if(ka.length<1||kb.length<1){return false;}
+return ka===kb;
+}
+function sampleRhyme(w){var fi=FAMIDX[w];if(fi===undefined){return null;}var f=FAMS[fi].split(' '),c,i;for(i=0;i<f.length;i++){c=f[i];if(c!==w){return c;}}return null;}
+function confetti(n){var cols=['#e879f9','#a78bfa','#22d3ee','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
+function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function updateHud(){elScore.textContent=score;elStreak.textContent=streak>0?streak+' (+'+(Math.min(streak,10)*3)+')':'0';var h='',i;for(i=0;i<3;i++){h+=i<lives?'♥':'♡';}elLives.textContent=h;elBest.textContent=best;}
+function updateBar(){var pct=Math.max(0,(timeLeft/timeTotal)*100);elBar.style.width=pct+'%';if(pct<30){elBar.classList.add('low');}else{elBar.classList.remove('low');}}
+function setLast(txt,cls){elLast.textContent=txt||'\u00a0';elLast.className='last-line'+(cls?' '+cls:'');}
+function pool(){if(round<5){return EASY;}if(round<12){return EASY.concat(MID);}return MID.concat(HARD);}
+function pickSeed(){var p=pool(),w,g=0;do{w=p[(Math.random()*p.length)|0];g++;}while((w===seed||used[w])&&g<40);return w;}
+function nextRound(){
+round++;
+seed=pickSeed();
+used[seed]=1;
+timeTotal=Math.max(6,14-round*0.4);
+timeLeft=timeTotal;
+busy=false;
+elSeed.textContent=seed.toUpperCase();
+elSeed.classList.remove('pop');void elSeed.offsetWidth;elSeed.classList.add('pop');
+elRound.textContent=round;
+elInput.value='';
+setLast('');
+updateBar();
+updateHud();
+try{elInput.focus();}catch(e){}
+}
+function deny(msg){sfx('buzz');setLast(msg,'bad');elInput.classList.remove('shake');void elInput.offsetWidth;elInput.classList.add('shake');}
+function submitRhyme(){
+if(!playing||busy||paused){return;}
+var w=clean(elInput.value);
+if(w.length<2){deny('TOO SHORT — 2+ letters');return;}
+if(w===seed){deny('SAME WORD — rhyme it!');return;}
+if(used[w]){deny('ALREADY USED');return;}
+if(!isRhyme(seed,w)){miss(w);return;}
+hit(w);
+}
+function hit(w){
+busy=true;
+used[w]=1;
+var speed=Math.max(0,Math.round((timeLeft/timeTotal)*10));
+var sb=Math.min(streak,10)*3;
+var gain=10+speed+sb;
+score+=gain;bumpStreak();
+if(speed>=8){score+=5;sfx('levelup');setTimeout(function(){floatText('⚡ FAST +5');},520);}
+if(score>best){best=score;localStorage.setItem('rt_best',String(best));}
+if(round>bestRound){bestRound=round;localStorage.setItem('rt_bestround',String(bestRound));}
+sfx('coin');
+jflash('#34d399');
+confetti(14+Math.min(streak,10)*2);
+floatText('+'+gain);
+setLast(w.toUpperCase()+' ✔ RHYMES WITH '+seed.toUpperCase(),'good');
+if(streak>=3&&streak%3===0){sfx('levelup');setTimeout(function(){floatText('🔥 CHAIN '+streak+'!');},260);}
+updateHud();
+setTimeout(nextRound,820);
+}
+function miss(w){
+busy=true;
+used[w]=1;
+lives--;streak=0;
+sfx('buzz');
+jflash('#fb7185');
+updateHud();
+var ex=sampleRhyme(seed);
+setLast(w.toUpperCase()+' ✘ no rhyme'+(ex?' — e.g. '+ex.toUpperCase():''),'bad');
+if(lives<=0){setTimeout(gameOver,950);return;}
+setTimeout(nextRound,1050);
+}
+function timeOut(){
+busy=true;lives--;streak=0;
+sfx('buzz');
+elBar.classList.add('flash');
+var ex=sampleRhyme(seed);
+setLast('⏰ TOO SLOW'+(ex?' — e.g. '+ex.toUpperCase():''),'bad');
+updateHud();
+if(lives<=0){setTimeout(gameOver,950);return;}
+setTimeout(function(){elBar.classList.remove('flash');nextRound();},1150);
+}
+function skipWord(){
+if(!playing||busy||paused){return;}
+streak=0;
+sfx('whoosh');
+setLast('SKIPPED '+seed.toUpperCase()+' — chain broken','bad');
+updateHud();
+nextRound();
+}
+function loop(t){
+if(!playing){return;}
+rafId=requestAnimationFrame(loop);
+if(paused){lastT=t;return;}
+var dt=(t-lastT)/1000;lastT=t;
+if(dt>0.25){dt=0.25;}
+if(!busy){
+timeLeft-=dt;
+if(timeLeft<=0){timeLeft=0;updateBar();timeOut();return;}
+updateBar();
+}
+beatPulse();
+}
+function startGame(){
+score=0;streak=0;lives=3;round=0;used={};
+loadBest();
+show('s-game');
+updateHud();
+elBeatInfo.textContent=mode==='builtin'?('BUILT-IN · '+bpm+' BPM'):(trackTitle||'YOUR TRACK');
+playing=true;paused=false;busy=true;
+if(schedId){clearInterval(schedId);}
+schedId=setInterval(scheduler,25);
+startBeat();
+nextRound();
+lastT=performance.now();
+if(rafId){cancelAnimationFrame(rafId);}
+rafId=requestAnimationFrame(loop);
+}
+function gameOver(){
+playing=false;
+if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+if(schedId){clearInterval(schedId);schedId=null;}
+stopBeat();
+sfx('lose');
+$('finalScore').textContent=score;
+$('overBest').textContent=best;
+$('overStreak').textContent=bestStreak;
+$('overRounds').textContent=round;
+var msg;
+if(score===best&&score>0){msg='New personal best — the crowd goes wild! 🎉';}
+else if(round<=2){msg='Listen to the beat, then let the rhymes flow.';}
+else{msg='Solid flow. Push for a longer chain next time!';}
+$('overMsg').textContent=msg;
+show('s-over');
+}
+function setMode(m){
+mode=m;
+$('btnBuiltin').classList.toggle('sel',m==='builtin');
+$('btnTrack').classList.toggle('sel',m==='track');
+$('bpmRow').style.display=m==='builtin'?'':'none';
+sfx('tap');
+}
+function onFile(ev){
+var f=ev.target.files&&ev.target.files[0];
+if(!f){return;}
+if(trackURL){try{URL.revokeObjectURL(trackURL);}catch(e){}}
+trackURL=URL.createObjectURL(f);
+if(!trackEl){trackEl=new Audio();trackEl.loop=true;}
+trackEl.src=trackURL;
+trackTitle=f.name.replace(/\.[^.]+$/,'');
+$('trackName').textContent='🎵 '+f.name;
+setMode('track');
+sfx('coin');
+}
+function init(){
+elScore=$('score');elStreak=$('streak');elLives=$('lives');elBest=$('best');elBar=$('bar');elSeed=$('seed');elInput=$('rhymeInput');elRound=$('round');elBeatInfo=$('beatInfo');elBeatDot=$('beatDot');elLast=$('lastLine');
+loadBest();
+var sb=parseInt(localStorage.getItem('rt_bpm')||'92',10)||92;
+if(sb>=70&&sb<=140){bpm=sb;}
+$('bpmSlider').value=bpm;
+$('bpmVal').textContent=bpm;
+$('startBest').textContent=best;
+$('startStreak').textContent=bestStreak;
+$('startRound').textContent=bestRound;
+$('btnStart').addEventListener('click',function(){sfx('coin');startGame();});
+$('btnAgain').addEventListener('click',function(){sfx('coin');startGame();});
+$('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
+$('btnDrop').addEventListener('click',function(){sfx('tap');submitRhyme();});
+$('btnSkip').addEventListener('click',skipWord);
+$('btnBuiltin').addEventListener('click',function(){setMode('builtin');});
+$('btnTrack').addEventListener('click',function(){$('beatFile').click();});
+$('beatFile').addEventListener('change',onFile);
+$('bpmSlider').addEventListener('input',function(){bpm=parseInt(this.value,10)||92;$('bpmVal').textContent=bpm;localStorage.setItem('rt_bpm',String(bpm));});
+elInput.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submitRhyme();}});
+$('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('rt_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';if(trackEl){trackEl.volume=muted?0:1;}});
+$('muteBtn').textContent=muted?'🔇':'🔊';
+document.addEventListener('visibilitychange',function(){
+if(!playing){return;}
+if(document.hidden){paused=true;if(trackEl){try{trackEl.pause();}catch(e){}}}
+else{paused=false;lastT=performance.now();if(mode==='builtin'&&AC){nextBeatTime=AC.currentTime+0.05;beatIdx=0;}if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
+});
+}
+init();
+})();
+</script>
+</body>
+</html>

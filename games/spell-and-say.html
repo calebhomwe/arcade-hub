@@ -54,6 +54,11 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 @keyframes shakeX{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
 .float{position:fixed;top:34%;left:45%;z-index:60;font-size:28px;font-weight:900;color:#34d399;text-shadow:0 0 14px rgba(52,211,153,.8);pointer-events:none;animation:floatUp 1.05s ease-out forwards}
 @keyframes floatUp{0%{opacity:0;transform:translateY(14px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-70px) scale(1)}}
+.jflash{position:fixed;inset:0;pointer-events:none;z-index:80;opacity:0;transition:opacity .22s ease-out}
+.confetti{position:fixed;top:-14px;width:9px;height:14px;z-index:55;pointer-events:none;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{100%{transform:translateY(106vh) rotate(680deg)}}
+.hud-item.jpop{animation:jpopk .32s ease}
+@keyframes jpopk{40%{transform:scale(1.18)}}
 .score-big{font-size:64px;font-weight:900;color:#34d399;text-shadow:0 0 26px rgba(52,211,153,.7);margin:6px 0}
 @media (min-width:700px){.title{font-size:56px}.key{max-width:54px;height:50px}.bx{width:50px;height:58px}}
 </style>
@@ -129,6 +134,10 @@ function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOsci
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
+function confetti(n){var cols=['#fb923c','#facc15','#fda4af','#34d399','#a78bfa'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+var jflashEl=null;
+function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function initSpeech(){
   if(!('speechSynthesis' in window)){noVoice=true;return;}
   try{
@@ -251,6 +260,7 @@ function submit(){
     saveMeta();
     if(score>best){best=score;saveBest();}
     sfx('coin');
+    jflash('#34d399');confetti(20);jpop(elScore.parentNode);
     var emoji=WORD_MAP[word];
     elAnsFlash.className='ans-flash good';
     elAnsFlash.textContent=(emoji?emoji+' ':'')+word.toUpperCase()+'  +'+gain+' '+CHEERS[(Math.random()*CHEERS.length)|0];
@@ -262,6 +272,7 @@ function submit(){
   }else{
     lives--;streak=0;
     sfx('buzz');
+    jflash('#fb7185');
     elBoxes.classList.add('shake');
     elAnsFlash.className='ans-flash bad';
     elAnsFlash.textContent='Almost! It\'s '+word.toUpperCase()+' 💪';

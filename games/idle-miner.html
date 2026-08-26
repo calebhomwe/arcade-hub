@@ -54,6 +54,10 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .srow .buy{font-size:13px;font-weight:800;color:#0a1208;background:linear-gradient(160deg,#4ade80,#16a34a);border:none;border-radius:10px;padding:10px 12px;cursor:pointer;min-height:42px;white-space:nowrap;touch-action:manipulation}
 .srow .buy:active{transform:scale(.94)}
 .srow .buy.no{filter:grayscale(.85);opacity:.55}
+.srow .buy.afford,.buy-amt.afford{animation:affordPulse .5s}
+@keyframes affordPulse{40%{transform:scale(1.1);filter:brightness(1.4)}}
+.srow.flash{animation:rowFlash .4s}
+@keyframes rowFlash{30%{background:rgba(74,222,128,.25);border-color:#4ade80;box-shadow:0 0 16px rgba(74,222,128,.5)}}
 .srow .lvl{font-size:14px;font-weight:900;color:#fbbf24;min-width:44px;text-align:center}
 .buy-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:8px;font-size:12px;color:#6b9c7d}
 .buy-amt{font-size:14px;padding:8px 14px;min-height:40px;background:rgba(15,40,20,.9);border:2px solid #1d5c33;color:#9cd8b4;border-radius:12px;cursor:pointer;font-weight:800;font-family:inherit}
@@ -303,6 +307,7 @@ function checkMilestones(){
       S.miles[i]=true;
       toast('⭐ '+TIERS[i].e+' '+TIERS[i].n+' reached at '+TIERS[i].min+'m! Mining ×2');
       sfx('mile');
+      confetti();
     }
   }
 }
@@ -341,6 +346,33 @@ function floater(x,y,txt){
   f.style.top=(y-30)+'px';
   f.style.animation='none';void f.offsetWidth;f.style.animation='';
 }
+function confetti(){
+  var i,p,an,vw=window.innerWidth,vh=window.innerHeight,cols=[PCOLS[3],PCOLS[4],PCOLS[5],PCOLS[6]];
+  for(i=0;i<28;i++){
+    p=ptFree.pop();
+    if(!p){
+      if(ptPool.length>=PTMAX){continue;}
+      p=document.createElement('div');
+      p.className='pt';
+      document.body.appendChild(p);
+      ptPool.push(p);
+    }
+    p.style.background=cols[i%cols.length];
+    p.style.left=(Math.random()*vw)+'px';
+    p.style.top='-12px';
+    an=p.animate(
+      [{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+((Math.random()*2-1)*70)+'px,'+(vh+40)+'px) rotate('+((Math.random()*540)|0)+'deg)',opacity:.2}],
+      {duration:900+Math.random()*700,easing:'cubic-bezier(.2,.6,.4,1)'}
+    );
+    (function(p){var seq=(p._seq=(p._seq||0)+1);an.onfinish=function(){if(p._seq===seq){ptFree.push(p);}};})(p);
+  }
+}
+function rowFx(btn){
+  var row=btn.closest('.srow');
+  if(!row){return;}
+  row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash');
+  try{var rc=row.getBoundingClientRect();burst(rc.left+rc.width/2,rc.top+rc.height/2,3);}catch(e){}
+}
 function dig(e){
   var v=tapValue();
   var crit=Math.random()<0.06;
@@ -375,6 +407,7 @@ function buyPick(){
   if(S.stones<c){sfx('error');return;}
   S.stones-=c;S.pick++;
   sfx('buy');
+  if(shopR){rowFx(shopR.pickBtn);}
   toast('⛏️ Pickaxe Lv '+S.pick+'!');
   updateHud();
 }
@@ -386,6 +419,7 @@ function buyMiner(){
   var first=S.miners===0;
   S.stones-=c;S.miners+=n;
   sfx('buy');
+  if(shopR){rowFx(shopR.minerBtn);}
   if(first){toast('🤖 Auto-Miner hired!');}
   updateHud();
 }
@@ -407,6 +441,8 @@ function buyGemUp(i){
   if(S.up[i]||S.gems<u.c){sfx('error');return;}
   S.gems-=u.c;S.up[i]=1;
   sfx('mile');
+  if(GUpBtns[i]){rowFx(GUpBtns[i]);}
+  confetti();
   toast('💎 '+u.n+': '+u.t);
   save();
   updateHud();
@@ -415,6 +451,7 @@ function doPrestige(){
   var g=gemsGain();
   if(g<1){sfx('error');return;}
   sfx('prestige');
+  confetti();
   $('psGained').textContent='+'+fmt(g)+' 💎';
   $('psStones').textContent=fmt(S.lifetime);
   $('psDepth').textContent=Math.floor(depth())+'m';
@@ -440,7 +477,7 @@ function updateDepth(){
   if(d>S.best){S.best=d;}
   var ri=rankIdx();
   if(ri!==lastRank){
-    if(lastRank>=0&&ri>lastRank){toast('🏅 RANK UP: '+RANKS[ri].n+'!');sfx('mile');}
+    if(lastRank>=0&&ri>lastRank){toast('🏅 RANK UP: '+RANKS[ri].n+'!');sfx('mile');confetti();}
     lastRank=ri;
     setTxt($('startRank'),RANKS[ri].n);
   }
@@ -501,7 +538,7 @@ function updateShop(){
   s='Lv '+S.pick;
   setTxt(shopR.pickLvl,s);
   ok=S.stones>=pc;
-  if(ok&&shopR.pickNo){shopR.pickNo=false;shopR.pickBtn.classList.remove('no');}
+  if(ok&&shopR.pickNo){shopR.pickNo=false;shopR.pickBtn.classList.remove('no');shopR.pickBtn.classList.remove('afford');void shopR.pickBtn.offsetWidth;shopR.pickBtn.classList.add('afford');}
   else if(!ok&&!shopR.pickNo){shopR.pickNo=true;shopR.pickBtn.classList.add('no');}
   n=S.buy===-1?Math.max(1,maxAfford()):S.buy;
   mc=minerCostAmt(n);
@@ -510,7 +547,7 @@ function updateShop(){
   s=(S.buy===-1?'MAX×':'×')+n+' · '+fmt(mc);
   setTxt(shopR.minerBtn,s);
   ok=S.stones>=mc;
-  if(ok&&shopR.minerNo){shopR.minerNo=false;shopR.minerBtn.classList.remove('no');}
+  if(ok&&shopR.minerNo){shopR.minerNo=false;shopR.minerBtn.classList.remove('no');shopR.minerBtn.classList.remove('afford');void shopR.minerBtn.offsetWidth;shopR.minerBtn.classList.add('afford');}
   else if(!ok&&!shopR.minerNo){shopR.minerNo=true;shopR.minerBtn.classList.add('no');}
   var k,b,u,ok2,got=0;
   for(k=0;k<GUPS.length;k++){
@@ -521,7 +558,7 @@ function updateShop(){
       b.textContent=u.e+' '+u.c+'💎';
       b.title=u.n+' ('+u.t+')';
       ok2=S.gems>=u.c;
-      if(ok2&&b.no){b.no=false;b.classList.remove('no');}
+      if(ok2&&b.no){b.no=false;b.classList.remove('no');b.classList.remove('afford');void b.offsetWidth;b.classList.add('afford');}
       else if(!ok2&&!b.no){b.no=true;b.classList.add('no');}
     }
   }

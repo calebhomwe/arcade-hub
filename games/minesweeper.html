@@ -24,6 +24,13 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .c.wrong{background:#7f1d1d;opacity:.6}
 .c.boom{background:#ef4444;animation:boom .3s ease}
 @keyframes boom{0%{scale:1.3}100%{scale:1}}
+.c.popin{animation:cpop .22s ease}
+@keyframes cpop{0%{transform:scale(.5)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+#grid.shake{animation:shk .45s}
+@keyframes shk{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+.jflash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;transition:opacity .22s ease-out}
+.confetti{position:fixed;top:-14px;width:9px;height:14px;z-index:55;pointer-events:none;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{100%{transform:translateY(106vh) rotate(680deg)}}
 .n1{color:#60a5fa}.n2{color:#4ade80}.n3{color:#f87171}.n4{color:#a78bfa}.n5{color:#fbbf24}.n6{color:#22d3ee}.n7{color:#f472b6}.n8{color:#e2e8f0}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
 .ov h1{font-size:40px}
@@ -95,6 +102,10 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function snd(n){if(n==='rev')sfx('tap');else if(n==='flag')sfx('hit');else if(n==='boom')sfx('boom');else if(n==='win')sfx('win');}
+function confetti(n){var cols=['#34d399','#38bdf8','#facc15','#f472b6','#a78bfa'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+var jflashEl=null;
+function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function shakeGrid(){const g=document.getElementById('grid');g.classList.remove('shake');void g.offsetWidth;g.classList.add('shake');}
 function newGame(){
 grid=[];started=false;dead=false;won=false;secs=0;flags=0;revealed=0;firstClick=true;flagTotal=0;flagRight=0;
 clearInterval(timer);
@@ -141,9 +152,11 @@ const b=cellEls[i];
 let cls='c',txt='';
 if(cell.rev){
 cls+=' rev';
+if(!b._rev)cls+=' popin';
 if(cell.mine)txt='💣';
 else if(cell.adj){txt=String(cell.adj);cls+=' n'+cell.adj;}
-}else if(cell.flag){cls+=' flag';txt='🚩';}
+}else if(cell.flag){cls+=' flag';if(!b._flag)cls+=' popin';txt='🚩';}
+b._rev=cell.rev;b._flag=cell.flag;
 if(b.className!==cls)b.className=cls;
 if(b.textContent!==txt)b.textContent=txt;
 });
@@ -210,7 +223,7 @@ else if(started&&!dead&&!won)startTimer();
 });
 function lose(i){
 clearInterval(timer);timer=null;
-snd('boom');document.getElementById('face').textContent='😵';
+snd('boom');shakeGrid();jflash('#ef4444');document.getElementById('face').textContent='😵';
 grid.forEach((cell,k)=>{
 if(cell.mine&&!cell.flag)cell.rev=true;
 if(cell.flag&&!cell.mine)cell.wrong=true;
@@ -229,7 +242,7 @@ streak=0;localStorage.setItem('minesStreak',streak);updBadges();checkAch();
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),700);
 }
 function win(){
-won=true;clearInterval(timer);timer=null;snd('win');
+won=true;clearInterval(timer);timer=null;snd('win');confetti(90);jflash('#4ade80');
 const prevBest=+localStorage.getItem('minesBest')||0;
 const isNewBest=!prevBest||secs<prevBest;
 if(isNewBest)localStorage.setItem('minesBest',secs);

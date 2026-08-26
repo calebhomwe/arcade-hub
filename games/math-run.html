@@ -26,7 +26,9 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
 #game{flex:1;width:100%;min-height:0;display:block}
 .popup{position:fixed;font-weight:900;font-size:24px;pointer-events:none;z-index:50;text-shadow:0 2px 6px rgba(0,0,0,.7);animation:popup .7s ease forwards}
 @keyframes popup{0%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -52px}}
-#flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;z-index:45}
+#flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;z-index:45;transition:opacity .12s ease-out}
+.hud span.jpop{animation:jpopk .3s ease}
+@keyframes jpopk{40%{transform:scale(1.16)}}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(7,7,15,.86);backdrop-filter:blur(6px);z-index:60;text-align:center;padding:20px}
 .ov h1{font-size:38px;font-weight:900}
 .ov p{color:#cbd5e1;font-size:15px;line-height:1.6;max-width:420px}
@@ -107,6 +109,8 @@ function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudio
 function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function flashColor(col,o){flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function genProblem(){
@@ -238,7 +242,7 @@ function popup(txt,x,y,color){
 function loseLife(){
   lives--;combo=0;shakeT=1;sfx('boom');updateHUD();
   spawnParticles(laneCenter(playerLane),playerY(),20);
-  flash.style.opacity='.45';setTimeout(()=>flash.style.opacity='0',120);
+  flashColor('#ef4444',.45);
   if(lives<=0){gameOver();return;}
   say('It was '+row.values[row.correctLane]+' · '+TRY[rnd(0,TRY.length-1)],'#fca5a5');
   row.active=false;spawnCd=0.9;
@@ -269,6 +273,7 @@ function loop(ts){
         row.evaluated=true;
         if(playerLane===row.correctLane){
           score++;combo++;sfx('coin');spawnCd=0.6;
+          flashColor('#4ade80',.13);jpop(scoreEl.parentElement);
           popup('+1',laneCenter(playerLane)+canvasRect.left,playerY()+canvasRect.top,'#4ade80');
           if(score%10===0){medalPts++;medalTotal++;localStorage.setItem('mathRunMedals',medalTotal);sfx('levelup');popup('🥇 +1 Medal!',laneCenter(playerLane)+canvasRect.left,playerY()+canvasRect.top-92,'#facc15');}
           if(combo%5===0){say(CHEER[rnd(0,CHEER.length-1)]);popup('⚡ COMBO ×'+combo,laneCenter(playerLane)+canvasRect.left,playerY()+canvasRect.top-46,'#facc15');}

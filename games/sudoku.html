@@ -44,6 +44,9 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .dbtn:active{scale:.94}
 .hidden{display:none}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+.jflash{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;transition:opacity .22s ease-out}
+.nb.jpop{animation:jpopk .35s ease}
+@keyframes jpopk{40%{transform:scale(1.18)}}
 @keyframes pop{0%{transform:scale(.4);opacity:.3}60%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 @media (max-height:600px){
@@ -113,6 +116,9 @@ function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioCont
 function tone(f,d,type,v){if(!AC||muted)return;try{const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}catch(e){}}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+var jflashEl=null;
+function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.26';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function gen(){
 let s=BASE.map(r=>r.slice());
@@ -223,6 +229,8 @@ for(let k=1;k<=9;k++){
 const left=9-user.filter(v=>v===k).length;
 const b=padBtns[k-1];
 b.className='nb'+(left<=0?' empty':'');
+if(left===0&&b._l>0)jpop(b);
+b._l=left;
 const cnt=b.lastChild;const t=String(Math.max(left,0));
 if(cnt.textContent!==t)cnt.textContent=t;
 }
@@ -234,7 +242,7 @@ initAudio();
 if(notesMode){if(!user[sel]){notes[sel]^=1<<(k-1);sfx('tap');render();}return;}
 if(user[sel]===k)return;
 if(k===sol[sel]){sfx('pop');popIdx=sel;}
-else{errors++;document.getElementById('errs').textContent=errors;sfx('buzz');shake();}
+else{errors++;document.getElementById('errs').textContent=errors;sfx('buzz');shake();jflash('#f87171');}
 if(k===sol[sel]){placementStreak++;if(placementStreak>maxStreak)maxStreak=placementStreak;if(placementStreak===10)sfx('levelup');}
 else{placementStreak=0;}
 user[sel]=k;notes[sel]=0;
@@ -277,6 +285,7 @@ if(maxStreak>=10&&earnBadge('streak10'))newB+=BADGE_KEYS.streak10;
 const have=badges.map(b=>BADGE_KEYS[b]).join(' ');
 document.getElementById('badgeLine').textContent=newB?('🎉 NEW BADGES: '+newB+' · '+have):(badges.length?('🏅 '+have):'');
 confetti();
+jflash('#4ade80');
 sfx('win');
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),600);
 }

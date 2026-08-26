@@ -51,8 +51,18 @@
   .bRow .sub{color:var(--dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .bRow .cnt{font-weight:800; font-size:16px; min-width:40px; text-align:right;}
   .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
-    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;}
+    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
+    transition:transform .1s;}
+  .buyBtn:active:not(:disabled){transform:scale(.92);}
   .buyBtn:disabled{opacity:.4; cursor:not-allowed;}
+  .buyBtn.afford{animation:affordPulse .5s;}
+  @keyframes affordPulse{40%{transform:scale(1.08);filter:brightness(1.35);}}
+  .bRow.flash{animation:rowFlash .45s;}
+  @keyframes rowFlash{30%{box-shadow:0 0 18px rgba(141,255,155,.75);}}
+  #tapArea{animation:breathe 2.8s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.035);}}
+  .big{animation:bigBob 2.6s ease-in-out infinite;}
+  @keyframes bigBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
   /* prestige */
   #prestige{padding:12px; text-align:center;}
   #prestige .lp{font-size:26px; font-weight:800; color:var(--gold); text-shadow:0 0 12px rgba(255,216,107,.5);}
@@ -309,6 +319,11 @@
     popCoins();
     sfx("buy");
     try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
+    var rr = rowRefs[BUILDINGS.indexOf(b)];
+    if(rr && rr.row){
+      rr.row.classList.remove("flash"); void rr.row.offsetWidth; rr.row.classList.add("flash");
+      try{ var rc = rr.row.getBoundingClientRect(); partBurst(rc.left + rc.width/2, rc.top + rc.height/2, [b.emoji,"✨"], 4, 24); }catch(e){}
+    }
     render();
   }
   function prestige(){
@@ -320,6 +335,7 @@
     state.clickPower = 1;
     BUILDINGS.forEach(function(b){ state.owned[b.id] = 0; });
     sfx("prestige");
+    confetti();
     save();
     render();
   }
@@ -341,6 +357,11 @@
     if(win > 0){
       state.coins += win;
       showToast("🎰 " + label + " (+" + fmt(win) + " 🪙)");
+      try{
+        var wr = elWheelBtn.getBoundingClientRect();
+        partBurst(wr.left + wr.width/2, wr.top + wr.height/2, ["🪙","✨"], win >= stake*4 ? 8 : 4, 26);
+      }catch(e){}
+      if(win >= stake*4) confetti();
     } else {
       showToast("🎰 " + label + " (-" + fmt(stake) + " 🪙)");
     }
@@ -441,7 +462,7 @@
         fresh = true;
       }
     });
-    if(fresh){ saveAch(); renderAchList(); }
+    if(fresh){ saveAch(); renderAchList(); confetti(); }
   }
 
   // ---- Burst ----
@@ -503,6 +524,26 @@
       })(s, dx, dy);
     }
   }
+  function confetti(){
+    var chars=["🌾","✨","🪙","🎉"], i;
+    for(i=0;i<24;i++){
+      var s=pPool.pop();
+      if(!s){ if(fxTotal>=FXMAX) return; s=document.createElement("span"); s.className="fxPart"; fx().appendChild(s); fxTotal++; }
+      s.textContent=chars[(Math.random()*chars.length)|0];
+      s.style.left=(Math.random()*window.innerWidth)+"px";
+      s.style.top="-16px";
+      s.style.transition="none";
+      s.style.transform="translate(-50%,-50%)";
+      s.style.opacity="1";
+      void s.offsetWidth;
+      s.style.transition="transform 1.1s cubic-bezier(.2,.6,.4,1), opacity 1.1s ease-out";
+      (function(s){
+        var seq=(s._seq=(s._seq||0)+1);
+        requestAnimationFrame(function(){ if(s._seq!==seq) return; s.style.transform="translate("+((Math.random()*2-1)*60)+"px,"+(window.innerHeight+40)+"px) scale(.6)"; s.style.opacity="0"; });
+        setTimeout(function(){ if(s._seq===seq) pPool.push(s); },1150);
+      })(s);
+    }
+  }
   var tractorC = {x:0, y:0}, tractorDirty = true;
   function invalidateTractor(){ tractorDirty = true; }
   window.addEventListener("resize", invalidateTractor);
@@ -536,7 +577,7 @@
       btn.addEventListener("click", function(){ buyBuilding(b); });
       row.appendChild(btn);
       list.appendChild(row);
-      rowRefs.push({sub: row.querySelector(".sub"), cnt: row.querySelector(".cnt"), btn: btn, s:"", c:"", b:"", d:null});
+      rowRefs.push({row: row, sub: row.querySelector(".sub"), cnt: row.querySelector(".cnt"), btn: btn, s:"", c:"", b:"", d:null});
     });
   }
   function renderList(){
@@ -551,7 +592,10 @@
       if(r.c !== c){ r.c = c; r.cnt.textContent = c; }
       var bt = "🪙 " + fmt(cost);
       if(r.b !== bt){ r.b = bt; r.btn.textContent = bt; }
-      if(r.d !== dis){ r.d = dis; r.btn.disabled = dis; }
+      if(r.d !== dis){
+        if(r.d === true && !dis){ r.btn.classList.remove("afford"); void r.btn.offsetWidth; r.btn.classList.add("afford"); }
+        r.d = dis; r.btn.disabled = dis;
+      }
     });
   }
   var elStartBest=$("startBest"), elLpGain=$("lpGain"), elPrestigeBtn=$("prestigeBtn"), elMute=$("muteBtn"), elAch=$("achBtn"), elBf=$("bf");

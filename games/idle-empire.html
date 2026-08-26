@@ -22,7 +22,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .best-box{font-size:16px;color:#d9c07a;background:rgba(50,40,10,.7);border:1px solid #6b561d;padding:10px 22px;border-radius:14px;margin-bottom:14px;line-height:1.7}
 .best-box b{color:#fbbf24}
 .tip{max-width:460px;font-size:13px;color:#a08c50;line-height:1.6;margin-bottom:16px}
-.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(217,119,6,.4);transition:transform .12s,filter .12s;min-height:48px}
+.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(217,119,6,.4);transition:transform .18s cubic-bezier(.34,1.56,.64,1),filter .12s;min-height:48px}
 .btn:active{transform:scale(.94);filter:brightness(1.2)}
 .btn-big{font-size:24px;padding:16px 44px;min-height:60px}
 .btn-ghost{background:transparent;border:2px solid #6b561d;color:#d9c07a;margin-top:12px}
@@ -58,6 +58,12 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .brow .buy{font-size:13px;font-weight:800;color:#1a1205;background:linear-gradient(160deg,#fbbf24,#d97706);border:none;border-radius:10px;padding:10px 12px;cursor:pointer;min-height:42px;white-space:nowrap;touch-action:manipulation}
 .brow .buy:active{transform:scale(.94)}
 .brow .buy.no{filter:grayscale(.85);opacity:.55}
+.brow .buy.afford{animation:affordPulse .5s}
+@keyframes affordPulse{40%{transform:scale(1.1);filter:brightness(1.4)}}
+.prestige-btn.ready{animation:readyPulse 1.4s ease-in-out infinite}
+@keyframes readyPulse{0%,100%{box-shadow:0 4px 20px rgba(217,119,6,.4)}50%{box-shadow:0 0 28px rgba(162,28,175,.9)}}
+.pfill.full{animation:pfillPulse 1.1s ease-in-out infinite}
+@keyframes pfillPulse{50%{filter:brightness(1.5)}}
 .brow .owned{font-size:14px;font-weight:900;color:#fbbf24;min-width:52px;text-align:center}
 .float{position:fixed;z-index:70;font-size:22px;font-weight:900;color:#fde68a;text-shadow:0 0 12px rgba(251,191,36,.8);pointer-events:none;animation:floatUp 0.9s ease-out forwards}
 @keyframes floatUp{0%{opacity:0;transform:translateY(10px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-64px) scale(1)}}
@@ -379,6 +385,7 @@ function updatePBar(){
   if(!(pr>=0)){pr=0;}if(pr>1){pr=1;}
   var w=(pr*100).toFixed(1)+'%';
   if(lastPW!==w){lastPW=w;elPfill.style.width=w;}
+  elPfill.classList.toggle('full',g>=1);
   setText(elPNext,'Next 🪙 at '+fmt(hi));
   setText(elPPrev,g>=1?'✨ Now: ×'+mult.toFixed(2)+' → ×'+Math.pow(1.1,S.gold+g).toFixed(2)+' income':'');
 }
@@ -428,7 +435,7 @@ function updateRows(){
     s=(S.buy===-1?'MAX×':'×')+amt+' · '+fmt(c);
     setText(r.buy,s);
     ok=S.coins>=c;
-    if(ok&&r.no){r.no=false;r.buy.classList.remove('no');}
+    if(ok&&r.no){r.no=false;r.buy.classList.remove('no');r.buy.classList.remove('afford');void r.buy.offsetWidth;r.buy.classList.add('afford');}
     else if(!ok&&!r.no){r.no=true;r.buy.classList.add('no');}
   }
 }
@@ -506,7 +513,10 @@ function openChest(){
   setTxt($('startChest'),S.chests);
   toast('📦 Chest opened: +'+fmt(loot)+' coins!');
   sfx('levelup');vib(18);
-  if(coinRect){burst(coinRect.left+coinRect.width/2,coinRect.top+coinRect.height/2,14,170,260,0.7,3);}
+  if(coinRect){
+    burst(coinRect.left+coinRect.width/2,coinRect.top+coinRect.height/2,14,170,260,0.7,3);
+    floater(coinRect.left+coinRect.width/2,coinRect.top,'+'+fmt(loot)+' 📦');
+  }
   updateHud();
   save();
 }
@@ -540,6 +550,7 @@ function updateHud(){
   var g=prestigeGain();
   setText(elPB,'✨ Prestige +'+g+' 🪙');
   if(elPB.disabled!==(g<1)){elPB.disabled=g<1;}
+  elPB.classList.toggle('ready',g>=1);
   updateRows();
 }
 function logicStep(){
@@ -570,6 +581,7 @@ function logicStep(){
     toast('💰 Caravan delivered +'+fmt(pay)+' coins!');
     sfx('win');vib([20,40,20,40,30]);
     confetti();
+    floater(FW/2,FH*0.35,'+'+fmt(pay)+' 🛒');
     if(S.trades===5||S.trades===15||S.trades===30){toast('🛒 TRADE MASTER ×'+S.trades+'!');sfx('mile');}
     save();
     carDue=nowT+(150+Math.random()*150)*1000;
@@ -593,6 +605,7 @@ function updateHudFrame(){
   var g=prestigeGain();
   setText(elPB,'✨ Prestige +'+g+' 🪙');
   if(elPB.disabled!==(g<1)){elPB.disabled=g<1;}
+  elPB.classList.toggle('ready',g>=1);
   updateRows();
   updatePBar();
   var nowT=Date.now();

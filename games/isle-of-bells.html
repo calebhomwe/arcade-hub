@@ -23,6 +23,7 @@
   .tool,.iconbtn{background:rgba(20,14,28,.82);border:2px solid rgba(255,233,199,.14);border-radius:13px;
     min-width:46px;min-height:46px;font-size:23px;cursor:pointer;color:#ffe9c7;flex:0 0 auto;
     box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  .tool,.iconbtn,.btn,.chip,.li .a,.x{transition:transform .12s cubic-bezier(.34,1.56,.64,1),filter .12s}
   .tool:active,.iconbtn:active{transform:scale(.9)}
   .tool.on{border-color:#ffd86b;box-shadow:0 0 14px rgba(255,216,107,.6);background:#4a3450}
   .tool.not{opacity:.35}
@@ -46,7 +47,8 @@
   .box{background:linear-gradient(180deg,#2b2033,#3a2c44);border:1px solid rgba(255,216,107,.28);
     border-radius:20px;padding:20px;max-width:470px;width:100%;text-align:center;box-shadow:0 16px 60px rgba(0,0,0,.7);
     max-height:92vh;overflow:auto}
-  .big{font-size:56px;line-height:1.1}
+  .big{font-size:56px;line-height:1.1;animation:bigBob 3s ease-in-out infinite}
+  @keyframes bigBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   .title{font-size:30px;font-weight:900;color:#ffd86b;text-shadow:0 0 22px rgba(255,216,107,.5)}
   .sub{color:#b9a3c9;margin:6px 0 14px;font-size:14px;line-height:1.5}
   .btn{display:block;width:100%;background:linear-gradient(180deg,#ffb347,#e8881f);color:#3a1d02;border:none;

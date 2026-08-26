@@ -23,6 +23,8 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#4338ca,#0f0f23 55%,#07
 .popup{position:fixed;font-weight:900;font-size:24px;pointer-events:none;z-index:50;text-shadow:0 2px 6px rgba(0,0,0,.7);animation:popup .7s ease forwards}
 @keyframes popup{0%{opacity:1;translate:0 0;scale:1}100%{opacity:0;translate:0 -52px;scale:1.15}}
 #flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;z-index:45;transition:opacity .08s}
+.hud span.jpop{animation:jpopk .3s ease}
+@keyframes jpopk{40%{transform:scale(1.16)}}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(7,7,15,.86);backdrop-filter:blur(6px);z-index:60;text-align:center;padding:20px}
 .ov h1{font-size:38px;font-weight:900}
 .ov p{color:#cbd5e1;font-size:15px;line-height:1.6;max-width:420px}
@@ -143,6 +145,8 @@ function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudio
 function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function flashColor(col,o){flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},90);}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function genProblem(){
@@ -270,6 +274,7 @@ function correct(b){
     }
   }
   sfx('pop');b.pop=350;
+  flashColor('#4ade80',.14);jpop(scoreEl.parentElement);
   opUp(currentOp);
   perfectBump();
   const bx=b.x+swayOf(b);
@@ -282,7 +287,7 @@ function wrong(){
   combo=0;updateHUD();sfx('buzz');shakeT=1;
   perfectChain=0;document.getElementById('perfect').textContent='×0';
   popup('Almost!',canvasRect.left+W/2-30,canvasRect.top+H*.3,'#f87171');
-  flash.style.opacity='.45';setTimeout(()=>flash.style.opacity='0',90);
+  flashColor('#ef4444',.45);
 }
 function endGame(){
   state='over';sfx('lose');

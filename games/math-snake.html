@@ -26,7 +26,11 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#166534,#0f0f23 55%,#07
 #game{flex:1;width:100%;min-height:0;display:block}
 .popup{position:fixed;font-weight:900;font-size:24px;pointer-events:none;z-index:50;text-shadow:0 2px 6px rgba(0,0,0,.7);animation:popup .7s ease forwards}
 @keyframes popup{0%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -52px}}
-#flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;z-index:45}
+#flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;z-index:45;transition:opacity .12s ease-out}
+.hud span.jpop{animation:jpopk .3s ease}
+@keyframes jpopk{40%{transform:scale(1.16)}}
+#game.shake{animation:shk .4s}
+@keyframes shk{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
 .ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(7,7,15,.86);backdrop-filter:blur(6px);z-index:60;text-align:center;padding:20px}
 .ov h1{font-size:38px;font-weight:900}
 .ov p{color:#cbd5e1;font-size:15px;line-height:1.6;max-width:420px}
@@ -101,6 +105,9 @@ function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudio
 function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function flashColor(col,o){flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
+function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
+function shakeCanvas(){canvas.classList.remove('shake');void canvas.offsetWidth;canvas.classList.add('shake');}
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function genProblem(){
@@ -208,7 +215,7 @@ function popup(txt,x,y,color){
 function trophyOf(n){let r='';for(const t of TROPHIES)if(n>=t[1])r=t[0];return r;}
 function eatBump(){
   foodsEaten++;try{localStorage.setItem('mathSnakeEaten',foodsEaten);}catch(e){}
-  const rk=fooTrophyOf(foodsEaten);
+  const rk=trophyOf(foodsEaten);
   if(rk&&rk!==trophyName){
     trophyName=rk;
     popup(rk+'!',ox+snake[0].x*cell+canvasRect.left-40,oy+snake[0].y*cell+canvasRect.top-46,'#fde047');
@@ -217,7 +224,7 @@ function eatBump(){
 }
 function loseLife(){
   lives--;streak=0;updateHUD();sfx('buzz');frenzy=0;frenzyT=0;updateFrenzyUI();
-  flash.style.opacity='.45';setTimeout(()=>flash.style.opacity='0',110);
+  flashColor('#ef4444',.45);shakeCanvas();
   if(lives<=0){gameOver();return;}
   say(TRY[rnd(0,TRY.length-1)],'#fca5a5');
   resetSnake();
@@ -254,6 +261,7 @@ function tick(){
         streak++;
         const pts=10*Math.min(streak,5);
         score+=pts;sfx('coin');
+        flashColor('#4ade80',.13);jpop(scoreEl.parentElement);
         popup('+'+pts,ox+head.x*cell+canvasRect.left,oy+head.y*cell+canvasRect.top,'#4ade80');
         if(streak%3===0)say(CHEER[rnd(0,CHEER.length-1)]);
         if(streak%5===0&&lives<3){lives++;say('❤️ +1 Life!','#fb7185');}
