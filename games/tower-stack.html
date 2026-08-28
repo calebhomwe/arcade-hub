@@ -11,6 +11,7 @@ body{background:radial-gradient(900px 600px at 50% -20%,#7c3aed,#0f0f23 60%,#070
 .back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
 .hud{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-size:32px;font-weight:900;z-index:5;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
 #comboHud{font-size:15px;font-weight:900;color:#fbbf24;letter-spacing:1px;min-height:20px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+#heartHud{font-size:14px;font-weight:900;color:#f472b6;letter-spacing:3px;min-height:20px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
 .wrap{position:relative}
 canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55)}
 .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.74);backdrop-filter:blur(4px);border-radius:14px;z-index:6;text-align:center}
@@ -30,13 +31,14 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 <a class="back" href="../index.html">← Hub</a>
 <button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <div class="wrap">
-  <div class="hud"><span id="hud">0</span><div id="comboHud"></div></div>
+  <div class="hud"><span id="hud">0</span><div id="comboHud"></div><div id="heartHud"></div></div>
   <canvas id="cv" width="420" height="700"></canvas>
   <div class="ov" id="start">
     <h1>Tower <span>Stack</span></h1>
-    <div class="sub">Tap to drop the block. Stack as high as you can!<br>Land it dead-center for a <b style="color:#fbbf24">PERFECT +2</b> bonus.<br>Chain <b style="color:#4ade80">3+ PERFECTs</b> to widen the block!<br>Every <b style="color:#facc15">10th block</b> is <b style="color:#facc15">GOLD</b>: +3 bonus!</div>
+    <div class="sub">Tap to drop the block. Stack as high as you can!<br>Land it dead-center for a <b style="color:#fbbf24">PERFECT +2</b> bonus.<br>Chain <b style="color:#4ade80">3+ PERFECTs</b> to widen the block!<br>Every <b style="color:#facc15">10th block</b> is <b style="color:#facc15">GOLD</b>: +3 bonus!<br>Earn a <b style="color:#f472b6">💜 HEART</b> every 12 blocks (max 3) — it saves you from one miss!</div>
     <button class="btn" id="playBtn">▶ Play</button>
     <div class="stat">Best: <b class="best" id="startBest">0</b></div>
+    <div class="stat">👻 Best-run ghost: <b class="best" id="startGhost">off</b></div>
   </div>
   <div class="ov hidden" id="over">
     <h1>Game Over</h1>
@@ -54,8 +56,11 @@ const DPR=Math.min(window.devicePixelRatio||1,2);
 cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
 let state='ready',score=0,best=+localStorage.getItem('towerBest')||0,t=0,shake=0,flash=0,combo=0;
 let goldT=0,goldOn=false;
+let hearts=0;
 let comboBest=+localStorage.getItem('towerComboBest')||0,comboFlash=false;
 let stack=[],slideX=0,slideDir=1,slideW=190,camY=0,camTarget=0,falling=null,floats=[],parts=[],roundToken=0;
+let ghost=null,ghostLen=0;
+const ghCol=[];for(let k=0;k<360;k++){ghCol[k]='hsla('+k+',70%,80%,.28)';}
 let muted=localStorage.getItem('towerMuted')==='1';
 let AC;
 function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended'){try{AC.resume();}catch(e){}}}
@@ -67,13 +72,15 @@ if(n==='drop')sfx('pop');
 if(n==='perfect')sfx('levelup');
 if(n==='gold')sfx('coin');
 if(n==='over')sfx('lose');
-if(n==='click')sfx('tap');}
+if(n==='click')sfx('tap');
+if(n==='saved')sfx('boom');}
 function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
 const muteBtn=document.getElementById('muteBtn');
 function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('towerMuted',muted?'1':'0');renderMute();});
 renderMute();
 document.getElementById('startBest').textContent=best;
+loadGhost();refreshGhostHud();
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function rrc(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 const bgCv=document.createElement('canvas');bgCv.width=W*DPR;bgCv.height=H*DPR;
@@ -137,15 +144,33 @@ if(floatCache.size>40)floatCache.clear();
 floatCache.set(txt,s);
 return s;
 }
-function startGame(){roundToken++;state='play';score=0;combo=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;hud();updCombo();}
+function loadGhost(){
+try{const g=JSON.parse(localStorage.getItem('towerGhost')||'null');ghost=(g&&g.b&&g.b.length>2)?g.b:null;ghostLen=ghost?ghost.length:0;}
+catch(e){ghost=null;ghostLen=0;}
+}
+function refreshGhostHud(){document.getElementById('startGhost').textContent=ghostLen?ghostLen+' blocks':'off';}
+function startGame(){roundToken++;state='play';score=0;combo=0;hearts=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;loadGhost();refreshGhostHud();hud();updCombo();updHearts();}
 function hud(){document.getElementById('hud').textContent=score;}
 function updCombo(){document.getElementById('comboHud').textContent=combo>1?'🔥 PERFECT x'+combo:'';}
+function updHearts(){document.getElementById('heartHud').textContent=hearts>0?'💜'.repeat(hearts):'💔';}
+function earnHeart(){
+if(hearts<3){hearts++;updHearts();snd('gold');floats.push({x:slideX,y:BASEY-stack.length*BH-70,life:1.3,txt:'💜 +1 HEART'});}
+}
 function burst(x,y,c,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=sp*(.3+Math.random()*.7);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:.4+Math.random()*.4,t:0,c});}if(parts.length>300)parts.splice(0,parts.length-300);}
 function place(){
 const top=stack[stack.length-1];
 const overlap=Math.min(top.cx+top.w/2,slideX+slideW/2)-Math.max(top.cx-top.w/2,slideX-slideW/2);
 const blockY=BASEY-stack.length*BH;
 if(overlap<=0.5){
+if(hearts>0){
+hearts--;updHearts();
+snd('saved');buzz(60);
+burst(slideX,blockY+BH/2,'#f472b6',20,210);
+floats.push({x:slideX,y:blockY-20,life:1.2,txt:'💜 SAVED!'});
+slideDir=-slideDir;
+slideX=slideDir>0?slideW/2:W-slideW/2;
+return;
+}
 falling={x:slideX,y:blockY,w:slideW,vy:0,rot:0,vr:slideDir*3.2};
 state='fall';shake=12;snd('over');buzz(80);
 return;
@@ -159,6 +184,7 @@ if(!comboFlash&&combo>comboBest){comboBest=combo;localStorage.setItem('towerComb
 if(combo>=3&&newW<190){newW=Math.min(190,newW+12);stack[stack.length-1].w=newW;floats.push({x:newX,y:blockY-26,life:1.2,txt:'WIDTH UP!'});burst(newX,blockY+BH/2,'#4ade80',10,150);}}
 else{combo=0;score++;shake=2.5;snd('drop');buzz(8);burst(newX,blockY+BH,'rgba(255,255,255,.8)',5,90);}
 if(goldOn){score+=3;snd('gold');burst(newX,blockY+BH/2,'#facc15',18,200);floats.push({x:newX,y:blockY-42,life:1.2,txt:'GOLD +3'});goldT=0;goldOn=false;}else{goldT++;if(goldT>=9)goldOn=true;}
+if(stack.length%12===0&&hearts<3){earnHeart();}
 if(floats.length>24)floats.splice(0,floats.length-24);
 hud();updCombo();
 slideW=newW;
@@ -181,6 +207,13 @@ falling.vy+=2000*dt;falling.y+=falling.vy*dt;falling.rot+=falling.vr*dt;
 if(falling.y>H+120){
 state='over';
 const nb=score>best;if(nb){best=score;localStorage.setItem('towerBest',best);}
+if(stack.length>3){
+const glen=+localStorage.getItem('towerGhostLen')||0;
+if(stack.length>glen){
+const g={b:stack.slice(0,400).map(s=>[+s.cx.toFixed(1),+s.w.toFixed(1)]),len:stack.length};
+try{localStorage.setItem('towerGhost',JSON.stringify(g));localStorage.setItem('towerGhostLen',String(stack.length));}catch(e){}
+}
+}
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best+(nb?' NEW!':'');
 document.getElementById('finCombo').textContent=comboBest;
@@ -195,6 +228,15 @@ const sx=(Math.random()*2-1)*shake,sy=(Math.random()*2-1)*shake;
 ctx.save();ctx.translate(sx,camY+sy);
 ctx.fillStyle='#312e81';rr(0,BASEY,W,H,0);ctx.fill();
 ctx.fillStyle='#4c1d95';ctx.fillRect(0,BASEY,W,10);
+if(ghost){
+const iMax=Math.min(ghost.length-1,Math.floor((BASEY+camY+4)/BH));
+const iMin=Math.max(0,Math.floor((BASEY-H+camY-4)/BH));
+for(let i=iMax;i>=iMin;i--){
+const gb=ghost[i],gy=BASEY-(i+1)*BH;
+ctx.fillStyle=ghCol[(i*24)%360];
+ctx.fillRect(gb[0]-gb[1]/2,gy,gb[1],BH-5);
+}
+}
 const top=stack[stack.length-1];
 if(state==='play'&&top){ctx.strokeStyle='rgba(255,255,255,.10)';ctx.setLineDash([5,7]);ctx.beginPath();ctx.moveTo(top.cx,BASEY-stack.length*BH-60);ctx.lineTo(top.cx,BASEY);ctx.stroke();ctx.setLineDash([]);}
 stack.forEach((b,i)=>{

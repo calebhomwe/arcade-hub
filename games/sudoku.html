@@ -93,6 +93,10 @@ h1{font-size:18px}
   <div style="font-size:14px;color:#94a3b8">Best: <b id="bestTime">–</b> <span id="newBest" class="hidden" style="color:#facc15;font-weight:900">New best!</span></div>
   <div style="font-size:14px;color:#fda4af">🔥 Best streak: <b id="finStreak">0</b> · 💡 Hints: <b id="finHints">0</b></div>
   <div style="font-size:13px;color:#a78bfa" id="badgeLine"></div>
+  <div style="font-size:13px;color:#38bdf8" id="solvedLine"></div>
+  <div style="font-size:13px;color:#fb923c" id="dailyLine"></div>
+  <div style="font-size:13px;color:#facc15" id="puristLine"></div>
+  <div style="font-size:12px;color:#64748b" id="overLife"></div>
   <button class="btn" id="againBtn">New Game</button>
 </div>
 <canvas id="fx"></canvas>
@@ -110,6 +114,9 @@ if(rj===r||cj===c||((rj/3)|0)===((r/3)|0)&&((cj/3)|0)===((c/3)|0))p.push(j);}
 PEERS.push(p);}
 let sol=[],given=[],user=[],notes=[],sel=-1,notesMode=false,errors=0,secs=0,timer=null,diff='easy',done=false,popIdx=-1,running=false;
 let placementStreak=0,maxStreak=0,hints=0;
+let solvedTotal=0,dayStreak=0,lastDay='';
+let lifeSecs=0,puristRuns=0;
+function lifeFmt(){const h=(lifeSecs/3600)|0,m=((lifeSecs%3600)/60)|0;return h?h+'h '+m+'m':m+'m';}
 let muted=localStorage.getItem('sudokuMuted')==='1';
 let AC;
 function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}}
@@ -162,6 +169,7 @@ const bak=g[i];g[i]=0;
 if(countSol(g,2)===1)removed++;else g[i]=bak;}
 return g;}
 function fmt(t){return (t/60|0)+':'+String(t%60).padStart(2,'0');}
+function dayKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function ovOpen(){return !document.getElementById('start').classList.contains('hidden')||!document.getElementById('over').classList.contains('hidden');}
 function newGame(d){
 diff=d||diff;
@@ -265,7 +273,9 @@ if(user.every((v,i)=>v===sol[i]))win();
 }
 const BLITZ={easy:180,medium:420,hard:720};
 let badges=[];
-const BADGE_KEYS={perfect:'🧼',blitz:'⚡',hardclear:'🏆',streak10:'🔥'};
+const BADGE_KEYS={perfect:'🧼',blitz:'⚡',hardclear:'🏆',streak10:'🔥',purist:'🧠'};
+const SOLVE_TIERS=[[1,'Solver'],[5,'Grid Finisher'],[15,'Number Whisperer'],[30,'Sudoku Knight'],[60,'Sudoku Master'],[120,'Sudoku Sage'],[250,'Sudoku Empath']];
+function solveRankOf(n){let r=SOLVE_TIERS[0][1];for(const t of SOLVE_TIERS){if(n>=t[0])r=t[1];}return r;}
 function loadBadges(){try{const r=localStorage.getItem('sudoBadges');if(r){badges=JSON.parse(r);if(!(badges instanceof Array))badges=[];}}catch(e){badges=[];}}
 function earnBadge(b){if(badges.indexOf(b)!==-1)return false;badges.push(b);try{localStorage.setItem('sudoBadges',JSON.stringify(badges));}catch(e){}return true;}
 function win(){
@@ -277,11 +287,32 @@ if(!prev||secs<prev){localStorage.setItem(key,secs);document.getElementById('bes
 else{document.getElementById('bestTime').textContent=fmt(prev);document.getElementById('newBest').classList.add('hidden');}
 document.getElementById('finStreak').textContent=maxStreak;
 document.getElementById('finHints').textContent=hints;
+const purist=(hints===0&&errors===0);
+if(purist)puristRuns++;
+try{localStorage.setItem('sudo_purist',String(puristRuns));}catch(e){}
+lifeSecs+=secs;
+try{localStorage.setItem('sudo_life',String(lifeSecs));}catch(e){}
+document.getElementById('puristLine').textContent='🧠 Purist wins: '+puristRuns+(purist&&puristRuns%5===0?' — MILESTONE!':'');
+if(purist&&puristRuns%5===0)sfx('levelup');
+document.getElementById('overLife').textContent='🕰 Lifetime '+lifeFmt()+' · 🧩 Solved '+solvedTotal;
+solvedTotal++;
+try{localStorage.setItem('sudo_solved',String(solvedTotal));}catch(e){}
+const sr=solveRankOf(solvedTotal),prevSr=solveRankOf(solvedTotal-1);
+document.getElementById('solvedLine').textContent='🧩 Solved '+solvedTotal+' · 🏅 '+sr+(sr!==prevSr?' (NEW!)':'');
+if(sr!==prevSr)sfx('levelup');
+const dk=dayKey(new Date());
+if(lastDay!==dk){
+  dayStreak=(lastDay===dayKey(new Date(Date.now()-86400000)))?dayStreak+1:1;
+  lastDay=dk;
+  try{localStorage.setItem('sudo_daily',JSON.stringify({d:dk,c:dayStreak}));}catch(e){}
+}
+document.getElementById('dailyLine').textContent='🔥 Daily streak: '+dayStreak;if(dayStreak>1)sfx('levelup');
 let newB='';
 if(errors===0&&earnBadge('perfect'))newB+=BADGE_KEYS.perfect;
 if(secs<=BLITZ[diff]&&earnBadge('blitz'))newB+=BADGE_KEYS.blitz;
 if(diff==='hard'&&earnBadge('hardclear'))newB+=BADGE_KEYS.hardclear;
 if(maxStreak>=10&&earnBadge('streak10'))newB+=BADGE_KEYS.streak10;
+if(purist&&earnBadge('purist'))newB+=BADGE_KEYS.purist;
 const have=badges.map(b=>BADGE_KEYS[b]).join(' ');
 document.getElementById('badgeLine').textContent=newB?('🎉 NEW BADGES: '+newB+' · '+have):(badges.length?('🏅 '+have):'');
 confetti();
@@ -298,7 +329,7 @@ function showStart(){
 clearInterval(timer);running=false;
 document.getElementById('bestLine').textContent='Best: '+['easy','medium','hard'].map(d=>{
 const b=+localStorage.getItem('sudoBest_'+d);
-return d[0].toUpperCase()+d.slice(1)+' '+(b?fmt(b):'–');}).join(' · ');
+return d[0].toUpperCase()+d.slice(1)+' '+(b?fmt(b):'–');}).join(' · ')+' · 🧩 '+solveRankOf(solvedTotal)+' · 🔥 '+dayStreak+'d'+(lifeSecs?' · 🕰 '+lifeFmt()+(puristRuns?' · 🧠 '+puristRuns:''):'');
 document.getElementById('start').classList.remove('hidden');
 }
 document.querySelectorAll('.dbtn').forEach(b=>b.addEventListener('pointerdown',()=>{initAudio();newGame(b.dataset.d);startTimer();}));
@@ -339,6 +370,9 @@ function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',()=>{muted=!muted;localStorage.setItem('sudokuMuted',muted?'1':'0');updMute();});
 updMute();
 loadBadges();
+try{solvedTotal=parseInt(localStorage.getItem('sudo_solved')||'0',10)||0;}catch(e){}
+try{puristRuns=parseInt(localStorage.getItem('sudo_purist')||'0',10)||0;}catch(e){}
+try{lifeSecs=parseInt(localStorage.getItem('sudo_life')||'0',10)||0;}catch(e){}
 buildUI();
 showStart();
 </script>

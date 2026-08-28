@@ -51,6 +51,8 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 @keyframes shakeBig{10%,90%{transform:translate(-3px,2px)}20%,80%{transform:translate(5px,-3px)}30%,50%,70%{transform:translate(-8px,4px)}40%,60%{transform:translate(8px,-4px)}}
 .prestige-btn{font-size:15px;padding:12px 20px;min-height:48px;background:linear-gradient(135deg,#7c3aed,#4f46e5)}
 .prestige-btn:disabled{opacity:.45;filter:grayscale(.6)}
+.cache-btn{font-size:15px;padding:12px 20px;min-height:48px;background:linear-gradient(135deg,#0ea5e9,#6366f1)}
+.cache-btn:disabled{opacity:.45;filter:grayscale(.6)}
 .hero-col{flex:1;min-height:200px;overflow-y:auto;background:rgba(35,8,14,.5);border:1px solid #5e1220;border-radius:16px;padding:8px;-webkit-overflow-scrolling:touch}
 .hrow{display:flex;align-items:center;gap:8px;background:rgba(60,15,25,.6);border:1px solid #7c2535;border-radius:12px;padding:8px 10px;margin-bottom:8px}
 .hrow .e{font-size:26px}
@@ -104,7 +106,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <div class="logo">👹</div>
   <h1 class="title">TAP MONSTERS</h1>
   <p class="sub">Tap the monster to slay it, hire heroes for auto-DPS, and climb endless levels. Every 10th level is a BOSS with 10× HP and 20× gold!</p>
-  <div class="best-box">👻 Souls: <b id="stSouls">0</b> · Damage ×<b id="stMult">1</b> · 🏆 Best Lv <b id="stBest">1</b> · 🏅 Badges: <b id="stBadges">0</b></div>
+  <div class="best-box">👻 Souls: <b id="stSouls">0</b> · Damage ×<b id="stMult">1</b> · 🏆 Best Lv <b id="stBest">1</b> · 🏅 Badges: <b id="stBadges">0</b> · 🔥 Best ×<b id="stFever">0</b> · 💎 <b id="stGems">0</b></div>
   <p class="tip">✨ Ascend for souls — each gives +5% damage · 💥 10% chance to CRIT for 3× damage · 📴 Offline gold: 50% rate, up to 8 hours · 💾 Auto-saves every 5 seconds</p>
   <button class="btn btn-big" id="btnPlay">▶ Play</button>
   <button class="btn btn-ghost" id="btnReset">New Run (keep souls)</button>
@@ -115,6 +117,8 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
     <div class="hud-item">💰 <span id="gold">0</span></div>
     <div class="hud-item">⚔️ <span id="dps">0</span>/s</div>
     <div class="hud-item">👻 <span id="souls">0</span></div>
+    <div class="hud-item">🔥 <span id="fever">—</span></div>
+    <div class="hud-item">💎 <span id="gems">0</span></div>
   </div>
   <div class="game-grid">
     <div class="fight-col" id="fightCol">
@@ -126,6 +130,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
         <div class="mon-info" id="hpText">10 / 10</div>
       </div>
       <button class="btn prestige-btn" id="btnAscend" disabled>👻 Ascend +0 souls</button>
+      <button class="btn cache-btn" id="btnCache" disabled>🎁 Open Loot Cache (5💎)</button>
       <div class="mon-info" id="ascNext"></div>
     </div>
     <div class="hero-col" id="heroes"></div>
@@ -169,8 +174,8 @@ var HEROES=[
 ];
 var MON=['🐭','🐰','🐸','🐍','🦇','🦊','🐺','🦅','🐗','🦂','🐙','🦍','🦏','🐊','🦈','🐉'];
 var PCOLS=['#fb7185','#f472b6','#fbbf24','#a78bfa'];
-var S={gold:0,total:0,lvl:1,best:1,hp:10,max:10,heroes:[0,0,0,0,0],souls:0,buy:1,last:Date.now(),kills:0,bosses:0,crits:0,ascents:0,badges:[]};
-var mult=1,rows=[],loopToken=0,dying=false,hidAt=0,goldenMon=false;
+var S={gold:0,total:0,lvl:1,best:1,hp:10,max:10,heroes:[0,0,0,0,0],souls:0,buy:1,last:Date.now(),kills:0,bosses:0,crits:0,ascents:0,badges:[],feverBest:0,feverPaid:0,crystals:0};
+var mult=1,rows=[],loopToken=0,dying=false,hidAt=0,goldenMon=false,feverStreak=0,feverNext=0;
 var AC=null,muted=localStorage.getItem('tm_muted')==='1';
 function $(id){return document.getElementById(id);}
 function show(id){var i,s=document.querySelectorAll('.screen');for(i=0;i<s.length;i++){s[i].classList.remove('s-active');}$(id).classList.add('s-active');}
@@ -290,6 +295,9 @@ function load(){
       S.crits=Math.max(0,Math.floor(num(d.crits,0)));
       S.ascents=Math.max(0,Math.floor(num(d.ascents,0)));
       S.badges=(d.badges instanceof Array)?d.badges:[];
+      S.feverBest=Math.max(0,Math.floor(num(d.feverBest,0)));
+      S.feverPaid=Math.max(0,Math.floor(num(d.feverPaid,0)));
+      S.crystals=Math.max(0,Math.floor(num(d.crystals,0)));
     }
   }catch(e){}
   mult=1+0.05*S.souls;
@@ -419,8 +427,61 @@ function killMon(){
   if(S.lvl>S.best){S.best=S.lvl;}
   S.kills++;if(boss){S.bosses++;}
   checkBadges();
+  feverStreak++;feverNext=performance.now()+4000;
+  if(feverStreak%10===0){toast('🔥 FEVER ×'+feverStreak+'!');sfx('levelup');}
+  var cry=((!boss&&goldenMon)||boss||Math.random()<0.08);
+  if(cry){
+    S.crystals++;
+    sfx('coin');
+    if(r){floater('float gold',r.left+r.width/2+34,r.top+58,'💎');}
+  }
   setTimeout(newMonster,420);
   updateHud();
+}
+var elFever=null;
+function setFever(){
+  if(!elFever){elFever=$('fever');}
+  var s=feverStreak>0?'×'+feverStreak:'—';
+  if(elFever.textContent!==s){elFever.textContent=s;}
+}
+function payFever(){
+  var stre=feverStreak;
+  feverStreak=0;feverNext=0;
+  if(stre<2){setFever();return;}
+  var bonus=Math.max(1,Math.floor(monReward()*(stre-1)*0.25));
+  S.gold+=bonus;S.total+=bonus;S.feverPaid+=bonus;
+  if(stre>S.feverBest){S.feverBest=stre;toast('🔥 NEW FEVER RECORD ×'+stre+'! +'+fmt(bonus));}
+  else{toast('🔥 Fever ×'+stre+' paid +'+fmt(bonus));}
+  sfx('coin');save();
+  if(!monRect){cacheMonRect();}
+  var r=monRect;
+  if(r){floater('float gold',r.left+r.width/2-40+Math.random()*80,r.top+40,'★ +'+fmt(bonus));}
+  setFever();
+  updateHud();
+}
+var elGems=null,elCache=null;
+function updateGems(){
+  if(!elGems){elGems=$('gems');}
+  var s=String(S.crystals);
+  if(elGems.textContent!==s){elGems.textContent=s;}
+}
+function updateCacheBtn(){
+  if(!elCache){elCache=$('btnCache');}
+  var ok=S.crystals>=5,lab='🎁 Open Loot Cache (5💎)';
+  if(elCache.disabled===ok){elCache.disabled=!ok;}
+  if(elCache.textContent!==lab){elCache.textContent=lab;}
+}
+function openCache(){
+  if(S.crystals<5){sfx('error');toast('Need 5 💎 to open a cache');return;}
+  S.crystals-=5;
+  var w=Math.random();
+  var secs=w<0.55?60:w<0.9?180:600;
+  var g=Math.max(1,Math.floor(heroDPS()*secs));
+  S.gold+=g;S.total+=g;
+  sfx(secs===600?'win':'ascend');
+  if(secs===600){confetti();}
+  toast('🎁 Cache: +'+fmt(g)+' gold!');
+  save();updateGems();updateCacheBtn();updateHud();
 }
 function tapMon(e){
   if(dying){return;}
@@ -545,6 +606,7 @@ function doAscend(){
   S.gold=0;S.total=0;S.lvl=1;S.hp=10;S.max=10;
   var i;
   for(i=0;i<HEROES.length;i++){S.heroes[i]=0;}
+  feverStreak=0;feverNext=0;
   newMonster();
   save();
   show('s-over');
@@ -572,6 +634,9 @@ function updateHud(){
   setTxt(elMonTap,fmtRate(tapDmg()));
   refreshAscend();
   updateRows();
+  setFever();
+  updateGems();
+  updateCacheBtn();
 }
 function startGame(){
   show('s-game');
@@ -601,6 +666,7 @@ function startGame(){
       refreshAscend();
       updateRows();
     }
+    if(feverStreak>0&&performance.now()>feverNext){payFever();}
     requestAnimationFrame(step);
   })();
 }
@@ -610,6 +676,10 @@ function init(){
   $('stMult').textContent=mult.toFixed(2);
   $('stBest').textContent=S.best;
   $('stBadges').textContent=S.badges.length;
+  $('stFever').textContent=S.feverBest;
+  $('stGems').textContent=S.crystals;
+  updateGems();
+  updateCacheBtn();
   checkBadges();
   var hasSave=false;
   try{hasSave=!!localStorage.getItem('tm_state');}catch(e){}
@@ -619,6 +689,7 @@ function init(){
     S.gold=0;S.total=0;S.lvl=1;S.hp=10;S.max=10;S.last=Date.now();
     var i;
     for(i=0;i<HEROES.length;i++){S.heroes[i]=0;}
+    feverStreak=0;feverNext=0;
     newMonster();
     save();
     $('stSouls').textContent=S.souls;
@@ -627,6 +698,7 @@ function init(){
   });
   $('btnContinue').addEventListener('click',function(){sfx('buy');startGame();});
   $('btnAscend').addEventListener('click',doAscend);
+  $('btnCache').addEventListener('click',openCache);
   $('btnOfflineOk').addEventListener('click',function(){
     $('offlineModal').classList.remove('open');
     sfx('ascend');

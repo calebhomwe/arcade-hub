@@ -40,6 +40,9 @@
   <h1>STACK BALL</h1>
   <div class="sub">Tap to <b>smash down</b> through the rotating platforms — tap again mid-air to <b>slam</b> faster! Land on a <b style="color:#0a0a0f;background:#fff;padding:0 4px;border-radius:4px">black</b> segment = game over. Dodge the gaps & collect 💎 gems!</div>
   <div class="sub" style="margin:-4px 0 0">🔥 Best slam streak: <b id="chainBestVal">0</b> · chain slams for +5 bonuses</div>
+  <div class="sub" style="margin:-4px 0 0">😅 Close calls: <b id="closeBestVal">0</b> · land right next to a black segment</div>
+  <div class="sub" style="margin:-4px 0 0">💎 Gems banked: <b id="gemTotalVal">0</b> · 📿 <b id="gemRankVal">Trinketeer</b> — bank gems to climb ranks</div>
+  <div class="sub" style="margin:-4px 0 0">🗼 Best depth: <b id="depthBestVal">0</b> · 🔥 <b id="dayStreakVal">0</b>d streak (best <b id="dayBestVal">0</b>)</div>
   <button id="playBtn">▶ PLAY</button>
 </div>
 <div class="overlay hidden" id="gameover">
@@ -47,6 +50,9 @@
   <div class="score-big" id="finalScore">0</div>
   <div class="best" id="finalBest">Best: 0</div>
   <div class="best" id="finalChain">🔥 Best slam streak: 0</div>
+  <div class="best" id="finalClose">😅 Close calls: 0</div>
+  <div class="best" id="finalGems" style="color:#67e8f9">💎 Gems banked: 0 · 📿 Trinketeer</div>
+  <div class="best" id="finalDepth" style="color:#a78bfa">🗼 Best depth: 0 · 🔥 0d streak (best 0)</div>
   <button id="restartBtn">↻ PLAY AGAIN</button>
 </div>
 <script>
@@ -154,12 +160,31 @@ function layout() {
 }
 
 let platforms = [], gems = [], particles = [], floaters = [], trail = [], rings = [], visBuf = [];
+const GEM_TIERS = [[3, 'Trinketeer'], [10, 'Gem Helper'], [25, 'Gem Crafter'], [60, 'Gem Curator'], [120, 'Gem Connoisseur'], [200, 'Gem Hoarder'], [320, 'Gem Lord']];
+function gemRankOf(n) { let r = GEM_TIERS[0][1]; for (const g of GEM_TIERS) { if (n >= g[0]) r = g[1]; } return r; }
+let gemTotal = 0, gemRank = 'Trinketeer';
 let cur = 0, score = 0, best = 0, camY = 0;
 let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
 let squash = 0, shake = 0, tGlobal = 0, slam = false, slamChain = 0, slamChainBest = 0;
+let closeCalls = 0, closeBest = 0;
+let depthBest = 0, dayStreak = 0, dayBest = 0, dayLast = -1;
+try { depthBest = parseInt(localStorage.getItem('stack-ball-depth') || '0', 10) || 0; } catch (e) {}
+try { const j = JSON.parse(localStorage.getItem('sb-days') || 'null'); if (j) { dayStreak = j.s | 0; dayBest = j.b | 0; dayLast = j.d | -1; } } catch (e) {}
+function bumpDays() {
+  const today = Math.floor(Date.now() / 86400000);
+  if (dayLast === today) return;
+  if (dayLast === today - 1) dayStreak++; else dayStreak = 1;
+  dayLast = today;
+  if (dayStreak > dayBest) dayBest = dayStreak;
+  try { localStorage.setItem('sb-days', JSON.stringify({ d: today, s: dayStreak, b: dayBest })); } catch (e) {}
+  if (dayStreak === 3 || dayStreak === 7 || dayStreak === 30) { addFloater('🔥 ' + dayStreak + '-DAY STREAK!', cx, desired - 120, '#fcd34d'); sfx('levelup'); }
+}
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 try { slamChainBest = parseInt(localStorage.getItem('stack-ball-chain') || '0', 10) || 0; } catch (e) {}
+try { closeBest = parseInt(localStorage.getItem('stack-ball-close') || '0', 10) || 0; } catch (e) {}
+try { gemTotal = parseInt(localStorage.getItem('stack-ball-gems') || '0', 10) || 0; } catch (e) {}
+gemRank = gemRankOf(gemTotal);
 
 function rand(a, b) { return a + Math.random() * (b - a); }
 function py(i) { return i * GAP - camY; }
@@ -226,7 +251,7 @@ function ensureWorld(n) {
 function startGame() {
   initWorld();
   trail = []; rings = []; slam = false;
-  cur = 0; score = 0; squash = 0; shake = 0; vy = 0; slamChain = 0;
+  cur = 0; score = 0; squash = 0; shake = 0; vy = 0; slamChain = 0; closeCalls = 0;
   by = ballRestY(0); camY = by - desired;
   phase = 'resting';
   updateHUD();
@@ -235,6 +260,10 @@ function startGame() {
   $('start').classList.add('hidden');
   $('gameover').classList.add('hidden');
   floaters.push({ text: 'TAP TO SMASH!', x: cx, y: desired - ballR - 26, t: 0, life: 2.4, color: '#fcd34d' });
+  bumpDays();
+  $('dayStreakVal').textContent = dayStreak;
+  $('dayBestVal').textContent = dayBest;
+  $('depthBestVal').textContent = depthBest;
 }
 function updateHUD() {
   $('score').textContent = score;
@@ -248,6 +277,10 @@ function endGame() {
   $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
   $('finalChain').textContent = '🔥 Best slam streak: ' + slamChainBest;
   try { localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
+  $('finalClose').textContent = '😅 Close calls: ' + closeBest;
+  try { localStorage.setItem('stack-ball-close', String(closeBest)); } catch (e) {}
+  $('finalGems').textContent = '💎 Gems banked: ' + gemTotal + ' · 📿 ' + gemRank;
+  $('finalDepth').textContent = '🗼 Best depth: ' + depthBest + ' · 🔥 ' + dayStreak + 'd streak (best ' + dayBest + ')';
   $('gameover').classList.remove('hidden');
 }
 function die() {
@@ -284,6 +317,17 @@ function resolveLanding() {
   const p = platAt(fallTarget);
   const c = topColor(p);
   if (c === BLACK) { die(); return; }
+  const segA = TAU / SEGS;
+  const aC0 = (-Math.PI / 2 - p.rot) % TAU;
+  const k0 = Math.floor((aC0 < 0 ? aC0 + TAU : aC0) / segA) % SEGS;
+  if (p.segs[(k0 + 1) % SEGS] === BLACK || p.segs[(k0 - 1 + SEGS) % SEGS] === BLACK) {
+    closeCalls++;
+    if (closeCalls > closeBest) closeBest = closeCalls;
+    addFloater('😅 CLOSE CALL!', cx, desired - 70, '#fda4af');
+    sfx('whoosh');
+    buzz(10);
+    if (closeCalls % 5 === 0) { addFloater('😅 ' + closeCalls + ' CLOSE CALLS!', cx, desired - 96, '#fda4af'); sfx('levelup'); }
+  }
   score += 1;
   addFloater('+1', cx, by - camY - 34, '#fde68a');
   sfx('hit');
@@ -314,6 +358,11 @@ function resolveLanding() {
     addFloater('DEPTH ' + cur + '!', cx, desired - 60, '#fbbf24');
     sfx('levelup');
     shake = Math.max(shake, 5);
+  }
+  if (cur > depthBest) {
+    depthBest = cur;
+    try { localStorage.setItem('stack-ball-depth', String(depthBest)); } catch (e) {}
+    if (cur > 5) { addFloater('🗼 NEW DEPTH ' + cur + '!', cx, desired - 120, '#a78bfa'); sfx('levelup'); }
   }
   updateHUD();
 }
@@ -353,6 +402,10 @@ function update(dt) {
         buzz(14);
         burst(gx, gsy, '#67e8f9', 10, 180);
         rings.push({ y: gsy, t: 0, col: '#67e8f9' });
+        gemTotal++;
+        try { localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
+        const gr = gemRankOf(gemTotal);
+        if (gr !== gemRank) { gemRank = gr; addFloater('🏅 ' + gemRank + '!', gx, gsy - 56, '#fcd34d'); sfx('levelup'); }
         if (gm.elite) {
           score += 15;
           addFloater('+15 ✨', gx, gsy - 30, '#fcd34d');
@@ -526,6 +579,12 @@ by = ballRestY(0); camY = by - desired;
 $('mute').textContent = muted ? '🔇' : '🔊';
 updateHUD();
 $('chainBestVal').textContent = slamChainBest;
+$('closeBestVal').textContent = closeBest;
+$('gemTotalVal').textContent = gemTotal;
+$('gemRankVal').textContent = gemRank;
+$('depthBestVal').textContent = depthBest;
+$('dayStreakVal').textContent = dayStreak;
+$('dayBestVal').textContent = dayBest;
 requestAnimationFrame(loop);
 </script>
 </body>

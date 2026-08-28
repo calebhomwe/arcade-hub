@@ -30,21 +30,27 @@ body{background:radial-gradient(900px 600px at 50% -20%,#15803d,#0f0f23 60%,#070
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1 style="font-size:26px;font-weight:900">🐍 Snake</h1>
-<div class="hud"><span>🍎 <b id="score">0</b></span><span>Best: <b class="best" id="best">0</b></span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="hud"><span>🍎 <b id="score">0</b></span><span>⭐ <b id="goldPts">0</b></span><span style="padding:8px 10px">🍏<b id="comboPts">0</b></span><span>Best: <b class="best" id="best">0</b></span><button class="mute" id="pauseBtn" aria-label="Pause">⏸</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
 <div id="board">
   <canvas id="cv"></canvas>
   <div class="ov" id="start">
     <h1>🐍 <span>Snake</span></h1>
     <div class="sub">Swipe to steer. Eat apples, grow, don't crash!</div>
+    <div class="stat" style="font-size:14px;color:#94a3b8">🍎 Lifetime: <b id="lifeApples">0</b> · Rank: <b class="best" id="rankTag">Sprout</b> · 🔥 <b id="dayTag">0</b>d streak</div>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
   <div class="ov hidden" id="over">
     <h1>Game Over</h1>
     <div class="stat">Score: <b id="finScore">0</b></div>
+    <div class="stat">⭐ Gold: <b id="finGold">0</b></div>
+    <div class="stat">🍏 Combo: <b id="finCombo">0</b></div>
+    <div class="stat">🏅 Rank: <b id="finRank">Sprout</b></div>
+    <div class="stat">🔥 Streak: <b id="finStreak">0</b>d (best <b id="finStreakBest">0</b>)</div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat" id="medals" style="font-size:26px;letter-spacing:6px">–</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="ov hidden" id="pauseOv"><h1 style="font-size:32px">⏸ Paused</h1><div class="sub">Tap to resume</div></div>
 </div>
 <script>
 
@@ -52,7 +58,20 @@ const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const N=20;
 let cell=0,state='ready',snake=[],dir={x:1,y:0},queue=[],pending=null,food={x:-9,y:-9},score=0,best=+localStorage.getItem('snakeBest')||0,acc=0,t=0,deadFlash=0,headPop=0,dirty=true;
 const parts=[],texts=[],MAXP=200,MAXT=24;
-let gold=null,goldT=0;const GOLD_LIFE=6000;
+let gold=null,goldT=0,goldPts=0;const GOLD_LIFE=6000;
+let combo=0,comboLastEat=0,comboBest=+localStorage.getItem('snakeCombo')||0;
+let paused=false;
+function togglePause(){if(state!=='play')return;paused=!paused;document.getElementById('pauseOv').classList.toggle('hidden',!paused);document.getElementById('pauseBtn').textContent=paused?'▶':'⏸';}
+const RANKS=[[10,'Sprout'],[25,'Vine'],[50,'Tangler'],[100,'Viper'],[200,'Anaconda'],[400,'Naga'],[700,'Ouroboros']];
+let totalApples=+localStorage.getItem('snakeTotal')||0,rankName='Sprout';
+function rankOf(n){let r=RANKS[0][1];for(const x of RANKS){if(n>=x[0])r=x[1];}return r;}
+rankName=rankOf(totalApples);
+const DAYMS=86400000;let dayStreak=0,dayBest=0,dayLast=-1;
+try{const j=JSON.parse(localStorage.getItem('snakeDays')||'');if(j){dayStreak=j.s|0;dayBest=j.b|0;dayLast=j.d|-1;}}catch(e){}
+function bumpDays(){const today=Math.floor(Date.now()/DAYMS);if(dayLast===today)return;if(dayLast===today-1)dayStreak++;else dayStreak=1;dayLast=today;if(dayStreak>dayBest)dayBest=dayStreak;try{localStorage.setItem('snakeDays',JSON.stringify({d:today,s:dayStreak,b:dayBest}));}catch(e){}
+if(dayStreak===3||dayStreak===7||dayStreak===30)setTimeout(()=>{banner('🔥 '+dayStreak+'-DAY STREAK!');sfx('levelup');},700);
+document.getElementById('dayTag').textContent=dayStreak;}
+document.getElementById('dayTag').textContent=dayStreak;
 function spawnPart(x,y,vx,vy){let p=null;
 for(let i=0;i<parts.length;i++){if(parts[i].life<=0){p=parts[i];break;}}
 if(!p){if(parts.length>=MAXP)return;p={};parts.push(p);}
@@ -64,6 +83,8 @@ x2.x=x;x2.y=y;x2.txt=txt;x2.c=c||'#fff';x2.life=1;}
 function fxAlive(){for(let i=0;i<parts.length;i++)if(parts[i].life>0)return true;for(let i=0;i<texts.length;i++)if(texts[i].life>0)return true;return false;}
 let muted=localStorage.getItem('gamesMuted')==='1';
 document.getElementById('best').textContent=best;
+document.getElementById('lifeApples').textContent=totalApples;
+document.getElementById('rankTag').textContent=rankName;
 function refreshMute(){document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';}
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();});
 refreshMute();
@@ -110,18 +131,29 @@ state='over';sfx('win');
 document.querySelector('#over h1').textContent='🏆 Perfect Win!';
 if(score>best){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
 document.getElementById('finScore').textContent=score;
+document.getElementById('finGold').textContent=goldPts;
 document.getElementById('finBest').textContent=best;
 document.getElementById('medals').textContent=medalStr(score);
+document.getElementById('finCombo').textContent=comboBest;
+document.getElementById('finRank').textContent=rankName;
+document.getElementById('finStreak').textContent=dayStreak;
+document.getElementById('finStreakBest').textContent=dayBest;
+document.getElementById('lifeApples').textContent=totalApples;
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),400);
 }
 function startGame(){
 initAudio();
+bumpDays();
+paused=false;document.getElementById('pauseOv').classList.add('hidden');document.getElementById('pauseBtn').textContent='⏸';
 state='play';score=0;acc=0;headPop=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;
 document.querySelector('#over h1').textContent='Game Over';
 snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
 dir={x:1,y:0};queue=[];pending=null;
 document.getElementById('score').textContent=0;
-gold=null;goldT=0;
+document.getElementById('goldPts').textContent=0;
+gold=null;goldT=0;goldPts=0;
+combo=0;comboLastEat=t-10;
+document.getElementById('comboPts').textContent=0;
 spawnFood();
 }
 function setDir(d){
@@ -141,12 +173,21 @@ score++;document.getElementById('score').textContent=score;
 snd('eat');headPop=1;
 for(let i=0;i<10;i++){const a=Math.random()*7,s=50+Math.random()*130;spawnPart((food.x+.5)*cell,(food.y+.5)*cell,Math.cos(a)*s,Math.sin(a)*s);}
 spawnText((food.x+.5)*cell,(food.y+.15)*cell,'+1','#fbbf24');
+if(t-comboLastEat<6)combo++;else combo=1;
+comboLastEat=t;
+document.getElementById('comboPts').textContent=combo;
+if(combo>comboBest){comboBest=combo;localStorage.setItem('snakeCombo',String(comboBest));}
+if(combo>1&&combo%3===0){banner('🍏 '+combo+' EAT STREAK!');sfx('levelup');}
+totalApples++;
+localStorage.setItem('snakeTotal',String(totalApples));
+const rn=rankOf(totalApples);
+if(rn!==rankName){rankName=rn;banner('🏅 '+rn+'!');sfx('levelup');}
 spawnFood();
 if(score%10===0){banner('🔥 '+score+' APPLES!');sfx('levelup');}
 if(gold===null&&score%5===0)spawnGold();
 }else snake.pop();
 if(gold&&head.x===gold.x&&head.y===gold.y){
-score+=5;document.getElementById('score').textContent=score;
+goldPts+=5;document.getElementById('goldPts').textContent=goldPts;
 gold=null;goldT=0;
 headPop=1;sfx('levelup');
 for(let i=0;i<14;i++){const a=Math.random()*7,s=60+Math.random()*160;spawnPart((head.x+.5)*cell,(head.y+.5)*cell,Math.cos(a)*s,Math.sin(a)*s);}
@@ -157,8 +198,14 @@ function die(){
 state='over';snd('die');deadFlash=.5;
 if(score>best){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
 document.getElementById('finScore').textContent=score;
+document.getElementById('finGold').textContent=goldPts;
 document.getElementById('finBest').textContent=best;
 document.getElementById('medals').textContent=medalStr(score);
+document.getElementById('finCombo').textContent=comboBest;
+document.getElementById('finRank').textContent=rankName;
+document.getElementById('finStreak').textContent=dayStreak;
+document.getElementById('finStreakBest').textContent=dayBest;
+document.getElementById('lifeApples').textContent=totalApples;
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
 }
 function draw(){
@@ -227,7 +274,7 @@ if(goldT>0){goldT-=dt*1000;if(goldT<=0){gold=null;goldT=0;}}
 if(headPop>0)headPop-=dt*4;
 if(deadFlash>0){deadFlash-=dt;ctx.save();ctx.filter='invert(1)';draw();ctx.restore();}
 else draw();
-if(state==='play'){
+if(state==='play'&&!paused){
 acc+=dt*1000;
 const speed=Math.max(68,Math.round(150*Math.pow(.985,score)));
 if(acc>=speed){acc-=speed;step();}
@@ -264,6 +311,8 @@ if(state==='ready'&&(e.key===' ')){document.getElementById('start').classList.ad
 });
 document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();document.getElementById('start').classList.add('hidden');startGame();});
 document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('over').classList.add('hidden');startGame();});
+document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});
+document.getElementById('pauseOv').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});
 </script>
 </body>
 </html>

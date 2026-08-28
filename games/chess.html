@@ -337,6 +337,7 @@ body.th-gold {
   <div class="stat-line"><span>🔥 Current streak</span><b id="statStreak">0</b></div>
   <div class="stat-line"><span>🏆 Best streak</span><b id="statBest">0</b></div>
   <div class="stat-line"><span>🧩 Puzzles solved</span><b id="statPuzzles">0</b></div>
+  <div class="stat-line"><span>⚡ Fastest mate</span><b id="statMate">—</b></div>
   <div class="stat-line"><span>⚡ Fastest mate (half-moves)</span><b id="statFastest">—</b></div>
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
 </div>
@@ -350,7 +351,8 @@ body.th-gold {
   <button class="btn" id="btnClock" title="Toggle the 3-minute blitz clock">⚡<span class="btn-label">Clock</span></button>
   <button class="btn" id="btnReset" title="Start a new game">🔄<span class="btn-label">Reset</span></button>
   <button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
-  <select class="sel" id="themeSel" title="Board theme">
+<button class="btn" id="btnLearn" title="Open the Chess Academy: combos, openings, endgames, quiz"><span>🧠</span><span class="btn-label">Learn</span></button>
+    <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
     <option value="neon">🌃 Neon</option>
     <option value="forest">🌲 Forest</option>
@@ -417,7 +419,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 let audioCtx = null;
 function ensureAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
-let muted = false;
+let muted = localStorage.getItem('gamesMuted') === '1';
 let _sfxMasterGain = null;
 
 function _sfxResume() {
@@ -517,71 +519,27 @@ function arp(notes, step, type, vol) {
   }
 }
 
-function sfxMove() {
-  if (muted) return;
-  try {
-    noise(0.06, 0.45, 'lowpass', 1200, 400);
-    tone(160, 0.09, 'triangle', 0.16, { glideTo: 118, attack: 0.002 });
-  } catch (e) {}
+// --- standard CC0 SFX preload (assets/sfx, see MANIFEST.json) + sfx() with tone() fallback ---
+const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(n=>{try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.6;SFXP[n]=a}catch(e){}});
+const SFXMAP={move:'tap',capture:'hit',check:'buzz',checkmate:'lose',castle:'whoosh',promote:'levelup'};
+function sfx(name){
+  if(muted)return;
+  var a=SFXP[SFXMAP[name]||name];
+  if(!a){try{tone(660,0.07,'sine',0.12);}catch(e){}return;}
+  try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){try{tone(660,0.07,'sine',0.12);}catch(e){}});}catch(e){try{tone(660,0.07,'sine',0.12);}catch(e2){}}
 }
 
-function sfxCapture() {
-  if (muted) return;
-  try {
-    noise(0.09, 0.55, 'bandpass', 3000, 800);
-    tone(220, 0.07, 'square', 0.18, { delay: 0.012, glideTo: 180 });
-    sub(70, 0.18, 0.32, 0.02);
-    noise(0.05, 0.22, 'highpass', 4200, 2600, 0.035);
-  } catch (e) {}
-}
+function sfxMove() { sfx('move'); }
 
-function sfxCheck() {
-  if (muted) return;
-  try {
-    tone(620, 0.07, 'sawtooth', 0.13);
-    tone(624, 0.07, 'sawtooth', 0.13);
-    tone(830, 0.09, 'sawtooth', 0.15, { delay: 0.095 });
-    tone(835, 0.09, 'sawtooth', 0.15, { delay: 0.095 });
-  } catch (e) {}
-}
+function sfxCapture() { sfx('capture'); }
 
-function sfxCheckmate() {
-  if (muted) return;
-  try {
-    var seq = [392, 311, 262, 196];
-    arp(seq, 0.14, 'sawtooth', 0.15);
-    for (var i = 0; i < seq.length; i++) {
-      noise(0.14, 0.28, 'lowpass', 320, 80, i * 0.14);
-      tone(seq[i] / 2, 0.12, 'sine', 0.2, { delay: i * 0.14, glideTo: seq[i] / 2.6 });
-    }
-    sub(60, 0.8, 0.4, 0.56);
-    sub(45, 1.0, 0.28, 0.6);
-    tone(98, 0.5, 'triangle', 0.12, { delay: 0.56, glideTo: 62 });
-  } catch (e) {}
-}
+function sfxCheck() { sfx('check'); }
 
-function sfxCastle() {
-  if (muted) return;
-  try {
-    noise(0.06, 0.45, 'lowpass', 1200, 420);
-    tone(165, 0.08, 'triangle', 0.16, { glideTo: 124, attack: 0.002 });
-    noise(0.06, 0.48, 'lowpass', 1600, 520, 0.08);
-    tone(210, 0.09, 'triangle', 0.18, { delay: 0.08, glideTo: 158, attack: 0.002 });
-  } catch (e) {}
-}
+function sfxCheckmate() { sfx('lose'); }
 
-function sfxPromote() {
-  if (muted) return;
-  try {
-    var seq = [523, 659, 784, 1047];
-    for (var i = 0; i < seq.length; i++) {
-      tone(seq[i], 0.24, 'sine', 0.15, { delay: i * 0.055 });
-      tone(seq[i], 0.2, 'triangle', 0.09, { delay: i * 0.055 + 0.004 });
-    }
-    ping([2093, 2637, 3136], 0.4, 0.055, 0.24);
-    tone(1568, 0.35, 'sine', 0.06, { delay: 0.26, glideTo: 2093 });
-  } catch (e) {}
-}
+function sfxCastle() { sfx('whoosh'); }
+
+function sfxPromote() { sfx('levelup'); }
 
 function sfxSelect() {
   if (muted) return;
@@ -1700,13 +1658,57 @@ function loadPuzzle(index) {
   if (botEnabled && game.turn === botColor) scheduleBotMove();
 }
 
+// Parse a move token in either from+to form (e4d5) or algebraic SAN (exd5, Nf3, Qxh7#, e8=Q, O-O).
+// Returns {castle:'k'|'q'} or {fromSquare?, fromFile?, to} or null if unparseable.
+function _parseMoveToken(s) {
+  if (typeof s !== 'string') return null;
+  s = s.trim();
+  if (!s) return null;
+  const low = s.toLowerCase();
+  if (low === 'o-o' || low === '0-0') return { castle: 'k' };
+  if (low === 'o-o-o' || low === '0-0-0') return { castle: 'q' };
+  // strip check/mate marks, promotion suffix (=Q), capture markers (x)
+  s = s.replace(/[+#]/g, '').replace(/=[a-z]/gi, '').replace(/x/gi, '');
+  const core = t => {
+    if (/^[a-h][1-8][a-h][1-8]$/.test(t)) return { fromSquare: t.slice(0, 2).toLowerCase(), to: t.slice(2).toLowerCase() };
+    if (/^[a-h][a-h][1-8]$/.test(t)) return { fromFile: t.charAt(0).toLowerCase(), to: t.slice(1).toLowerCase() };
+    if (/^[a-h][1-8]$/.test(t)) return { to: t.toLowerCase() };
+    return null;
+  };
+  // drop a leading piece letter (K,Q,R,B,N) when the remainder parses as squares
+  let p = null;
+  if (s.length >= 3 && /^[KQRBNkqrbn]/.test(s)) p = core(s.slice(1));
+  if (!p) p = core(s);
+  return p;
+}
+
+// Match played move vs puzzle solution by from square/file + destination square,
+// keeping exact-match and O-O/O-O-O special cases. Tolerates algebraic answers.
+function puzzleAnswerMatches(played, solution) {
+  if (typeof played === 'string' && typeof solution === 'string' && played.toLowerCase() === solution.toLowerCase()) return true;
+  const P = _parseMoveToken(played), S = _parseMoveToken(solution);
+  if (!P || !S) return false;
+  if (P.castle || S.castle) {
+    if (P.castle && S.castle) return P.castle === S.castle;
+    const other = P.castle ? S : P, kind = P.castle || S.castle;
+    if (!other.to) return false;
+    return kind === 'k' ? (other.to === 'g1' || other.to === 'g8') : (other.to === 'c1' || other.to === 'c8');
+  }
+  if (!P.to || !S.to || P.to !== S.to) return false;
+  if (P.fromSquare && S.fromSquare) return P.fromSquare === S.fromSquare;
+  const pf = P.fromSquare ? P.fromSquare.charAt(0) : P.fromFile;
+  const sf = S.fromSquare ? S.fromSquare.charAt(0) : S.fromFile;
+  if (pf && sf) return pf === sf;
+  return true; // destination-only answer (e.g. Nf3): to-square match suffices
+}
+
 function checkPuzzleSolution(move) {
   if (!puzzleMode) return;
   const pz = PUZZLES[puzzleIndex];
   const from = String.fromCharCode(97 + col(move.from)) + (8 - row(move.from));
   const to = String.fromCharCode(97 + col(move.to)) + (8 - row(move.to));
   const played = (move.castle === 'kingside') ? 'O-O' : (move.castle === 'queenside') ? 'O-O-O' : from + to;
-  if (played.toLowerCase() === pz.solution.toLowerCase() || (played === 'e1g1' && pz.solution === 'O-O') || (played === 'e8g8' && pz.solution === 'O-O')) {
+  if (puzzleAnswerMatches(played, pz.solution)) {
     document.getElementById('tip').textContent = '✅ Correct! Great move!';
     setTimeout(() => loadPuzzle(puzzleIndex + 1), 1500);
   } else {
@@ -1976,11 +1978,16 @@ document.getElementById('btnClock').addEventListener('click', () => {
   document.getElementById('btnClock').classList.toggle('active', clockEnabled);
 });
 document.getElementById('btnReset').addEventListener('click', resetGame);
-document.getElementById('btnMute').addEventListener('click', () => {
+var _mbtn = document.getElementById('btnMute'); if (_mbtn) _mbtn.addEventListener('click', () => {
   muted = !muted;
-  document.getElementById('muteIcon').textContent = muted ? '🔇' : '🔊';
-  document.getElementById('btnMute').title = muted ? 'Sound OFF — tap to unmute' : 'Sound ON — tap to mute';
+  localStorage.setItem('gamesMuted', muted ? '1' : '0'); // persist
+  var _mi = document.getElementById('muteIcon'); if (_mi) _mi.textContent = muted ? '🔇' : '🔊';
+  var _bm = document.getElementById('btnMute'); if (_bm) _bm.title = muted ? 'Sound OFF - tap to unmute' : 'Sound ON - tap to mute';
 });
+if (muted) {
+  var _mi0 = document.getElementById('muteIcon'); if (_mi0) _mi0.textContent = '🔇';
+  var _bm0 = document.getElementById('btnMute'); if (_bm0) _bm0.title = 'Sound OFF - tap to unmute';
+}
 document.getElementById('btnPuzzleExit').addEventListener('click', () => { document.getElementById('puzzlePanel').classList.remove('show'); resetGame(); });
 
 document.getElementById('btnLearn').addEventListener('click', openLearn);
@@ -1991,19 +1998,21 @@ document.getElementById('btnStatsClose').addEventListener('click', () => toggleS
 function toggleStatsPanel(force){
   const sp = document.getElementById('statsPanel');
   const show = force !== undefined ? force : !sp.classList.contains('show');
-  const pct = STATS.played ? Math.round(100 * (STATS.w + 0.5 * STATS.d) / STATS.played) : 0;
-  const fm = STATS.fastestMateMoves ? STATS.fastestMateMoves + ' half-moves' : '—';
-  document.getElementById('statsBody').innerHTML = [
-    ['Games vs bot', STATS.played],
-    ['Won · Drawn · Lost', STATS.w + ' · ' + STATS.d + ' · ' + STATS.l],
-    ['Score rate', pct + '%'],
-    ['Current streak 🔥', STATS.streak],
-    ['Best streak 🏆', STATS.bestStreak],
-    ['Puzzles solved 🧩', STATS.puzzlesSolved],
-    ['Fastest mate ⚡', fm]
-  ].map(x => '<div class="st-row"><span>' + x[0] + '</span><b>' + x[1] + '</b></div>').join('');
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('statGames', STATS.played);
+  set('statRecord', STATS.w + '-' + STATS.l + '-' + STATS.d);
+  set('statStreak', STATS.streak);
+  set('statBest', STATS.bestStreak);
+  set('statPuzzles', STATS.puzzlesSolved);
+  set('statMate', STATS.fastestMateMoves ? STATS.fastestMateMoves + ' half-moves' : '—');
   sp.classList.toggle('show', show);
 }
+document.getElementById('btnStatsReset').addEventListener('click', () => {
+  if (!confirm('Erase all saved stats?')) return;
+  STATS = { played: 0, w: 0, l: 0, d: 0, streak: 0, bestStreak: 0, puzzlesSolved: 0, fastestMateMoves: 0 };
+  saveStats();
+  toggleStatsPanel(true);
+});
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('learnPanel').classList.remove('show'); const sp = document.getElementById('statsPanel'); if (sp) sp.classList.remove('show'); } });
 
 document.getElementById('themeSel').addEventListener('change', function() {

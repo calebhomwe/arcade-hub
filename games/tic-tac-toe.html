@@ -53,6 +53,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 </div>
 <div class="streak" id="streak">Streak: 0 &bull; Best: 0</div>
 <div class="streak" id="meta">🏆 0 · 💀 0 · 🤝 0</div>
+<div class="streak" id="metaM" style="color:#fda4af">⚠️ Misère: 🏆 0 · 💀 0</div>
 <div id="wrap"><div id="board"></div></div>
 <button class="btn" id="newBtn">🔄 New Round</button>
 <div class="ov" id="start">
@@ -61,7 +62,10 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
   <div class="modes">
     <button class="mbtn big" data-m="pvp">👥 2 Players</button>
     <button class="mbtn big" data-m="ai">🤖 vs Computer</button>
+    <button class="mbtn big" data-m="ai-easy">🤖 Easy</button>
+    <button class="mbtn big" data-m="misere">⚠️ Misère</button>
   </div>
+  <div style="color:#64748b;font-size:12px;max-width:300px">⚠️ Misère: making 3-in-a-row LOSES — force your opponent!</div>
 </div>
 <div class="ov hidden" id="over">
   <h1 id="overTitle">You win! 🎉</h1>
@@ -76,7 +80,10 @@ let streak=0,lastWinner=0,best=+localStorage.getItem('tttBest')||0;
 let recW=+localStorage.getItem('tttRecW')||0,recL=+localStorage.getItem('tttRecL')||0,recD=+localStorage.getItem('tttRecD')||0,nextBadge=+localStorage.getItem('tttBadge')||5;
 let fastRound=+localStorage.getItem('tttFastRound')||0,roundT0=0;
 let muted=localStorage.getItem('tttMuted')==='1';
+let misW=+localStorage.getItem('tttMisW')||0,misL=+localStorage.getItem('tttMisL')||0;
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function aiMode(){return mode==='ai'||mode==='ai-easy'||mode==='misere';}
+function isHardAI(){return mode==='ai';}
 let AC;
 function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
 function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
@@ -90,11 +97,13 @@ muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;loca
 renderMute();
 function updStreak(){document.getElementById('streak').textContent='Streak: '+streak+' \u2022 Best: '+best;}
 updStreak();
+updMisMeta();
 function updMeta(){document.getElementById('meta').textContent='🏆 '+recW+' \u2022 💀 '+recL+' \u2022 🤝 '+recD+(fastRound?' \u2022 ⚡ '+(fastRound/1000).toFixed(1)+'s':'');}
-function recordRound(){if(mode!=='ai')return;const ms=performance.now()-roundT0;if(!fastRound||ms<fastRound){fastRound=Math.round(ms);localStorage.setItem('tttFastRound',fastRound);bannerP('⚡ FASTEST '+((fastRound/1000).toFixed(1))+'s!');}updMeta();}
+function updMisMeta(){document.getElementById('metaM').textContent='⚠️ Misère: 🏆 '+misW+' \u2022 💀 '+misL;}
+function recordRound(){if(mode!=='ai'&&mode!=='ai-easy')return;const ms=performance.now()-roundT0;if(!fastRound||ms<fastRound){fastRound=Math.round(ms);localStorage.setItem('tttFastRound',fastRound);bannerP('⚡ FASTEST '+((fastRound/1000).toFixed(1))+'s!');}updMeta();}
 function bannerP(txt){const bn=document.createElement('div');bn.className='banner';bn.id='pBanner';bn.textContent=txt;document.body.appendChild(bn);snd('badge');setTimeout(()=>{const b=document.getElementById('pBanner');if(b)b.remove();},1600);}
 function checkBadge(){if(recW>=nextBadge){bannerP('🏅 '+nextBadge+' WINS BADGE!');nextBadge*=2;localStorage.setItem('tttBadge',nextBadge);}}
-function recordResult(r){if(r===1)recW++;else if(r===2)recL++;else recD++;localStorage.setItem('tttRecW',recW);localStorage.setItem('tttRecL',recL);localStorage.setItem('tttRecD',recD);updMeta();checkBadge();}
+function recordResult(r){if(!aiMode()||mode==='misere')return;if(r===1)recW++;else if(r===2)recL++;else recD++;localStorage.setItem('tttRecW',recW);localStorage.setItem('tttRecL',recL);localStorage.setItem('tttRecD',recD);updMeta();checkBadge();}
 function newRound(){
   clearTimeout(overTimer);
   roundToken++;
@@ -108,7 +117,7 @@ render();updateTurn();
 function updateTurn(){
 const t=document.getElementById('turn');
 if(winner)t.textContent='';
-else t.textContent=mode==='ai'?(turn===1?'Your turn (X)':'CPU thinking... (O)'):turn===1?'P1 (X)':'P2 (O)';
+else t.textContent=aiMode()?(turn===1?'Your turn (X)':'CPU thinking... (O)'):turn===1?'P1 (X)':'P2 (O)';
 }
 const boardEl=document.getElementById('board');
 const cellEls=[];
@@ -131,7 +140,7 @@ d.style.animationDelay='';
 }
 function place(i,isAI){
 if(board[i]||winner||locked)return;
-if(!isAI&&mode==='ai'&&turn===2)return;
+if(!isAI&&aiMode()&&turn===2)return;
 initAudio();
 board[i]=turn;snd('place');
 const b=document.getElementById('board');
@@ -139,20 +148,26 @@ b.children[i].textContent=turn===1?'X':'O';
 b.children[i].classList.add(turn===1?'x':'o','appear');
   const line=checkWin(turn);
   if(line){
-    winner=turn;line.forEach((k,i)=>{b.children[k].classList.add('win');b.children[k].style.animationDelay=(i*80)+'ms';});
+    const isMis=mode==='misere';
+    winner=isMis?(turn===1?2:1):turn;
+    line.forEach((k,i)=>{b.children[k].classList.add('win');b.children[k].style.animationDelay=(i*80)+'ms';});
     const wEl=document.getElementById('wrap');wEl.classList.remove('boom');void wEl.offsetWidth;wEl.classList.add('boom');
-scores[turn-1]++;
+scores[winner-1]++;
 document.getElementById('s1').textContent='X: '+scores[0];
-document.getElementById('s2').textContent=(mode==='ai'?'CPU: ':'O: ')+scores[1];
-if(turn===lastWinner)streak++;else{streak=1;lastWinner=turn;}
+document.getElementById('s2').textContent=(aiMode()?'CPU: ':'O: ')+scores[1];
+if(winner===lastWinner)streak++;else{streak=1;lastWinner=winner;}
 if(streak>best){best=streak;localStorage.setItem('tttBest',best);}
 updStreak();
-recordResult(turn);
+if(isMis){
+  if(winner===1)misW++;else misL++;
+  localStorage.setItem('tttMisW',misW);localStorage.setItem('tttMisL',misL);
+  updMisMeta();
+}else if(aiMode()){recordResult(winner);}
 recordRound();
-snd(mode==='ai'&&turn===2?'lose':'win');
+snd(aiMode()&&winner===2?'lose':'win');
 confetti();
 drawWinLine(line);
-const title=mode==='ai'?(turn===1?'You win! 🎉':'CPU wins! 🤖'):(turn===1?'P1 wins! 🎉':'P2 wins! 🎉');
+const title=isMis?(winner===1?'You win (Misère)! 🎉':'CPU wins (Misère)! 🤖'):aiMode()?(winner===1?'You win! 🎉':'CPU wins! 🤖'):(winner===1?'P1 wins! 🎉':'P2 wins! 🎉');
 const bn=document.createElement('div');bn.className='banner';bn.id='banner';
 bn.textContent=title;
 document.body.appendChild(bn);
@@ -170,7 +185,7 @@ return;
 }
 turn=turn===1?2:1;
 updateTurn();
-  if(mode==='ai'&&turn===2&&!winner){locked=true;const tk=roundToken;const delay=420+Math.random()*380;setTimeout(()=>{if(tk!==roundToken)return;locked=false;aiMove();},delay);}
+  if(aiMode()&&turn===2&&!winner){locked=true;const tk=roundToken;const delay=420+Math.random()*380;setTimeout(()=>{if(tk!==roundToken)return;locked=false;aiMove();},delay);}
 }
 function showOver(title,sub){
 clearTimeout(overTimer);
@@ -208,8 +223,57 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{ln.style.strokeDashoffset='
 function checkWin(p){
 return LINES.find(l=>l.every(i=>board[i]===p))||null;
 }
+function minimaxMis(isMax,depth){
+const w2=checkWin(2);if(w2)return -(10-depth);
+const w1=checkWin(1);if(w1)return (10-depth);
+if(!board.includes(0))return 0;
+let best=isMax?-Infinity:Infinity;
+for(let i=0;i<9;i++){
+if(!board[i]){
+board[i]=isMax?2:1;
+const s=minimaxMis(!isMax,depth+1);
+board[i]=0;
+if(isMax){if(s>best)best=s;}else{if(s<best)best=s;}
+}
+}
+return best;
+}
+function aiMoveMisere(){
+if(winner)return;
+let bestScore=-Infinity,cands=[];
+for(let i=0;i<9;i++){
+if(!board[i]){
+board[i]=2;
+const s=minimaxMis(false,1);
+board[i]=0;
+if(s>bestScore){bestScore=s;cands=[i];}
+else if(s===bestScore)cands.push(i);
+}
+}
+if(cands.length)place(cands[(Math.random()*cands.length)|0],true);
+}
+function winInOne(p){
+for(const l of LINES){let n=0,e=0;for(const i of l){if(board[i]===p)n++;else if(board[i]===0)e++;}if(n===2&&e===1)return true;}
+return false;
+}
+function aiMoveEasy(){
+if(winner)return;
+const safe=[];
+for(let i=0;i<9;i++){
+if(board[i])continue;
+board[i]=2;
+const self=checkWin(2);
+const givesX=winInOne(1);
+board[i]=0;
+if(self||!givesX)safe.push(i);
+}
+if(!safe.length){const frees=[];for(let i=0;i<9;i++)if(!board[i])frees.push(i);if(frees.length)place(frees[(Math.random()*frees.length)|0],true);return;}
+place(safe[(Math.random()*safe.length)|0],true);
+}
 function aiMove(){
 if(winner)return;
+if(mode==='misere'){aiMoveMisere();return;}
+if(mode==='ai-easy'){aiMoveEasy();return;}
 let bestScore=-Infinity,cands=[];
 for(let i=0;i<9;i++){
 if(!board[i]){
@@ -240,7 +304,7 @@ return best;
 document.querySelectorAll('.modes .mbtn').forEach(b=>b.addEventListener('pointerdown',()=>{
 mode=b.dataset.m;scores=[0,0];
 document.getElementById('s1').textContent='X: 0';
-document.getElementById('s2').textContent=mode==='ai'?'CPU: 0':'O: 0';
+document.getElementById('s2').textContent=aiMode()?'CPU: 0':'O: 0';
 document.getElementById('start').classList.add('hidden');
 newRound();
 }));

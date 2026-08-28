@@ -34,6 +34,8 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .time-bar{height:100%;background:linear-gradient(90deg,#34d399,#fbbf24);border-radius:8px;transition:width .1s linear;box-shadow:0 0 12px rgba(52,211,153,.5)}
 .time-bar.low{background:linear-gradient(90deg,#fb7185,#f59e0b);box-shadow:0 0 12px rgba(251,113,133,.6)}
 .word-card{background:rgba(6,40,30,.7);border:1px solid #14532d;border-radius:20px;padding:22px 34px;margin:12px 0 4px;box-shadow:0 6px 30px rgba(16,185,129,.2);position:relative}
+.word-card.cardhit{border-color:#34d399;box-shadow:0 6px 32px rgba(52,211,153,.55)}
+.word-card.cardmiss{border-color:#fb7185;box-shadow:0 6px 32px rgba(251,113,133,.55)}
 .word-display{font-size:48px;font-weight:900;letter-spacing:10px;color:#e4fff4}
 .word-display .ch{display:inline-block;animation:chIn .32s backwards}
 @keyframes chIn{0%{opacity:0;transform:translateY(-18px) scale(.4)}100%{opacity:1;transform:none}}
@@ -127,9 +129,11 @@ var HARD=[['banana','🍌'],['basket','🧺'],['bridge','🌉'],['bubble','🫧'
 var CHEERS=['GREAT','SUPER','WOW','NICE','AWESOME','FANTASTIC'];
 var DURATION=60,HINT_DELAY=3000,PENALTY=2;
 var score=0,combo=0,bestCombo=0,bestComboAll=0,correct=0,best=0,timeLeft=60,busy=false;
-var endless=false,wrongs=0,slip=0,slipBest=+localStorage.getItem('ml_slipbest')||0;
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+var endless=false,wrongs=0,slip=0,slipBest=+(lsGet('ml_slipbest'))||0;
 var word='',wordEmoji='💡',blankIdx=0,ans='',optsArr=[],hintTimer=null,tickId=null,wordTimer=null,running=false;
-var AC=null,muted=localStorage.getItem('ml_muted')==='1';
+var AC=null,muted=lsGet('ml_muted')==='1';
 var elScore,elCombo,elMult,elTime,elBest,elTimeBar,elHintZone,elWordDisplay,elOpts,elWordCard,elGameScr,elMedCount;
 var chEls=[],blankEl=null,hintEl=null,optEls=[],lastShownSec=-1;
 var wordShown=0,timesSum=0,timesN=0,fastestAns=0;
@@ -143,11 +147,11 @@ function earnMedal(id){
   sfx('levelup');floatText(MEDS[id]+'!');
 }
 var screenEls=null;
-var lRight=parseInt(localStorage.getItem('ml_lr')||'0',10)||0,lWrong=parseInt(localStorage.getItem('ml_lw')||'0',10)||0;
+var lRight=parseInt(lsGet('ml_lr')||'0',10)||0,lWrong=parseInt(lsGet('ml_lw')||'0',10)||0;
 function $(id){return document.getElementById(id);}
 function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
-function loadBest(){best=parseInt(localStorage.getItem('ml_best')||'0',10)||0;bestComboAll=parseInt(localStorage.getItem('ml_bestcombo')||'0',10)||0;}
-function saveBest(){localStorage.setItem('ml_best',String(best));}
+function loadBest(){best=parseInt(lsGet('ml_best')||'0',10)||0;bestComboAll=parseInt(lsGet('ml_bestcombo')||'0',10)||0;}
+function saveBest(){lsSet('ml_best',String(best));}
 var bookTotal=EASY.length+MID.length+HARD.length,bookCollected=[];
 try{bookCollected=JSON.parse(localStorage.getItem('ml_book')||'[]')||[];}catch(e){bookCollected=[];}
 function updBook(){$('bookCount').textContent=bookCollected.length;$('bookTotal').textContent=bookTotal;$('bookCountO').textContent=bookCollected.length;$('bookTotalO').textContent=bookTotal;}
@@ -161,8 +165,9 @@ function penaltyText(txt){var f=document.createElement('div');f.className='penal
 var jflashEl=null;
 function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
+function cardFlash(cls){elWordCard.classList.remove('cardhit','cardmiss');void elWordCard.offsetWidth;elWordCard.classList.add(cls);setTimeout(function(){elWordCard.classList.remove(cls);},650);}
 function tierPool(){
-  var tier=Math.min(2,Math.floor(correct/8));
+  var tier=Math.min(2,Math.floor(correct/6));
   if(tier===0){return EASY;}
   if(tier===1){return MID;}
   return HARD;
@@ -247,7 +252,7 @@ function answer(ch,idx,btn){
     if(correct>=10){earnMedal('w');}
     if(fastRun>=3){earnMedal('f');}
     if(combo>bestCombo){bestCombo=combo;}
-    if(combo>bestComboAll){bestComboAll=combo;localStorage.setItem('ml_bestcombo',String(bestComboAll));}
+    if(combo>bestComboAll){bestComboAll=combo;lsSet('ml_bestcombo',String(bestComboAll));}
     var mult=1+Math.floor(combo/4);
     var gain=10*mult;
     if(wordEmoji&&bookCollected.indexOf(wordEmoji)===-1){bookCollected.push(wordEmoji);try{localStorage.setItem('ml_book',JSON.stringify(bookCollected));}catch(e){}}
@@ -256,7 +261,7 @@ function answer(ch,idx,btn){
     lRight++;
     if(lRight%100===0){sfx('levelup');floatText('📈 '+lRight+' WORDS!');}
     btn.classList.add('right');
-    jflash('#34d399');jpop(elScore.parentNode);elTimeBar.classList.remove('gain');void elTimeBar.offsetWidth;elTimeBar.classList.add('gain');
+    jflash('#34d399');cardFlash('cardhit');jpop(elScore.parentNode);elTimeBar.classList.remove('gain');void elTimeBar.offsetWidth;elTimeBar.classList.add('gain');
     if(blankEl){blankEl.textContent=ans.toUpperCase();blankEl.classList.add('ok');}
     showHintEmoji();
     if(combo%4===0){sfx('whoosh');confetti(20+mult*4);floatText(CHEERS[(Math.random()*CHEERS.length)|0]+'! +'+gain);}
@@ -275,7 +280,9 @@ function answer(ch,idx,btn){
       setTimeout(function(){elWordCard.classList.remove('shake');},450);
       sfx('buzz');
       jflash('#fb7185');
+      cardFlash('cardmiss');
       penaltyText('\u2764\uFE0F lost!');
+      updateHud();
       if(wrongs>=3){gameOver();return;}
       wordTimer=setTimeout(nextWord,800);
       return;
@@ -289,6 +296,7 @@ function answer(ch,idx,btn){
     setTimeout(function(){elWordCard.classList.remove('shake');},450);
     sfx('buzz');
     jflash('#fb7185');
+    cardFlash('cardmiss');
     penaltyText('Almost! -2s');
     updateHud();
     wordTimer=setTimeout(nextWord,800);
@@ -315,6 +323,8 @@ function startGame(es){
   score=0;combo=0;bestCombo=0;correct=0;timeLeft=DURATION;busy=false;running=true;lastShownSec=-1;
   timesSum=0;timesN=0;fastestAns=0;wordShown=0;wrongRun=0;fastRun=0;medGot={};
   loadBest();
+  if(hintTimer){clearTimeout(hintTimer);hintTimer=null;}
+  if(wordTimer){clearTimeout(wordTimer);wordTimer=null;}
   show('s-game');
   updateHud();
   nextWord();
@@ -329,7 +339,7 @@ function gameOver(){
   sfx('lose');
   $('overTitle').textContent=endless?'ENDLESS RUN!':"TIME'S UP!";
   $('slipTotal').textContent=slip;
-  if(slip>slipBest){slipBest=slip;localStorage.setItem('ml_slipbest',String(slipBest));}
+  if(slip>slipBest){slipBest=slip;lsSet('ml_slipbest',String(slipBest));}
   $('slipBest').textContent=slipBest;
   $('finalScore').textContent=score;
   $('overBest').textContent=best;
@@ -345,8 +355,8 @@ function gameOver(){
   else{$('speedLine').style.display='none';}
   if(timesN>0&&wrongRun===0){earnMedal('p');}
   $('medMedals').textContent=medals.length;
-  localStorage.setItem('ml_lr',String(lRight));
-  localStorage.setItem('ml_lw',String(lWrong));
+  lsSet('ml_lr',String(lRight));
+  lsSet('ml_lw',String(lWrong));
   $('lLife').textContent=lRight;
   $('lAcc').textContent=lRight+lWrong?Math.round(lRight/(lRight+lWrong)*100):0;
   updBook();
@@ -364,8 +374,8 @@ function init(){
   $('btnAgain').addEventListener('click',function(){sfx('coin');startGame();});
   $('btnEndless').addEventListener('click',function(){sfx('coin');startGame(true);});
   $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
-  $('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('ml_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';});
-  $('muteBtn').textContent=muted?'🔇':'🔊';
+  $('muteBtn').addEventListener('click',function(){muted=!muted;lsSet('ml_muted',muted?'1':'0');$('muteBtn').textContent=muted?'\u{1F507}':'\u{1F50A}';});
+  $('muteBtn').textContent=muted?'\u{1F507}':'\u{1F50A}';
   document.addEventListener('keydown',function(e){
     if(!elGameScr.classList.contains('s-active')||busy){return;}
     var n=parseInt(e.key,10),m;

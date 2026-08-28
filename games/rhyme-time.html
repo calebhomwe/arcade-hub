@@ -16,7 +16,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .screen.s-active{display:flex}
 .logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(232,121,249,.6));animation:bob 2.2s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.title{font-size:44px;font-weight:900;letter-spacing:2px;line-height:1.1;background:linear-gradient(90deg,#e879f9,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;text-shadow:0 0 30px rgba(232,121,249,.3)}
+.title{font-size:44px;font-weight:900;letter-spacing:2px;line-height:1.1;background:linear-gradient(90deg,#e879f9,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
 .sub{max-width:460px;font-size:15px;color:#9fb3d9;margin-bottom:18px;line-height:1.5}
 .btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#c026d3,#6366f1);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(192,38,211,.35);transition:transform .12s,filter .12s;min-height:48px}
 .btn:active{transform:scale(.94);filter:brightness(1.2)}
@@ -26,6 +26,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .beat-btn{background:rgba(20,30,60,.9);border:2px solid #334;font-size:15px;padding:10px 16px;min-height:44px}
 .beat-btn.sel{border-color:#e879f9;background:linear-gradient(135deg,rgba(192,38,211,.35),rgba(99,102,241,.35));box-shadow:0 0 16px rgba(232,121,249,.4)}
 .track-name{font-size:13px;color:#67e8f9;margin-top:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-name.err{color:#fb7185}
 .bpm-row{display:flex;align-items:center;gap:12px;justify-content:center;font-size:15px;font-weight:800;color:#9fb3d9}
 .bpm-row input[type=range]{width:180px;accent-color:#e879f9}
 .bpm-val{color:#e879f9;min-width:64px;text-align:left}
@@ -45,6 +46,8 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .beat-strip{display:flex;align-items:center;gap:12px;justify-content:center;margin:2px 0 10px;font-size:14px;font-weight:800;color:#6b7fa3}
 .beat-dot{width:18px;height:18px;border-radius:50%;background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,.7);transition:transform .07s,background .07s}
 .beat-dot.on{transform:scale(1.7);background:#e879f9;box-shadow:0 0 18px rgba(232,121,249,.9)}
+.beat-dot.auto{animation:autoPulse 1s ease-in-out infinite;background:#e879f9}
+@keyframes autoPulse{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.5);opacity:1}}
 .seed-label{font-size:13px;letter-spacing:3px;color:#67e8f9;text-transform:uppercase;margin-bottom:4px}
 .seed{font-size:52px;font-weight:900;color:#fff;text-shadow:0 0 24px rgba(34,211,238,.55);letter-spacing:2px;margin:6px 0 14px;text-transform:uppercase;min-height:62px}
 .seed.pop{animation:seedPop .38s ease}
@@ -112,10 +115,10 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <div class="seed-label">Rhyme with</div>
   <div class="seed" id="seed">CAT</div>
   <div class="in-row">
-    <input type="text" id="rhymeInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24" placeholder="your rhyme...">
+    <input type="text" id="rhymeInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" placeholder="your rhyme..." aria-label="Your rhyme">
     <button class="btn" id="btnDrop">🎤 DROP</button>
   </div>
-  <div class="last-line" id="lastLine">&nbsp;</div>
+  <div class="last-line" id="lastLine" aria-live="polite">&nbsp;</div>
   <div class="ctrl-row">
     <button class="btn ctrl" id="btnSkip">⏭ Pass (breaks chain)</button>
   </div>
@@ -135,37 +138,181 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 
 (function(){
 'use strict';
-var EASY='cat dog sun hat ball cake map ice pen box cup car bus fox run top zip net bed pie jam rat bat mat king star door fish frog hand jump kite lion milk moon nest pear rain ship snow tree wind ball book boot chip drum duck farm fire flag fork gift gold hill hook lamp leaf lock mail mask nail park pine ring road rock rope sail sand seat seed shoe sock song soup tail tent town wash wave'.split(' ');
-var MID='apple bear bird clock cloud crown dance dream earth fairy fruit ghost grape green heart honey horse house juice knife lemon light magic money mouse music night ocean paint party pizza plant plate queen radio river robot salad sheep shelf shirt smile snake spoon storm sugar table tiger toast train truck watch water whale wheel white world candy beach happy'.split(' ');
-var HARD='animal answer banana basket bottle bridge bubble butter camera candle castle cheese cherry circle cookie cotton crayon donkey dragon energy family feather flower forest friend garden gentle guitar hammer helmet island jacket jungle ladder letter magnet marble market mirror monkey muffin nature needle number orange panda parrot peanut pencil person picnic pillow pirate planet pocket potato prince purple rabbit rocket rubber school season secret shadow silver singer spider sponge square statue street summer sunset temple tennis thread ticket tomato tongue tower travel tunnel turtle valley violin wallet window winter wonder yellow'.split(' ');
+var EASY='cat sun hat ball cake map ice pen box cup car bus fox dog run jam zip top net bed pie rat king star door fish frog hand jump kite moon nest pear rain ship snow tree wind book boot chip drum duck farm fire flag fork gift gold hill hook lamp leaf lock mail mask nail park pine ring road rock rope sail sand seat seed shoe sock song soup tail tent town wave'.split(' ');
+var MID='bear bird clock cloud crown dance dream earth fairy fruit ghost grape green heart honey horse house juice knife lemon light magic money mouse night ocean paint party plant plate queen radio river sheep shelf shirt smile snake spoon storm table toast train truck water whale wheel white world candy beach'.split(' ');
+var HARD='answer basket bridge bubble butter cherry cheese cotton feather flower friend garden hammer letter magnet market mirror monkey nickel number parrot pocket potato rabbit rocket school season secret shadow singer single spider sponge square street summer thread ticket tomato tongue tower travel valley wallet window winter wonder'.split(' ');
 var FAMS=[
-'day play way say may ray stay pay pray tray grey they weigh eight great break steak wait late date gate plate state fate mate hate weight straight freight',
+'day play way say may ray stay pay pray tray grey they weigh sleigh bay lay hay spray stray delay display replay',
+'make take bake cake lake rake wake snake break steak mistake awake',
+'late date gate plate wait weight eight straight freight state fate mate hate rate skate crate great bait',
+'rain train brain plain pain chain gain main vein reign insane crane lane plane mane explain drain',
 'you blue do who two too true glue shoe new knew grew flew blew view due crew through brew chew hue sue zoo flu',
-'moon soon spoon tune noon june boom zoom room bloom groom broom',
+'moon soon spoon noon june tune croon balloon cartoon afternoon',
+'boom zoom room bloom groom broom',
 'see sea be bee key free tree three me we he she knee plea tea agree degree flee',
 'kite bite white quite write site night light right sight tight fight flight might bright slight invite excite despite tonight',
 'time climb rhyme dime crime lime mime chime prime slime grime',
-'sun fun run gun one won none done son bun ton spun stun hun',
-'love glove dove above shove',
-'there their care hair bear wear where fair pair stare rare square dare pear swear chair prayer share',
-'go so no know snow show blow grow flow low throw glow though toe dough sew',
+'sun fun run gun one won none done son bun ton spun stun hun begun',
+'love glove dove above shove of',
+'there their care hair bear wear where fair pair stare rare square dare pear swear chair prayer share repair compare air stair tear',
+'go so no know snow show blow grow flow low throw glow though toe dough sew slow crow row window pillow yellow fellow mellow',
 'top pop stop hop drop shop mop chop',
-'hot lot got shot pot dot rot knot not',
-'more door floor pour before explore roar score shore',
+'hot lot got shot pot dot rot knot not what watch',
+'more door floor pour before explore roar score shore four store sore',
 'boy toy joy enjoy annoy deploy',
 'ball call wall fall tall hall small crawl',
 'face place space race chase base case grace trace',
-'rain train brain plain pain chain gain main',
 'cool pool school fool tool rule jewel',
 'mind find kind blind behind grind remind',
 'car star far bar jar guitar',
-'fly try sky cry dry why high eye bye tie dye',
-'boat coat float goat note wrote throat'
+'fly try sky cry dry why high eye bye tie dye my by buy guy pie lie die',
+'boat coat float goat note wrote throat',
+'pin tin win sin spin chin grin thin skin bin fin',
+'cat hat bat mat sat rat flat that pat chat brat splat',
+'ice rice dice nice mice slice twice price spice',
+'boot root shoot loot fruit suit hoot',
+'chip zip clip ship trip tip whip grip slip drip',
+'drum gum hum mum thumb crumb plum come some sum',
+'duck luck stuck truck',
+'farm arm charm alarm harm',
+'fire higher wire tire hire liar',
+'flag bag tag rag drag',
+'fork cork pork',
+'gift lift shift drift',
+'gold cold hold told bold fold',
+'hill fill mill will chill still drill',
+'book look cook hook took shook nook',
+'lamp camp damp stamp',
+'leaf beef chief thief belief grief',
+'lock rock sock knock clock block',
+'mail tail sail nail rail pale whale trail',
+'mask task bask cask',
+'park dark bark shark mark',
+'pine line nine fine mine shine spine',
+'king ring sing wing thing bring string swing',
+'road code mode load toad',
+'rope soap hope cope slope',
+'hand band land sand stand',
+'seat meat beat heat feet treat sweet street meet greet beet fleet',
+'seed need feed speed breed',
+'song long strong wrong belong',
+'soup loop group scoop troop',
+'tent sent rent bent spent',
+'town down brown crown clown frown',
+'wave brave grave save cave shave',
+'dog frog log fog bog',
+'jam ham lamb ram',
+'pen ten hen men when then',
+'cup up pup',
+'bus fuss plus',
+'nest best rest test west chest guest',
+'net get set wet bet jet yet',
+'bed red head bread dead said thread spread',
+'box fox socks locks',
+'fish dish wish',
+'jump bump dump pump',
+'bird word third heard curd',
+'cloud loud proud crowd',
+'dance chance glance trance',
+'dream stream cream team scream beam',
+'earth birth worth mirth',
+'fairy hairy scary',
+'ghost most post toast host',
+'grape tape shape cape escape',
+'green seen queen bean clean mean screen',
+'heart start cart part smart',
+'honey money funny sunny bunny',
+'horse force course source',
+'house mouse blouse',
+'juice loose moose goose noose',
+'knife life wife strife',
+'lemon melon felon',
+'magic tragic',
+'ocean motion potion lotion',
+'paint faint saint',
+'party hearty smarty',
+'plant ant grant chant',
+'sheep sleep deep keep creep steep',
+'shelf himself itself',
+'shirt skirt hurt dirt',
+'smile mile style file while tile',
+'storm form warm norm',
+'table able cable stable label fable',
+'water later',
+'wheel feel steel heel real meal',
+'world curled hurled swirled',
+'candy handy brandy sandy',
+'beach teach reach peach each',
+'answer dancer cancer',
+'basket gasket casket',
+'bridge fridge ridge',
+'bubble trouble double rubble',
+'butter gutter mutter cutter',
+'cherry merry berry ferry very',
+'cheese freeze breeze sneeze tease ease',
+'cotton rotten forgotten',
+'feather weather leather together whether',
+'flower power tower shower hour',
+'friend send bend blend trend',
+'garden pardon',
+'hammer grammar',
+'letter better sweater getter',
+'magnet planet',
+'market target',
+'mirror horror',
+'monkey donkey',
+'nickel pickle tickle freckle',
+'number lumber slumber',
+'parrot carrot',
+'pocket rocket locket',
+'potato tomato',
+'rabbit habit',
+'season reason treason',
+'secret discreet',
+'shadow meadow',
+'singer finger ringer',
+'single tingle jingle mingle',
+'spider rider slider wider',
+'sponge plunge lounge',
+'summer drummer',
+'ticket cricket wicket',
+'tongue young sung rung',
+'tower lower',
+'travel gravel',
+'valley alley',
+'wallet mallet',
+'winter sprinter printer',
+'wonder thunder under blunder',
+'catch match hatch latch',
+'bone tone cone zone lone phone stone throne',
+'cow how now wow plow brow',
+'man can pan fan ran plan van tan ban',
+'map cap tap nap rap clap trap',
+'move groove prove approve',
+'here fear dear hear near clear year beer deer cheer steer peer appear',
+'work jerk smirk',
+'give live forgive',
+'five drive hive alive dive',
+'home dome foam roam',
+'close rose those pose nose hose',
+'lose choose bruise cruise booze snooze shoes',
+'mud bud thud stud blood flood',
+'does buzz fuzz was',
+'were her fur stir blur occur',
+'have halve',
+'foot good wood could should would hood stood',
+'spook',
+'woke smoke broke joke poke spoke',
+'hug mug rug bug tug snug',
+'wind pinned sinned',
+'radio studio',
+'river giver shiver deliver'
 ];
 var FAMIDX={};
-(function(){var i,j,w;for(i=0;i<FAMS.length;i++){var f=FAMS[i].split(' ');for(j=0;j<f.length;j++){w=f[j];if(!FAMIDX[w]){FAMIDX[w]=i;}}}})();
+(function(){var i,j,w;for(i=0;i<FAMS.length;i++){var f=FAMS[i].split(' ');for(j=0;j<f.length;j++){w=f[j];if(FAMIDX[w]===undefined){FAMIDX[w]=i;}}}})();
 var VOWELS='aeiouy';
-var AC=null,noiseBuf=null,beatGain=null,schedId=null,nextBeatTime=0,beatIdx=0,lastPulseBeat=-1;
+var VSCAN='aeiouy:';
+var AC=null,noiseBuf=null,beatGain=null,schedId=null,nextBeatTime=0,beatAnchor=0,beatIdx=0,lastPulseBeat=-1;
 var mode='builtin',bpm=92,trackEl=null,trackURL=null,trackTitle='';
 var playing=false,paused=false,busy=false;
 var score=0,streak=0,lives=3,round=0,best=0,bestStreak=0,bestRound=0;
@@ -177,44 +324,60 @@ var screenEls=null,jflashEl=null;
 var elScore,elStreak,elLives,elBest,elBar,elSeed,elInput,elRound,elBeatInfo,elBeatDot,elLast;
 function $(id){return document.getElementById(id);}
 function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
-function shuffle(a){var i,j,t;for(i=a.length-1;i>0;i--){j=(Math.random()*(i+1))|0;t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function loadBest(){best=parseInt(localStorage.getItem('rt_best')||'0',10)||0;bestStreak=parseInt(localStorage.getItem('rt_beststreak')||'0',10)||0;bestRound=parseInt(localStorage.getItem('rt_bestround')||'0',10)||0;}
 function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('rt_beststreak',String(bestStreak));}}
-function ac(){try{if(!AC){var W=window;var C=W.AudioContext||W.webkitAudioContext;if(!C){return null;}AC=new C();beatGain=AC.createGain();beatGain.gain.value=0.85;beatGain.connect(AC.destination);var len=(AC.sampleRate*0.25)|0;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);var d=noiseBuf.getChannelData(0),i;for(i=0;i<len;i++){d[i]=Math.random()*2-1;}}if(AC.state==='suspended'){AC.resume();}return AC;}catch(e){return null;}}
+function applyMute(){if(beatGain&&AC){try{beatGain.gain.setTargetAtTime(muted?0:0.85,AC.currentTime,0.02);}catch(e){beatGain.gain.value=muted?0:0.85;}}if(trackEl){trackEl.volume=muted?0:0.65;}}
+function ac(){try{if(!AC){var W=window;var C=W.AudioContext||W.webkitAudioContext;if(!C){return null;}AC=new C();var comp=AC.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=20;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.25;comp.connect(AC.destination);beatGain=AC.createGain();beatGain.gain.value=muted?0:0.85;beatGain.connect(comp);var len=(AC.sampleRate*0.25)|0;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);var d=noiseBuf.getChannelData(0),i;for(i=0;i<len;i++){d[i]=Math.random()*2-1;}}if(AC.state==='suspended'){AC.resume();}return AC;}catch(e){return null;}}
 function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac();if(!a){return;}var o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
 var SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a;}catch(e){}});
-function sfx(n){if(muted){return;}var a=SFXP[n];if(!a){return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}
-function kick(t){var a=AC,o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+0.16);g.gain.setValueAtTime(0.9,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.28);o.connect(g);g.connect(beatGain);o.start(t);o.stop(t+0.3);}
-function snare(t){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=1900;f.Q.value=0.8;g.gain.setValueAtTime(0.38,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t);s.stop(t+0.2);var o=a.createOscillator(),g2=a.createGain();o.type='triangle';o.frequency.value=190;g2.gain.setValueAtTime(0.25,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);o.connect(g2);g2.connect(beatGain);o.start(t);o.stop(t+0.1);}
-function hat(t,v){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='highpass';f.frequency.value=7500;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t);s.stop(t+0.06);}
-function scheduleBeat(i,t){var bar=i%4;var spb=60/bpm;if(bar===0||bar===2){kick(t);}if(bar===1||bar===3){snare(t);}hat(t,0.16);hat(t+spb/2,0.08);}
-function scheduler(){var a=AC;if(!a||!playing||paused||mode!=='builtin'){return;}while(nextBeatTime<a.currentTime+0.12){scheduleBeat(beatIdx,nextBeatTime);nextBeatTime+=60/bpm;beatIdx++;}}
-function startBeat(){var a=ac();if(mode==='builtin'){if(a){nextBeatTime=a.currentTime+0.1;beatIdx=0;}}else if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
+var TONEF={tap:340,pop:520,coin:880,hit:220,boom:90,jump:420,whoosh:600,win:660,lose:160,buzz:110,levelup:760,tick:1200};
+function sfx(n){if(muted){return;}var a=SFXP[n];if(!a){tone(TONEF[n]||440,0.12,'sine',0.12);return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch){p.catch(function(){tone(TONEF[n]||440,0.12,'sine',0.12);});}}catch(e){tone(TONEF[n]||440,0.12,'sine',0.12);}}
+function kick(t,dec,freq){var a=AC,o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.setValueAtTime(freq||165,t);o.frequency.exponentialRampToValueAtTime(48,t+0.12);g.gain.setValueAtTime(0.95,t);g.gain.exponentialRampToValueAtTime(0.001,t+(dec||0.28));o.connect(g);g.connect(beatGain);o.start(t);o.stop(t+(dec||0.28)+0.05);var s=a.createBufferSource(),f=a.createBiquadFilter(),g2=a.createGain();s.buffer=noiseBuf;s.playbackRate.value=2;f.type='bandpass';f.frequency.value=3200;f.Q.value=1;g2.gain.setValueAtTime(0.22,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.02);s.connect(f);f.connect(g2);g2.connect(beatGain);s.start(t,Math.random()*0.2);s.stop(t+0.03);}
+function snare(t){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='bandpass';f.frequency.value=1900;f.Q.value=1.3;g.gain.setValueAtTime(0.38,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t,Math.random()*0.15);s.stop(t+0.2);var o=a.createOscillator(),g2=a.createGain();o.type='triangle';o.frequency.value=190;g2.gain.setValueAtTime(0.2,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.09);o.connect(g2);g2.connect(beatGain);o.start(t);o.stop(t+0.1);}
+function hat(t,v){var a=AC,s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=noiseBuf;f.type='highpass';f.frequency.value=7500;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);s.connect(f);f.connect(g);g.connect(beatGain);s.start(t,Math.random()*0.15);s.stop(t+0.06);}
+function scheduleBeat(i,t){var spb=60/bpm,bar=i%4,trap=bpm>110;
+if(bar===0||bar===2){kick(t);}
+if(bar===2){kick(t+spb*0.5,0.16,60);}
+if(trap){if(bar===2){snare(t);}}else{if(bar===1||bar===3){snare(t);}}
+if(trap){hat(t,0.15);hat(t+spb/4,0.05);hat(t+spb/2,0.10);hat(t+3*spb/4,0.05);}
+else{hat(t,0.16);hat(t+spb/2,0.08);}
+}
+function scheduler(){var a=AC;if(!a||!playing||paused||mode!=='builtin'){return;}if(nextBeatTime<a.currentTime-0.3){nextBeatTime=a.currentTime+0.05;beatAnchor=nextBeatTime;}while(nextBeatTime<a.currentTime+0.12){scheduleBeat(beatIdx,nextBeatTime);nextBeatTime+=60/bpm;beatIdx++;}}
+function startBeat(){var a=ac();if(mode==='builtin'){if(a){nextBeatTime=a.currentTime+0.1;beatAnchor=nextBeatTime;beatIdx=0;}elBeatDot.classList.remove('auto');}else if(trackEl){elBeatDot.classList.add('auto');try{trackEl.currentTime=0;var p=trackEl.play();if(p&&p.catch){p.catch(function(){trackFail();});}}catch(e){trackFail();}}}
+function trackFail(){var tn=$('trackName');if(tn){tn.textContent='⚠ Could not play that file — using built-in beat';tn.classList.add('err');}setMode('builtin');}
 function stopBeat(){if(trackEl){try{trackEl.pause();}catch(e){}}}
-function beatPulse(){var b=-1;if(mode==='builtin'){if(AC){var spb=60/bpm;var ph=(AC.currentTime-(nextBeatTime-spb*1))/spb;b=Math.floor(ph);}}else if(trackEl&&!trackEl.paused){b=Math.floor(trackEl.currentTime*2);}if(b!==lastPulseBeat){lastPulseBeat=b;elBeatDot.classList.add('on');setTimeout(function(){elBeatDot.classList.remove('on');},110);}}
+function beatPulse(){var b=-1;if(mode==='builtin'){if(AC){var spb=60/bpm;b=Math.floor((AC.currentTime-beatAnchor)/spb);}}else{return;}if(b!==lastPulseBeat){lastPulseBeat=b;elBeatDot.classList.add('on');setTimeout(function(){elBeatDot.classList.remove('on');},110);}}
 function clean(s){return s.toLowerCase().replace(/[^a-z]/g,'');}
-function rhymeKey(w){
-if(w.length>3&&w.charAt(w.length-1)==='s'){w=w.slice(0,-1);}
-if(w.length>3&&w.slice(-2)==='es'&&'sxzho'.indexOf(w.charAt(w.length-3))!==-1){w=w.slice(0,-2);}
-var core=w;
-if(core.length>3&&core.charAt(core.length-1)==='e'&&VOWELS.indexOf(core.charAt(core.length-2))===-1){core=core.slice(0,-1);}
-if(core.length>3&&core.slice(-2)==='mb'){core=core.slice(0,-1);}
-if(core.length>3&&core.slice(-2)==='gh'){core=core.slice(0,-2);}
-var i=core.length-1;
-while(i>=0&&VOWELS.indexOf(core.charAt(i))===-1){i--;}
-if(i<0){return core;}
-return core.slice(i);
+function canon(w){
+if(w.length>4&&/(?:ches|shes|sses|xes|zes)$/.test(w)){w=w.slice(0,-2);}
+else if(w.length>3&&w.charAt(w.length-1)==='s'&&w.charAt(w.length-2)!=='s'){w=w.slice(0,-1);}
+if(w.length>2&&w.charAt(w.length-1)==='x'){w=w.slice(0,-1)+'ck';}
+w=w.replace(/igh/g,'i:').replace(/ay/g,'a:').replace(/ai/g,'a:').replace(/ea/g,'i:').replace(/ee/g,'i:').replace(/ie/g,'i:').replace(/oa/g,'o:').replace(/oo/g,'u:').replace(/ou/g,'q').replace(/ow/g,'w').replace(/ew/g,'u:').replace(/ue/g,'u:');
+if(w.length>=3&&w.charAt(w.length-1)==='e'&&VOWELS.indexOf(w.charAt(w.length-2))===-1){
+w=w.slice(0,-1);
+var vi=w.length-1;
+while(vi>=0&&VOWELS.indexOf(w.charAt(vi))===-1){vi--;}
+if(vi>=0){w=w.slice(0,vi)+w.charAt(vi).toUpperCase()+w.slice(vi+1);}
+}
+if(w.length>3&&w.slice(-2)==='mb'){w=w.slice(0,-1);}
+var i=w.length-1;
+while(i>=0&&VSCAN.indexOf(w.charAt(i))===-1&&VSCAN.indexOf(w.charAt(i).toLowerCase())===-1){i--;}
+if(i<0){return w;}
+var key=w.slice(i).toLowerCase();
+return key;
 }
 function isRhyme(a,b){
 if(a===b){return false;}
 var fa=FAMIDX[a],fb=FAMIDX[b];
-if(fa!==undefined&&fa===fb){return true;}
-var ka=rhymeKey(a),kb=rhymeKey(b);
-if(ka.length<1||kb.length<1){return false;}
+if(fb!==undefined){return fa!==undefined&&fa===fb;}
+var ka=canon(a),kb=canon(b);
+if(ka.length<2||kb.length<2){return false;}
+if(ka==='er'||kb==='er'){return false;}
+if(!/[bcdfghjklmnpqrstvwxz]/.test(ka)){return false;}
 return ka===kb;
 }
-function sampleRhyme(w){var fi=FAMIDX[w];if(fi===undefined){return null;}var f=FAMS[fi].split(' '),c,i;for(i=0;i<f.length;i++){c=f[i];if(c!==w){return c;}}return null;}
-function confetti(n){var cols=['#e879f9','#a78bfa','#22d3ee','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function sampleRhyme(w){var fi=FAMIDX[w];if(fi===undefined){return null;}var f=FAMS[fi].split(' '),i,c;for(i=0;i<f.length;i++){c=f[i];if(c!==w){return c;}}return null;}
+function confetti(n){var cols=['#e879f9','#a78bfa','#22d3ee','#34d399','#fbbf24'],i,m=Math.min(n,24);for(i=0;i<m;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
 function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function updateHud(){elScore.textContent=score;elStreak.textContent=streak>0?streak+' (+'+(Math.min(streak,10)*3)+')':'0';var h='',i;for(i=0;i<3;i++){h+=i<lives?'♥':'♡';}elLives.textContent=h;elBest.textContent=best;}
@@ -226,7 +389,7 @@ function nextRound(){
 round++;
 seed=pickSeed();
 used[seed]=1;
-timeTotal=Math.max(6,14-round*0.4);
+timeTotal=Math.max(8,14-round*0.3);
 timeLeft=timeTotal;
 busy=false;
 elSeed.textContent=seed.toUpperCase();
@@ -241,6 +404,7 @@ try{elInput.focus();}catch(e){}
 function deny(msg){sfx('buzz');setLast(msg,'bad');elInput.classList.remove('shake');void elInput.offsetWidth;elInput.classList.add('shake');}
 function submitRhyme(){
 if(!playing||busy||paused){return;}
+try{elInput.focus();}catch(e){}
 var w=clean(elInput.value);
 if(w.length<2){deny('TOO SHORT — 2+ letters');return;}
 if(w===seed){deny('SAME WORD — rhyme it!');return;}
@@ -251,6 +415,7 @@ hit(w);
 function hit(w){
 busy=true;
 used[w]=1;
+elInput.value='';
 var speed=Math.max(0,Math.round((timeLeft/timeTotal)*10));
 var sb=Math.min(streak,10)*3;
 var gain=10+speed+sb;
@@ -269,7 +434,7 @@ setTimeout(nextRound,820);
 }
 function miss(w){
 busy=true;
-used[w]=1;
+elInput.value='';
 lives--;streak=0;
 sfx('buzz');
 jflash('#fb7185');
@@ -291,6 +456,7 @@ setTimeout(function(){elBar.classList.remove('flash');nextRound();},1150);
 }
 function skipWord(){
 if(!playing||busy||paused){return;}
+try{elInput.focus();}catch(e){}
 streak=0;
 sfx('whoosh');
 setLast('SKIPPED '+seed.toUpperCase()+' — chain broken','bad');
@@ -304,7 +470,10 @@ if(paused){lastT=t;return;}
 var dt=(t-lastT)/1000;lastT=t;
 if(dt>0.25){dt=0.25;}
 if(!busy){
+var ps=Math.floor(timeLeft);
 timeLeft-=dt;
+var ns=Math.floor(timeLeft);
+if(ns<ps&&ns>=1&&ns<=3){sfx('tick');}
 if(timeLeft<=0){timeLeft=0;updateBar();timeOut();return;}
 updateBar();
 }
@@ -347,17 +516,19 @@ mode=m;
 $('btnBuiltin').classList.toggle('sel',m==='builtin');
 $('btnTrack').classList.toggle('sel',m==='track');
 $('bpmRow').style.display=m==='builtin'?'':'none';
-sfx('tap');
 }
 function onFile(ev){
 var f=ev.target.files&&ev.target.files[0];
 if(!f){return;}
 if(trackURL){try{URL.revokeObjectURL(trackURL);}catch(e){}}
 trackURL=URL.createObjectURL(f);
-if(!trackEl){trackEl=new Audio();trackEl.loop=true;}
+if(!trackEl){trackEl=new Audio();trackEl.loop=true;trackEl.addEventListener('error',trackFail);}
 trackEl.src=trackURL;
+trackEl.volume=muted?0:0.65;
 trackTitle=f.name.replace(/\.[^.]+$/,'');
-$('trackName').textContent='🎵 '+f.name;
+var tn=$('trackName');
+tn.classList.remove('err');
+tn.textContent='🎵 '+f.name;
 setMode('track');
 sfx('coin');
 }
@@ -376,17 +547,17 @@ $('btnAgain').addEventListener('click',function(){sfx('coin');startGame();});
 $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
 $('btnDrop').addEventListener('click',function(){sfx('tap');submitRhyme();});
 $('btnSkip').addEventListener('click',skipWord);
-$('btnBuiltin').addEventListener('click',function(){setMode('builtin');});
+$('btnBuiltin').addEventListener('click',function(){setMode('builtin');sfx('tap');});
 $('btnTrack').addEventListener('click',function(){$('beatFile').click();});
 $('beatFile').addEventListener('change',onFile);
 $('bpmSlider').addEventListener('input',function(){bpm=parseInt(this.value,10)||92;$('bpmVal').textContent=bpm;localStorage.setItem('rt_bpm',String(bpm));});
 elInput.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submitRhyme();}});
-$('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('rt_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';if(trackEl){trackEl.volume=muted?0:1;}});
+$('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('rt_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';applyMute();});
 $('muteBtn').textContent=muted?'🔇':'🔊';
 document.addEventListener('visibilitychange',function(){
 if(!playing){return;}
 if(document.hidden){paused=true;if(trackEl){try{trackEl.pause();}catch(e){}}}
-else{paused=false;lastT=performance.now();if(mode==='builtin'&&AC){nextBeatTime=AC.currentTime+0.05;beatIdx=0;}if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
+else{paused=false;lastT=performance.now();if(mode==='builtin'&&AC){nextBeatTime=AC.currentTime+0.05;beatAnchor=nextBeatTime;beatIdx=0;}if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
 });
 }
 init();
