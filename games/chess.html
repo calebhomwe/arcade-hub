@@ -1126,7 +1126,7 @@ function refreshCssCache() {
   const cs = getComputedStyle(document.body);
   const keys = ['lt','dk','ltSel','dkSel','ltLast','dkLast','ltChk','dkChk','ltHint','dkHint','wPiece','bPiece','wStroke','bStroke'];
   const out = {};
-  for (const k of keys) out[k] = cs.getPropertyValue(k).trim();
+  for (const k of keys) out[k] = cs.getPropertyValue('--' + k).trim();
   cssCache = out;
 }
 function getCssVar(name) { return cssCache[name.replace(/^--/, '')] || ''; }
@@ -1374,6 +1374,43 @@ function spawnTextPop(x, y, text, color, size) {
 }
 function bodyShake() { document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake'); }
 
+// ==================== MOD MODULE API ====================
+window.ChessMods = (function () {
+  const listeners = {};
+  function on(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); }
+  function emit(ev, data) {
+    const ls = listeners[ev]; if (!ls) return;
+    for (const fn of ls) { try { fn(data); } catch (e) { console.warn('[chess-mod]', ev, e); } }
+  }
+  function sqXY(sq) {
+    const r = row(sq), c = col(sq);
+    const rr = flip ? 7 - r : r, cc = flip ? 7 - c : c;
+    return { x: padding + cc * sqSize + sqSize / 2, y: padding + rr * sqSize + sqSize / 2 };
+  }
+  return {
+    on: on, emit: emit,
+    api: {
+      sqXY: sqXY,
+      get sqSize() { return sqSize; },
+      get juice() { return juiceLevel; },
+      get turn() { return game.turn; },
+      get board() { return game.board; },
+      get gameOver() { return game.gameOver; },
+      particles: (x, y, n, color) => spawnParticles(x, y, n, color),
+      textPop: (x, y, t, c, s) => spawnTextPop(x, y, t, c, s),
+      shake: n => triggerShake(n),
+      flash: sq => triggerFlash(sq),
+      playMove: (from, to) => {
+        const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+        for (const m of legal) if (m.from === from && m.to === to) { executeMove(m); return true; }
+        return false;
+      },
+      setBot: b => { botEnabled = b; },
+      isOver: () => game.gameOver,
+    }
+  };
+})();
+
 // ==================== INPUT HANDLING ====================
 
 function getSquareFromEvent(e) {
@@ -1535,6 +1572,16 @@ function executeMove(move) {
     game.result = 'Draw — threefold repetition!'; sfxDraw();
   } else if (move.castle && juiceLevel > 30) { triggerShake(0.5); sfxCastle(); }
 
+  ChessMods.emit('move', {
+    from: move.from, to: move.to,
+    captured: capturedPiece, castle: !!move.castle, promo: !!move.promo,
+    mover: 1 - game.turn,
+    check: !game.gameOver && isInCheck(game.board, game.turn),
+    mate: game.gameOver && game.result.indexOf('checkmate') >= 0,
+    draw: game.gameOver && game.result.indexOf('draw') >= 0,
+    win: game.gameOver && game.result.indexOf('wins') >= 0,
+    combo: comboCount
+  });
   if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); }
   updateUI();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
@@ -1786,6 +1833,7 @@ function resetGame() {
   shakeAmount = 0; comboCount = 0;
   castleUsedThisGame = false;
   puzzleMode = false; puzzleIndex = -1;
+  ChessMods.emit('reset', {});
   if (prevBotEnabled !== null) { botEnabled = prevBotEnabled; prevBotEnabled = null; }
   document.getElementById('puzzlePanel').classList.remove('show');
   document.getElementById('tip').textContent = '';
@@ -2114,6 +2162,22 @@ juiceSlider.addEventListener('input', () => {
 });
 
 // ==================== INIT ====================
+
+(function loadMods() {
+  const mods = [
+    'chess-faces.js', 'chess-movement.js', 'chess-combo.js', 'chess-elim.js',
+    'chess-powerups.js', 'chess-celebration.js', 'chess-sfx.js', 'chess-coach.js',
+    'chess-personality.js', 'chess-modes.js'
+  ];
+  let loaded = 0, failed = 0;
+  mods.forEach(src => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { loaded++; };
+    s.onerror = () => { failed++; console.warn('[chess-mod] missing:', src); };
+    document.body.appendChild(s);
+  });
+})();
 
 refreshCssCache();
 loadMeta(); refreshMeta();

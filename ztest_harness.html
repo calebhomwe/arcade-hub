@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>harness</title></head>
+<body style="margin:0;background:#111">
+<iframe id="f" src="games/chess.html" style="width:480px;height:960px;border:0"></iframe>
+<script>
+var SEQ = ['e2e4','e7e5','d1h5','b8c6','f1c4','g8f6','h5f7'];
+function sq(s){ return (8 - parseInt(s[1],10)) * 8 + (s.charCodeAt(0) - 97); }
+function playNext(w, i){
+  if (i >= SEQ.length) { document.title = 'SEQDONE'; return; }
+  try {
+    var from = sq(SEQ[i].slice(0,2)), to = sq(SEQ[i].slice(2,4));
+    var ok = w.ChessMods.api.playMove(from, to);
+    if (!ok) { document.title = 'NOMOVE:' + SEQ[i]; return; }
+    if (typeof w.draw === 'function') w.draw();
+  } catch(e) { document.title = 'ERR:' + e.message; return; }
+  setTimeout(function(){ playNext(w, i+1); }, 200);
+}
+document.getElementById('f').addEventListener('load', function(){
+  var w = document.getElementById('f').contentWindow;
+  setTimeout(function(){
+    try {
+      w.ChessMods.api.setBot(false);
+      playNext(w, 0);
+    } catch(e) { document.title = 'BOOTERR:' + e.message; }
+  }, 300);
+});
+</script>
+</body></html>
+
