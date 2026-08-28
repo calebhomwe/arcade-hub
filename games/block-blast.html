@@ -208,6 +208,10 @@ const BLAST_MAX = 5, BOMB_COLOR = '#f43f5e';
 let clearStreak = 0;
 let bestStreakEver = parseInt(localStorage.getItem('blockblast_streak') || '0');
 let lifetimeClears = parseInt(localStorage.getItem('blockblast_clears') || '0');
+let sparks = parseInt(localStorage.getItem('blockblast_sparks') || '0');
+let quadEver = false;
+let ach = [];
+try { ach = JSON.parse(localStorage.getItem('blockblast_ach') || '[]') || []; } catch (e) { ach = []; }
 
 // ==================== CANVAS ====================
 
@@ -267,6 +271,7 @@ function generatePieces() {
     blastCharge -= BLAST_MAX;
     sfx('levelup');
   }
+  if (Math.random() < 0.12) p[2].star = true;
   return p;
 }
 
@@ -378,6 +383,7 @@ if (linesCleared > 0) {
     blastCharge = Math.min(BLAST_MAX, blastCharge + 1);
     clearStreak++;
     lifetimeClears++;
+    if (linesCleared >= 4) quadEver = true;
     if (clearStreak > bestStreakEver) bestStreakEver = clearStreak;
     localStorage.setItem('blockblast_clears', lifetimeClears);
     localStorage.setItem('blockblast_streak', bestStreakEver);
@@ -386,6 +392,12 @@ if (linesCleared > 0) {
     const points = linesCleared * 10 * comboCount;
     score += points;
     if (linesCleared >= 3) score += 20;
+
+    if (pieces[pieceIdx].star) {
+      sparks++;
+      try { localStorage.setItem('blockblast_sparks', String(sparks)); } catch (e) {}
+      sfx('levelup');
+    }
 
     if (linesCleared >= 4) sfxCombo(linesCleared);
     else if (comboCount >= 3) sfxCombo(comboCount);
@@ -427,6 +439,7 @@ if (linesCleared > 0) {
     } else {
       document.getElementById('comboText').textContent = `+${points}`;
     }
+    if (pieces[pieceIdx].star) document.getElementById('comboText').textContent = '💫 ' + document.getElementById('comboText').textContent;
     setTimeout(() => { document.getElementById('comboText').textContent = ''; }, 1500);
   } else {
     comboCount = 0;
@@ -477,6 +490,7 @@ if (linesCleared > 0) {
     localStorage.setItem('blockblast_best', bestScore);
   }
 
+  checkAch();
   updateUI();
   drawGrid();
   drawPieces();
@@ -718,6 +732,12 @@ function drawPieces() {
       pctx.fillText('💣', size / 2, size / 2 + 6);
     }
 
+    if (piece.star && !piece.bomb) {
+      pctx.font = 'bold ' + 13 * dpr + 'px system-ui';
+      pctx.textAlign = 'center';
+      pctx.fillText('✨', 14 * dpr, 15 * dpr);
+    }
+
     slot.appendChild(pc);
     slot.addEventListener('click', () => {
       if (gameOver || piece.used) return;
@@ -727,6 +747,27 @@ function drawPieces() {
       drawGrid();
     });
     area.appendChild(slot);
+  }
+}
+
+const BADGES = [
+  ['boom', '💣 Demolitionist', () => bombsPlaced >= 1],
+  ['quad', '🔥 Quad Master', () => quadEver],
+  ['chain5', '🔗 Streak 5', () => bestStreakEver >= 5],
+  ['club500', '🏆 500 Club', () => bestScore >= 500],
+  ['spark10', '✨ 10 Sparks', () => sparks >= 10],
+  ['clear100', '🧱 Century', () => lifetimeClears >= 100],
+];
+
+function checkAch() {
+  for (const b of BADGES) {
+    if (ach.indexOf(b[0]) === -1 && b[2]()) {
+      ach.push(b[0]);
+      try { localStorage.setItem('blockblast_ach', JSON.stringify(ach)); } catch (e) {}
+      sfx('levelup');
+      document.getElementById('comboText').textContent = '🎖 ' + b[1] + ' unlocked!';
+      setTimeout(() => { document.getElementById('comboText').textContent = ''; }, 2000);
+    }
   }
 }
 
@@ -744,7 +785,7 @@ function updateUI() {
   document.getElementById('bestVal').textContent = bestScore;
   document.getElementById('comboVal').textContent = comboCount;
   document.getElementById('blastVal').textContent = (bombsPlaced ? '💣' + bombsPlaced + ' ' : '') + blastCharge + '/' + BLAST_MAX;
-  document.getElementById('metaStats').textContent = rankName(lifetimeClears) + ' · ' + lifetimeClears + ' clears · 🔗 best ' + bestStreakEver;
+  document.getElementById('metaStats').textContent = rankName(lifetimeClears) + ' · ' + lifetimeClears + ' clears · 🔗 best ' + bestStreakEver + ' · ✨' + sparks + ' · 🎖' + ach.length + '/' + BADGES.length;
   if (gameOver) {
     document.getElementById('status').textContent = 'Game Over! No more moves.';
     document.getElementById('status').style.color = '#f472b6';

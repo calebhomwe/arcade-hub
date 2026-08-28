@@ -339,6 +339,8 @@ body.th-gold {
   <div class="stat-line"><span>🧩 Puzzles solved</span><b id="statPuzzles">0</b></div>
   <div class="stat-line"><span>⚡ Fastest mate</span><b id="statMate">—</b></div>
   <div class="stat-line"><span>⚡ Fastest mate (half-moves)</span><b id="statFastest">—</b></div>
+  <div class="stat-line"><span>🎖️ Badges</span><b id="statBadges">0/0</b></div>
+  <div class="stat-line"><span>🔥 Puzzle rush best</span><b id="statRush">0</b></div>
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
 </div>
 
@@ -977,6 +979,38 @@ function recordPosition(g) {
   return g.positionCounts[k];
 }
 
+// ==================== ACHIEVEMENT BADGES ====================
+
+const BADGE_KEY = 'chessBadges';
+let ACH_FLAGS = { combo3: false, castleWin: false };
+let castleUsedThisGame = false;
+let badges = [];
+try { badges = JSON.parse(localStorage.getItem(BADGE_KEY) || '[]') || []; } catch (e) { badges = []; }
+const BADGES = [
+  { id: 'first-win', icon: '🥇', name: 'First Blood', cond: () => STATS.w >= 1 || metaW >= 1 },
+  { id: 'streak3', icon: '🔥', name: 'Three-peat', cond: () => STATS.bestStreak >= 3 || metaBestStreak >= 3 },
+  { id: 'veteran', icon: '🎖️', name: 'Veteran (10 games)', cond: () => STATS.played >= 10 },
+  { id: 'combo3', icon: '⚡', name: 'Fury Road (3 captures in a row)', cond: () => ACH_FLAGS.combo3 },
+  { id: 'speedy', icon: '⏱️', name: 'Speed Demon (mate in <=20 half-moves)', cond: () => STATS.fastestMateMoves > 0 && STATS.fastestMateMoves <= 20 },
+  { id: 'castlemate', icon: '🏰', name: 'Castled Winner', cond: () => ACH_FLAGS.castleWin },
+  { id: 'puzzler', icon: '🧩', name: 'Puzzle Solver x5', cond: () => STATS.puzzlesSolved >= 5 },
+];
+let RUSH = { cur: 0, best: 0 };
+try { RUSH.best = +localStorage.getItem('chessRushBest') || 0; } catch (e) {}
+
+function unlockBadges() {
+  let changed = false;
+  for (const b of BADGES) {
+    if (badges.indexOf(b.id) === -1 && b.cond()) {
+      badges.push(b.id); changed = true;
+      const el = document.getElementById('tip');
+      if (el) { el.textContent = b.icon + ' Badge unlocked: ' + b.name + '!'; setTimeout(() => { if (el.textContent.indexOf(b.name) !== -1) el.textContent = ''; }, 4000); }
+      try { sfx('levelup'); } catch (e) {}
+    }
+  }
+  if (changed) { try { localStorage.setItem(BADGE_KEY, JSON.stringify(badges)); } catch (e) {} }
+}
+
 function hasInsufficientMaterial(board) {
   const pieces = [];
   for (let i = 0; i < 64; i++) if (board[i]) pieces.push({ p: board[i], i });
@@ -1419,6 +1453,7 @@ function executeMove(move) {
     triggerShake(Math.min(2.5, 0.8 + comboCount * 0.3));
     sfxCapture();
     if (juiceLevel >= 30 && comboCount >= 3) { sfxCombo(); bodyShake(); }
+    if (comboCount >= 3) ACH_FLAGS.combo3 = true;
     const x = padding + (flip?7-toC:toC) * sqSize + sqSize/2, y = padding + (flip?7-toR:toR) * sqSize + sqSize/2;
     const capColor = move.ep ? (1 - game.turn) : pColor(capturedPiece);
     const capVal = VAL[pType(capturedPiece)] || 1;
@@ -1461,6 +1496,7 @@ function executeMove(move) {
   }
   game.halfmoveClock = (captured || pType(game.board[move.to]) === PT.PAWN) ? 0 : (game.halfmoveClock || 0) + 1;
   game.turn = 1 - game.turn;
+  if (move.castle) castleUsedThisGame = true;
 
   if (isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
     sfxCheck();
@@ -1476,6 +1512,7 @@ function executeMove(move) {
     game.gameOver = true;
     if (isInCheck(game.board, game.turn)) {
       game.result = `${game.turn === CL.WHITE ? 'Black' : 'White'} wins by checkmate!`;
+      if (castleUsedThisGame && (game.turn === botColor || !botEnabled)) ACH_FLAGS.castleWin = true;
       if (game.turn === botColor || !botEnabled) sfxWin(); else sfxCheckmate();
       if (juiceLevel > 0) {
         triggerShake(3); bodyShake();
@@ -1498,7 +1535,7 @@ function executeMove(move) {
     game.result = 'Draw — threefold repetition!'; sfxDraw();
   } else if (move.castle && juiceLevel > 30) { triggerShake(0.5); sfxCastle(); }
 
-  if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); }
+  if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); }
   updateUI();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
   showRandomTip();
@@ -1710,9 +1747,17 @@ function checkPuzzleSolution(move) {
   const played = (move.castle === 'kingside') ? 'O-O' : (move.castle === 'queenside') ? 'O-O-O' : from + to;
   if (puzzleAnswerMatches(played, pz.solution)) {
     document.getElementById('tip').textContent = '✅ Correct! Great move!';
+    RUSH.cur++;
+    if (RUSH.cur > RUSH.best) { RUSH.best = RUSH.cur; try { localStorage.setItem('chessRushBest', String(RUSH.best)); } catch (e) {} }
+    STATS.puzzlesSolved++; saveStats(); unlockBadges();
+    if (RUSH.cur === 3 || RUSH.cur === 5 || RUSH.cur === 10) {
+      document.getElementById('tip').textContent = '🔥 Puzzle rush: ' + RUSH.cur + ' in a row! Best: ' + RUSH.best;
+      try { sfx('levelup'); } catch (e) {}
+    }
     setTimeout(() => loadPuzzle(puzzleIndex + 1), 1500);
   } else {
     document.getElementById('tip').textContent = '❌ Not quite. Try again! Hint: ' + pz.hint;
+    RUSH.cur = 0;
     setTimeout(() => { if (!game.gameOver) { game = game.moveHistory.pop(); updateUI(); draw(); } }, 600);
   }
 }
@@ -1739,6 +1784,7 @@ function resetGame() {
   pendingPromo = null; hidePromoUI();
   particles = []; flashSquares = []; textPops = []; clickRings = [];
   shakeAmount = 0; comboCount = 0;
+  castleUsedThisGame = false;
   puzzleMode = false; puzzleIndex = -1;
   if (prevBotEnabled !== null) { botEnabled = prevBotEnabled; prevBotEnabled = null; }
   document.getElementById('puzzlePanel').classList.remove('show');
@@ -2005,6 +2051,8 @@ function toggleStatsPanel(force){
   set('statBest', STATS.bestStreak);
   set('statPuzzles', STATS.puzzlesSolved);
   set('statMate', STATS.fastestMateMoves ? STATS.fastestMateMoves + ' half-moves' : '—');
+  set('statBadges', badges.length + '/' + BADGES.length);
+  set('statRush', RUSH.best);
   sp.classList.toggle('show', show);
 }
 document.getElementById('btnStatsReset').addEventListener('click', () => {
@@ -2046,6 +2094,7 @@ document.getElementById('btnPuzzleHint').addEventListener('click', () => {
 });
 
 document.getElementById('btnPuzzleSkip').addEventListener('click', () => {
+  RUSH.cur = 0;
   if (puzzleIndex >= 0 && puzzleIndex < PUZZLES.length) {
     document.getElementById('tip').textContent = '⏭ Solution: ' + PUZZLES[puzzleIndex].solution;
     setTimeout(() => loadPuzzle(puzzleIndex + 1), 1200);

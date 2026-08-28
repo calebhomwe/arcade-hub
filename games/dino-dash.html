@@ -44,6 +44,8 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Distance: <b id="finScore">0</b></div>
     <div class="stat">Cleared: <b id="finCleared">0</b></div>
     <div class="stat">Bones: <b id="finBones">0</b> · total <b id="finBonesT">0</b></div>
+    <div class="stat">Medals: <b id="finMedals">0</b> · total <b id="finMedalsT">0</b></div>
+    <div class="stat">Lifetime: <b id="finLife">0</b> m · <b id="finRuns">0</b> runs</div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
@@ -67,6 +69,8 @@ let dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};
 let shield=0,invuln=0,featherT=7;
 const feathers=[];
 let bonesRun=0,totalBones=+localStorage.getItem('dinoBones')||0,boneT=4;
+let lastMedal=0,medalsRun=0,totalMedals=+localStorage.getItem('dinoMedals')||0,totalYards=+localStorage.getItem('dinoYards')||0,runs=+localStorage.getItem('dinoRuns')||0;
+let magnetT=0,magT=9;const magnets=[];
 const bones=[];
 let obs=[];
 const parts=[],texts=[],MAXP=200,MAXT=32;
@@ -103,7 +107,7 @@ if(dino.grounded){dino.vy=-560;dino.grounded=false;dino.jumps=1;snd('jump');dino
 else if(dino.jumps<2){dino.vy=-470;dino.jumps=2;snd('jump');dino.pop=1;burst(dino.x+dino.w/2,dino.y+dino.h,6,'#a7f3d0');}
 }
 function duck(){if(dino.grounded)dino.duck=.45;else dino.vy=Math.max(dino.vy,420);}
-function startGame(){state='play';dist=0;obs=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnT=1;flash=0;lastMile=0;lastFd=-1;lastBv=-1;cleared=0;shield=0;invuln=0;featherT=7;feathers.length=0;bonesRun=0;boneT=4;bones.length=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};}
+function startGame(){state='play';dist=0;obs=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnT=1;flash=0;lastMile=0;lastFd=-1;lastBv=-1;cleared=0;shield=0;invuln=0;featherT=7;feathers.length=0;bonesRun=0;boneT=4;bones.length=0;lastMedal=0;medalsRun=0;magnetT=0;magT=9;magnets.length=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};}
 function die(){if(state!=='play')return;state='over';snd('die');shake=10;flash=1;burst(dino.x+dino.w/2,dino.y+dino.h/2,24,'#34d399');
  const nb=dist>best;if(nb){best=dist;localStorage.setItem('dinoBest',best);}
 document.getElementById('finScore').textContent=Math.floor(dist);
@@ -111,6 +115,11 @@ document.getElementById('finBest').textContent=Math.floor(best);
 document.getElementById('finCleared').textContent=cleared;
 document.getElementById('finBones').textContent=bonesRun;
 document.getElementById('finBonesT').textContent=totalBones;
+totalYards+=Math.floor(dist);runs++;try{localStorage.setItem('dinoYards',totalYards);localStorage.setItem('dinoRuns',runs);}catch(err){}
+document.getElementById('finMedals').textContent=medalsRun;
+document.getElementById('finMedalsT').textContent=totalMedals;
+document.getElementById('finLife').textContent=Math.floor(totalYards);
+document.getElementById('finRuns').textContent=runs;
 document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),450);}
 function update(dt){
@@ -122,6 +131,7 @@ nightMix+=(nt-nightMix)*Math.min(1,dt*1.5);
 if(state==='play'){
 const s=spd();dist+=s*dt*.016;
 const mile=Math.floor(dist/100);if(mile>lastMile){lastMile=mile;snd('mile');hudEl.classList.remove('pop');void hudEl.offsetWidth;hudEl.classList.add('pop');}
+const medal=Math.floor(dist/500);if(medal>lastMedal){lastMedal=medal;medalsRun++;totalMedals++;try{localStorage.setItem('dinoMedals',totalMedals);}catch(err){}sfx('win');ftext(dino.x+44,dino.y-30,'MEDAL!','#fde047');burst(dino.x+dino.w/2,dino.y,10,'#fde047');}
 const ducking=dino.duck>0&&dino.grounded;
 dino.h=ducking?24:44;if(dino.grounded)dino.y=GY-dino.h;
 if(!dino.grounded){dino.vy+=1700*dt;dino.y+=dino.vy*dt;if(dino.y>=GY-dino.h){const iv=dino.vy;dino.y=GY-dino.h;dino.vy=0;dino.grounded=true;dino.jumps=0;dino.pop=1;dust(dino.x+dino.w/2,GY,5);if(iv>300)snd('land');if(iv>700)shake=Math.max(shake,4);}}
@@ -156,8 +166,15 @@ let fI=0;for(let i=0;i<feathers.length;i++){if(feathers[i].x>-40)feathers[fI++]=
 boneT-=dt*s/300;
 if(boneT<=0){boneT=2.8+Math.random()*2.6;bones.push({x:W+20,y:GY-26-Math.random()*58});}
 for(let i=0;i<bones.length;i++){const b=bones[i];b.x-=s*dt;
-if(px<b.x+14&&px+pw>b.x-14&&py<b.y+14&&py+ph>b.y-14){bonesRun++;totalBones++;try{localStorage.setItem('dinoBones',totalBones);}catch(err){}sfx('coin');ftext(b.x,b.y-16,'+🦴','#fff');burst(b.x,b.y,5,'#fef3c7');b.x=-999;}}
+if(magnetT>0&&b.x>0&&b.x<280){const ddx=dino.x+8-b.x,ddy=dino.y+dino.h/2-b.y;const dd=Math.sqrt(ddx*ddx+ddy*ddy);if(dd<140){b.x+=ddx*dt*6;b.y+=ddy*dt*6;}}
+if(px<b.x+14&&px+pw>b.x-14&&py<b.y+14&&py+ph>b.y-14){bonesRun++;totalBones++;if(magnetT>0)totalBones++;try{localStorage.setItem('dinoBones',totalBones);}catch(err){}sfx('coin');ftext(b.x,b.y-16,'+🦴','#fff');burst(b.x,b.y,5,'#fef3c7');b.x=-999;}}
 let bI=0;for(let i=0;i<bones.length;i++){if(bones[i].x>-40)bones[bI++]=bones[i];}bones.length=bI;
+if(magnetT>0)magnetT-=dt;
+magT-=dt*s/300;
+if(magT<=0){magT=13+Math.random()*9;magnets.push({x:W+20,y:GY-70-Math.random()*30});}
+for(let i=0;i<magnets.length;i++){const m=magnets[i];m.x-=s*dt;
+if(px<m.x+14&&px+pw>m.x-14&&py<m.y+14&&py+ph>m.y-14){magnetT=6;sfx('levelup');ftext(dino.x+44,dino.y-14,'MAGNET!','#22d3ee');burst(m.x,m.y,8,'#22d3ee');m.x=-999;}}
+let mI=0;for(let i=0;i<magnets.length;i++){if(magnets[i].x>-40)magnets[mI++]=magnets[i];}magnets.length=mI;
 const fd=Math.floor(dist);if(fd!==lastFd){lastFd=fd;hudTxt.nodeValue=fd;const bv=Math.floor(Math.max(best,fd));if(bv!==lastBv){lastBv=bv;hudBestEl.textContent='BEST '+bv;}}
 }
 }
@@ -202,6 +219,7 @@ ctx.fillStyle='#fde047';
 for(const f of feathers){ctx.beginPath();ctx.ellipse(f.x,f.y,9,3.4,-.6,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(f.x,f.y-5,3.2,6,0,0,7);ctx.fill();}
 ctx.fillStyle='#fef3c7';
 for(const b of bones){ctx.fillRect(b.x-6,b.y-2.5,12,5);ctx.beginPath();ctx.arc(b.x-6,b.y-2.5,4,0,7);ctx.arc(b.x+6,b.y-2.5,4,0,7);ctx.fill();}
+for(const m of magnets){ctx.strokeStyle='#ef4444';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(m.x,m.y,8,Math.PI,0);ctx.stroke();ctx.strokeStyle='#e2e8f0';ctx.lineWidth=4.5;ctx.beginPath();ctx.moveTo(m.x-8,m.y);ctx.lineTo(m.x-8,m.y+6);ctx.moveTo(m.x+8,m.y);ctx.lineTo(m.x+8,m.y+6);ctx.stroke();ctx.lineCap='butt';}
 const d=dino;
 ctx.save();ctx.translate(d.x,d.y+d.h);
 const ip=(state==='ready'?Math.sin(t*3)*2:0),pp=Math.max(0,d.pop);
@@ -225,6 +243,7 @@ ctx.fillStyle='#111';ctx.beginPath();ctx.arc(32,-d.h+4,1.6,0,7);ctx.fill();
 }
 ctx.restore();
 if(shield>0){ctx.strokeStyle=invuln>0?'rgba(100,116,139,.5)':'rgba(253,224,71,.95)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(dino.x+dino.w/2,dino.y+dino.h/2,32+Math.sin(t*6)*2,0,7);ctx.stroke();}
+if(magnetT>0){ctx.strokeStyle='rgba(34,211,238,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(dino.x+dino.w/2,dino.y+dino.h/2,26+Math.sin(t*8)*2,0,7);ctx.stroke();}
 for(let i=0;i<parts.length;i++){const p=parts[i];if(p.life<=0)continue;ctx.globalAlpha=Math.max(p.life,0);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,3.4,0,7);ctx.fill();}
 ctx.globalAlpha=1;
 ctx.font='900 16px system-ui,sans-serif';ctx.textAlign='center';

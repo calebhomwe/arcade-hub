@@ -32,14 +32,16 @@
 <div class="hud hidden" id="hud">
   <div class="pill"><small>Score</small><span id="score">0</span></div>
   <div class="pill"><small>Combo</small><span id="combo">&mdash;</span></div>
+  <div class="pill"><small>Gems</small><span id="gems">0</span></div>
   <div class="pill"><small>Best</small><span id="best">0</span></div>
 </div>
 <div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
 <a id="hub" href="../index.html">← Hub</a>
 <div class="overlay" id="start">
   <h1>HELIX SMASH</h1>
-  <div class="sub">Tap to <b>smash</b> through the platform below. <b style="color:#60a5fa">Blue/purple</b> break &rarr; <b style="color:#4ade80">green</b> bounces (combo!) &middot; <b style="color:#f87171">red/orange</b> = game over. Grab 💎 gems &amp; 💍 golden rings.</div>
+  <div class="sub">Tap to <b>smash</b> through the platform below. <b style="color:#60a5fa">Blue/purple</b> break &rarr; <b style="color:#4ade80">green</b> bounces (combo!) &middot; <b style="color:#f87171">red/orange</b> = game over. Grab 💎 gems &amp; 💍 golden rings. 🧲 magnets vacuum gems toward you!</div>
   <div class="best" id="ringInfo">💍 Golden Rings Ever: 0</div>
+  <div class="best" id="gemEverInfo">💎 Gems Ever: 0</div>
   <button id="playBtn">▶ PLAY</button>
 </div>
 <div class="overlay hidden" id="gameover">
@@ -47,6 +49,7 @@
   <div class="score-big" id="finalScore">0</div>
   <div class="best" id="finalBest">Best: 0</div>
   <div class="best" id="comboInfo">Best Combo: ×0</div>
+  <div class="best" id="gemInfo">💎 Best Gem Run: 0</div>
   <button id="restartBtn">↻ PLAY AGAIN</button>
 </div>
 <script>
@@ -104,7 +107,7 @@ function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;v
 const TAU = Math.PI * 2, SEGS = 8;
 const COLORS = { red:'#ef4444', orange:'#f97316', blue:'#3b82f6', purple:'#8b5cf6', green:'#22c55e' };
 let GAP, rx, ry, ringHalf, ballR, cx, desired;
-let ballSpr = null, gemSpr = null, shieldSpr = null, ringSpr = null;
+let ballSpr = null, gemSpr = null, shieldSpr = null, ringSpr = null, magSpr = null;
 function buildBallSprite() {
   const pad = 26, S = Math.ceil(ballR + pad) * 2;
   ballSpr = document.createElement('canvas');
@@ -151,6 +154,21 @@ function buildShieldSprite() {
   x.fillStyle = 'rgba(255,255,255,.7)';
   x.beginPath(); x.arc(S/2 - 3, S/2 - 5, 2, 0, TAU); x.fill();
 }
+function buildMagSprite() {
+  const pad = 20, S = (10 + pad) * 2;
+  magSpr = document.createElement('canvas');
+  magSpr.width = S; magSpr.height = S;
+  const x = magSpr.getContext('2d');
+  x.shadowColor = '#f472b6'; x.shadowBlur = 14;
+  x.strokeStyle = '#f472b6'; x.lineWidth = 5;
+  x.beginPath(); x.arc(S/2, S/2, 8, Math.PI, 0); x.stroke();
+  x.shadowBlur = 0;
+  x.fillStyle = '#f9a8d4';
+  x.fillRect(S/2 - 10.5, S/2 - 1, 5, 8);
+  x.fillRect(S/2 + 5.5, S/2 - 1, 5, 8);
+  x.fillStyle = '#fde68a';
+  x.beginPath(); x.arc(S/2 - 3, S/2 - 8, 2, 0, TAU); x.fill();
+}
 function layout() {
   GAP = Math.min(W, H) * 0.20;
   rx = Math.min(W, H) * 0.42;
@@ -163,10 +181,11 @@ function layout() {
   buildGemSprite();
   buildShieldSprite();
   buildRingSprite();
+  buildMagSprite();
 }
 
-let platforms = [], gems = [], powerups = [], goldPus = [], particles = [], floaters = [], trail = [], visBuf = [], rings = [];
-let cur = 0, combo = 0, score = 0, best = 0, camY = 0, shield = 0, fever = 0, ringGot = 0, ringBest = 0;
+let platforms = [], gems = [], powerups = [], goldPus = [], mags = [], particles = [], floaters = [], trail = [], visBuf = [], rings = [];
+let cur = 0, combo = 0, score = 0, best = 0, camY = 0, shield = 0, fever = 0, ringGot = 0, ringBest = 0, magnet = 0;
 let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
 let squash = 0, shake = 0, tGlobal = 0;
 
@@ -174,6 +193,9 @@ try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 try { ringBest = parseInt(localStorage.getItem(KEY + '-rings') || '0', 10) || 0; } catch (e) {}
 let comboRec = 0, runComboBest = 0, recCeleb = false;
 try { comboRec = parseInt(localStorage.getItem(KEY + '-combo') || '0', 10) || 0; } catch (e) {}
+let gemsRun = 0, gemMilestone = 0, gemsBestRun = 0, gemEverTotal = 0;
+try { gemsBestRun = parseInt(localStorage.getItem(KEY + '-gemsbest') || '0', 10) || 0; } catch (e) {}
+try { gemEverTotal = parseInt(localStorage.getItem(KEY + '-gemsever') || '0', 10) || 0; } catch (e) {}
 
 function rand(a, b) { return a + Math.random() * (b - a); }
 function py(i) { return i * GAP - camY; }
@@ -205,6 +227,7 @@ function trimWorld() {
   while (gems.length && gems[0].i < cur - 24) gems.shift();
   while (powerups.length && powerups[0].i < cur - 24) powerups.shift();
   while (goldPus.length && goldPus[0].i < cur - 24) goldPus.shift();
+  while (mags.length && mags[0].i < cur - 24) mags.shift();
 }
 
 function makeSegs(i) {
@@ -227,12 +250,13 @@ function topColor(p) {
 }
 
 function initWorld() {
-  platforms = []; gems = []; powerups = []; goldPus = []; particles = []; floaters = [];
+  platforms = []; gems = []; powerups = []; goldPus = []; mags = []; particles = []; floaters = [];
   for (let i = 0; i < 90; i++) platforms.push(makePlatform(i));
   for (let i = 1; i < 90; i++) {
     if (Math.random() < 0.35) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
     if (Math.random() < 0.05) powerups.push({ i, off: 0, collected: false });
     if (Math.random() < 0.04 && !powerups.some(u => u.i === i)) goldPus.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+    if (Math.random() < 0.025 && !powerups.some(u => u.i === i) && !goldPus.some(u => u.i === i)) mags.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
   }
 }
 function ensureWorld(n) {
@@ -242,12 +266,13 @@ function ensureWorld(n) {
     if (Math.random() < 0.35) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
     if (Math.random() < 0.05) powerups.push({ i, off: 0, collected: false });
     if (Math.random() < 0.04 && !powerups.some(u => u.i === i)) goldPus.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+    if (Math.random() < 0.025 && !powerups.some(u => u.i === i) && !goldPus.some(u => u.i === i)) mags.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
   }
 }
 function startGame() {
   initWorld();
   trail = []; rings = [];
-  cur = 0; combo = 0; score = 0; squash = 0; shake = 0; vy = 0; shield = 0; fever = 0; ringGot = 0; runComboBest = 0; recCeleb = false;
+  cur = 0; combo = 0; score = 0; squash = 0; shake = 0; vy = 0; shield = 0; fever = 0; ringGot = 0; runComboBest = 0;   recCeleb = false; magnet = 0; gemsRun = 0; gemMilestone = 0;
   by = ballRestY(0); camY = by - desired;
   phase = 'resting';
   updateHUD();
@@ -261,6 +286,7 @@ function updateHUD() {
   $('score').textContent = score;
   $('combo').textContent = combo > 0 ? 'x' + combo : '\u2014';
   $('best').textContent = best;
+  $('gems').textContent = gemsRun;
 }
 function endGame() {
   const nb = score > best;
@@ -274,6 +300,13 @@ function endGame() {
     sfx('win');
   }
   $('comboInfo').textContent = 'Best Combo: ×' + comboRec + (nr ? '  🏆 NEW!' : '');
+  const ngr = gemsRun > gemsBestRun;
+  if (ngr) {
+    gemsBestRun = gemsRun;
+    try { localStorage.setItem(KEY + '-gemsbest', String(gemsBestRun)); } catch (e) {}
+  }
+  try { localStorage.setItem(KEY + '-gemsever', String(gemEverTotal)); } catch (e) {}
+  $('gemInfo').textContent = '💎 Best Gem Run: ' + gemsBestRun + ' (' + gemMilestone + ' bonuses) · Ever: ' + gemEverTotal + (ngr ? '  🏆 NEW!' : '');
   $('gameover').classList.remove('hidden');
 }
 function die() {
@@ -363,6 +396,7 @@ function update(dt) {
   tGlobal += dt;
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (squash > 0) squash = Math.max(0, squash - 6 * dt);
+  if (magnet > 0) magnet = Math.max(0, magnet - dt);
   for (const p of platforms) { if (!p.broken) p.rot += p.rs * dt; }
 
   if (phase === 'resting') {
@@ -394,6 +428,14 @@ function update(dt) {
         buzz(14);
         burst(gx, gsy, '#67e8f9', 10, 180);
         addRing(gx, gsy, '#67e8f9');
+        gemsRun++; gemEverTotal++;
+        if (gemsRun % 10 === 0) {
+          gemMilestone++;
+          score += 2 * gemsRun;
+          addFloater('💎 GEM MASTER ×' + gemsRun + ' +' + (2 * gemsRun), gx, gsy - 30, '#f0abfc');
+          sfx('levelup');
+          buzz(16);
+        }
         updateHUD();
       }
     }
@@ -428,6 +470,31 @@ function update(dt) {
         if (nc) { addFloater('🏆 NEW RING RECORD!', cx, psy - 84, '#fde68a'); sfx('levelup'); }
         else if (ringGot % 5 === 0) { addFloater('💍 RING COLLECTOR ×' + ringGot, cx, psy - 84, '#fde68a'); sfx('levelup'); }
         updateHUD();
+      }
+    }
+    for (const mg of mags) {
+      if (mg.collected) continue;
+      const pwy = mg.i * GAP - ry - ringHalf - ballR;
+      if (Math.hypot(mg.off, pwy - by) < ballR + 18) {
+        mg.collected = true;
+        magnet = Math.min(12, magnet + 6);
+        const px = cx + mg.off, psy = pwy - camY;
+        addFloater('🧲 MAGNET +6s', px, psy, '#f9a8d4');
+        sfx('levelup');
+        buzz(14);
+        burst(px, psy, '#f472b6', 12, 190);
+        addRing(px, psy, '#f9a8d4');
+      }
+    }
+    if (magnet > 0) {
+      const pullR = ballR * 6;
+      for (const gm of gems) {
+        if (gm.collected) continue;
+        const gwy = gm.i * GAP - ry - ringHalf - ballR;
+        const dx = (cx + gm.off) - cx, dy = gwy - by;
+        if (Math.hypot(dx, dy) < pullR) {
+          gm.off -= dx * Math.min(1, 8 * dt);
+        }
       }
     }
   }
@@ -494,6 +561,13 @@ function drawRing(x, y) {
   }
   ctx.restore();
 }
+function drawMag(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tGlobal * 1.2);
+  ctx.drawImage(magSpr, -magSpr.width / 2, -magSpr.height / 2);
+  ctx.restore();
+}
 function drawBall() {
   let sy = by - camY;
   if (phase === 'resting') sy += Math.sin(tGlobal * 7) * 2.5;
@@ -516,6 +590,15 @@ function drawBall() {
     ctx.beginPath();
     ctx.arc(0, 0, ballR + 8 + Math.sin(tGlobal * 5) * 1.5, 0, TAU);
     ctx.stroke();
+  }
+  if (magnet > 0) {
+    ctx.strokeStyle = 'rgba(244,114,182,' + (0.4 + 0.3 * Math.min(1, magnet / 2)) + ')';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(0, 0, ballR * 6, 0, TAU);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
   ctx.restore();
 }
@@ -547,6 +630,11 @@ function draw() {
     if (gp.collected) continue;
     const sy = gp.i * GAP - ry - ringHalf - ballR - camY;
     if (sy > -60 && sy < H + 60) drawRing(cx + gp.off, sy);
+  }
+  for (const mg of mags) {
+    if (mg.collected) continue;
+    const sy = mg.i * GAP - ry - ringHalf - ballR - camY;
+    if (sy > -60 && sy < H + 60) drawMag(cx + mg.off, sy);
   }
 
   if (phase !== 'dying') drawBall();
@@ -611,6 +699,7 @@ initWorld();
 by = ballRestY(0); camY = by - desired;
 $('mute').textContent = muted ? '🔇' : '🔊';
 $('ringInfo').textContent = '💍 Golden Rings Ever: ' + ringBest;
+$('gemEverInfo').textContent = '💎 Gems Ever: ' + gemEverTotal;
 $('comboInfo').textContent = 'Best Combo: ×' + comboRec;
 updateHUD();
 requestAnimationFrame(loop);

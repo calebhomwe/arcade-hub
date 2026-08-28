@@ -50,6 +50,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 @keyframes pop{50%{transform:scale(1.12)}}
 .tiles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:520px;margin:10px 0}
 .tile{width:56px;height:60px;font-size:26px;font-weight:900;color:#fff;background:linear-gradient(160deg,#38bdf8 0%,#0ea5e9 34%,#6366f1 100%);border:1px solid rgba(224,242,254,.4);border-top-color:rgba(255,255,255,.55);border-bottom:5px solid #312e81;border-radius:14px;box-shadow:0 6px 14px rgba(2,6,23,.55),0 0 16px rgba(34,211,238,.22),inset 0 2px 3px rgba(255,255,255,.3);cursor:pointer;transition:transform .1s,border-bottom-width .08s,box-shadow .1s,opacity .2s;touch-action:manipulation;text-shadow:0 2px 3px rgba(15,23,42,.5)}
+.tile.gold{background:linear-gradient(160deg,#fde68a 0%,#f59e0b 45%,#b45309 100%);border-bottom-color:#78350f;color:#451a03;box-shadow:0 6px 14px rgba(2,6,23,.55),0 0 18px rgba(252,211,77,.75)}
 .tile:active{transform:translateY(3px);border-bottom-width:2px;box-shadow:0 2px 6px rgba(2,6,23,.5),inset 0 2px 3px rgba(255,255,255,.2)}
 .stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .stars::before{content:'';position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;background:transparent;box-shadow:8vw 12vh rgba(255,255,255,.9),22vw 4vh rgba(255,255,255,.5),35vw 18vh rgba(255,255,255,.7),47vw 8vh rgba(255,255,255,.4),58vw 22vh rgba(255,255,255,.8),69vw 6vh rgba(255,255,255,.5),81vw 15vh rgba(255,255,255,.7),93vw 9vh rgba(255,255,255,.4),5vw 34vh rgba(255,255,255,.6),17vw 42vh rgba(255,255,255,.35),29vw 55vh rgba(255,255,255,.5),41vw 38vh rgba(255,255,255,.7),53vw 48vh rgba(255,255,255,.4),65vw 58vh rgba(255,255,255,.6),77vw 36vh rgba(255,255,255,.45),89vw 52vh rgba(255,255,255,.7),11vw 68vh rgba(255,255,255,.5),25vw 76vh rgba(255,255,255,.65),38vw 84vh rgba(255,255,255,.4),52vw 70vh rgba(255,255,255,.75),66vw 88vh rgba(255,255,255,.5),79vw 72vh rgba(255,255,255,.6),91vw 82vh rgba(255,255,255,.35),14vw 92vh rgba(255,255,255,.55),44vw 94vh rgba(255,255,255,.45),60vw 33vh rgba(255,255,255,.5);animation:starDriftA 46s ease-in-out infinite alternate}
@@ -115,6 +116,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
     <button class="btn diff-btn" data-d="9">9+ letters</button>
   </div>
   <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best streak: <b id="startStreak">0</b> · ⚡ Fastest word: <b id="startFast">—</b></div>
+  <div class="best-box" id="startMeta">🪙 Gold tiles: 0 · 🧠 Best clean run: 0</div>
   <div class="xp-box"><div id="xpText">LV 1 · Rookie · 0/50 XP</div><div class="xp-bar-wrap"><div class="xp-bar" id="xpBar"></div></div><div id="xpNext">Next unlock: MEDIUM at LV 2</div></div>
   <p class="tip">💡 Hint reveals a letter (−5 pts, +5 per extra hint on the same word) · ⏭ Skip resets streak · ⏳ Speed bonus for fast solves · ❤️ 3 time-outs and you're out · 🎯 No hint + no mistake = PERFECT +5</p>
 </div>
@@ -141,6 +143,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <h1 class="title">GAME OVER</h1>
   <div class="score-big" id="finalScore">0</div>
   <div class="best-box">🏆 Best score: <b id="overBest">0</b> · 🔥 Best streak: <b id="overStreak">0</b> · ⚡ Fastest: <span id="overFast">—</span></div>
+  <div class="best-box" id="overMeta">🪙 Gold: 0 · 🧠 Best clean run: 0</div>
   <p class="tip" id="overMsg"></p>
   <button class="btn btn-big" id="btnAgain">▶ Play Again</button>
   <button class="btn btn-ghost" id="btnMenu">Change Difficulty</button>
@@ -180,6 +183,7 @@ function shuffle(a){var i,j,t;for(i=a.length-1;i>0;i--){j=(Math.random()*(i+1))|
 function pool(){if(diff==='3'){return W3;}if(diff==='45'){return W45;}if(diff==='6'){return W6;}if(diff==='78'){return W78;}return W9;}
 function pickWord(){var p=pool(),w;do{w=p[(Math.random()*p.length)|0];}while(w===word&&p.length>1);return w;}
 function loadBest(){best=parseInt(lsGet('ws_best')||'0',10)||0;bestStreak=parseInt(lsGet('ws_beststreak')||'0',10)||0;}
+var goldTot=parseInt(lsGet('ws_gold')||'0',10)||0,goldJ=-1,cleanRun=0,cleanBest=parseInt(lsGet('ws_cleanbest')||'0',10)||0,shuffledThis=false;
 function saveBest(){lsSet('ws_best',String(best));}
 function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;lsSet('ws_beststreak',String(bestStreak));}}
 function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
@@ -200,7 +204,7 @@ function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;
 function updateHud(){elScore.textContent=score;elStreak.textContent=streak>0?streak+' (+'+(Math.min(streak,10)*3)+')':'0';var h='',i;for(i=0;i<3;i++){h+=i<lives?'♥':'♡';}elLives.textContent=h;elBest.textContent=best;updateHintBtn();}
 function updateBar(){var pct=(timeLeft/timeTotal)*100;elBar.style.width=pct+'%';if(pct<30){elBar.classList.add('low');}else{elBar.classList.remove('low');}}
 function renderSlots(){var i,n=word.length,d;while(slotEls.length<n){d=document.createElement('div');d.className='slot';var sp=document.createElement('span');d.appendChild(sp);elSlots.appendChild(d);slotEls.push(d);slotChEls.push(sp);}for(i=0;i<slotEls.length;i++){d=slotEls[i];if(i<n){d.style.display='';d.classList.remove('filled','hinted','win','reveal','wrong');slotChEls[i].textContent='';}else{d.style.display='none';}}}
-function renderTiles(){var j,n=tiles.length,b;while(tileEls.length<n){b=document.createElement('button');b.className='tile';elTiles.appendChild(b);tileEls.push(b);}for(j=0;j<tileEls.length;j++){b=tileEls[j];if(j<n){b.style.display='';b.textContent=tiles[j].ch.toUpperCase();b.style.animationDelay=(j*0.05)+'s';b.classList.remove('used','deal');}else{b.style.display='none';}}void elTiles.offsetWidth;for(j=0;j<n;j++){tileEls[j].classList.add('deal');}}
+function renderTiles(){var j,n=tiles.length,b;while(tileEls.length<n){b=document.createElement('button');b.className='tile';elTiles.appendChild(b);tileEls.push(b);}for(j=0;j<tileEls.length;j++){b=tileEls[j];if(j<n){b.style.display='';b.textContent=tiles[j].ch.toUpperCase();b.style.animationDelay=(j*0.05)+'s';b.classList.remove('used','deal');if(tiles[j].gold){b.classList.add('gold');}else{b.classList.remove('gold');}}else{b.style.display='none';}}void elTiles.offsetWidth;for(j=0;j<n;j++){tileEls[j].classList.add('deal');}}
 function joinTiles(){var s='',i;for(i=0;i<tiles.length;i++){s+=tiles[i].ch;}return s;}
 function revealWord(){var i;for(i=0;i<word.length;i++){slotChEls[i].textContent=word[i].toUpperCase();slotEls[i].classList.add('reveal');}voicePlay(word,1,null);}
 function nextWord(){
@@ -210,6 +214,9 @@ function nextWord(){
   var g=0;do{shuffle(tiles);g++;}while(g<64&&joinTiles()===word);
   if(joinTiles()===word&&tiles.length>1){for(var sfq=0;sfq<tiles.length-1;sfq++){if(tiles[sfq].ch!==tiles[sfq+1].ch){var sft=tiles[sfq];tiles[sfq]=tiles[sfq+1];tiles[sfq+1]=sft;break;}}}
   timeTotal=TIMES[diff];timeLeft=timeTotal;busy=false;hintsUsed=0;updateHintBtn();
+  goldJ=(word.length>=3&&Math.random()<0.3)?((Math.random()*tiles.length)|0):-1;
+  if(goldJ!==-1)tiles[goldJ].gold=true;
+  shuffledThis=false;
   deadline=performance.now()+timeTotal*1000;pausedMidWord=false;
   wrongCount=0;wordBorn=performance.now();
   renderSlots();renderTiles();updateBar();
@@ -252,6 +259,8 @@ function wordCorrect(){
   addXp(XP_TIER[diff]);voiceCheer();pausedMidWord=false;
   var perfectBonus=(hintsUsed===0&&wrongCount===0)?5:0;
   if(perfectBonus){score+=perfectBonus;sfx('levelup');setTimeout(function(){floatText('PERFECT +'+perfectBonus);},600);}
+  if(hintsUsed===0&&wrongCount===0&&!shuffledThis){cleanRun++;if(cleanRun>cleanBest){cleanBest=cleanRun;lsSet('ws_cleanbest',String(cleanBest));}if(cleanRun%5===0){setTimeout(function(){floatText('🧠 CLEAN RUN x'+cleanRun+'!');sfx('levelup');},1000);}}else{cleanRun=0;}
+  if(goldJ!==-1){goldTot++;lsSet('ws_gold',String(goldTot));setTimeout(function(){floatText('🪙 GOLD TILE! total '+goldTot);sfx('coin');},1300);if(goldTot%10===0){setTimeout(function(){floatText('🪙 10 GOLD TILES!');sfx('levelup');},1600);}}
   var msW=performance.now()-wordBorn,fk='ws_fast_'+diff,fv=parseInt(lsGet(fk)||'0',10)||0;
   if(fv===0||msW<fv){lsSet(fk,String(Math.round(msW)));setTimeout(function(){floatText('⚡ FASTEST '+(msW/1000).toFixed(1)+'s!');sfx('win');},1700);}
   if(score>best){best=score;saveBest();}
@@ -284,7 +293,7 @@ function wordWrong(){
   },500);
 }
 function markWrong(){var i,j;for(i=0;i<slots.length;i++){j=slots[i];if(j!==-1&&tiles[j].ch!==word[i]){slotEls[i].classList.add('wrong');}}}
-function shuffleTiles(){if(busy){return;}sfx('whoosh');var order=[],k;for(k=0;k<tiles.length;k++){order.push(k);}shuffle(order);var nt=[],remap={};for(k=0;k<order.length;k++){nt.push(tiles[order[k]]);remap[order[k]]=k;}for(k=0;k<slots.length;k++){if(slots[k]!==-1){slots[k]=remap[slots[k]];}}tiles=nt;renderTiles();for(k=0;k<tiles.length;k++){if(tiles[k].used){tileEls[k].classList.add('used');}}var si,sj;for(si=0;si<slots.length;si++){sj=slots[si];slotChEls[si].textContent=sj===-1?'':tiles[sj].ch.toUpperCase();}}
+function shuffleTiles(){if(busy){return;}shuffledThis=true;sfx('whoosh');var order=[],k;for(k=0;k<tiles.length;k++){order.push(k);}shuffle(order);var nt=[],remap={};for(k=0;k<order.length;k++){nt.push(tiles[order[k]]);remap[order[k]]=k;}for(k=0;k<slots.length;k++){if(slots[k]!==-1){slots[k]=remap[slots[k]];}}tiles=nt;renderTiles();for(k=0;k<tiles.length;k++){if(tiles[k].used){tileEls[k].classList.add('used');}}var si,sj;for(si=0;si<slots.length;si++){sj=slots[si];slotChEls[si].textContent=sj===-1?'':tiles[sj].ch.toUpperCase();}}
 function timeOut(){
   busy=true;lives--;streak=0;wrongCount++;
   if(tickId){clearInterval(tickId);tickId=null;}
@@ -327,6 +336,7 @@ function gameOver(){
   $('overStreak').textContent=bestStreak;
   var fkO='ws_fast_'+diff,fvO=parseInt(lsGet(fkO)||'0',10)||0;
   $('overFast').textContent=fvO?((fvO/1000).toFixed(1)+'s'):'—';
+$('overMeta').textContent='🪙 Gold: '+goldTot+' · 🧠 Best clean run: '+cleanBest;
   var msg;
   if(score>prevBest&&score>0){msg='New personal best! 🎉';}
   else if(score<=0){msg='Unscramble faster next time!';}
@@ -353,6 +363,7 @@ function init(){
   $('startStreak').textContent=bestStreak;
   var iF,fkF,fvF,bestF=0;for(iF=0;iF<5;iF++){fkF=['3','45','6','78','9'][iF];fvF=parseInt(lsGet('ws_fast_'+fkF)||'0',10)||0;if(fvF>0&&(bestF===0||fvF<bestF))bestF=fvF;}
   $('startFast').textContent=bestF?((bestF/1000).toFixed(1)+'s'):'—';
+$('startMeta').textContent='🪙 Gold tiles: '+goldTot+' · 🧠 Best clean run: '+cleanBest;
   var dbs=document.querySelectorAll('.diff-btn'),i;
   for(i=0;i<dbs.length;i++){
     if(dbs[i].getAttribute('data-d')===diff){dbs[i].classList.add('sel');}else{dbs[i].classList.remove('sel');}

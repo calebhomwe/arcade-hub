@@ -96,7 +96,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <div class="logo">👑</div>
   <h1 class="title">IDLE EMPIRE</h1>
   <p class="sub">Tap the coin, buy buildings, and grow an empire! Own 25, 50 or 100 of a building to double its output each time.</p>
-  <div class="best-box">🪙 Golden coins: <b id="startGold">0</b> · Income ×<b id="startMult">1</b><br>🏆 All-time earned: <b id="startAll">0</b><br>🏅 Deeds: <b id="startDeeds">0</b>/10 (+0%)<br>🛒 Caravans: <b id="startCar">0</b> · 🎁 Chests: <b id="startChest">0</b></div>
+  <div class="best-box">🪙 Golden coins: <b id="startGold">0</b> · Income ×<b id="startMult">1</b><br>🏆 All-time earned: <b id="startAll">0</b><br>🏅 Deeds: <b id="startDeeds">0</b>/10 (+0%)<br>🛒 Caravans: <b id="startCar">0</b> · 🎁 Chests: <b id="startChest">0</b> · ☀️ Tributes: <b id="startTrib">0</b> · 👆 Taps: <b id="startTaps">0</b></div>
   <p class="tip">✨ Prestige for golden coins — each gives +10% income · 📴 Offline earnings: 50% rate, up to 8 hours · 💾 Auto-saves every 5 seconds</p>
   <button class="btn btn-big" id="btnPlay">▶ Play</button>
   <button class="btn btn-ghost" id="btnReset">New Run (keep golden coins)</button>
@@ -125,6 +125,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
       <button class="btn" id="btnCaravan" style="display:none">🛒 Trade Caravan</button>
       <div class="coin-label" id="chestRow">🎁 Chests: <span id="chestCount">0</span></div>
       <button class="btn" id="btnChest" style="display:none">📦 Open Chest</button>
+      <button class="btn" id="btnTrib" style="display:none;background:linear-gradient(135deg,#0ea5e9,#6d28d9)">☀️ Daily Tribute</button>
     </div>
     <div class="list-col" id="buildings"></div>
   </div>
@@ -168,7 +169,8 @@ var DEFS=[
   {n:'Galaxy',c:5100000000,i:260000,e:'🌌'},
   {n:'Empire',c:75000000000,i:1600000,e:'👑'}
 ];
-var S={coins:0,lifetime:0,alltime:0,owned:[0,0,0,0,0,0,0,0,0,0],gold:0,buy:1,deeds:[],trades:0,chests:0,last:Date.now()};
+var S={coins:0,lifetime:0,alltime:0,owned:[0,0,0,0,0,0,0,0,0,0],gold:0,buy:1,deeds:[],trades:0,chests:0,trib:0,tribs:0,taps:0,tapRew:0,last:Date.now()};
+var TAPC=[250,1000,5000,20000];
 var DEEDS=[
   {n:'First Strike',d:function(){return S.alltime>=1e3;}},
   {n:'Coin Hoarder',d:function(){return S.alltime>=1e5;}},
@@ -181,7 +183,7 @@ var DEEDS=[
   {n:'Limitless',d:function(){return S.gold>=10;}},
   {n:'Empire Forever',d:function(){return S.gold>=50;}}
 ];
-var mult=1,rows=[],rowsBuilt=false,disp=0,lastTick=0,inGame=false,rushT=0,rushNext=0,carDue=0,carEnd=0,carStake=0;
+var mult=1,rows=[],rowsBuilt=false,disp=0,lastTick=0,inGame=false,rushT=0,rushNext=0,carDue=0,carEnd=0,carStake=0,tribDay=-1;
 var AC=null,muted=localStorage.getItem('ie_muted')==='1';
 function $(id){return document.getElementById(id);}
 var elCoins=$('coins'),elPersec=$('persec'),elGold=$('gold'),elTapPow=$('tapPow'),elPB=$('btnPrestige'),elPfill=$('pfill'),elPNext=$('pNext'),elPPrev=$('pPrev');
@@ -291,6 +293,8 @@ function load(){
       for(i=0;i<DEEDS.length;i++){S.deeds[i]=dd[i]===true;}
       S.trades=Math.floor(num(d.trades,0));
       S.chests=Math.floor(num(d.chests,0));
+      S.trib=Math.floor(num(d.trib,0));S.tribs=Math.floor(num(d.tribs,0));
+      S.taps=Math.floor(num(d.taps,0));S.tapRew=Math.floor(num(d.tapRew,0));
     }
   }catch(e){}
   mult=Math.pow(1.1,S.gold);
@@ -472,9 +476,22 @@ function buyBuilding(i){
   updateRows();
   updateHud();
 }
+function tapMilestone(){
+  var k=S.tapRew|0;
+  if(k<TAPC.length&&S.taps>=TAPC[k]){
+    S.tapRew=k+1;
+    var bonus=Math.max(100,Math.floor(incomePerSec()*20));
+    S.coins+=bonus;
+    toast('👆 '+TAPC[k]+' TAPS! +'+fmt(bonus)+' coins');
+    sfx('mile');vib([15,40,15]);confetti();
+    save();
+  }
+  if(S.taps%500===0){toast('👆 '+S.taps+' taps!');sfx('pop');setTxt($('startTaps'),S.taps);}
+}
 function tapCoin(e){
   var tp=tapPower();
   S.coins+=tp;S.lifetime+=tp;S.alltime+=tp;
+  S.taps++;tapMilestone();
   var cb=$('coinBtn');
   cb.classList.remove('pop');
   void cb.offsetWidth;
@@ -519,6 +536,28 @@ function openChest(){
   }
   updateHud();
   save();
+}
+function dayIdx(){return Math.floor(Date.now()/86400000);}
+function claimTrib(){
+  var d=dayIdx();
+  if(S.trib===d){sfx('error');return;}
+  var reward=Math.max(50,Math.floor(incomePerSec()*60));
+  S.coins+=reward;
+  S.trib=d;S.tribs++;
+  setTxt($('startTrib'),S.tribs);
+  toast('☀️ Daily tribute: +'+fmt(reward)+' coins!');
+  sfx('win');vib([15,40,15]);confetti();
+  floater(FW/2,FH*0.3,'+'+fmt(reward)+' ☀️');
+  if(S.tribs===7||S.tribs===30||S.tribs===100){toast('☀️ DEVOTED ×'+S.tribs+' days!');sfx('mile');}
+  updateHud();
+  save();
+  refreshTrib();
+}
+function refreshTrib(){
+  var b=$('btnTrib');
+  if(!b){return;}
+  if(S.trib===dayIdx()){b.style.display='none';}
+  else{b.style.display='';}
 }
 function doPrestige(){
   if(carEnd){carEnd=0;carStake=0;toast('🛒 Your caravan was lost in the reset…');}
@@ -596,6 +635,7 @@ function logicStep(){
       carDue=nowT+30000;
     }
   }
+  if(tribDay!==dayIdx()){tribDay=dayIdx();refreshTrib();}
   var inc=incomePerSec()*dt*rate;
   if(inc>0){S.coins+=inc;S.lifetime+=inc;S.alltime+=inc;}
   checkDeeds();
@@ -639,6 +679,7 @@ function startGame(){
   carDue=Date.now()+(150+Math.random()*150)*1000;
   setTxt($('chestCount'),S.chests);
   cacheRects();
+  refreshTrib();
   updateHud();
 }
 function init(){
@@ -650,6 +691,8 @@ function init(){
   $('startDeeds').textContent=deedCount()+'/10 (+'+(deedCount()*2)+'%)';
   $('startCar').textContent=S.trades;
   $('startChest').textContent=S.chests;
+  $('startTrib').textContent=S.tribs;
+  $('startTaps').textContent=S.taps;
   $('chestCount').textContent=S.chests;
   var hasSave=false;
   try{hasSave=!!localStorage.getItem('ie_state');}catch(e){}
@@ -675,6 +718,7 @@ function init(){
   $('btnPrestige').addEventListener('click',doPrestige);
   $('btnCaravan').addEventListener('click',startTrade);
   $('btnChest').addEventListener('click',openChest);
+  $('btnTrib').addEventListener('click',claimTrib);
   $('btnOfflineOk').addEventListener('click',function(){
     $('offlineModal').classList.remove('open');
     sfx('prestige');

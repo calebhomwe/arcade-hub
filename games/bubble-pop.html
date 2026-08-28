@@ -38,7 +38,7 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
   <canvas id="cv"></canvas>
   <div class="ov" id="start">
     <h1>🫧 Bubble <span>Pop</span></h1>
-    <div class="sub">Pop bubbles fast! Bigger = more points.<br>Never touch 💣 bombs!</div>
+    <div class="sub">Pop bubbles fast! Bigger = more points.<br>Never touch 💣 bombs!<br>⭐ Star bubbles split — tap twice!</div>
     <button class="btn" id="playBtn">▶ Start (45s)</button>
   </div>
   <div class="ov hidden" id="over">
@@ -46,6 +46,7 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat">Lifetime: <b id="lifeStats">0</b></div>
+    <div class="stat">🏅 <b id="badgeLine">0/5</b></div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
 </div>
@@ -58,7 +59,10 @@ let bgG=null,cvRect=null;
 const bubbles=[],particles=[],floaters=[],rings=[];
 const MAXB=80,MAXP=200,MAXF=32,MAXR=32;
 let spawnT=0,lastPop=0,combo=0,comboEnd=0,roundTimer=null,shake=0;
-let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0;
+let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0,roundMaxCombo=0,lifeGold=+localStorage.getItem('bubbleGold')||0,lifeRounds=+localStorage.getItem('bubbleRounds')||0;
+const BADGES=[{id:'pop50',name:'🎯 Pop Star',test:function(){return roundPops>=50}},{id:'combo12',name:'🔥 Chain Master',test:function(){return roundMaxCombo>=12}},{id:'score500',name:'💯 Big Score',test:function(){return score>=500}},{id:'gold25',name:'🌟 Gold Digger',test:function(){return lifeGold>=25}},{id:'vet10',name:'🛡 Veteran',test:function(){return lifeRounds>=10}}];
+let badges=[];try{badges=JSON.parse(localStorage.getItem('bubbleBadges'))||[]}catch(e){badges=[]}
+document.getElementById('badgeLine').textContent=badges.length+'/'+BADGES.length;
 let muted=localStorage.getItem('gamesMuted')==='1';
 function refreshMute(){document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';}
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();});
@@ -100,6 +104,15 @@ g.fillStyle='#fff';g.font='bold 48px system-ui';g.textAlign='center';g.textBasel
 g.fillText('💣',64,66);
 bombSpr=s;return s;
 }
+let starSpr=null;
+function starSprite(){
+if(starSpr)return starSpr;
+const s=document.createElement('canvas');s.width=s.height=BUBS;
+const g=s.getContext('2d');
+g.font='bold 40px system-ui';g.textAlign='center';g.textBaseline='middle';
+g.fillStyle='rgba(255,255,255,.95)';g.fillText('\u2B50',64,66);
+starSpr=s;return s;
+}
 function makeLabel(txt,color){
 const c=document.createElement('canvas'),g=c.getContext('2d');
 g.font='bold 17px system-ui';
@@ -126,8 +139,12 @@ const r=isBomb?20+Math.random()*10:12+Math.random()*28;
 let b=null;
 for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
 if(!b){if(bubbles.length>=MAXB)return;b={};bubbles.push(b);}
-b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&Math.random()<.06;if(b.gold)b.hue=48;
+b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&Math.random()<.06;if(b.gold)b.hue=48;b.mega=!isBomb&&!b.gold&&r>=32&&Math.random()<.3;
 }
+function addBubble(x,y,r,hue){let b=null;
+for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
+if(!b){if(bubbles.length>=MAXB)return null;b={};bubbles.push(b);}
+b.on=true;b.x=Math.max(r,Math.min(W-r,x));b.y=y;b.r=r;b.hue=hue;b.vy=(30+(44-r)*2.2)*.9;b.ph=Math.random()*7;b.bomb=false;b.gold=false;b.mega=false;return b;}
 function spawnPart(x,y,vx,vy,hue){let p=null;
 for(let i=0;i<particles.length;i++){if(particles[i].life<=0){p=particles[i];break;}}
 if(!p){if(particles.length>=MAXP)return;p={};particles.push(p);}
@@ -149,7 +166,7 @@ for(const b of bubbles)b.on=false;
 for(const p of particles)p.life=0;
 for(const f of floaters)f.life=0;
 for(const g2 of rings)g2.life=0;
-shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;
+shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;roundMaxCombo=0;
 document.getElementById('score').textContent=0;
 document.getElementById('timeLeft').textContent=timeLeft;
 document.getElementById('timefill').style.width='100%';
@@ -173,17 +190,35 @@ document.getElementById('overTitle').textContent=(boom?'💥 Boomed!':'Time\'s U
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best;
 lifePops+=roundPops;localStorage.setItem('bubblePops',lifePops);
+lifeRounds++;localStorage.setItem('bubbleRounds',lifeRounds);
+localStorage.setItem('bubbleGold',lifeGold);
+const unlocked=[];
+for(const bd of BADGES){if(badges.indexOf(bd.id)<0&&bd.test()){badges.push(bd.id);unlocked.push(bd.name);}}
+try{localStorage.setItem('bubbleBadges',JSON.stringify(badges));}catch(e){}
+document.getElementById('badgeLine').textContent='🏅 '+badges.length+'/'+BADGES.length+(unlocked.length?' · NEW: '+unlocked.join(', '):'');
 document.getElementById('lifeStats').textContent=lifePops+(lifePops>=1500?' · Genius':lifePops>=700?' · Storm':lifePops>=300?' · Blaster':lifePops>=100?' · Lover':' · Rookie');
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
 }
 function popBubble(b){
+if(b.mega){
+b.mega=false;
+b.r=Math.max(12,b.r*.52);b.vy=(30+(44-b.r)*2.2)*.9;
+spawnRing(b.x,b.y,b.r,b.hue);
+spawnFloater(b.x,b.y-b.r,'⭐ SPLIT!','rgba(250,204,21,1)');
+sfx('whoosh');shake=Math.max(shake,.3);
+for(let i=0;i<8;i++){const an=Math.random()*7;spawnPart(b.x,b.y,Math.cos(an)*(60+Math.random()*120),Math.sin(an)*(60+Math.random()*120),b.hue);}
+const dx=b.r*2.4,sib=addBubble(b.x+(Math.random()<.5?-dx:dx),b.y+b.r*.3,b.r*(.7+Math.random()*.3),b.hue);
+if(sib)sib.mega=false;
+return;
+}
 b.on=false;
 const now=performance.now();
 combo=now-lastPop<Math.min(1800,1000+combo*60)?combo+1:1;
 lastPop=now;comboEnd=now+Math.min(1800,1000+combo*60);
+if(combo>roundMaxCombo)roundMaxCombo=combo;
 spawnRing(b.x,b.y,b.r,b.bomb?0:b.hue);
 if(b.bomb){shake=1;spawnFloater(b.x,b.y,'💥','hsl(0,90%,75%)');endGame(true);return;}
-if(b.gold){timeLeft=Math.min(ROUND_TIME,timeLeft+4);document.getElementById('timeLeft').textContent=timeLeft;document.getElementById('timefill').style.width=(timeLeft/ROUND_TIME*100)+'%';spawnFloater(b.x,b.y-b.r,'⏱ +4s','rgba(250,204,21,1)');sfx('coin');for(let i=0;i<14;i++){const an=Math.random()*7;spawnPart(b.x,b.y,Math.cos(an)*(70+Math.random()*130),Math.sin(an)*(70+Math.random()*130),48);}return;}
+if(b.gold){lifeGold++;timeLeft=Math.min(ROUND_TIME,timeLeft+4);document.getElementById('timeLeft').textContent=timeLeft;document.getElementById('timefill').style.width=(timeLeft/ROUND_TIME*100)+'%';spawnFloater(b.x,b.y-b.r,'⏱ +4s','rgba(250,204,21,1)');sfx('coin');for(let i=0;i<14;i++){const an=Math.random()*7;spawnPart(b.x,b.y,Math.cos(an)*(70+Math.random()*130),Math.sin(an)*(70+Math.random()*130),48);}return;}
 const mult=1+Math.floor(combo/4);
 const pts=Math.max(1,Math.round((b.r-8)/8))*mult;
 score+=pts;
@@ -240,6 +275,7 @@ const b=bubbles[i];
 if(!b.on)continue;
 const dw=BUBS*(b.r/BUBR);
 ctx.drawImage(b.bomb?bombSprite():bubSprite(b.hue),b.x-dw/2,b.y-dw/2,dw,dw);
+if(b.mega){const q=dw*.8;ctx.drawImage(starSprite(),b.x-q/2,b.y-q/2,q,q);}
 }
 for(let i=0;i<particles.length;i++){
 const p=particles[i];

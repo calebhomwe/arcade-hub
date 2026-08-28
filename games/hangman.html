@@ -84,6 +84,7 @@ canvas{display:block;width:150px;height:210px}
     <button class="btn cat-btn" data-cat="tech">💻 Tech</button>
   </div>
   <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best streak: <b id="startStreak">0</b></div>
+  <button class="btn cat-btn" id="btnAchOpen" style="margin-bottom:14px;">🏅 Achievements</button>
   <p class="tip">5 words per game · 💡 Hint costs 15 pts · ⏭ Skip reveals the word (no points) · Win streak multiplies your bonus · Type letters on a physical keyboard too!</p>
 </div>
 
@@ -93,6 +94,7 @@ canvas{display:block;width:150px;height:210px}
     <div class="hud-item">🔥 <span id="streak">0</span></div>
     <div class="hud-item">🎯 <span id="round">1/5</span></div>
     <div class="hud-item">💯 <span id="perfect">0</span></div>
+    <div class="hud-item">🌹 <span id="tokens">0</span></div>
     <div class="hud-item" id="catBox">🐾 Animals</div>
     <div class="hud-item">🏆 <span id="best">0</span></div>
   </div>
@@ -104,11 +106,19 @@ canvas{display:block;width:150px;height:210px}
       <div class="keyboard" id="keyboard"></div>
       <div class="ctrl-row">
         <button class="btn ctrl" id="btnHint">💡 Hint −15</button>
+        <button class="btn ctrl" id="btnRose" disabled>🌹 Reveal 1</button>
         <button class="btn ctrl" id="btnSkip">⏭ Skip</button>
         <button class="btn ctrl" id="btnMenu2">🏠 Menu</button>
       </div>
     </div>
   </div>
+</div>
+
+<div class="screen" id="s-ach">
+  <h1 class="title" style="font-size:30px;">ACHIEVEMENTS</h1>
+  <div class="best-box" id="achStats"></div>
+  <div id="achList" style="max-width:460px;width:100%;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+  <button class="btn btn-big" id="btnAchBack">← Back</button>
 </div>
 
 <div class="screen" id="s-over">
@@ -137,13 +147,60 @@ var cat='animals',score=0,streak=0,best=0,bestStreak=0,mistakes=0,roundIdx=0,wor
 var perfectRun=0,bestPerfect=0,goldIdx=-1,firstGuess=true;
 var keyEls={};
 var AC=null,muted=localStorage.getItem('hg_muted')==='1';
-var elScore,elStreak,elRound,elPerfect,elBest,elMistakes,elWordBox,elCtx,elGameScr,lblEls=[],stageSprites=[];
+var elScore,elStreak,elRound,elPerfect,elBest,elMistakes,elWordBox,elCtx,elGameScr,lblEls=[],stageSprites=[],elTokens,elRose;
+var tokens=0;
+function saveTokens(){try{localStorage.setItem('hg_tokens_v1',String(tokens));}catch(e){}}
+function loadTokens(){tokens=parseInt(localStorage.getItem('hg_tokens_v1')||'0',10)||0;}
 var screenEls=null;
 function $(id){return document.getElementById(id);}
 function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
 function loadBest(){best=parseInt(localStorage.getItem('hg_best')||'0',10)||0;bestStreak=parseInt(localStorage.getItem('hg_beststreak')||'0',10)||0;bestPerfect=parseInt(localStorage.getItem('hg_bestperfect')||'0',10)||0;}
 function saveBest(){localStorage.setItem('hg_best',String(best));}
-function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('hg_beststreak',String(bestStreak));}}
+var stats={wins:0,gold:0,perfect:0,games:0,cats:{}};
+var ACH={};
+function loadStats(){try{var s=JSON.parse(localStorage.getItem('hg_stats_v1')||'null');if(s&&typeof s==='object'){stats.wins=parseInt(s.wins,10)||0;stats.gold=parseInt(s.gold,10)||0;stats.perfect=parseInt(s.perfect,10)||0;stats.games=parseInt(s.games,10)||0;if(s.cats&&typeof s.cats==='object'){stats.cats=s.cats;}}}catch(e){}}
+function saveStats(){try{localStorage.setItem('hg_stats_v1',JSON.stringify(stats));}catch(e){}}
+function loadAchList(){try{var a=JSON.parse(localStorage.getItem('hg_ach_v1')||'null');if(a&&typeof a==='object'){ACH=a;}}catch(e){}}
+function saveAchList(){try{localStorage.setItem('hg_ach_v1',JSON.stringify(ACH));}catch(e){}}
+function achCount(){var n=0,k;for(k in ACH){if(ACH[k]){n++;}}return n;}
+var ACH_INFO=[
+  {id:'w1',icon:'🎯',name:'First Solve',desc:'Win your first round ever',test:function(){return stats.wins>=1;}},
+  {id:'w10',icon:'📚',name:'Bookworm',desc:'Win 10 rounds total',test:function(){return stats.wins>=10;}},
+  {id:'w50',icon:'📖',name:'Word Smasher',desc:'Win 50 rounds total',test:function(){return stats.wins>=50;}},
+  {id:'g25',icon:'✨',name:'Gold Rush',desc:'Find 25 gold letters',test:function(){return stats.gold>=25;}},
+  {id:'p20',icon:'💯',name:'Perfectionist',desc:'20 flawless rounds total',test:function(){return stats.perfect>=20;}},
+  {id:'p5',icon:'🥇',name:'Flawless Game',desc:'5-round perfect run in one game',test:function(){return perfectRun>=5;}},
+  {id:'st5',icon:'🔥',name:'Unbroken',desc:'Reach a 5 win streak',test:function(){return bestStreak>=5;}},
+  {id:'sc300',icon:'⭐',name:'High Roller',desc:'Score 300 in one game',test:function(){return best>=300;}},
+  {id:'cat4',icon:'🌐',name:'Polyglot',desc:'Win rounds in all 4 categories',test:function(){return !!(stats.cats.animals&&stats.cats.food&&stats.cats.sports&&stats.cats.tech);}},
+  {id:'g200',icon:'🗄️',name:'Collector',desc:'Play 100 games',test:function(){return stats.games>=100;}}
+];
+function checkAch(){
+  var fresh=false,i,a;
+  for(i=0;i<ACH_INFO.length;i++){
+    a=ACH_INFO[i];
+    if(!ACH[a.id]&&a.test()){
+      ACH[a.id]=1;
+      toast(a.icon+' Unlocked: '+a.name);
+      sfx('levelup');
+      fresh=true;
+    }
+  }
+  if(fresh){saveAchList();}
+}
+function renderAchScreen(){
+  var l=$('achList'),i,a,row;
+  l.innerHTML='';
+  for(i=0;i<ACH_INFO.length;i++){
+    a=ACH_INFO[i];
+    row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;gap:10px;background:rgba(40,28,80,.75);border:1px solid '+(ACH[a.id]?'#fbbf24':'#4a3a7e')+';border-radius:12px;padding:10px 14px;font-size:14px;text-align:left';
+    row.innerHTML='<span>'+a.icon+' <b>'+a.name+'</b><br><span style="color:#b7a6e0;font-size:12px;">'+a.desc+'</span></span><b style="color:'+(ACH[a.id]?'#fbbf24':'#8a76b8')+'">'+(ACH[a.id]?'✓':'🔒')+'</b>';
+    l.appendChild(row);
+  }
+  $('achStats').innerHTML='🏅 '+achCount()+'/'+ACH_INFO.length+' · 🎯 wins: <b>'+stats.wins+'</b> · 🎮 games: <b>'+stats.games+'</b>';
+}
+function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('hg_beststreak',String(bestStreak));}stats.wins++;stats.cats[cat]=1;saveStats();}
 function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
 function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
@@ -225,6 +282,9 @@ function updateHud(){
   elPerfect.textContent=perfectRun;
   elRound.textContent=(roundIdx+1)+'/'+ROUNDS;
   elBest.textContent=best;
+  elTokens.textContent=tokens;
+  if(elRose){elRose.disabled=tokens<1;}
+  checkAch();
 }
 function guess(ch){
   if(busy){return;}
@@ -235,7 +295,7 @@ function guess(ch){
     guessed.push(ch);
     renderWord();
     sfx('coin');
-    if(firstGuess){firstGuess=false;if(goldIdx>=0&&ch===word[goldIdx]){score+=2;updateHud();sfx('levelup');toast('✨ Gold letter +2!');}}
+    if(firstGuess){firstGuess=false;if(goldIdx>=0&&ch===word[goldIdx]){score+=2;updateHud();sfx('levelup');toast('✨ Gold letter +2!');stats.gold++;saveStats();}}
     if(winCheck()){
       busy=true;
       var gain=10+(7-mistakes)*8+Math.min(streak,5)*5;
@@ -305,8 +365,37 @@ function useHint(){
     setTimeout(newRound,1100);
   }
 }
+function roseReveal(){
+  if(busy){return;}
+  if(tokens<1){toast('No 🌹 tokens — win a flawless round!');sfx('buzz');return;}
+  var hidden=[],i,ch;
+  for(i=0;i<word.length;i++){if(guessed.indexOf(word[i])===-1&&hidden.indexOf(word[i])===-1){hidden.push(word[i]);}}
+  if(hidden.length===0){return;}
+  tokens--;saveTokens();
+  ch=hidden[(Math.random()*hidden.length)|0];
+  guessed.push(ch);
+  var b=keyEls[ch];
+  if(b){b.classList.add('hit');}
+  sfx('whoosh');
+  renderWord();
+  toast('🌹 Rose reveal: '+ch.toUpperCase());
+  if(winCheck()){
+    busy=true;
+    var gain=10+(7-mistakes)*8+Math.min(streak,5)*5;
+    score+=gain;bumpStreak();
+    trackPerfectWin();
+    if(score>best){best=score;saveBest();}
+    sfx('win');
+    jflash('#34d399');confetti(26);floatText('+'+gain);jpop(elScore.parentNode);
+    setTimeout(function(){toast('Solved! +'+gain+' pts');},400);
+    updateHud();
+    roundIdx++;
+    setTimeout(newRound,1100);
+  }
+  updateHud();
+}
 function trackPerfectWin(){
-  if(mistakes===0){perfectRun++;if(perfectRun>bestPerfect){bestPerfect=perfectRun;try{localStorage.setItem('hg_bestperfect',String(bestPerfect));}catch(e){}}}
+  if(mistakes===0){perfectRun++;if(perfectRun>bestPerfect){bestPerfect=perfectRun;try{localStorage.setItem('hg_bestperfect',String(bestPerfect));}catch(e){}}stats.perfect++;saveStats();tokens++;saveTokens();toast('🌹 Rose token earned!');}
   else{perfectRun=0;}
 }
 function skipWord(){
@@ -335,6 +424,7 @@ function gameOver(){
 }
 function startGame(c){
   cat=c;score=0;streak=0;roundIdx=0;usedWords=[];perfectRun=0;
+  stats.games++;saveStats();
   $('catBox').textContent=CATS[cat];
   loadBest();
   show('s-game');
@@ -342,13 +432,18 @@ function startGame(c){
   newRound();
 }
 function init(){
-  elScore=$('score');elStreak=$('streak');elRound=$('round');elPerfect=$('perfect');elBest=$('best');elMistakes=$('mistakes');elWordBox=$('wordBox');elGameScr=$('s-game');
+  elScore=$('score');elStreak=$('streak');elRound=$('round');elPerfect=$('perfect');elBest=$('best');elMistakes=$('mistakes');elWordBox=$('wordBox');elGameScr=$('s-game');elTokens=$('tokens');elRose=$('btnRose');
   elCtx=$('canvas').getContext('2d');
   buildHangmanSprites();
   buildKeyboard();
   loadBest();
+  loadStats();
+  loadAchList();
   $('startBest').textContent=best;
   $('startStreak').textContent=bestStreak;
+  $('btnAchOpen').textContent='🏅 Achievements ' + achCount() + '/' + ACH_INFO.length;
+  $('btnAchOpen').addEventListener('click',function(){sfx('tap');renderAchScreen();show('s-ach');});
+  $('btnAchBack').addEventListener('click',function(){sfx('tap');$('btnAchOpen').textContent='🏅 Achievements ' + achCount() + '/' + ACH_INFO.length;show('s-start');});
   var cbs=document.querySelectorAll('.cat-btn'),i;
   for(i=0;i<cbs.length;i++){
     cbs[i].addEventListener('click',function(){sfx('coin');startGame(this.getAttribute('data-cat'));});
@@ -357,6 +452,8 @@ function init(){
   $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
   $('btnMenu2').addEventListener('click',function(){sfx('tap');show('s-start');});
   $('btnHint').addEventListener('click',useHint);
+  loadTokens();
+  $('btnRose').addEventListener('click',roseReveal);
   $('btnSkip').addEventListener('click',skipWord);
   $('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('hg_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';});
   $('muteBtn').textContent=muted?'🔇':'🔊';

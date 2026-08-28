@@ -113,6 +113,17 @@
   <div id="tapArea"><button id="tractor">🚜</button></div>
   <div id="clickBurst"></div>
 
+  <div id="goldWrap" class="panel" style="padding:10px 12px;margin-bottom:8px;text-align:center;">
+    <div class="sub" id="goldInfo" style="margin:0 0 6px;"></div>
+    <div style="height:10px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden;margin-bottom:8px;"><div id="goldBar" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd86b,#8dff9b);border-radius:6px;transition:width .15s;"></div></div>
+    <button class="btn" id="goldBtn" disabled>✨ Golden Harvest</button>
+  </div>
+
+  <div id="ordWrap" class="panel" style="padding:10px 12px;margin-bottom:8px;text-align:center;">
+    <div class="sub" id="ordInfo" style="margin:0 0 6px;"></div>
+    <div style="height:10px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden;"><div id="ordBar" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd86b,#8dff9b);border-radius:6px;transition:width .15s;"></div></div>
+  </div>
+
   <div id="qtyRow" class="panel">
     <button class="qty sel" data-q="1">×1</button>
     <button class="qty" data-q="10">×10</button>
@@ -181,11 +192,14 @@
   var OFFLINE_CAP = 8 * 3600;
   var OFFLINE_RATE = 0.5;
   var LEGACY_BONUS = 0.10;
+  var GOLD_TAPS = 25, GOLD_DUR = 10, GOLD_TAP_X = 5, GOLD_FEST = 0.25;
+  var ORD_TIME = {tap:45, buy:45, bfly:80};
+  var ORD_TIERS = {tap:[15,25,40], buy:[3,5,8], bfly:[1,1,2]};
 
   function defaultState(){
     var owned = {};
     BUILDINGS.forEach(function(b){ owned[b.id] = 0; });
-    return {coins:0, lifetime:0, clickPower:1, legacy:0, buyQty:1, butterflies:0, muted:false, lastSave:Date.now(), owned:owned};
+    return {coins:0, lifetime:0, clickPower:1, legacy:0, buyQty:1, butterflies:0, muted:false, lastSave:Date.now(), goldMeter:0, goldActive:0, goldCount:0, ordType:"", ordN:0, ordProg:0, ordT:0, ordDone:0, owned:owned};
   }
   var state = defaultState();
 
@@ -285,6 +299,71 @@
     return combo >= 25 ? 8 : combo >= 12 ? 5 : combo >= 5 ? 3 : combo >= 2 ? 2 : 1;
   }
 
+  // ---- Golden Harvest (additive bonus meter) ----
+  function goldTap(){
+    if(state.goldActive > 0){
+      var extra = currentClickPower() * comboMult() * GOLD_TAP_X;
+      state.coins += extra;
+      return extra;
+    }
+    if(state.goldMeter < GOLD_TAPS){
+      state.goldMeter++;
+      if(state.goldMeter === GOLD_TAPS){ showToast("✨ Golden Harvest ready!"); sfx("levelup"); }
+    }
+    return 0;
+  }
+  function activateGold(){
+    if(state.goldActive > 0 || state.goldMeter < GOLD_TAPS){ sfx("deny"); return; }
+    state.goldMeter = 0;
+    state.goldActive = GOLD_DUR;
+    state.goldCount++;
+    sfx("prestige");
+    confetti();
+    showToast("✨ Golden Harvest! +" + Math.round(GOLD_FEST * 100) + "% income & ×" + GOLD_TAP_X + " taps for " + GOLD_DUR + "s");
+    render();
+  }
+
+  // ---- Market Orders (additive quests) ----
+  function orderReward(){ return Math.max(500, totalIncome() * 25); }
+  function newOrder(){
+    var types = ["tap", "buy", "bfly"];
+    state.ordType = types[(Math.random() * types.length) | 0];
+    var tiers = ORD_TIERS[state.ordType];
+    state.ordN = tiers[(Math.random() * tiers.length) | 0];
+    state.ordProg = 0;
+    state.ordT = ORD_TIME[state.ordType];
+  }
+  function ordHit(type, n){
+    if(!state.ordType || state.ordType !== type) return;
+    state.ordProg += n;
+    if(state.ordProg < state.ordN) return;
+    var rw = orderReward();
+    state.coins += rw;
+    state.ordDone++;
+    showToast("📦 Order filled! +" + fmt(rw) + " 🪙 (" + state.ordDone + " filled)");
+    sfx("win");
+    var c0 = centerOf($("tractor"));
+    partBurst(c0.x, c0.y - 60, ["📦", "🪙"], 5, 28);
+    if(state.ordDone % 5 === 0){
+      state.coins += rw;
+      showToast("📦 5-order bonus! +" + fmt(rw) + " 🪙");
+      confetti();
+      sfx("levelup");
+    }
+    newOrder();
+  }
+  function expireOrder(){
+    showToast("📦 Order expired — new request at the market");
+    sfx("deny");
+    newOrder();
+  }
+  function orderText(){
+    if(state.ordType === "tap") return "👆 Tap the tractor " + state.ordN + " times";
+    if(state.ordType === "buy") return "🏗 Buy " + state.ordN + " buildings";
+    if(state.ordType === "bfly") return "🦋 Catch " + state.ordN + " butterfly";
+    return "";
+  }
+
   // ---- Actions ----
   function popCoins(){
     coinsEl.classList.remove("pop");
@@ -306,6 +385,9 @@
     var c0 = centerOf($("tractor"));
     floatText(c0.x, c0.y - 40, "+" + fmt(pw * m) + " 🪙");
     partBurst(c0.x, c0.y, ["🌾","🪙","✨"], 4, 26);
+    var gExtra = goldTap();
+    if(gExtra > 0) floatText(c0.x, c0.y - 74, "+" + fmt(gExtra) + " ✨");
+    ordHit("tap", 1);
     try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
     sfx("click");
     render();
@@ -316,6 +398,7 @@
     var cost = bulkCost(b, n);
     state.coins = Math.max(0, state.coins - cost);
     state.owned[b.id] += n;
+    ordHit("buy", n);
     popCoins();
     sfx("buy");
     try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
@@ -389,6 +472,7 @@
     var gift = Math.max(20, totalIncome() * 3);
     state.coins += gift;
     state.butterflies = (state.butterflies || 0) + 1;
+    ordHit("bfly", 1);
     partBurst(c0.x, c0.y, ["\ud83e\udd8b","\u2728"], 5, 30);
     if(state.butterflies % 10 === 0){
       var bonus = totalIncome() * 30;
@@ -601,6 +685,30 @@
   var elStartBest=$("startBest"), elLpGain=$("lpGain"), elPrestigeBtn=$("prestigeBtn"), elMute=$("muteBtn"), elAch=$("achBtn"), elBf=$("bf");
   var lastQty=-1, lastMuteIcon="";
   function setTxt(el, v){ if(el.textContent !== v) el.textContent = v; }
+  var goldBarEl=null, goldBtnEl=null, goldInfoEl=null, goldLast="", goldBarW="", goldBtnTxt="";
+  function renderGold(){
+    if(!goldBarEl){ goldBarEl=$("goldBar"); goldBtnEl=$("goldBtn"); goldInfoEl=$("goldInfo"); }
+    var s = state.goldActive > 0
+      ? "✨ ACTIVE " + state.goldActive.toFixed(1) + "s · taps pay ×" + GOLD_TAP_X + " click power"
+      : state.goldMeter + "/" + GOLD_TAPS + " taps charged · ready bonus: +" + Math.round(GOLD_FEST * 100) + "% income, 10s";
+    if(s !== goldLast){ goldLast = s; goldInfoEl.textContent = s; }
+    var w = (state.goldActive > 0 ? 100 : state.goldMeter / GOLD_TAPS * 100).toFixed(0) + "%";
+    if(w !== goldBarW){ goldBarW = w; goldBarEl.style.width = w; }
+    var bt = state.goldActive > 0 ? "✨ Harvesting…" : "✨ Golden Harvest (" + state.goldCount + ")";
+    if(bt !== goldBtnTxt){ goldBtnTxt = bt; goldBtnEl.textContent = bt; }
+    var dis = state.goldActive > 0 || state.goldMeter < GOLD_TAPS;
+    if(goldBtnEl.disabled !== dis) goldBtnEl.disabled = dis;
+  }
+  var ordInfoEl=null, ordBarEl=null, ordLast="", ordBarW="";
+  function renderOrder(){
+    if(!ordInfoEl){ ordInfoEl=$("ordInfo"); ordBarEl=$("ordBar"); }
+    var s = state.ordType
+      ? orderText() + " — " + state.ordProg + "/" + state.ordN + " · " + Math.ceil(state.ordT) + "s left · pays " + fmt(orderReward()) + " 🪙"
+      : "📦 The market posts timed orders — fill them for bonus coins";
+    if(s !== ordLast){ ordLast = s; ordInfoEl.textContent = s; }
+    var w = (state.ordType && state.ordN > 0 ? Math.min(100, state.ordProg / state.ordN * 100) : 0).toFixed(0) + "%";
+    if(w !== ordBarW){ ordBarW = w; ordBarEl.style.width = w; }
+  }
   function render(){
     setTxt(coinsEl, fmt(state.coins));
     setTxt(cpsEl, fmt(totalIncome()));
@@ -618,6 +726,8 @@
     setTxt(elWheelDesc, "Stake: " + fmt(wheelStake()) + " 🪙 (5% of coins, min 1K)");
     var wDis = state.coins < 1000;
     if(elWheelBtn.disabled !== wDis) elWheelBtn.disabled = wDis;
+    renderGold();
+    renderOrder();
 
     if(lastQty !== state.buyQty){
       lastQty = state.buyQty;
@@ -643,6 +753,17 @@
       if(inc > 0){
         var gain = inc * dt;
         state.coins += gain; state.lifetime += gain;
+      }
+      if(state.goldActive > 0){
+        var gdt = Math.min(dt, 0.5);
+        state.goldActive = Math.max(0, state.goldActive - gdt);
+        if(inc > 0) state.coins += inc * GOLD_FEST * gdt;
+        if(state.goldActive <= 0) showToast("✨ Golden Harvest ended");
+      }
+      if(!state.ordType) newOrder();
+      else {
+        state.ordT -= Math.min(dt, 0.5);
+        if(state.ordT <= 0) expireOrder();
       }
       uiAcc += dt;
       if(uiAcc >= 0.1){ uiAcc = 0; render(); }
@@ -686,6 +807,14 @@
     state.clickPower = Math.max(1, num(state.clickPower, 1));
     state.legacy = Math.max(0, num(state.legacy, 0));
     state.butterflies = Math.max(0, Math.floor(num(state.butterflies, 0)));
+    state.goldMeter = Math.max(0, Math.min(GOLD_TAPS, Math.floor(num(state.goldMeter, 0))));
+    state.goldActive = Math.max(0, Math.min(GOLD_DUR, num(state.goldActive, 0)));
+    state.goldCount = Math.max(0, Math.floor(num(state.goldCount, 0)));
+    if(["tap","buy","bfly"].indexOf(state.ordType) < 0) state.ordType = "";
+    state.ordN = Math.max(1, Math.floor(num(state.ordN, 15)));
+    state.ordProg = Math.max(0, Math.floor(num(state.ordProg, 0)));
+    state.ordT = Math.max(0, num(state.ordT, 0));
+    state.ordDone = Math.max(0, Math.floor(num(state.ordDone, 0)));
     state.lastSave = num(state.lastSave, Date.now());
     state.muted = !!state.muted;
     if([1,10,25].indexOf(state.buyQty) < 0) state.buyQty = 1;
@@ -720,6 +849,7 @@
     });
   });
   $("prestigeBtn").addEventListener("click", prestige);
+  $("goldBtn").addEventListener("click", activateGold);
   $("achBtn").addEventListener("click", function(){ buildAchList(); renderAchList(); $("achScreen").classList.remove("hidden"); sfx("click"); });
   $("achCloseBtn").addEventListener("click", function(){ $("achScreen").classList.add("hidden"); sfx("click"); });
   $("muteBtn").addEventListener("click", function(){ state.muted = !state.muted; save(); render(); });

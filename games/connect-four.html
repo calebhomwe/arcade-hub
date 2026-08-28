@@ -60,6 +60,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
   <span class="p2" id="s2">P2: 0</span>
 </div>
 <div class="streak" id="streak">Streak: 0 &bull; Best: 0</div>
+<div class="streak" id="trophyRow">🏆 0/5</div>
 <div id="board">
   <div class="holes" id="holes"></div>
 </div>
@@ -70,9 +71,10 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 <div class="ov" id="start">
   <h1>Connect Four</h1>
   <div style="color:#cbd5e1;font-size:15px">Choose mode:</div>
-  <div class="modes">
+  <div class="modes" style="flex-wrap:wrap">
     <button class="mbtn big" data-m="pvp">👥 Pass &amp; Play</button>
     <button class="mbtn big" data-m="ai">🤖 vs Computer</button>
+    <button class="mbtn big" data-m="hard" style="font-size:14px;padding:10px 20px">🧠 Hard CPU</button>
   </div>
 </div>
 <div class="ov hidden" id="over">
@@ -85,8 +87,23 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 
 const COLS=7,ROWS=6;
 let board=[],discEls=[],turn=1,mode='ai',scores=[0,0],winner=0,locked=false,aiThinking=false;
+let hardAI=false;
 let streak=0,lastWinner=0,best=+localStorage.getItem('c4Best')||0,overTimer=null,roundToken=0;
 let coins=+localStorage.getItem('c4Coins')||0,goldCol=-1,goldLive=false,goldEl=null;
+let c4Games=+localStorage.getItem('c4Games')||0,c4Wins=+localStorage.getItem('c4Wins')||0,c4Upsets=+localStorage.getItem('c4Upsets')||0,c4Trophies=+localStorage.getItem('c4Trophies')||0;
+const TROPHIES=[
+{name:'First Win',test:()=>c4Wins>=1},
+{name:'Five Streak',test:()=>best>=5},
+{name:'Century',test:()=>c4Games>=100},
+{name:'Gold Rush',test:()=>c4Wins>=10},
+{name:'Upset Artist',test:()=>c4Upsets>=5}
+];
+let earnedSet=(function(){try{return JSON.parse(localStorage.getItem('c4Earned')||'[]')}catch(e){return[]}})();
+function saveEarned(){try{localStorage.setItem('c4Earned',JSON.stringify(earnedSet));}catch(e){}}
+function checkTrophies(){let newT=[];for(let i=0;i<TROPHIES.length;i++){const t=TROPHIES[i];if(earnedSet.indexOf(t.name)<0&&t.test()){earnedSet.push(t.name);newT.push(t);}}
+if(newT.length){saveEarned();c4Trophies=earnedSet.length;try{localStorage.setItem('c4Trophies',c4Trophies);}catch(e){}for(let i=0;i<newT.length;i++){const b=document.createElement('div');b.className='banner';b.textContent='🏆 '+newT[i].name+'!';b.style.top=(20+i*14)+'%';document.body.appendChild(b);(function(b){setTimeout(()=>b.remove(),1400);})(b);}sfx('levelup');}
+const tr=document.getElementById('trophyRow');if(tr)tr.textContent='🏆 '+earnedSet.length+'/'+TROPHIES.length;
+}
 let muted=localStorage.getItem('c4Muted')==='1';
 let AC;
 function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
@@ -100,7 +117,7 @@ function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('c4Muted',muted?'1':'0');renderMute();});
 renderMute();
 function updStreak(){document.getElementById('streak').textContent='Streak: '+streak+' \u2022 Best: '+best+' \u2022 \u26a1 '+coins;const hb=document.getElementById('hintBtn');if(hb)hb.textContent='\ud83d\udca1 Hint \u00b7 1\u26a1 ('+coins+')';}
-updStreak();
+updStreak();checkTrophies();
 const boardEl=document.getElementById('board'),holesEl=document.getElementById('holes');
 for(let i=0;i<COLS*ROWS;i++){const h=document.createElement('div');h.className='hole';holesEl.appendChild(h);}
 let cellW=0,holesLeft=0,holesW=0;
@@ -192,7 +209,9 @@ document.getElementById('s1').textContent='P1: '+scores[0];
 document.getElementById('s2').textContent=(mode==='ai'?'CPU: ':'P2: ')+scores[1];
 if(turn===lastWinner)streak++;else{streak=1;lastWinner=turn;}
 if(streak>best){best=streak;localStorage.setItem('c4Best',best);}
-updStreak();
+c4Games++;if(!(mode==='ai'&&turn===2)){c4Wins++;if(mode==='ai')c4Upsets++;}
+try{localStorage.setItem('c4Games',c4Games);localStorage.setItem('c4Wins',c4Wins);localStorage.setItem('c4Upsets',c4Upsets);}catch(e){}
+updStreak();checkTrophies();
 snd(mode==='ai'&&turn===2?'lose':'win');
 confetti();
 const title=mode==='ai'?(turn===1?'You win! 🎉':'CPU wins! 🤖'):(turn===1?'P1 wins! 🎉':'P2 wins! 🎉');

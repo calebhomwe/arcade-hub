@@ -39,6 +39,7 @@ body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#070
 .undo{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:8px 16px;cursor:pointer}
 .undo:active{transform:scale(.94)}
 .undo.off{opacity:.35}
+.undo.armed{outline:2px solid #facc15;color:#facc15}
 .toast2{position:fixed;top:16%;left:50%;transform:translateX(-50%);z-index:30;background:rgba(30,41,59,.95);border:1px solid #facc15;color:#facc15;padding:10px 22px;border-radius:14px;font-weight:900;pointer-events:none;animation:toastfade 1.5s ease forwards}
 @keyframes toastfade{0%{opacity:0;transform:translate(-50%,-12px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,0)}}
 </style>
@@ -56,11 +57,13 @@ body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#070
 <div class="hint">Swipe or use arrow keys to merge tiles · Best tile: <b id="bestTile">0</b></div>
 <button class="undo off" id="undoBtn">↩ Undo</button>
 <button class="undo" id="gambleBtn">🎲 50/50</button>
+<button class="undo off" id="hammerBtn">🔨 Hammer x0</button>
 <div class="ov hidden" id="over">
   <h1>Game Over!</h1>
   <div style="font-size:18px">Score: <b id="finScore" style="color:#facc15">0</b></div>
   <div style="font-size:16px">Best tile: <b id="finBestTile" style="color:#4ade80">0</b></div>
   <div style="font-size:14px;color:#94a3b8">🔥 Best combo: <b id="finCombo" style="color:#f472b6">0</b> · 🏆 2048 wins: <b id="finWins" style="color:#facc15">0</b></div>
+  <div style="font-size:14px;color:#94a3b8">🔗 Lifetime merges: <b id="finMerges" style="color:#38bdf8">0</b> · 🏅 Club tier: <b id="finClub" style="color:#4ade80">Bronze</b></div>
   <button class="btn" id="againBtn">Try Again</button>
 </div>
 <div class="ov hidden" id="winOv">
@@ -75,8 +78,27 @@ const boardEl=document.getElementById('board');
 const N=4,PAD=12,GAP=10;
 let cell=0,tiles=[],nextId=1,score=0,best=+localStorage.getItem('best2048')||0,won=false,keepPlaying=false,winPending=false;
 let history=[],gen=0,gainCount=0,combo=0;
+let hammers=0,mergeCount=0,hammerMode=false,tapHandled=false,hx=0,hy=0;
+function updHammer(){const b=document.getElementById('hammerBtn');b.textContent='🔨 Hammer x'+hammers;b.classList.toggle('off',hammers<1);b.classList.toggle('armed',hammerMode);}
+function armHammer(){initAudio();if(hammers<1){riskToast('🔨 Earn hammers by merging!');sfx('buzz');return;}hammerMode=!hammerMode;updHammer();if(hammerMode)riskToast('🔨 Tap a tile to smash');}
+function smashAt(px,py){
+ const rect=boardEl.getBoundingClientRect();
+ const r=Math.floor((py-rect.top-PAD)/(cell+GAP)),c=Math.floor((px-rect.left-PAD)/(cell+GAP));
+ if(r<0||c<0||r>=N||c>=N)return false;
+ const t=tiles.find(x=>!x.kill&&x.r===r&&x.c===c);
+ if(!t)return false;
+ history.push(snapshot());if(history.length>60)history.shift();
+ tiles=tiles.filter(x=>x!==t);
+ const el=elMap.get(t.id);if(el){el.remove();elMap.delete(t.id);}
+ hammers--;hammerMode=false;updHammer();updUndo();sfx('boom');riskToast('🔨 Smashed!');
+ setTimeout(checkEnd,60);
+ return true;
+}
 let bestTile=+localStorage.getItem('bestTile2048')||0;
 let bestCombo=+localStorage.getItem('bestCombo2048')||0,wins2048=+localStorage.getItem('wins2048')||0;
+const CLUBS=[1000,2500,5000,10000,20000,50000];
+let clubIdx=0,clubsEver=+localStorage.getItem('clubs2048')||0,lifeMerges=+localStorage.getItem('lifeMerges2048')||0;
+function clubCheck(){while(clubIdx<CLUBS.length&&score>=CLUBS[clubIdx]){const v=CLUBS[clubIdx];clubIdx++;if(clubIdx>clubsEver){clubsEver=clubIdx;try{localStorage.setItem('clubs2048',String(clubsEver));}catch(e){}}riskToast('🏆 '+v+' CLUB!');sfx('levelup');}}
 function tileToast(v){
  const t=document.createElement('div');t.className='toast2';
  t.textContent=v>=2048?'🏆 2048 — YOU WIN!':v>=1024?'💫 Godlike: '+v+'!':v>=512?'🎇 Unbelievable: '+v+'!':v>=256?'🔥 Blazing: '+v+'!':v>=128?'✨ Sharp: '+v+'!':'⭐ '+v+' tile unlocked!';
@@ -144,7 +166,7 @@ const t={id:nextId++,val:Math.random()<.1?4:2,r:pos.r,c:pos.c};
 tiles.push(t);
 const el=makeEl(t);el.classList.add('new');
 }
-function updateScore(){document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('best2048',best);document.getElementById('best').textContent=best;}}
+function updateScore(){document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('best2048',best);document.getElementById('best').textContent=best;}clubCheck();}
 function snapshot(){return {score,tiles:tiles.filter(t=>!t.kill).map(t=>({val:t.val,r:t.r,c:t.c}))};}
 function move(dir){
 const snap=snapshot();
@@ -189,6 +211,7 @@ history.push(snap);if(history.length>60)history.shift();updUndo();
 if(gained){score+=gained;updateScore();sfx('coin');const sb=document.getElementById('score').parentElement;sb.classList.remove('bump');requestAnimationFrame(()=>requestAnimationFrame(()=>sb.classList.add('bump')));}
 if(bigMerge){boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');}
 const killed=tiles.filter(t=>t.kill);
+if(killed.length){mergeCount+=killed.length;lifeMerges+=killed.length;if(mergeCount>=12){mergeCount-=12;if(hammers<3){hammers++;riskToast('🔨 Hammer ready!');sfx('levelup');}updHammer();}}
 const g=gen;
 if(killed.length){
 setTimeout(()=>{
@@ -252,9 +275,12 @@ document.getElementById('finScore').textContent=score;
 document.getElementById('finBestTile').textContent=bestTile;
 document.getElementById('finCombo').textContent=bestCombo;
 document.getElementById('finWins').textContent=wins2048;
+document.getElementById('finMerges').textContent=lifeMerges;
+document.getElementById('finClub').textContent=['None','Bronze','Silver','Gold','Platinum','Diamond','Master'][clubsEver]||'Master';
+try{localStorage.setItem('lifeMerges2048',String(lifeMerges));}catch(e){}
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),350);
 }
-function newGame(){tiles=[];score=0;won=false;keepPlaying=false;winPending=false;history=[];gen++;combo=0;updCombo();elMap.forEach(el=>el.remove());elMap.clear();boardEl.classList.remove('danger');updateScore();document.getElementById('over').classList.add('hidden');document.getElementById('winOv').classList.add('hidden');updUndo();spawn();spawn();}
+function newGame(){tiles=[];score=0;won=false;keepPlaying=false;winPending=false;history=[];gen++;combo=0;updCombo();hammers=0;mergeCount=0;clubIdx=0;hammerMode=false;updHammer();elMap.forEach(el=>el.remove());elMap.clear();boardEl.classList.remove('danger');updateScore();document.getElementById('over').classList.add('hidden');document.getElementById('winOv').classList.add('hidden');updUndo();spawn();spawn();}
 let tsX=null,tsY=null;
 boardEl.addEventListener('touchstart',e=>{initAudio();tsX=e.touches[0].clientX;tsY=e.touches[0].clientY;},{passive:true});
 boardEl.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
@@ -274,6 +300,13 @@ document.getElementById('againBtn').addEventListener('pointerdown',newGame);
 document.getElementById('keepBtn').addEventListener('pointerdown',()=>{keepPlaying=true;document.getElementById('winOv').classList.add('hidden');});
 document.getElementById('winNewBtn').addEventListener('pointerdown',newGame);
 document.getElementById('undoBtn').addEventListener('pointerdown',()=>{initAudio();undo();});
+document.getElementById('hammerBtn').addEventListener('pointerdown',armHammer);
+boardEl.addEventListener('touchstart',e=>{hx=e.touches[0].clientX;hy=e.touches[0].clientY;},{passive:true});
+boardEl.addEventListener('touchend',e=>{
+ const dx=Math.abs(e.changedTouches[0].clientX-hx),dy=Math.abs(e.changedTouches[0].clientY-hy);
+ if(Math.max(dx,dy)<24){tapHandled=true;setTimeout(()=>{tapHandled=false;},500);if(hammerMode)smashAt(e.changedTouches[0].clientX,e.changedTouches[0].clientY);}
+},{passive:true});
+boardEl.addEventListener('click',e=>{if(tapHandled||!hammerMode)return;smashAt(e.clientX,e.clientY);});
 function riskToast(txt){const t=document.createElement('div');t.className='toast2';t.textContent=txt;document.body.appendChild(t);setTimeout(()=>t.remove(),1550);}
 function gamble(){
  if(score<=0)return;

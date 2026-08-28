@@ -35,8 +35,10 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
   <canvas id="cv" width="420" height="660"></canvas>
   <div class="ov" id="start">
     <h1>Color <span>Switch</span></h1>
-    <div class="sub">Tap or Space to spin. Pass through the color that matches your ball — it changes after every pass!</div>
+    <div class="sub">Tap or Space to spin. Pass through the color that matches your ball — it changes after every pass!<br>🌟 Gold rings pay +2 bonus!</div>
     <div class="stat">Bullseye Best: <b class="best" id="startClose">0</b></div>
+    <div class="stat">🌈 Chaos Best: <b class="best" id="startRB">0</b></div>
+    <button class="btn" id="rbBtn" style="font-size:15px;padding:10px 26px">🌈 Mode: Classic</button>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
   <div class="ov hidden" id="over">
@@ -44,6 +46,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat">Bullseye Best: <b class="best" id="finClose">0</b></div>
+    <div class="stat">🌈 Chaos Best: <b class="best" id="finRB">0</b></div>
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
@@ -67,6 +70,7 @@ let state='ready',score=0,best=rd('colorBest'),t=0,shake=0,flash=0,bpop=0,dirty=
 let a=-90,w=0,ballColor=0;
 let lives=1,heartGrace=0;const MAXL=3;
 let nearStreak=0,bestNear=+localStorage.getItem('csNear')||0,lifePass=+localStorage.getItem('csPass')||0;
+let rainbow=false,rbT=0,bestRB=rd('colorBestRB');
 const TRAILN=14,trail=new Array(TRAILN).fill(0);let trailN=0,trailI=0;
 let rings=[],spawnT=1.2;
 const particles=[],texts=[],MAXP=200,MAXT=32;
@@ -93,15 +97,20 @@ function refreshMute(){document.getElementById('muteBtn').textContent=muted?'�
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();initAudio();muted=!muted;localStorage.setItem('colorMute',muted?'1':'0');refreshMute();});
 refreshMute();
 document.getElementById('startClose').textContent=bestNear;
-function startGame(){state='play';score=0;lives=1;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';}
+function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rainbow?'CHAOS':'Classic');document.getElementById('startRB').textContent=bestRB;}
+document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();rainbow=!rainbow;updRb();});
+updRb();
+function startGame(){state='play';score=0;lives=1;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
 if(lives>1){lives--;heartGrace=1.6;sfx('hit');const ba2=a*Math.PI/180;burst(cx+R*Math.cos(ba2),cy+R*Math.sin(ba2),18,'#f87171');shake=Math.max(shake,8);ftext(cx,cy-30,'💔','#f87171');return;}
 state='over';snd('die');shake=12;flash=1;
 for(let i=0;i<26;i++){const an=a/180*Math.PI+Math.random()*.8-.4;spawnPart(cx+R*Math.cos(an),cy+R*Math.sin(an),Math.cos(an)*(80+Math.random()*220),Math.sin(an)*(80+Math.random()*220)-80,colors[ballColor]);}
  const nb=score>best;if(nb){best=score;localStorage.setItem('colorBest',best);}
+if(rainbow&&score>bestRB){bestRB=score;localStorage.setItem('colorBestRB',bestRB);}
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
 document.getElementById('finClose').textContent=bestNear;localStorage.setItem('csPass',lifePass);
+document.getElementById('finRB').textContent=bestRB;
 document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),450);}
 function update(dt){
@@ -110,10 +119,11 @@ for(let i=0;i<particles.length;i++){const p=particles[i];if(p.life<=0)continue;p
 for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;x.life-=dt*1.1;x.y-=42*dt;}
 if(state==='play'){
 w=Math.max(0,w-130*dt);
+if(rainbow){rbT-=dt;if(rbT<=0){rbT=.85;ballColor=(Math.random()*4)|0;const b2=a*Math.PI/180;burst(cx+R*Math.cos(b2),cy+R*Math.sin(b2),5,colors[ballColor]);}}
 a=(a+w*dt)%360;if(a<0)a+=360;
 trail[trailI]=a;trailI=(trailI+1)%TRAILN;if(trailN<TRAILN)trailN++;
  spawnT-=dt;
-if(spawnT<=0){spawnT=Math.max(.9,1.35-score*.015);rings.push({r:R+110,rot:Math.random()*360,rs:30+Math.random()*45,crossed:false});}
+if(spawnT<=0){spawnT=Math.max(.9,1.35-score*.015);rings.push({r:R+110,rot:Math.random()*360,rs:30+Math.random()*45,crossed:false,gold:Math.random()<.12});}
 const shrink=62+Math.min(score*1.5,38);
 let wI=0;
 for(let i=0;i<rings.length;i++){
@@ -128,7 +138,8 @@ if(db<12){ftext(cx+R*Math.cos(ba),cy+R*Math.sin(ba)-26,'Close!','#fbbf24');snd('
 if(db<12){nearStreak++;if(nearStreak>bestNear){bestNear=nearStreak;localStorage.setItem('csNear',bestNear);}if(nearStreak%3===0){ftext(cx,cy-120,'🔥 BULLSEYE x'+nearStreak,'#fbbf24');sfx('levelup');}}else nearStreak=0;
 if((score===10||score===25||score===40)&&lives<MAXL){lives++;ftext(cx,cy-110,'+1 ❤','#f87171');sfx('levelup');}
 if(score%5===0){ftext(cx,cy-60,'COMBO x'+score,'#4ade80');snd('mile');shake=Math.max(shake,5);}
-ballColor=otherColors[ballColor][(Math.random()*3)|0];}
+ballColor=otherColors[ballColor][(Math.random()*3)|0];
+if(rg.gold){score+=2;const hg=document.getElementById('hud');hg.textContent=score;hg.classList.remove('pop');void hg.offsetWidth;hg.classList.add('pop');ftext(cx,cy-140,'🌟 GOLD +2','#fde047');sfx('coin');burst(cx,cy,10,'#fde047');}}
 else die();
 }
 if(rg.r>=8)rings[wI++]=rg;
@@ -150,6 +161,7 @@ const s0=(rg.rot+i*90)*Math.PI/180,s1=(rg.rot+i*90+82)*Math.PI/180;
 ctx.strokeStyle=colors[i];ctx.lineWidth=13;ctx.lineCap='butt';
 ctx.beginPath();ctx.arc(cx,cy,rg.r,s0,s1);ctx.stroke();
 }
+if(rg.gold){ctx.strokeStyle='rgba(253,224,71,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,rg.r+9,0,7);ctx.stroke();}
 }
 ctx.save();ctx.translate(cx,cy);
 const br=(state==='ready'?1+Math.sin(t*3)*.06:1);ctx.scale(br,br);
