@@ -54,12 +54,14 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <h1>Brick <span>Breaker</span></h1>
     <div class="sub">Drag anywhere (or ← → keys) to move the paddle. Break every brick!</div>
     <div class="stat">Best: <b class="best" id="startBest">0</b></div>
+    <div class="stat" id="startStats">Games 0</div>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
   <div class="ov hidden" id="over">
     <h1>Game Over</h1>
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
+    <div class="stat" id="finStats">LV 1</div>
     <button class="btn" id="againBtn">Play Again</button>
     <div class="retry" id="retryHint">tap anywhere to retry</div>
   </div>
@@ -73,6 +75,8 @@ const rowColors=['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#a78bfa','#f
 const bgG=ctx.createLinearGradient(0,0,0,H);bgG.addColorStop(0,'#0c1a33');bgG.addColorStop(1,'#0a0a18');
 function rd(k){const v=+localStorage.getItem(k);return Number.isFinite(v)&&v>0?v:0;}
 let state='ready',score=0,best=rd('brickBest'),lives=3,level=1,shake=0,flash=0,t=0,combo=0,dirty=true;
+let runs=rd('brickRuns'),bestLv=rd('brickBestLv'),bricksTot=rd('brickBricks');
+let runBricks=0,runMaxCombo=0,runPowers=0;
 let shield=0;
 let paddle={x:W/2-45,y:PY,w:90,h:14,wide:0,slow:0,pop:0};
 let balls=[],bricks=[],powerups=[],serving=true;
@@ -120,7 +124,7 @@ if(score!==shownScore){shownScore=score;hScoreEl.textContent='SCORE '+score;popE
 if(level!==shownLv){shownLv=level;hLvEl.textContent='LV '+level;popEl(hLvEl,470);}
 if(lives!==shownLives){shownLives=lives;hLivesEl.textContent='❤'.repeat(Math.max(0,lives));popEl(hLivesEl,320);}
 }
-function showBest(){document.getElementById('startBest').textContent=best;}
+function showBest(){document.getElementById('startBest').textContent=best;document.getElementById('startStats').textContent='Games '+runs+' · Best LV '+(bestLv||'-')+' · Bricks '+bricksTot;}
 function mkSpr(w,h,fn){const c=document.createElement('canvas');c.width=w*2;c.height=h*2;const g=c.getContext('2d');g.scale(2,2);fn(g);return c;}
 const ballSpr=mkSpr(64,64,g=>{g.shadowColor='#fff';g.shadowBlur=24;g.fillStyle='#f8fafc';g.beginPath();g.arc(32,32,7,0,7);g.fill();});
 const padSpr=mkSpr(130,54,g=>{g.shadowColor='#fbbf24';g.shadowBlur=28;g.fillStyle='#fbbf24';rr2(g,20,20,90,14,7);g.fill();g.shadowBlur=0;g.fillStyle='rgba(255,255,255,.3)';rr2(g,24,23,82,4,2);g.fill();});
@@ -143,19 +147,23 @@ const b=balls[0],sp=ballSpeed();
 b.vx=(Math.random()<.5?-1:1)*sp*(.18+Math.random()*.22);b.vy=-Math.sqrt(sp*sp-b.vx*b.vx);
 snd('launch');
 }
-function startGame(){state='play';score=0;lives=3;level=1;shield=0;shownScore=-1;shownLv=-1;shownLives=-1;flash=0;paddle={x:W/2-45,y:PY,w:90,h:14,wide:0,slow:0,pop:0};powerups=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnBricks();resetBall();hud();}
+function startGame(){state='play';score=0;lives=3;level=1;shield=0;shownScore=-1;shownLv=-1;shownLives=-1;flash=0;runBricks=0;runMaxCombo=0;runPowers=0;runs++;localStorage.setItem('brickRuns',runs);paddle={x:W/2-45,y:PY,w:90,h:14,wide:0,slow:0,pop:0};powerups=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnBricks();resetBall();hud();}
 function saveBest(){if(score>best){best=score;localStorage.setItem('brickBest',best);}}
 function loseBall(){
 if(state!=='play')return;
 if(shield>0){shield--;snd('power');floater(paddle.x+paddle.w/2,PY-30,'🛡 SAVED','#f472b6');shake=8;flash=.6;resetBall();return;}
 snd('life');lives--;combo=0;hud();shake=10;flash=1;
-if(lives<=0){state='over';snd('over');const pb=best;saveBest();
+if(lives<=0){state='over';snd('over');const pb=best;const pl=bestLv;saveBest();bricksTot+=runBricks;localStorage.setItem('brickBricks',bricksTot);
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
+document.getElementById('finStats').textContent='LV '+level+' · Bricks '+runBricks+' this run · max ×'+Math.max(1,runMaxCombo)+' combo · '+runPowers+' power-ups · Games '+runs;
 setTimeout(()=>{document.getElementById('over').classList.remove('hidden');
-if(score>pb)Kit.win('NEW BEST!',score+' · prev '+pb);else Kit.lose('GAME OVER','Score '+score+' · Best '+best);},450);}
+if(score>pb)Kit.win('NEW BEST!',score+' pts · prev '+pb+' · LV '+level);
+else if(level>pl)Kit.win('DEEPEST WALLS!','LV '+level+' · new record · '+score+' pts');
+else Kit.lose('GAME OVER','Score '+score+' · Best '+best+' · LV '+level);},450);}
 else resetBall();
 }
 function applyPower(tp){
+ runPowers++;
  snd('power');
  if(tp==='shield'){shield=Math.min(2,shield+1);floater(paddle.x+paddle.w/2,PY-30,'🛡 SHIELD!','#f472b6');}
  if(tp==='multi'&&balls.length){const src=balls[0];for(let i=1;i<=2&&balls.length<4;i++){const nb=newBall(src.x,src.y);nb.vx=-src.vx+(i-.5)*140;nb.vy=src.vy-40;balls.push(nb);}}
@@ -202,8 +210,9 @@ if(b.x+b.r>br.x&&b.x-b.r<br.x+br.w&&b.y+b.r>br.y&&b.y-b.r<br.y+br.h){
  const ox2=(b.x-(br.x+br.w/2))/(br.w/2),oy2=(b.y-(br.y+br.h/2))/(br.h/2);
  if(Math.abs(ox2)>Math.abs(oy2))b.vx=Math.sign(ox2||1)*Math.abs(b.vx);else b.vy=Math.sign(oy2||1)*Math.abs(b.vy);
  break;}
- br.alive=false;combo++;
-const pts=10*level+(combo>1?(combo-1)*5:0);
+ br.alive=false;combo++;runBricks++;
+ const pts=10*level+(combo>1?(combo-1)*5:0);
+ if(combo>runMaxCombo)runMaxCombo=combo;
 score+=pts;hud();
 if(combo>1)floater(br.x+br.w/2,br.y,'×'+combo+' +'+pts,'#facc15');
 snd('brick',combo);burst(br.x+br.w/2,br.y+br.h/2,10,br.c);shake=Math.max(shake,2.5+Math.min(combo,8)*.3);
@@ -229,7 +238,7 @@ b.vx=Math.sign(b.vx||1)*Math.sqrt(Math.max(0,s*s-b.vy*b.vy));
 }
 }
 let bw=0;for(let i=0;i<balls.length;i++){if(!balls[i].dead)balls[bw++]=balls[i];}balls.length=bw;
-if(cleared){level++;snd('level');saveBest();spawnBricks();powerups=[];resetBall();hud();floater(W/2,H/2-40,'LEVEL '+level,'#4ade80');}
+if(cleared){level++;snd('level');saveBest();if(level>bestLv){bestLv=level;localStorage.setItem('brickBestLv',bestLv);}bricksTot+=runBricks;localStorage.setItem('brickBricks',bricksTot);runBricks=0;const cc=kitAt(W/2,H/2);Kit.burst(cc.x,cc.y,'#4ade80',18);if(level%5===0)Kit.confetti(40);spawnBricks();powerups=[];resetBall();hud();floater(W/2,H/2-40,'LEVEL '+level,'#4ade80');}
 for(let i=powerups.length-1;i>=0;i--){
 const p=powerups[i];p.y+=p.vy*dt;
 if(p.y>PY&&p.y<PY+paddle.h+20&&p.x>paddle.x-10&&p.x<paddle.x+paddle.w+10){applyPower(p.t);powerups.splice(i,1);}
