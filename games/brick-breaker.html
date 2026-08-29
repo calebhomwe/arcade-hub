@@ -131,16 +131,16 @@ badges.shield=badgeSpr('#f472b6','★');
 const tapSpr=(()=>{const c=document.createElement('canvas');const g=c.getContext('2d');g.font='bold 16px system-ui';const w=Math.ceil(g.measureText('TAP TO LAUNCH').width)+8;c.width=w*2;c.height=24*2;g.scale(2,2);g.font='bold 16px system-ui';g.fillStyle='rgba(255,255,255,.85)';g.textAlign='center';g.fillText('TAP TO LAUNCH',w/2,17);return c;})();
 function spawnBricks(){
 bricks=[];const rows=Math.min(4+level,8);const bw=(W-24-(COLS-1)*6)/COLS,bh=20;
-for(let r=0;r<rows;r++)for(let c=0;c<COLS;c++)bricks.push({x:12+c*(bw+6),y:60+r*(bh+6),w:bw,h:bh,c:rowColors[r%rowColors.length],alive:true});
-for(let i=0;i<bricks.length;i++){const br=bricks[i];br.hp=br.c===rowColors[0]&&i%3===0?2:1;br.crack=0;}
+for(let r=0;r<rows;r++)for(let c=0;c<COLS;c++)bricks.push({x:12+c*(bw+6),y:60+r*(bh+6),w:bw,h:bh,r:r,c:rowColors[r%rowColors.length],alive:true});
+for(const br of bricks){br.hp=br.r===0?(level>=6?3:2):br.r===1&&level>=4?2:1;br.crack=0;}
 }
 function newBall(x,y){const tr=[];for(let i=0;i<9;i++)tr.push({x:x,y:y});return{x:x,y:y,r:7,vx:0,vy:0,trail:tr,ti:0,tn:0,dead:false};}
 function resetBall(){serving=true;combo=0;balls=[newBall(paddle.x+paddle.w/2,PY-8)];}
-function ballSpeed(){return (330+level*15)*(paddle.slow>0?.62:1);}
+function ballSpeed(){return (330+24*Math.sqrt(Math.max(0,level-1)))*(paddle.slow>0?.62:1);}
 function launch(){
 if(!serving)return;serving=false;
 const b=balls[0],sp=ballSpeed();
-b.vx=(Math.random()-.5)*160;b.vy=-Math.sqrt(sp*sp-b.vx*b.vx);
+b.vx=(Math.random()<.5?-1:1)*sp*(.18+Math.random()*.22);b.vy=-Math.sqrt(sp*sp-b.vx*b.vx);
 snd('launch');
 }
 function startGame(){state='play';score=0;lives=3;level=1;shield=0;shownScore=-1;shownLv=-1;shownLives=-1;flash=0;paddle={x:W/2-45,y:PY,w:90,h:14,wide:0,slow:0,pop:0};powerups=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnBricks();resetBall();hud();}
