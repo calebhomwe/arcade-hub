@@ -45,6 +45,7 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
 @keyframes risein{from{opacity:0;transform:translateY(18px) scale(.92)}to{opacity:1;transform:none}}
 .stat{color:#e2e8f0;font-size:17px;font-weight:700}
 .best{color:#4ade80;font-weight:800}
+.rank{color:#facc15;font-weight:800;text-shadow:0 0 12px rgba(250,204,21,.45)}
 #score.pp,#timeLeft.pp{animation:ppop .18s ease}
 @keyframes ppop{0%{scale:1}40%{scale:1.35}100%{scale:1}}
 .hidden{display:none}
@@ -66,6 +67,8 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
     <h1 id="overTitle">Time's Up!</h1>
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
+    <div class="stat">Run: <b id="runStats">0</b></div>
+    <div class="stat">Rank: <b class="rank" id="finRank">–</b></div>
     <div class="stat">Lifetime: <b id="lifeStats">0</b></div>
     <div class="stat">🏅 <b id="badgeLine">0/5</b></div>
     <button class="btn" id="againBtn">Play Again</button>
@@ -83,7 +86,8 @@ let bgG=null,cvRect=null;
 const bubbles=[],particles=[],floaters=[],rings=[];
 const MAXB=80,MAXP=200,MAXF=32,MAXR=32;
 let spawnT=0,lastPop=0,combo=0,comboEnd=0,roundTimer=null,shake=0;
-let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0,roundMaxCombo=0,lifeGold=+localStorage.getItem('bubbleGold')||0,lifeRounds=+localStorage.getItem('bubbleRounds')||0,diffLvl=0,lastWasBomb=false,goldDry=0;
+let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0,roundMaxCombo=0,roundGold=0,lifeGold=+localStorage.getItem('bubbleGold')||0,lifeRounds=+localStorage.getItem('bubbleRounds')||0,diffLvl=0,lastWasBomb=false,goldDry=0;
+const RANKS=[[0,'🫧 Rookie'],[150,'🐚 Bubble Blaster'],[300,'🌊 Wave Rider'],[500,'⛈️ Storm Caller'],[750,'🌪️ Cyclone'],[1000,'🌀 Maelstrom']];
 const BADGES=[{id:'pop50',name:'🎯 Pop Star',test:function(){return roundPops>=50}},{id:'combo12',name:'🔥 Chain Master',test:function(){return roundMaxCombo>=12}},{id:'score500',name:'💯 Big Score',test:function(){return score>=500}},{id:'gold25',name:'🌟 Gold Digger',test:function(){return lifeGold>=25}},{id:'vet10',name:'🛡 Veteran',test:function(){return lifeRounds>=10}}];
 let badges=[];try{badges=JSON.parse(localStorage.getItem('bubbleBadges'))||[]}catch(e){badges=[]}
 document.getElementById('badgeLine').textContent=badges.length+'/'+BADGES.length;
@@ -206,7 +210,7 @@ for(const b of bubbles)b.on=false;
 for(const p of particles)p.life=0;
 for(const f of floaters)f.life=0;
 for(const g2 of rings)g2.life=0;
-shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;roundMaxCombo=0;diffLvl=0;lastWasBomb=false;goldDry=0;
+shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;roundMaxCombo=0;roundGold=0;diffLvl=0;lastWasBomb=false;goldDry=0;
 document.getElementById('score').textContent=0;
 showTime(false);
 document.getElementById('start').classList.add('hidden');
@@ -228,12 +232,14 @@ const newBest=score>best&&score>0;
 if(boom)sfxBombSting();else if(newBest)sfxEndWin();else sfxEndLose();
 if(newBest){best=score;localStorage.setItem('bubbleBest',best);}
 document.getElementById('overTitle').textContent=(boom?'💥 Boomed!':'Time\'s Up!')+(newBest?' 🏆 New Best!':'');
-const kc=kitAt(W/2,H/2);
-if(newBest)Kit.win('NEW BEST!',score+' pts · prev '+prevBest+' · '+roundPops+' pops');
-else if(boom)Kit.lose('BOOMED!','Score '+score+' · Best '+best);
-else Kit.lose('TIME UP','Score '+score+' · Best '+best+' · max combo '+roundMaxCombo);
+const margin=newBest?score-prevBest:0;
+const runLine=score+' pts · '+roundPops+' pops · max x'+roundMaxCombo+' · ⭐'+roundGold+(boom?' · 💥':'');
+if(newBest)Kit.win('NEW BEST!',runLine+' · beat '+prevBest+' by +'+margin);
+else if(boom)Kit.lose('BOOMED!',runLine+' · Best '+best);
+else Kit.lose('TIME UP',runLine+' · Best '+best+(prevBest>0&&score>prevBest*.85?' · so close!':''));
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best;
+document.getElementById('runStats').textContent=runLine;
 lifePops+=roundPops;localStorage.setItem('bubblePops',lifePops);
 lifeRounds++;localStorage.setItem('bubbleRounds',lifeRounds);
 localStorage.setItem('bubbleGold',lifeGold);
@@ -241,8 +247,9 @@ const unlocked=[];
 for(const bd of BADGES){if(badges.indexOf(bd.id)<0&&bd.test()){badges.push(bd.id);unlocked.push(bd.name);}}
 try{localStorage.setItem('bubbleBadges',JSON.stringify(badges));}catch(e){}
 document.getElementById('badgeLine').textContent='🏅 '+badges.length+'/'+BADGES.length+(unlocked.length?' · NEW: '+unlocked.join(', '):'');
+document.getElementById('finRank').textContent=RANKS.filter(r=>score>=r[0]).pop()[1];
 document.getElementById('lifeStats').textContent=lifePops+(lifePops>=1500?' · Genius':lifePops>=700?' · Storm':lifePops>=300?' · Blaster':lifePops>=100?' · Lover':' · Rookie');
-setTimeout(()=>{const ov=document.getElementById('over');ov.classList.remove('hidden');document.getElementById('againBtn').focus({preventScroll:true});},500);
+setTimeout(()=>{const ov=document.getElementById('over');ov.classList.remove('hidden');document.getElementById('againBtn').focus({preventScroll:true});if(unlocked.length){const kp=kitAt(W/2,H*.3);Kit.burst(kp.x,kp.y,'#facc15',18);Kit.text(kp.x,kp.y-30,'🏅 BADGE!','#facc15',22);}},500);
 }
 function popBubble(b){
 if(b.mega){
@@ -263,7 +270,7 @@ lastPop=now;comboEnd=now+Math.min(1800,1000+combo*60);
 if(combo>roundMaxCombo)roundMaxCombo=combo;
 spawnRing(b.x,b.y,b.r,b.bomb?0:b.hue);
 if(b.bomb){shake=1;spawnFloater(b.x,b.y,'💥','hsl(0,90%,75%)');endGame(true);return;}
-if(b.gold){lifeGold++;timeLeft=Math.min(ROUND_TIME,timeLeft+4);showTime(true);spawnFloater(b.x,b.y-b.r,'⏱ +4s','rgba(250,204,21,1)');sfxGold();for(let i=0;i<14;i++){const an=Math.random()*7;spawnPart(b.x,b.y,Math.cos(an)*(70+Math.random()*130),Math.sin(an)*(70+Math.random()*130),48);}return;}
+if(b.gold){lifeGold++;roundGold++;timeLeft=Math.min(ROUND_TIME,timeLeft+4);showTime(true);spawnFloater(b.x,b.y-b.r,'⏱ +4s','rgba(250,204,21,1)');sfxGold();for(let i=0;i<14;i++){const an=Math.random()*7;spawnPart(b.x,b.y,Math.cos(an)*(70+Math.random()*130),Math.sin(an)*(70+Math.random()*130),48);}return;}
 const mult=1+Math.floor(combo/4);
 const pts=Math.max(1,Math.round((b.r-8)/8))*mult;
 score+=pts;
