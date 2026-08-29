@@ -17,6 +17,11 @@ Global window.Kit after load. API:
 ## Screenshot truth
 This machine runs Windows at 125% display scale: headless --window-size=420 renders a 336-CSS-px viewport (clipping artifacts). For a true 390-CSS-px phone capture use --window-size=488,1055. When a screenshot looks wrong, MEASURE before believing: iframe probe reading getBoundingClientRect + innerWidth is ground truth.
 
+## Headless probe limits (learned 2026-08-30)
+- requestAnimationFrame fires ~2x per 2.5s virtual-time budget in iframes: rAF-driven spawn/update loops DO NOT advance in probes. Empty canvas after startGame is NOT a bug — verify via synchronous state (arrays built in startGame, DOM, scores) instead.
+- Game buttons bind pointerdown, not click: probes must dispatch new PointerEvent('pointerdown',{bubbles:true}) then pointerup. .click() silently does nothing.
+- setInterval/timers DO run under virtual time; rAF does not.
+
 ## Cycle steps
 
 ## CONCURRENCY GUARD
