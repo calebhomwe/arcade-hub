@@ -1,0 +1,300 @@
+{"id":1,"game":"block-blast.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":2,"game":"block-blast.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":3,"game":"block-blast.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":4,"game":"block-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":5,"game":"block-blast.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":6,"game":"block-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":7,"game":"block-blast.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":8,"game":"block-blast.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":9,"game":"brick-breaker.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":10,"game":"brick-breaker.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":11,"game":"brick-breaker.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":12,"game":"brick-breaker.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":13,"game":"brick-breaker.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":14,"game":"brick-breaker.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":15,"game":"brick-breaker.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":16,"game":"brick-breaker.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":17,"game":"bubble-pop.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":18,"game":"bubble-pop.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":19,"game":"bubble-pop.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":20,"game":"bubble-pop.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":21,"game":"bubble-pop.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":22,"game":"bubble-pop.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":23,"game":"bubble-pop.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":24,"game":"bubble-pop.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":25,"game":"color-switch.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":26,"game":"color-switch.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":27,"game":"color-switch.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":28,"game":"color-switch.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":29,"game":"color-switch.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":30,"game":"color-switch.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":31,"game":"color-switch.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":32,"game":"color-switch.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":33,"game":"connect-four.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":34,"game":"connect-four.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":35,"game":"connect-four.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":36,"game":"connect-four.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":37,"game":"connect-four.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":38,"game":"connect-four.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":39,"game":"connect-four.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":40,"game":"connect-four.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":41,"game":"dino-dash.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":42,"game":"dino-dash.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":43,"game":"dino-dash.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":44,"game":"dino-dash.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":45,"game":"dino-dash.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":46,"game":"dino-dash.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":47,"game":"dino-dash.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":48,"game":"dino-dash.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":49,"game":"farm-harvest.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":50,"game":"farm-harvest.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":51,"game":"farm-harvest.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":52,"game":"farm-harvest.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":53,"game":"farm-harvest.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":54,"game":"farm-harvest.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":55,"game":"farm-harvest.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":56,"game":"farm-harvest.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":57,"game":"farm-idle.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":58,"game":"farm-idle.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":59,"game":"farm-idle.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":60,"game":"farm-idle.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":61,"game":"farm-idle.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":62,"game":"farm-idle.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":63,"game":"farm-idle.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":64,"game":"farm-idle.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":65,"game":"flappy-flight.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":66,"game":"flappy-flight.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":67,"game":"flappy-flight.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":68,"game":"flappy-flight.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":69,"game":"flappy-flight.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":70,"game":"flappy-flight.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":71,"game":"flappy-flight.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":72,"game":"flappy-flight.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":73,"game":"game-2048.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":74,"game":"game-2048.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":75,"game":"game-2048.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":76,"game":"game-2048.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":77,"game":"game-2048.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":78,"game":"game-2048.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":79,"game":"game-2048.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":80,"game":"game-2048.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":81,"game":"hangman.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":82,"game":"hangman.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":83,"game":"hangman.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":84,"game":"hangman.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":85,"game":"hangman.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":86,"game":"hangman.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":87,"game":"hangman.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":88,"game":"hangman.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":89,"game":"helix-smash.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":90,"game":"helix-smash.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":91,"game":"helix-smash.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":92,"game":"helix-smash.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":93,"game":"helix-smash.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":94,"game":"helix-smash.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":95,"game":"helix-smash.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":96,"game":"helix-smash.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":97,"game":"hole-swallow.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":98,"game":"hole-swallow.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":99,"game":"hole-swallow.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":100,"game":"hole-swallow.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":101,"game":"hole-swallow.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":102,"game":"hole-swallow.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":103,"game":"hole-swallow.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":104,"game":"hole-swallow.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":105,"game":"idle-empire.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":106,"game":"idle-empire.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":107,"game":"idle-empire.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":108,"game":"idle-empire.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":109,"game":"idle-empire.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":110,"game":"idle-empire.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":111,"game":"idle-empire.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":112,"game":"idle-empire.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":113,"game":"idle-miner.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":114,"game":"idle-miner.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":115,"game":"idle-miner.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":116,"game":"idle-miner.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":117,"game":"idle-miner.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":118,"game":"idle-miner.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":119,"game":"idle-miner.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":120,"game":"idle-miner.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":121,"game":"isle-of-bells.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":122,"game":"isle-of-bells.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":123,"game":"isle-of-bells.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":124,"game":"isle-of-bells.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":125,"game":"isle-of-bells.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":126,"game":"isle-of-bells.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":127,"game":"isle-of-bells.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":128,"game":"isle-of-bells.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":129,"game":"knife-hit.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":130,"game":"knife-hit.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":131,"game":"knife-hit.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":132,"game":"knife-hit.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":133,"game":"knife-hit.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":134,"game":"knife-hit.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":135,"game":"knife-hit.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":136,"game":"knife-hit.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":137,"game":"math-battle.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":138,"game":"math-battle.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":139,"game":"math-battle.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":140,"game":"math-battle.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":141,"game":"math-battle.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":142,"game":"math-battle.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":143,"game":"math-battle.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":144,"game":"math-battle.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":145,"game":"math-blast.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":146,"game":"math-blast.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":147,"game":"math-blast.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":148,"game":"math-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":149,"game":"math-blast.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":150,"game":"math-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":151,"game":"math-blast.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":152,"game":"math-blast.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":153,"game":"math-run.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":154,"game":"math-run.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":155,"game":"math-run.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":156,"game":"math-run.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":157,"game":"math-run.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":158,"game":"math-run.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":159,"game":"math-run.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":160,"game":"math-run.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":161,"game":"math-snake.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":162,"game":"math-snake.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":163,"game":"math-snake.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":164,"game":"math-snake.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":165,"game":"math-snake.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":166,"game":"math-snake.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":167,"game":"math-snake.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":168,"game":"math-snake.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":169,"game":"memory-match.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":170,"game":"memory-match.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":171,"game":"memory-match.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":172,"game":"memory-match.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":173,"game":"memory-match.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":174,"game":"memory-match.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":175,"game":"memory-match.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":176,"game":"memory-match.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":177,"game":"merge-blocks.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":178,"game":"merge-blocks.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":179,"game":"merge-blocks.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":180,"game":"merge-blocks.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":181,"game":"merge-blocks.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":182,"game":"merge-blocks.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":183,"game":"merge-blocks.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":184,"game":"merge-blocks.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":185,"game":"minesweeper.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":186,"game":"minesweeper.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":187,"game":"minesweeper.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":188,"game":"minesweeper.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":189,"game":"minesweeper.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":190,"game":"minesweeper.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":191,"game":"minesweeper.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":192,"game":"minesweeper.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":193,"game":"missing-letter.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":194,"game":"missing-letter.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":195,"game":"missing-letter.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":196,"game":"missing-letter.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":197,"game":"missing-letter.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":198,"game":"missing-letter.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":199,"game":"missing-letter.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":200,"game":"missing-letter.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":201,"game":"rhyme-time.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":202,"game":"rhyme-time.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":203,"game":"rhyme-time.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":204,"game":"rhyme-time.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":205,"game":"rhyme-time.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":206,"game":"rhyme-time.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":207,"game":"rhyme-time.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":208,"game":"rhyme-time.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":209,"game":"simon-says.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":210,"game":"simon-says.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":211,"game":"simon-says.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":212,"game":"simon-says.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":213,"game":"simon-says.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":214,"game":"simon-says.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":215,"game":"simon-says.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":216,"game":"simon-says.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":217,"game":"snake.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":218,"game":"snake.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":219,"game":"snake.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":220,"game":"snake.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":221,"game":"snake.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":222,"game":"snake.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":223,"game":"snake.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":224,"game":"snake.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":225,"game":"spell-and-say.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":226,"game":"spell-and-say.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":227,"game":"spell-and-say.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":228,"game":"spell-and-say.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":229,"game":"spell-and-say.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":230,"game":"spell-and-say.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":231,"game":"spell-and-say.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":232,"game":"spell-and-say.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":233,"game":"stack-ball.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":234,"game":"stack-ball.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":235,"game":"stack-ball.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":236,"game":"stack-ball.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":237,"game":"stack-ball.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":238,"game":"stack-ball.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":239,"game":"stack-ball.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":240,"game":"stack-ball.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":241,"game":"sudoku.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":242,"game":"sudoku.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":243,"game":"sudoku.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":244,"game":"sudoku.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":245,"game":"sudoku.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":246,"game":"sudoku.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":247,"game":"sudoku.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":248,"game":"sudoku.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":249,"game":"survivor-wave.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":250,"game":"survivor-wave.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":251,"game":"survivor-wave.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":252,"game":"survivor-wave.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":253,"game":"survivor-wave.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":254,"game":"survivor-wave.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":255,"game":"survivor-wave.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":256,"game":"survivor-wave.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":257,"game":"tap-monsters.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":258,"game":"tap-monsters.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":259,"game":"tap-monsters.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":260,"game":"tap-monsters.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":261,"game":"tap-monsters.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":262,"game":"tap-monsters.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":263,"game":"tap-monsters.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":264,"game":"tap-monsters.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":265,"game":"tic-tac-toe.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":266,"game":"tic-tac-toe.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":267,"game":"tic-tac-toe.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":268,"game":"tic-tac-toe.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":269,"game":"tic-tac-toe.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":270,"game":"tic-tac-toe.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":271,"game":"tic-tac-toe.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":272,"game":"tic-tac-toe.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":273,"game":"tower-stack.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":274,"game":"tower-stack.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":275,"game":"tower-stack.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":276,"game":"tower-stack.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":277,"game":"tower-stack.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":278,"game":"tower-stack.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":279,"game":"tower-stack.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":280,"game":"tower-stack.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":281,"game":"whack-a-mole.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":282,"game":"whack-a-mole.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":283,"game":"whack-a-mole.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":284,"game":"whack-a-mole.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":285,"game":"whack-a-mole.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":286,"game":"whack-a-mole.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":287,"game":"whack-a-mole.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":288,"game":"whack-a-mole.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":289,"game":"word-scramble.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}
+{"id":290,"game":"word-scramble.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":291,"game":"word-scramble.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
+{"id":292,"game":"word-scramble.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":293,"game":"word-scramble.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
+{"id":294,"game":"word-scramble.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":295,"game":"word-scramble.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
+{"id":296,"game":"word-scramble.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
+{"id":297,"game":"chess.html","pass":1,"theme":"chess: harness run (ztest_harness.html) + console audit, fix findings","status":"pending"}
+{"id":298,"game":"chess.html","pass":2,"theme":"chess: verify all 10 mods respect juice slider and gamesMuted","status":"pending"}
+{"id":299,"game":"chess.html","pass":3,"theme":"chess: perf pass — overlay caps, rAF cost, sprite cache","status":"pending"}
+{"id":300,"game":"chess.html","pass":4,"theme":"chess: content pass — more taunts/titles/funny subtitles","status":"pending"}
