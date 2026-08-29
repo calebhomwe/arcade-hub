@@ -8,7 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:10px;left:12px;display:flex;align-items:center;min-height:44px;padding:0 14px;background:rgba(30,41,59,.72);border-radius:999px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
 .hud{display:flex;gap:14px;font-weight:800;font-size:15px;align-items:center}
 .hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
 .hud>span,.hud>.mute{animation:chipin .45s cubic-bezier(.34,1.56,.64,1) backwards}
@@ -21,7 +21,7 @@ body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#070
 @keyframes hurry{from{transform:scale(1)}to{transform:scale(1.045)}}
 #score{display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums}
 #timeLeft{display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums}
-.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
+.mute{background:#1e293b;border:none;color:#fff;font-size:17px;min-width:44px;min-height:44px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
 #timebar{width:min(90vw,400px);height:10px;background:#1e293b;border-radius:999px;overflow:hidden}
 #timefill{height:100%;width:100%;background:linear-gradient(90deg,#4ade80,#facc15,#f87171);border-radius:999px}
 .wrap{position:relative;width:min(90vw,400px)}
@@ -236,7 +236,7 @@ for(const bd of BADGES){if(badges.indexOf(bd.id)<0&&bd.test()){badges.push(bd.id
 try{localStorage.setItem('bubbleBadges',JSON.stringify(badges));}catch(e){}
 document.getElementById('badgeLine').textContent='🏅 '+badges.length+'/'+BADGES.length+(unlocked.length?' · NEW: '+unlocked.join(', '):'');
 document.getElementById('lifeStats').textContent=lifePops+(lifePops>=1500?' · Genius':lifePops>=700?' · Storm':lifePops>=300?' · Blaster':lifePops>=100?' · Lover':' · Rookie');
-setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
+setTimeout(()=>{const ov=document.getElementById('over');ov.classList.remove('hidden');document.getElementById('againBtn').focus({preventScroll:true});},500);
 }
 function popBubble(b){
 if(b.mega){
@@ -359,6 +359,8 @@ requestAnimationFrame(loop);
 cv.addEventListener('pointerdown',onTap);
 document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
 document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
+document.getElementById('playBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();startGame();}});
+document.getElementById('againBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();startGame();}});
 </script>
 </body>
 </html>
