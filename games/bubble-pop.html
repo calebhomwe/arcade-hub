@@ -50,9 +50,12 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
     <button class="btn" id="againBtn">Play Again</button>
   </div>
 </div>
+<script src="kit/juicekit.js"></script>
 <script>
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+function kitAt(px,py){return{x:cvRect.left+px*cvRect.width/W,y:cvRect.top+py*cvRect.height/H};}
+let kitLast=0;
 const ROUND_TIME=45;
 let W=400,H=600,state='ready',score=0,best=+localStorage.getItem('bubbleBest')||0,timeLeft=ROUND_TIME,t=0,dirty=true;
 let bgG=null,cvRect=null;
@@ -65,7 +68,7 @@ let badges=[];try{badges=JSON.parse(localStorage.getItem('bubbleBadges'))||[]}ca
 document.getElementById('badgeLine').textContent=badges.length+'/'+BADGES.length;
 let muted=localStorage.getItem('gamesMuted')==='1';
 function refreshMute(){document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';}
-document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();});
+document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();});
 refreshMute();
 const DPR=Math.min(2,window.devicePixelRatio||1);
 function size(){
@@ -184,9 +187,14 @@ if(timeLeft<=0)endGame(false);
 function endGame(boom){
 state='over';clearInterval(roundTimer);
 snd(boom?'bomb':'end');
+const prevBest=best;
 const newBest=score>best&&score>0;
 if(newBest){best=score;localStorage.setItem('bubbleBest',best);}
 document.getElementById('overTitle').textContent=(boom?'💥 Boomed!':'Time\'s Up!')+(newBest?' 🏆 New Best!':'');
+const kc=kitAt(W/2,H/2);
+if(newBest)Kit.win('NEW BEST!',score+' pts · prev '+prevBest+' · '+roundPops+' pops');
+else if(boom)Kit.lose('BOOMED!','Score '+score+' · Best '+best);
+else Kit.lose('TIME UP','Score '+score+' · Best '+best+' · max combo '+roundMaxCombo);
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best;
 lifePops+=roundPops;localStorage.setItem('bubblePops',lifePops);
@@ -225,6 +233,7 @@ score+=pts;
 const se=document.getElementById('score');se.textContent=score;
 se.classList.remove('pp');void se.offsetWidth;se.classList.add('pp');
 snd('pop',b.r);
+{const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kp=kitAt(b.x,b.y);Kit.hit(kp.x,kp.y,pts);}}
 spawnFloater(b.x,b.y-b.r,'+'+pts+(mult>1?' 🔥x'+mult:''),'hsl('+b.hue+',90%,75%)');
 for(let i=0;i<10;i++){
 const an=Math.random()*7;
@@ -317,8 +326,8 @@ update(dt);draw();
 }
 requestAnimationFrame(loop);
 cv.addEventListener('pointerdown',onTap);
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
+document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
+document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
 </script>
 </body>
 </html>
