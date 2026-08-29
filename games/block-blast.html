@@ -86,6 +86,7 @@ body.shake { animation: bodyShake 0.3s ease-out; }
 
 <a class="back" href="../index.html">← Back to Arcade Hub</a>
 
+<script src="kit/juicekit.js"></script>
 <script>
 
 // ==================== POLYFILL ====================
@@ -379,7 +380,9 @@ function placePieceAt(pieceIdx, row, col) {
   const { rows, cols } = findFullLines(grid);
   const linesCleared = rows.length + cols.length;
 
+  function kitAt(px, py) { const r = canvas.getBoundingClientRect(); return { x: r.left + px * r.width / canvas.width, y: r.top + py * r.height / canvas.height }; }
 if (linesCleared > 0) {
+    { const kp = kitAt(gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2); Kit.hit(kp.x, kp.y, linesCleared); }
     blastCharge = Math.min(BLAST_MAX, blastCharge + 1);
     clearStreak++;
     lifetimeClears++;
@@ -474,15 +477,18 @@ if (linesCleared > 0) {
     if (!hasAnyMoves(grid, pieces)) {
       gameOver = true;
       sfxGameOver();
+      Kit.lose('GAME OVER', 'Score ' + score + ' · Best ' + bestScore);
     }
   } else if (!hasAnyMoves(grid, pieces)) {
     gameOver = true;
     sfxGameOver();
+    Kit.lose('GAME OVER', 'Score ' + score + ' · Best ' + bestScore);
   }
 
   if (score > bestScore) {
     if (prevBest > 0 && prevBest === bestScore) {
       sfx('win');
+      Kit.win('NEW BEST!', score + ' points — legendary');
       document.getElementById('comboText').textContent = '🏆 NEW BEST!';
       setTimeout(() => { document.getElementById('comboText').textContent = ''; }, 2000);
     }
@@ -852,8 +858,8 @@ canvas.addEventListener('touchstart', (e) => {
 
 canvas.addEventListener('mouseleave', () => { hoverCell = null; drawGrid(); });
 
-document.getElementById('btnUndo').addEventListener('click', undo);
-document.getElementById('btnReset').addEventListener('click', initGrid);
+document.getElementById('btnUndo').addEventListener('click', () => { Kit.click(); undo(); });
+document.getElementById('btnReset').addEventListener('click', () => { Kit.click(); initGrid(); });
 
 // ==================== ANIMATION LOOP ====================
 
