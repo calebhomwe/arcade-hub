@@ -1,5 +1,5 @@
 {
-  "max_cycles_per_day": 30,
-  "cycles_today": 0,
-  "done_total": 0
+    "max_cycles_per_day":  45,
+    "cycles_today":  0,
+    "done_total":  0
 }

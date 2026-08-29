@@ -83,6 +83,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
   <button class="btn" id="nextBtn">▶ Next Round</button>
   <button class="mbtn big" id="modeBtn">Change Mode</button>
 </div>
+<script src="kit/juicekit.js"></script>
 <script>
 
 const COLS=7,ROWS=6;
@@ -190,11 +191,14 @@ boardEl.classList.remove('dropthud');void boardEl.offsetWidth;boardEl.classList.
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
 disc.style.transition='transform .45s cubic-bezier(.3,1.6,.5,1)';
 disc.style.transform='translateY(0)';
+setTimeout(()=>{const c=Kit.center(disc);Kit.burst(c.x,c.y,turn===1?'#f87171':'#facc15',7);},450);
 }));
 if(goldLive&&col===goldCol){
-goldLive=false;goldEl.style.display='none';
+goldLive=false;
+const gc=Kit.center(goldEl);
+goldEl.style.display='none';
 coins++;try{localStorage.setItem('c4Coins',coins);}catch(e){}
-updStreak();sfx('coin');
+updStreak();sfx('coin');Kit.hit(gc.x,gc.y,2);
 const gb=document.createElement('div');gb.className='banner';
 gb.textContent='\u26a1 +1 Coin!';document.body.appendChild(gb);
 setTimeout(()=>gb.remove(),950);
@@ -214,7 +218,9 @@ try{localStorage.setItem('c4Games',c4Games);localStorage.setItem('c4Wins',c4Wins
 updStreak();checkTrophies();
 snd(mode==='ai'&&turn===2?'lose':'win');
 confetti();
+const bc=Kit.center(boardEl);Kit.hit(bc.x,bc.y,4);Kit.flash(turn===1?'#f87171':'#facc15');
 const title=mode==='ai'?(turn===1?'You win! 🎉':'CPU wins! 🤖'):(turn===1?'P1 wins! 🎉':'P2 wins! 🎉');
+if(mode==='ai'&&turn===2)Kit.lose('CPU wins!','Score '+scores[0]+' : '+scores[1]);else Kit.win(title,'Score '+scores[0]+' : '+scores[1]);
 const b=document.createElement('div');b.className='banner';b.id='banner';
 b.textContent=title;
 document.body.appendChild(b);
@@ -225,6 +231,7 @@ return;
 if(board.every(c=>c.indexOf(0)===-1)){
 locked=true;streak=0;lastWinner=0;updStreak();
 snd('draw');
+Kit.text(Kit.center(boardEl).x,Kit.center(boardEl).y,'DRAW! 🤝','#94a3b8',30);
 const b=document.createElement('div');b.className='banner';b.id='banner';b.textContent='Draw! 🤝';
 document.body.appendChild(b);updateTurn();updGhost();
 showOver('Draw! 🤝','Score '+scores[0]+' : '+scores[1]);
@@ -325,15 +332,17 @@ if(col>=0&&col<COLS)drop(col);
 holesEl.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;if(!holesW)measure();ghostCol=Math.floor((e.clientX-holesLeft)/(holesW/COLS));if(ghostCol<0||ghostCol>=COLS)ghostCol=-1;updGhost();},{passive:true});
 holesEl.addEventListener('pointerleave',()=>{ghostCol=-1;updGhost();});
 document.querySelectorAll('.modes .mbtn').forEach(b=>b.addEventListener('pointerdown',()=>{
+Kit.click();
 mode=b.dataset.m;scores=[0,0];
 document.getElementById('s1').textContent='P1: 0';
 document.getElementById('s2').textContent=mode==='ai'?'CPU: 0':'P2: 0';
 document.getElementById('start').classList.add('hidden');
 newRound();
 }));
-document.getElementById('newBtn').addEventListener('pointerdown',newRound);
-document.getElementById('nextBtn').addEventListener('pointerdown',newRound);
+document.getElementById('newBtn').addEventListener('pointerdown',()=>{Kit.click();newRound();});
+document.getElementById('nextBtn').addEventListener('pointerdown',()=>{Kit.click();newRound();});
 document.getElementById('modeBtn').addEventListener('pointerdown',()=>{
+Kit.click();
 clearTimeout(overTimer);
 document.getElementById('over').classList.add('hidden');
 document.getElementById('start').classList.remove('hidden');
