@@ -212,6 +212,8 @@ let animFrame = null;
 let blastCharge = 0, bombsPlaced = 0;
 const BLAST_MAX = 5, BOMB_COLOR = '#f43f5e';
 let clearStreak = 0;
+let runClears = 0;
+let runMaxCombo = 0;
 let bestStreakEver = parseInt(localStorage.getItem('blockblast_streak') || '0');
 let lifetimeClears = parseInt(localStorage.getItem('blockblast_clears') || '0');
 let sparks = parseInt(localStorage.getItem('blockblast_sparks') || '0');
@@ -260,6 +262,8 @@ function initGrid() {
   blastCharge = 0;
   bombsPlaced = 0;
   clearStreak = 0;
+  runClears = 0;
+  runMaxCombo = 0;
   updateUI();
   drawGrid();
   drawPieces();
@@ -416,6 +420,7 @@ if (linesCleared > 0) {
     { const kp = kitAt(gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2); Kit.hit(kp.x, kp.y, linesCleared); }
     blastCharge = Math.min(BLAST_MAX, blastCharge + 1);
     clearStreak++;
+    runClears += linesCleared;
     lifetimeClears++;
     if (linesCleared >= 4) quadEver = true;
     if (clearStreak > bestStreakEver) bestStreakEver = clearStreak;
@@ -423,6 +428,7 @@ if (linesCleared > 0) {
     localStorage.setItem('blockblast_streak', bestStreakEver);
     if (rankName(lifetimeClears) !== rankName(lifetimeClears - 1)) sfx('levelup');
     comboCount++;
+    if (comboCount > runMaxCombo) runMaxCombo = comboCount;
     const points = linesCleared * 10 * comboCount;
     score += points;
     if (linesCleared >= 3) score += 20;
@@ -500,25 +506,31 @@ if (linesCleared > 0) {
   selectedPiece = -1;
   hoverCell = null;
 
-  // Check if all pieces used
+  const beatBest = prevBest > 0 && score > prevBest;
+  const runLine = score + ' pts · ' + runClears + ' clears · best x' + Math.max(1, runMaxCombo) + ' combo';
   const allUsed = pieces.every(p => p.used);
+  let ended = false;
   if (allUsed) {
     pieces = generatePieces();
-    if (!hasAnyMoves(grid, pieces)) {
-      gameOver = true;
-      sfxGameOver();
-      Kit.lose('GAME OVER', 'Score ' + score + ' · Best ' + bestScore);
-    }
+    if (!hasAnyMoves(grid, pieces)) { gameOver = true; ended = true; }
   } else if (!hasAnyMoves(grid, pieces)) {
-    gameOver = true;
-    sfxGameOver();
-    Kit.lose('GAME OVER', 'Score ' + score + ' · Best ' + bestScore);
+    gameOver = true; ended = true;
+  }
+  if (ended) {
+    if (beatBest || prevBest === 0) sfx('win');
+    else sfxGameOver();
+    if (beatBest) {
+      Kit.win('NEW BEST!', runLine + ' · beat ' + prevBest);
+    } else if (prevBest === 0) {
+      Kit.win('FIRST GAME!', runLine);
+    } else {
+      Kit.lose('GAME OVER', runLine + ' · Best ' + prevBest);
+    }
   }
 
   if (score > bestScore) {
-    if (prevBest > 0 && prevBest === bestScore) {
+    if (prevBest > 0 && prevBest === bestScore && !ended) {
       sfx('win');
-      Kit.win('NEW BEST!', score + ' points — legendary');
       showCombo('🏆 NEW BEST!', 2000);
     }
     bestScore = score;
@@ -833,7 +845,7 @@ function updateUI() {
   document.getElementById('blastVal').textContent = (bombsPlaced ? '💣' + bombsPlaced + ' ' : '') + blastCharge + '/' + BLAST_MAX;
   document.getElementById('metaStats').textContent = rankName(lifetimeClears) + ' · ' + lifetimeClears + ' clears · 🔗 best ' + bestStreakEver + ' · ✨' + sparks + ' · 🎖' + ach.length + '/' + BADGES.length;
   if (gameOver) {
-    document.getElementById('status').textContent = 'Game Over! No more moves.';
+    document.getElementById('status').textContent = 'Game Over! No more moves. Tap the grid to play again.';
     document.getElementById('status').style.color = '#f472b6';
   } else if (selectedPiece >= 0) {
     document.getElementById('status').textContent = 'Tap the grid to place the block';
