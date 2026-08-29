@@ -40,3 +40,4 @@
 {"cycle":44,"task_id":37,"game":"connect-four.html","pass":5,"theme":"micro-animations","status":"done","tests":"score pop on win, btn/mbtn hover-lift, mute hover-spin; 0 Uncaught"}
 {"cycle":45,"task_id":38,"game":"connect-four.html","pass":6,"theme":"UX","status":"done","tests":"keyboard arrows+enter+n restart, aria-live turn, focus-visible rings; 0 Uncaught"}
 {"cycle":46,"task_id":41,"game":"dino-dash.html","pass":1,"theme":"kit juice integration","status":"done","tests":"WIPEOUT/NEW BEST ceremony, milestone pops, start click; 0 Uncaught"}
+{"cycle":47,"task_id":39,"game":"connect-four.html","pass":7,"theme":"difficulty/pacing","status":"done","commit":"pending","tests":"fixed hard-mode dead button + unbeatable AI; normal 30/25pct blunder, hard perfect; syntax OK + 0 Uncaught"}

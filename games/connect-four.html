@@ -301,8 +301,11 @@ if(col!==null)drop(col,true);
 aiThinking=false;
 }
 function bestMove(){
+const open=()=>{const o=[];for(let c=0;c<COLS;c++)if(board[c].indexOf(0)!==-1)o.push(c);return o;};
 for(let c=0;c<COLS;c++){const r=board[c].indexOf(0);if(r===-1)continue;board[c][r]=2;const w=checkWin(c,r,2);board[c][r]=0;if(w)return c;}
+if(!hardAI&&Math.random()<0.3){const o=open();return o[(Math.random()*o.length)|0];}
 for(let c=0;c<COLS;c++){const r=board[c].indexOf(0);if(r===-1)continue;board[c][r]=1;const w=checkWin(c,r,1);board[c][r]=0;if(w)return c;}
+if(!hardAI&&Math.random()<0.25){const o=open();return o[(Math.random()*o.length)|0];}
 const pref=[3,2,4,1,5,0,6];
 for(const c of pref){
 const r=board[c].indexOf(0);if(r===-1)continue;
@@ -340,7 +343,7 @@ holesEl.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;if(
 holesEl.addEventListener('pointerleave',()=>{ghostCol=-1;updGhost();});
 document.querySelectorAll('.modes .mbtn').forEach(b=>b.addEventListener('pointerdown',()=>{
 Kit.click();
-mode=b.dataset.m;scores=[0,0];
+mode=b.dataset.m==='hard'?'ai':b.dataset.m;hardAI=b.dataset.m==='hard';scores=[0,0];
 document.getElementById('s1').textContent='P1: 0';
 document.getElementById('s2').textContent=mode==='ai'?'CPU: 0':'P2: 0';
 document.getElementById('start').classList.add('hidden');
