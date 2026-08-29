@@ -28,6 +28,11 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px;background:linear-gradient
 .ov h1{font-size:40px}
 .btn{border:none;cursor:pointer;background:linear-gradient(90deg,#38bdf8,#a78bfa);color:#0c1226;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(56,189,248,.35);min-height:48px}
 .btn:active{transform:scale(.94)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(56,189,248,.5)}
+.mbtn:hover{background:#26334a;transform:translateY(-1px)}
+.mute:hover{transform:scale(1.1) rotate(-8deg)}
+@keyframes c4pop{0%{scale:1}40%{scale:1.5;text-shadow:0 0 14px rgba(250,204,21,.8)}100%{scale:1}}
+.hud .pop{display:inline-block;animation:c4pop .4s cubic-bezier(.2,1.6,.4,1)}
 .modes{display:flex;gap:8px;margin-top:4px}
 .mbtn{border:none;border-radius:999px;background:#1e293b;color:#cbd5e1;font-size:14px;font-weight:800;padding:10px 20px;cursor:pointer;min-height:48px}
 .mbtn:active{scale:.94}
@@ -209,6 +214,7 @@ if(discEls[c][r]){discEls[c][r].classList.add('win');discEls[c][r].style.setProp
 });
 const wtk=roundToken;setTimeout(()=>{if(wtk===roundToken)drawWinLine(w);},520);
 scores[turn-1]++;
+const sp=document.getElementById(turn===1?'s1':'s2');sp.classList.remove('pop');void sp.offsetWidth;sp.classList.add('pop');
 document.getElementById('s1').textContent='P1: '+scores[0];
 document.getElementById('s2').textContent=(mode==='ai'?'CPU: ':'P2: ')+scores[1];
 if(turn===lastWinner)streak++;else{streak=1;lastWinner=turn;}
