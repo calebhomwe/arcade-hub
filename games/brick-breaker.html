@@ -8,12 +8,16 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#07070f);display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0 12px;border-radius:12px}
+.back:active{color:#fff;background:rgba(255,255,255,.1)}
 .hud{position:absolute;top:12px;left:14px;right:66px;display:flex;justify-content:space-between;color:#fff;font-size:17px;font-weight:900;z-index:5;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
 .wrap{position:relative}
 canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 22px rgba(167,139,250,.25);touch-action:none}
 .mute{position:fixed;top:12px;right:14px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:20px;cursor:pointer}
-.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.74);backdrop-filter:blur(4px);border-radius:14px;z-index:6;text-align:center}
+.mute:active{transform:scale(.92)}
+.mute:focus-visible,.back:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.74);backdrop-filter:blur(4px);border-radius:14px;z-index:6;text-align:center;touch-action:manipulation;cursor:pointer}
+#start{cursor:default}
 .ov h1{font-size:44px;font-weight:900;color:#fff;letter-spacing:-1px}
 .ov h1 span{background:linear-gradient(90deg,#f472b6,#fb923c,#facc15,#4ade80,#38bdf8,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 40px rgba(167,139,250,.35)}
 .ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px}
@@ -23,6 +27,9 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 .btn:active{transform:scale(.94)}
 .btn:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
 .stat{color:#e2e8f0;font-size:17px;font-weight:700}
+.retry{color:#64748b;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;animation:retryBlink 1.6s ease-in-out infinite}
+@keyframes retryBlink{0%,100%{opacity:.45}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.retry{animation:none;opacity:.8}}
 .best{color:#4ade80;font-weight:800}
 .hidden{display:none}
 @keyframes hpop{0%,100%{transform:none}40%{transform:scale(1.32);text-shadow:0 0 14px rgba(250,204,21,.85)}}
@@ -39,7 +46,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
-<button class="mute" id="muteBtn">🔊</button>
+<button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <div class="wrap">
   <div class="hud" id="hud"><span id="hScore">SCORE 0</span><span id="hLv">LV 1</span><span id="hLives">❤❤❤</span></div>
   <canvas id="cv" width="420" height="640"></canvas>
@@ -54,6 +61,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <button class="btn" id="againBtn">Play Again</button>
+    <div class="retry" id="retryHint">tap anywhere to retry</div>
   </div>
 </div>
 <script src="kit/juicekit.js"></script>
@@ -282,7 +290,10 @@ window.addEventListener('resize',()=>{cvRect=cv.getBoundingClientRect();});
 function kitAt(px,py){return{x:cvRect.left+px*cvRect.width/W,y:cvRect.top+py*cvRect.height/H};}
 function moveTo(x){paddle.x=Math.max(0,Math.min(W-paddle.w,x-paddle.w/2));}
 window.addEventListener('pointerdown',e=>{
-if(e.target&&e.target.closest&&e.target.closest('.ov'))return;initAudio();
+if(e.target&&e.target.closest&&e.target.closest('.ov')){
+ if(state==='over'&&!document.getElementById('over').classList.contains('hidden')){initAudio();document.getElementById('over').classList.add('hidden');startGame();}
+ return;}
+initAudio();
 const x=(e.clientX-cvRect.left)*(W/cvRect.width);
 if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();}
 else if(state==='play'){moveTo(x);if(serving)launch();}
