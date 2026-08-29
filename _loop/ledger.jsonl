@@ -4,3 +4,6 @@
 {"cycle":4,"task_id":4,"game":"block-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done","tests":"0 Uncaught + render ok"}
 {"cycle":5,"task_id":5,"game":"block-blast.html","pass":5,"theme":"micro-animations","status":"done","tests":"0 Uncaught + render ok"}
 {"cycle":6,"task_id":6,"game":"block-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done","commit":"next","tests":"0 Uncaught + render ok"}
+{"cycle":8,"task_id":9,"game":"brick-breaker.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"done","tests":"0 Uncaught + render ok"}
+{"cycle":7,"task_id":8,"game":"block-blast.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"done","tests":"0 Uncaught + render ok (retro-entry, ledger was missing this line)"}
+{"cycle":8,"task_id":10,"game":"brick-breaker.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"done","commit":"next","tests":"0 Uncaught + render ok"}
