@@ -14,6 +14,9 @@ Global window.Kit after load. API:
 - Kit.confetti(n)
 - Kit.center(el) -> {x,y} client coords — for effects anchored to elements
 
+## Screenshot truth
+This machine runs Windows at 125% display scale: headless --window-size=420 renders a 336-CSS-px viewport (clipping artifacts). For a true 390-CSS-px phone capture use --window-size=488,1055. When a screenshot looks wrong, MEASURE before believing: iframe probe reading getBoundingClientRect + innerWidth is ground truth.
+
 ## Cycle steps
 
 ## CONCURRENCY GUARD

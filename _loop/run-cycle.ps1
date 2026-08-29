@@ -13,19 +13,30 @@ Set-Content -Path $lock -Value (Get-Date -Format o)
 Add-Content $log "[$(Get-Date -Format o)] START"
 Set-Location $repo
 try {
-  $budgetFile = Join-Path $repo '_loop\budget.json'
-  $b = Get-Content $budgetFile -Raw | ConvertFrom-Json
   $today = (Get-Date).ToString('yyyy-MM-dd')
   $stFile = Join-Path $repo '_loop\state.json'
   if (Test-Path $stFile) { $st = Get-Content $stFile -Raw | ConvertFrom-Json } else { $st = [pscustomobject]@{ day = $today; cycles = 0 } }
   if ($st.day -ne $today) { $st.day = $today; $st.cycles = 0 }
-  if ($st.cycles -ge $b.max_cycles_per_day) { exit 0 }
-  $prompt = "Continue the Arcade Juice Grind. Read and follow C:\Users\caleb\AppData\Local\arcade-hub\_loop\CONTRACT.md EXACTLY: take the lowest pending task in _loop\queue.jsonl, make the improvement in that game, verify headless (zero Uncaught + non-blank screenshot view), update queue+ledger, git commit AND git push. Then increment cycles in _loop\state.json and commit it too. One cycle only, then stop."
+  $max = 96
+  try { $max = [int]((Get-Content (Join-Path $repo '_loop\budget.json') -Raw | ConvertFrom-Json).max_cycles_per_day) } catch {}
+  if ($st.cycles -ge $max) { exit 0 }
+  $prompt = "Continue the Arcade Juice Grind. Read and follow C:\Users\caleb\AppData\Local\arcade-hub\_loop\CONTRACT.md EXACTLY: take the lowest pending task in _loop\queue.jsonl, make the improvement in that game, verify headless (zero Uncaught + non-blank screenshot), update queue+ledger, git commit AND git push. One cycle only, then stop. Do NOT touch _loop\state.json."
   $before = (git -C $repo rev-parse HEAD) 2>$null
-  $out = & $exe run -m alibaba-token-plan/qwen3.8-flash --title "arcade-juice-cycle" $prompt 2>&1 | Out-String
-  $after = (git -C $repo rev-parse HEAD) 2>$null
-  if ($before -eq $after) { Add-Content $log "[$(Get-Date -Format o)] CYCLE-NOOP agent finished without a new commit - claims untrusted. tail: $($out.Substring([Math]::Max(0,$out.Length-400)))" }
-  else { Add-Content $log "[$(Get-Date -Format o)] CYCLE-OK $before -> $after" }
+  $tmpOut = Join-Path $env:TEMP "aj-out.txt"; $tmpErr = Join-Path $env:TEMP "aj-err.txt"
+  $p = Start-Process -FilePath $exe -ArgumentList @('run','-m','alibaba-token-plan/qwen3.8-flash','--title','arcade-juice-cycle',$prompt) -NoNewWindow -PassThru -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+  $exited = $p.WaitForExit(1200000)
+  if (-not $exited) {
+    Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+    Add-Content $log "[$(Get-Date -Format o)] CYCLE-TIMEOUT killed after 20min"
+  } else {
+    $after = (git -C $repo rev-parse HEAD) 2>$null
+    if ($before -eq $after) {
+      $out = if ((Get-Item $tmpOut).Length -gt 0) { (Get-Content $tmpOut -Raw) } else { '<no output>' }
+      Add-Content $log "[$(Get-Date -Format o)] CYCLE-NOOP no new commit. tail: $($out.Substring([Math]::Max(0,$out.Length-500)))"
+    } else { Add-Content $log "[$(Get-Date -Format o)] CYCLE-OK $before -> $after" }
+  }
+  $st.cycles += 1
+  $st | ConvertTo-Json | Set-Content $stFile
 } finally {
   Remove-Item $lock -ErrorAction SilentlyContinue
 }
