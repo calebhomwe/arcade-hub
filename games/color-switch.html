@@ -34,7 +34,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 .ov h1 span{background:linear-gradient(90deg,#f472b6,#fb923c,#facc15,#4ade80,#38bdf8,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 40px rgba(167,139,250,.35)}
 .ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px}
 #over h1{color:#fda4af;text-shadow:0 0 24px rgba(244,114,182,.7)}
-.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#4ade80,#38bdf8);color:#0f0f23;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(56,189,248,.35);transition:transform .12s ease,box-shadow .2s ease}
+.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#4ade80,#38bdf8);color:#0f0f23;font-size:20px;font-weight:900;padding:14px 44px;min-height:44px;border-radius:999px;box-shadow:0 8px 24px rgba(56,189,248,.35);transition:transform .12s ease,box-shadow .2s ease}
 .btn:hover{transform:translateY(-2px) scale(1.03)}
 .btn:hover{box-shadow:0 10px 28px rgba(56,189,248,.5)}
 .btn:active{transform:scale(.94)}
@@ -47,7 +47,8 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
-<button class="mute" id="muteBtn">🔊</button>
+<button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
+<button class="mute hidden" id="pauseBtn" style="right:66px" aria-label="Pause">⏸</button>
 <div class="wrap">
   <div class="hud" id="hud">0</div>
   <canvas id="cv" width="420" height="660"></canvas>
@@ -56,7 +57,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="sub">Tap or Space to spin. Pass through the color that matches your ball — it changes after every pass!<br>🌟 Gold rings pay +2 bonus!</div>
     <div class="stat">Bullseye Best: <b class="best" id="startClose">0</b></div>
     <div class="stat">🌈 Chaos Best: <b class="best" id="startRB">0</b></div>
-    <button class="btn" id="rbBtn" style="font-size:15px;padding:10px 26px">🌈 Mode: Classic</button>
+    <button class="btn" id="rbBtn" style="font-size:15px;padding:13px 26px;min-height:44px">🌈 Mode: Classic</button>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
   <div class="ov hidden" id="over">
@@ -126,11 +127,12 @@ document.getElementById('startClose').textContent=bestNear;
 function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rainbow?'CHAOS':'Classic');document.getElementById('startRB').textContent=bestRB;}
 document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();rainbow=!rainbow;updRb();});
 updRb();
-function startGame(){state='play';score=0;lives=1;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
+function showPauseBtn(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
+function startGame(){showPauseBtn(true);score=0;lives=1;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
 if(lives>1){lives--;heartGrace=1.6;sfx('hit');layer(300,.2,'sawtooth',.06,80);layer(150,.3,'square',.04,60,.08);const ba2=a*Math.PI/180;burst(cx+R*Math.cos(ba2),cy+R*Math.sin(ba2),18,'#f87171');shake=Math.max(shake,8);ftext(cx,cy-30,'💔','#f87171');return;}
-state='over';snd('die');shake=12;flash=1;
+state='over';showPauseBtn(false);snd('die');shake=12;flash=1;
 for(let i=0;i<26;i++){const an=a/180*Math.PI+Math.random()*.8-.4;spawnPart(cx+R*Math.cos(an),cy+R*Math.sin(an),Math.cos(an)*(80+Math.random()*220),Math.sin(an)*(80+Math.random()*220)-80,colors[ballColor]);}
  const nb=score>best,prevBest=best;if(nb){best=score;localStorage.setItem('colorBest',best);}
 if(rainbow&&score>bestRB){bestRB=score;localStorage.setItem('colorBestRB',bestRB);}
@@ -224,9 +226,10 @@ ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*
 draw();ctx.restore();
 }
 requestAnimationFrame(loop);
-function setPaused(on){if(on&&state==='play'){state='paused';document.getElementById('pause').classList.remove('hidden');}else if(!on&&state==='paused'){state='play';document.getElementById('pause').classList.add('hidden');last=performance.now();}}
+function setPaused(on){if(on&&state==='play'){state='paused';showPauseBtn(false);document.getElementById('pause').classList.remove('hidden');}else if(!on&&state==='paused'){state='play';showPauseBtn(true);document.getElementById('pause').classList.add('hidden');last=performance.now();}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
-document.getElementById('pause').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();setPaused(false);});
+document.getElementById('pause').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(false);});
+document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(true);});
 window.addEventListener('keydown',e=>{
 if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();initAudio();
 if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();w=520;}
