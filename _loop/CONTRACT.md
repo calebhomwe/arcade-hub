@@ -16,6 +16,9 @@ Global window.Kit after load. API:
 
 ## Cycle steps
 
+## CONCURRENCY GUARD
+Another agent may commit to this repo while you work. Before editing queue.jsonl, RE-READ it fresh from disk, change only your task's line, write, and commit immediately. If `git push` is rejected, run `git pull --rebase` (commit your staged work first) and push again. Never rewrite lines you did not touch.
+
 ## ANTI-HALLUCINATION (CRITICAL)
 - NEVER write a commit hash into the ledger you have not obtained from `git log -1 --format=%h` AFTER your commit.
 - The runner diffs HEAD before/after your session: no new commit = CYCLE-NOOP logged, your claims ignored. Do the work, do not narrate it.
