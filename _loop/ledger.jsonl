@@ -28,3 +28,4 @@
 
 {"cycle":26,"task_id":28,"game":"color-switch.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done","commit":"0f30fa7","tests":"0 Uncaught + render ok"}
 {"cycle":27,"task_id":29,"game":"color-switch.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"done","commit":"8c88052","tests":"0 Uncaught + render ok"}
+{"cycle":28,"task_id":30,"game":"color-switch.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done","commit":"625b28f","tests":"0 Uncaught + render ok"}
