@@ -31,3 +31,4 @@
 {"cycle":28,"task_id":30,"game":"color-switch.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done","commit":"625b28f","tests":"0 Uncaught + render ok"}
 {"cycle":29,"task_id":31,"game":"color-switch.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"done","commit":"4fef579","tests":"ok"}
 {"cycle":30,"task_id":32,"game":"color-switch.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"done","commit":"11bc4af","tests":"0 Uncaught + render ok"}
+{"cycle":7,"task_id":7,"game":"block-blast.html","pass":7,"theme":"difficulty/pacing curve","status":"done","tests":"probe PASS 300 gen + 0 Uncaught"}
