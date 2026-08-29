@@ -35,3 +35,4 @@
 {"cycle":32,"task_id":33,"game":"connect-four.html","pass":1,"theme":"kit juice integration","status":"done","tests":"salvaged interrupted agent work; 0 Uncaught + render ok"}
 {"cycle":"34-39-phantom","note":"cron agent hallucinated cycles 34-39 (fake hashes 9780237..c2d070d, no commits in reflog/origin); tasks 34-39 re-queued except 34";"status":"audit"}
 {"cycle":40,"task_id":34,"game":"connect-four.html","pass":2,"theme":"juice audit","status":"done","tests":"mute cross-sync gamesMuted+c4Muted, confetti dedupe to Kit; 0 Uncaught + render ok"}
+{"cycle":41,"task_id":35,"game":"connect-four.html","pass":3,"theme":"audio layering","status":"done","tests":"depth-thud per row, streak>=3 arpeggio, draw sting 392-311-233; 0 Uncaught"}

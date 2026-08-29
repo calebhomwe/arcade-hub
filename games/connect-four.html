@@ -186,7 +186,7 @@ const fromY=-(row+1)*(cellW+gap);
 disc.style.transform='translateY('+fromY+'px)';
 boardEl.appendChild(disc);
 discEls[col][row]=disc;
-snd('drop');
+snd('drop');tone(150+row*40,0.1,'sine',0.06,50);
 boardEl.classList.remove('dropthud');void boardEl.offsetWidth;boardEl.classList.add('dropthud');
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
 disc.style.transition='transform .45s cubic-bezier(.3,1.6,.5,1)';
@@ -213,6 +213,7 @@ document.getElementById('s1').textContent='P1: '+scores[0];
 document.getElementById('s2').textContent=(mode==='ai'?'CPU: ':'P2: ')+scores[1];
 if(turn===lastWinner)streak++;else{streak=1;lastWinner=turn;}
 if(streak>best){best=streak;localStorage.setItem('c4Best',best);}
+if(streak>=3){[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,0.14,'square',0.05),i*90));}
 c4Games++;if(!(mode==='ai'&&turn===2)){c4Wins++;if(mode==='ai')c4Upsets++;}
 try{localStorage.setItem('c4Games',c4Games);localStorage.setItem('c4Wins',c4Wins);localStorage.setItem('c4Upsets',c4Upsets);}catch(e){}
 updStreak();checkTrophies();
@@ -229,7 +230,7 @@ return;
 }
 if(board.every(c=>c.indexOf(0)===-1)){
 locked=true;streak=0;lastWinner=0;updStreak();
-snd('draw');
+snd('draw');tone(392,0.25,'triangle',0.07);setTimeout(()=>tone(311,0.3,'triangle',0.07),220);setTimeout(()=>tone(233,0.5,'triangle',0.07),440);
 Kit.text(Kit.center(boardEl).x,Kit.center(boardEl).y,'DRAW! 🤝','#94a3b8',30);
 const b=document.createElement('div');b.className='banner';b.id='banner';b.textContent='Draw! 🤝';
 document.body.appendChild(b);updateTurn();updGhost();
