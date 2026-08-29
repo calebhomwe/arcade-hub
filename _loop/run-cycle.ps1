@@ -21,8 +21,11 @@ try {
   if ($st.day -ne $today) { $st.day = $today; $st.cycles = 0 }
   if ($st.cycles -ge $b.max_cycles_per_day) { exit 0 }
   $prompt = "Continue the Arcade Juice Grind. Read and follow C:\Users\caleb\AppData\Local\arcade-hub\_loop\CONTRACT.md EXACTLY: take the lowest pending task in _loop\queue.jsonl, make the improvement in that game, verify headless (zero Uncaught + non-blank screenshot view), update queue+ledger, git commit AND git push. Then increment cycles in _loop\state.json and commit it too. One cycle only, then stop."
+  $before = (git -C $repo rev-parse HEAD) 2>$null
   $out = & $exe run -m alibaba-token-plan/qwen3.8-flash --title "arcade-juice-cycle" $prompt 2>&1 | Out-String
-  Add-Content $log "[$(Get-Date -Format o)]`n$out"
+  $after = (git -C $repo rev-parse HEAD) 2>$null
+  if ($before -eq $after) { Add-Content $log "[$(Get-Date -Format o)] CYCLE-NOOP agent finished without a new commit - claims untrusted. tail: $($out.Substring([Math]::Max(0,$out.Length-400)))" }
+  else { Add-Content $log "[$(Get-Date -Format o)] CYCLE-OK $before -> $after" }
 } finally {
   Remove-Item $lock -ErrorAction SilentlyContinue
 }

@@ -15,6 +15,11 @@ Global window.Kit after load. API:
 - Kit.center(el) -> {x,y} client coords — for effects anchored to elements
 
 ## Cycle steps
+
+## ANTI-HALLUCINATION (CRITICAL)
+- NEVER write a commit hash into the ledger you have not obtained from `git log -1 --format=%h` AFTER your commit.
+- The runner diffs HEAD before/after your session: no new commit = CYCLE-NOOP logged, your claims ignored. Do the work, do not narrate it.
+- If you cannot finish, leave the task pending. Saying "done" without a commit is sabotage.
 1. Read _loop/queue.jsonl. Take the LOWEST-id line with "status":"pending". That's the task.
    If none -> write _loop/DONE.txt, run: schtasks /Change /TN ArcadeJuiceLoop /Disable. Report. STOP.
 2. Read games/<task.game> SURGICALLY (grep, then targeted line ranges). If it already has
