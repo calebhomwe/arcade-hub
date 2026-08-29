@@ -38,3 +38,4 @@
 {"cycle":41,"task_id":35,"game":"connect-four.html","pass":3,"theme":"audio layering","status":"done","tests":"depth-thud per row, streak>=3 arpeggio, draw sting 392-311-233; 0 Uncaught"}
 {"cycle":43,"task_id":36,"game":"connect-four.html","pass":4,"theme":"visual polish","status":"done","commit":"5579d78+f2fd9f0","tests":"agent code + orchestrator follow-up; 0 Uncaught + render ok"}
 {"cycle":44,"task_id":37,"game":"connect-four.html","pass":5,"theme":"micro-animations","status":"done","tests":"score pop on win, btn/mbtn hover-lift, mute hover-spin; 0 Uncaught"}
+{"cycle":45,"task_id":38,"game":"connect-four.html","pass":6,"theme":"UX","status":"done","tests":"keyboard arrows+enter+n restart, aria-live turn, focus-visible rings; 0 Uncaught"}

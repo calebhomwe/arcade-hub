@@ -28,6 +28,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px;background:linear-gradient
 .ov h1{font-size:40px}
 .btn{border:none;cursor:pointer;background:linear-gradient(90deg,#38bdf8,#a78bfa);color:#0c1226;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(56,189,248,.35);min-height:48px}
 .btn:active{transform:scale(.94)}
+.btn:focus-visible,.mbtn:focus-visible,.mute:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
 .btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(56,189,248,.5)}
 .mbtn:hover{background:#26334a;transform:translateY(-1px)}
 .mute:hover{transform:scale(1.1) rotate(-8deg)}
@@ -61,7 +62,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px;background:linear-gradient
 <h1>Connect Four</h1>
 <div class="hud">
   <span class="p1" id="s1">P1: 0</span>
-  <span class="turn" id="turn"></span>
+  <span class="turn" id="turn" aria-live="polite"></span>
   <span class="p2" id="s2">P2: 0</span>
 </div>
 <div class="streak" id="streak">Streak: 0 &bull; Best: 0</div>
@@ -345,6 +346,13 @@ document.getElementById('s2').textContent=mode==='ai'?'CPU: 0':'P2: 0';
 document.getElementById('start').classList.add('hidden');
 newRound();
 }));
+document.addEventListener('keydown',e=>{
+if(winner||locked||(mode==='ai'&&turn===2))return;
+if(e.key==='ArrowLeft'){ghostCol=Math.max(0,(ghostCol<0?3:ghostCol)-1);updGhost();e.preventDefault();}
+else if(e.key==='ArrowRight'){ghostCol=Math.min(6,(ghostCol<0?3:ghostCol)+1);updGhost();e.preventDefault();}
+else if(e.key===' '||e.key==='Enter'){if(ghostCol>=0){e.preventDefault();drop(ghostCol);}}
+else if(e.key.toLowerCase()==='n'){newRound();}
+});
 document.getElementById('newBtn').addEventListener('pointerdown',()=>{Kit.click();newRound();});
 document.getElementById('nextBtn').addEventListener('pointerdown',()=>{Kit.click();newRound();});
 document.getElementById('modeBtn').addEventListener('pointerdown',()=>{
