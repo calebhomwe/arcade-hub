@@ -105,7 +105,7 @@ function checkTrophies(){let newT=[];for(let i=0;i<TROPHIES.length;i++){const t=
 if(newT.length){saveEarned();c4Trophies=earnedSet.length;try{localStorage.setItem('c4Trophies',c4Trophies);}catch(e){}for(let i=0;i<newT.length;i++){const b=document.createElement('div');b.className='banner';b.textContent='🏆 '+newT[i].name+'!';b.style.top=(20+i*14)+'%';document.body.appendChild(b);(function(b){setTimeout(()=>b.remove(),1400);})(b);}sfx('levelup');}
 const tr=document.getElementById('trophyRow');if(tr)tr.textContent='🏆 '+earnedSet.length+'/'+TROPHIES.length;
 }
-let muted=localStorage.getItem('c4Muted')==='1';
+let muted=(localStorage.getItem('gamesMuted')||localStorage.getItem('c4Muted')||'0')==='1';
 let AC;
 function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
 function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
@@ -115,7 +115,7 @@ function snd(n){if(muted)return;if(n==='drop')sfx('pop');if(n==='win')sfx('win')
 function confetti(){const cols=['#f87171','#facc15','#38bdf8','#4ade80','#a78bfa','#f472b6'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.background=cols[i%cols.length];document.body.appendChild(d);const a=Math.random()*Math.PI*2,s=90+Math.random()*240,dx=Math.cos(a)*s,dy=Math.sin(a)*s-140,rot=(Math.random()*720-360)|0;requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)';d.style.opacity='0';}));setTimeout(()=>d.remove(),1000);}}
 const muteBtn=document.getElementById('muteBtn');
 function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
-muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('c4Muted',muted?'1':'0');renderMute();});
+muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('c4Muted',muted?'1':'0');localStorage.setItem('gamesMuted',muted?'1':'0');renderMute();});
 renderMute();
 function updStreak(){document.getElementById('streak').textContent='Streak: '+streak+' \u2022 Best: '+best+' \u2022 \u26a1 '+coins;const hb=document.getElementById('hintBtn');if(hb)hb.textContent='\ud83d\udca1 Hint \u00b7 1\u26a1 ('+coins+')';}
 updStreak();checkTrophies();
@@ -217,7 +217,6 @@ c4Games++;if(!(mode==='ai'&&turn===2)){c4Wins++;if(mode==='ai')c4Upsets++;}
 try{localStorage.setItem('c4Games',c4Games);localStorage.setItem('c4Wins',c4Wins);localStorage.setItem('c4Upsets',c4Upsets);}catch(e){}
 updStreak();checkTrophies();
 snd(mode==='ai'&&turn===2?'lose':'win');
-confetti();
 const bc=Kit.center(boardEl);Kit.hit(bc.x,bc.y,4);Kit.flash(turn===1?'#f87171':'#facc15');
 const title=mode==='ai'?(turn===1?'You win! 🎉':'CPU wins! 🤖'):(turn===1?'P1 wins! 🎉':'P2 wins! 🎉');
 if(mode==='ai'&&turn===2)Kit.lose('CPU wins!','Score '+scores[0]+' : '+scores[1]);else Kit.win(title,'Score '+scores[0]+' : '+scores[1]);

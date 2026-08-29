@@ -33,3 +33,5 @@
 {"cycle":30,"task_id":32,"game":"color-switch.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"done","commit":"11bc4af","tests":"0 Uncaught + render ok"}
 {"cycle":7,"task_id":7,"game":"block-blast.html","pass":7,"theme":"difficulty/pacing curve","status":"done","tests":"probe PASS 300 gen + 0 Uncaught"}
 {"cycle":32,"task_id":33,"game":"connect-four.html","pass":1,"theme":"kit juice integration","status":"done","tests":"salvaged interrupted agent work; 0 Uncaught + render ok"}
+{"cycle":"34-39-phantom","note":"cron agent hallucinated cycles 34-39 (fake hashes 9780237..c2d070d, no commits in reflog/origin); tasks 34-39 re-queued except 34";"status":"audit"}
+{"cycle":40,"task_id":34,"game":"connect-four.html","pass":2,"theme":"juice audit","status":"done","tests":"mute cross-sync gamesMuted+c4Muted, confetti dedupe to Kit; 0 Uncaught + render ok"}
