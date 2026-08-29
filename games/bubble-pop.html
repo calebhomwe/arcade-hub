@@ -11,6 +11,8 @@ body{background:radial-gradient(900px 600px at 50% -20%,#c026d3,#0f0f23 60%,#070
 .back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
 .hud{display:flex;gap:14px;font-weight:800;font-size:15px;align-items:center}
 .hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
+#score{display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums}
+#timeLeft{display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums}
 .mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
 #timebar{width:min(90vw,400px);height:10px;background:#1e293b;border-radius:999px;overflow:hidden}
 #timefill{height:100%;width:100%;background:linear-gradient(90deg,#4ade80,#facc15,#f87171);border-radius:999px}
@@ -131,9 +133,9 @@ function pStyle(h){let s=pStyleCache[h];if(!s){s='hsl('+h+',85%,65%)';pStyleCach
 function rStyle(h){let s=rStyleCache[h];if(!s){s='hsl('+h+',90%,70%)';rStyleCache[h]=s;}return s;}
 let AC;
 function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}}
-function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
+function tone(f,d,type,v){try{muted=localStorage.getItem('gamesMuted')==='1'}catch(e){}if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function sfx(n){try{muted=localStorage.getItem('gamesMuted')==='1'}catch(e){}if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function snd(n,r){if(n==='pop')sfx('pop');else if(n==='bomb')sfx('boom');else if(n==='end')sfx('win');}
 function spawn(){
 const prog=1-timeLeft/ROUND_TIME;
