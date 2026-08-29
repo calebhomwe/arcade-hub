@@ -128,7 +128,7 @@ function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rai
 document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();rainbow=!rainbow;updRb();});
 updRb();
 function showPauseBtn(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
-function startGame(){showPauseBtn(true);score=0;lives=1;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
+function startGame(){showPauseBtn(true);score=0;lives=2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
 if(lives>1){lives--;heartGrace=1.6;sfx('hit');layer(300,.2,'sawtooth',.06,80);layer(150,.3,'square',.04,60,.08);const ba2=a*Math.PI/180;burst(cx+R*Math.cos(ba2),cy+R*Math.sin(ba2),18,'#f87171');shake=Math.max(shake,8);ftext(cx,cy-30,'💔','#f87171');return;}
@@ -153,8 +153,8 @@ if(rainbow){rbT-=dt;if(rbT<=0){rbT=.85;ballColor=(Math.random()*4)|0;layer(700,.
 a=(a+w*dt)%360;if(a<0)a+=360;
 trail[trailI]=a;trailI=(trailI+1)%TRAILN;if(trailN<TRAILN)trailN++;
  spawnT-=dt;
-if(spawnT<=0){spawnT=Math.max(.9,1.35-score*.015);rings.push({r:R+110,rot:Math.random()*360,rs:30+Math.random()*45,crossed:false,gold:Math.random()<.12});}
-const shrink=62+Math.min(score*1.5,38);
+if(spawnT<=0){spawnT=Math.max(.85,1.45-score*.018);rings.push({r:R+110,rot:Math.random()*360,rs:(30+Math.random()*45)*(1+Math.min(score,60)*.008),crossed:false,gold:Math.random()<Math.min(.2,.1+score*.002)});}
+const shrink=60+Math.min(score*1.2,28)+Math.min(Math.max(0,score-25)*.5,16);
 let wI=0;
 for(let i=0;i<rings.length;i++){
 const rg=rings[i];const prev=rg.r;rg.r-=shrink*dt;rg.rot=(rg.rot+rg.rs*dt)%360;
