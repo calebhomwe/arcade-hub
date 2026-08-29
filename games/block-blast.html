@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: radial-gradient(1200px 800px at 50% -10%, #1e1b4b 0%, #0f0f23 45%, #07070f 100%);
+  background: radial-gradient(1200px 800px at 50% -10%, #312e81 0%, #0f0f23 45%, #07070f 100%);
   min-height: 100vh; color: #e5e7eb; display: flex; flex-direction: column; align-items: center;
   padding: 16px 8px 24px; overflow-x: hidden; user-select: none; touch-action: manipulation;
 }
@@ -17,20 +17,20 @@ h1 {
   background: linear-gradient(90deg, #f472b6, #fb923c, #facc15, #4ade80, #38bdf8, #a78bfa);
   -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 4px;
 }
-.subtitle { color: #64748b; font-size: 0.8rem; margin-bottom: 8px; }
+.subtitle { color: #94a3b8; font-size: 0.8rem; margin-bottom: 8px; }
 
 #gameWrap { position: relative; width: min(92vw, 480px); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 #scoreBoard { display: flex; gap: 20px; justify-content: center; width: 100%; }
-.scoreBox { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 16px; text-align: center; min-width: 70px; }
-.scoreBox .label { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+.scoreBox { background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 16px; text-align: center; min-width: 70px; }
+.scoreBox .label { font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 .scoreBox .value { font-size: 1.4rem; font-weight: 900; color: #e5e7eb; font-variant-numeric: tabular-nums; min-width: 2ch; }
 .scoreBox .value.combo { color: #facc15; }
 .scoreBox.small { padding: 8px 10px; min-width: 44px; }
 .scoreBox .value.blast { color: #f43f5e; }
-#metaStats { font-size: 0.7rem; color: #64748b; font-weight: 600; text-align: center; min-height: 14px; }
+#metaStats { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-align: center; min-height: 14px; }
 
-#gridCanvas { display: block; border-radius: 12px; box-shadow: 0 0 0 2px rgba(167,139,250,0.3), 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(167,139,250,0.15); touch-action: none; }
+#gridCanvas { display: block; border-radius: 12px; box-shadow: 0 0 0 2px rgba(167,139,250,0.35), 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(56,189,248,0.18); touch-action: none; }
 
 #piecesArea { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .pieceSlot { width: 90px; height: 90px; border-radius: 12px; border: 2px dashed rgba(255,255,255,0.15); background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; position: relative; }
@@ -50,10 +50,12 @@ h1 {
 }
 .btn:hover { border-color: rgba(167,139,250,0.5); box-shadow: 0 0 14px rgba(167,139,250,0.2); }
 .btn:active { transform: scale(0.94); }
+.btn:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.btn.primary { background: linear-gradient(90deg, #4ade80, #38bdf8); color: #0f0f23; border-color: transparent; box-shadow: 0 6px 20px rgba(56,189,248,0.3); }
 
 #controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-.back { margin-top: 12px; color: #64748b; text-decoration: none; font-size: 0.8rem; font-weight: 700; }
+.back { margin-top: 12px; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 700; }
 .back:hover { color: #a78bfa; }
 
 </style>
@@ -75,7 +77,7 @@ h1 {
   <div id="status">Select a block, then tap the grid</div>
   <div id="controls">
     <button class="btn" id="btnUndo">↩ Undo</button>
-    <button class="btn" id="btnReset">🔄 New Game</button>
+    <button class="btn primary" id="btnReset">🔄 New Game</button>
   </div>
   <div id="metaStats"></div>
 </div>
@@ -661,7 +663,9 @@ function drawGrid() {
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${cellSize * 0.5}px system-ui`;
     ctx.textAlign = 'center';
+    ctx.shadowColor = '#f472b6'; ctx.shadowBlur = 18;
     ctx.fillText('GAME OVER', gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2 - cellSize * 0.1);
+    ctx.shadowBlur = 0;
     ctx.font = `${cellSize * 0.25}px system-ui`;
     ctx.fillStyle = '#94a3b8';
     ctx.fillText('Tap New Game', gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2 + cellSize * 0.5);
