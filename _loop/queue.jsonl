@@ -1,5 +1,5 @@
 ﻿{"id":1,"game":"block-blast.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"done"}
-{"id":2,"game":"block-blast.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"pending"}
+{"id":2,"game":"block-blast.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"done"}
 {"id":3,"game":"block-blast.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"pending"}
 {"id":4,"game":"block-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
 {"id":5,"game":"block-blast.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}

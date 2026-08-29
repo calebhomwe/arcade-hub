@@ -1,1 +1,2 @@
 {"cycle":1,"task_id":1,"game":"block-blast.html","pass":1,"theme":"kit juice integration","status":"done","tests":"0 Uncaught + render ok"}
+{"cycle":2,"task_id":2,"game":"block-blast.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"done","tests":"0 Uncaught + render ok"}
