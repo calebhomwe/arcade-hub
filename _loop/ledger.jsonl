@@ -19,3 +19,4 @@
 {"cycle":18,"task_id":19,"game":"bubble-pop.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"done","commit":"fb2a47a","tests":"0 Uncaught + render ok"}
 {"cycle":19,"task_id":20,"game":"bubble-pop.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done","commit":"7da9ef5","tests":"0 Uncaught + render ok"}
 {"cycle":20,"task_id":21,"game":"bubble-pop.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"done","commit":"acc8867","tests":"0 Uncaught + render ok"}
+{"cycle":21,"task_id":22,"game":"bubble-pop.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done","commit":"c5909ee","tests":"0 Uncaught + render ok"}
