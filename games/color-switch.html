@@ -55,8 +55,10 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
   <div class="ov" id="start">
     <h1>Color <span>Switch</span></h1>
     <div class="sub">Tap or Space to spin. Pass through the color that matches your ball — it changes after every pass!<br>🌟 Gold rings pay +2 bonus!</div>
+    <div class="stat">Best: <b class="best" id="startBest">0</b></div>
     <div class="stat">Bullseye Best: <b class="best" id="startClose">0</b></div>
     <div class="stat">🌈 Chaos Best: <b class="best" id="startRB">0</b></div>
+    <div class="stat" style="font-size:14px;color:#94a3b8">Runs <b id="startRuns">0</b> · Rings passed <b id="startPasses">0</b></div>
     <button class="btn" id="rbBtn" style="font-size:15px;padding:13px 26px;min-height:44px">🌈 Mode: Classic</button>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
@@ -66,6 +68,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat">Bullseye Best: <b class="best" id="finClose">0</b></div>
     <div class="stat">🌈 Chaos Best: <b class="best" id="finRB">0</b></div>
+    <div class="stat" style="font-size:14px;color:#94a3b8">Lifetime rings: <b id="finPasses">0</b></div>
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
@@ -92,6 +95,7 @@ let a=-90,w=0,ballColor=0;
 let lives=1,heartGrace=0;const MAXL=3;
 let nearStreak=0,bestNear=+localStorage.getItem('csNear')||0,lifePass=+localStorage.getItem('csPass')||0;
 let rainbow=false,rbT=0,bestRB=rd('colorBestRB');
+let runs=rd('csRuns'),goldRun=0,goldBest=rd('csGold');
 const TRAILN=14,trail=new Array(TRAILN).fill(0);let trailN=0,trailI=0;
 let rings=[],spawnT=1.2,kitLast=0;
 const particles=[],texts=[],MAXP=200,MAXT=32;
@@ -124,25 +128,31 @@ function refreshMute(){document.getElementById('muteBtn').textContent=muted?'�
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();initAudio();muted=!muted;try{localStorage.setItem('gamesMuted',muted?'1':'0')}catch(e){}refreshMute();});
 refreshMute();
 document.getElementById('startClose').textContent=bestNear;
+function showStats(){document.getElementById('startBest').textContent=best;document.getElementById('startRuns').textContent=runs;document.getElementById('startPasses').textContent=lifePass;}
+showStats();
 function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rainbow?'CHAOS':'Classic');document.getElementById('startRB').textContent=bestRB;}
 document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();rainbow=!rainbow;updRb();});
 updRb();
 function showPauseBtn(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
-function startGame(){showPauseBtn(true);score=0;lives=2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
+function startGame(){showPauseBtn(true);runs++;localStorage.setItem('csRuns',runs);score=0;goldRun=0;lives=2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
 if(lives>1){lives--;heartGrace=1.6;sfx('hit');layer(300,.2,'sawtooth',.06,80);layer(150,.3,'square',.04,60,.08);const ba2=a*Math.PI/180;burst(cx+R*Math.cos(ba2),cy+R*Math.sin(ba2),18,'#f87171');shake=Math.max(shake,8);ftext(cx,cy-30,'💔','#f87171');return;}
 state='over';showPauseBtn(false);snd('die');shake=12;flash=1;
 for(let i=0;i<26;i++){const an=a/180*Math.PI+Math.random()*.8-.4;spawnPart(cx+R*Math.cos(an),cy+R*Math.sin(an),Math.cos(an)*(80+Math.random()*220),Math.sin(an)*(80+Math.random()*220)-80,colors[ballColor]);}
- const nb=score>best,prevBest=best;if(nb){best=score;localStorage.setItem('colorBest',best);}
+const nb=score>best,prevBest=best;if(nb){best=score;localStorage.setItem('colorBest',best);}
 if(rainbow&&score>bestRB){bestRB=score;localStorage.setItem('colorBestRB',bestRB);}
+if(goldRun>goldBest){goldBest=goldRun;localStorage.setItem('csGold',goldBest);}
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
 document.getElementById('finClose').textContent=bestNear;localStorage.setItem('csPass',lifePass);
+document.getElementById('finPasses').textContent=lifePass;
 document.getElementById('finRB').textContent=bestRB;
 document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
-setTimeout(()=>{document.getElementById('over').classList.remove('hidden');
+setTimeout(()=>{document.getElementById('over').classList.remove('hidden');showStats();
 if(nb)Kit.win('NEW BEST!',score+' rings · prev '+prevBest+' · Bullseye '+bestNear);
-else Kit.lose('GAME OVER','Score '+score+' · Best '+best);},450);}
+else if(score>=40)Kit.win('🌈 CHROMA MASTER!',score+' rings · gold x'+goldRun+' (best '+goldBest+') · Best '+best);
+else if(score>=20)Kit.win('SOLID RUN!',score+' rings · '+(40-score)+' to Chroma Master · Best '+best);
+else Kit.lose(score>0&&prevBest>0&&score>=prevBest-2?'SO CLOSE!':'GAME OVER','Score '+score+' · Best '+best);},450);}
 function update(dt){
  t+=dt;if(shake>0)shake-=dt*30;if(flash>0)flash-=dt*2.5;if(bpop>0)bpop-=dt*4.5;if(heartGrace>0)heartGrace-=dt;
 for(let i=0;i<particles.length;i++){const p=particles[i];if(p.life<=0)continue;p.life-=dt*1.6;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=600*dt;}
@@ -170,7 +180,7 @@ if(db<12){nearStreak++;if(nearStreak>bestNear){bestNear=nearStreak;localStorage.
 if((score===10||score===25||score===40)&&lives<MAXL){lives++;ftext(cx,cy-110,'+1 ❤','#f87171');sfx('levelup');[660,880,1100].forEach(function(f,i){layer(f,.12,'triangle',.045,f*1.2,i*.06);});}
 if(score%5===0){ftext(cx,cy-60,'COMBO x'+score,'#4ade80');snd('mile');shake=Math.max(shake,5);}
 ballColor=otherColors[ballColor][(Math.random()*3)|0];
-if(rg.gold){score+=2;const hg=document.getElementById('hud');hg.textContent=score;hg.classList.remove('pop');void hg.offsetWidth;hg.classList.add('pop');ftext(cx,cy-140,'🌟 GOLD +2','#fde047');sfx('coin');layer(1320,.07,'sine',.05);layer(1760,.07,'sine',.05,0,.07);layer(2640,.1,'sine',.04,0,.14);burst(cx,cy,10,'#fde047');{const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kg=kitAt(cx,cy);Kit.hit(kg.x,kg.y,2);}}}}
+if(rg.gold){goldRun++;score+=2;const hg=document.getElementById('hud');hg.textContent=score;hg.classList.remove('pop');void hg.offsetWidth;hg.classList.add('pop');ftext(cx,cy-140,'🌟 GOLD +2','#fde047');sfx('coin');layer(1320,.07,'sine',.05);layer(1760,.07,'sine',.05,0,.07);layer(2640,.1,'sine',.04,0,.14);burst(cx,cy,10,'#fde047');{const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kg=kitAt(cx,cy);Kit.hit(kg.x,kg.y,2);}}}}
 else die();
 }
 if(rg.r>=8)rings[wI++]=rg;
