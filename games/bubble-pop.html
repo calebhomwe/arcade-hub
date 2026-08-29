@@ -83,7 +83,7 @@ let bgG=null,cvRect=null;
 const bubbles=[],particles=[],floaters=[],rings=[];
 const MAXB=80,MAXP=200,MAXF=32,MAXR=32;
 let spawnT=0,lastPop=0,combo=0,comboEnd=0,roundTimer=null,shake=0;
-let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0,roundMaxCombo=0,lifeGold=+localStorage.getItem('bubbleGold')||0,lifeRounds=+localStorage.getItem('bubbleRounds')||0;
+let roundPops=0,lifePops=+localStorage.getItem('bubblePops')||0,roundMaxCombo=0,lifeGold=+localStorage.getItem('bubbleGold')||0,lifeRounds=+localStorage.getItem('bubbleRounds')||0,diffLvl=0,lastWasBomb=false,goldDry=0;
 const BADGES=[{id:'pop50',name:'🎯 Pop Star',test:function(){return roundPops>=50}},{id:'combo12',name:'🔥 Chain Master',test:function(){return roundMaxCombo>=12}},{id:'score500',name:'💯 Big Score',test:function(){return score>=500}},{id:'gold25',name:'🌟 Gold Digger',test:function(){return lifeGold>=25}},{id:'vet10',name:'🛡 Veteran',test:function(){return lifeRounds>=10}}];
 let badges=[];try{badges=JSON.parse(localStorage.getItem('bubbleBadges'))||[]}catch(e){badges=[]}
 document.getElementById('badgeLine').textContent=badges.length+'/'+BADGES.length;
@@ -167,13 +167,19 @@ function sfxEndLose(){sfx('lose');layer(330,.3,'sawtooth',.06,110);}
 function sfxTick(){layer(1500,.04,'square',.03);}
 function snd(n,r){if(n==='pop')sfxPop(r);else if(n==='bomb')sfxBombSting();else if(n==='end')sfxEndLose();}
 function spawn(){
+const el=ROUND_TIME-timeLeft;
 const prog=1-timeLeft/ROUND_TIME;
-const isBomb=timeLeft<ROUND_TIME-2&&Math.random()<.05+prog*.08;
+diffLvl=el<5?0:Math.min(6,1+Math.floor(Math.sqrt(el-4)));
+let bombChance=el<8||timeLeft<7?0:.03+prog*.06;
+if(lastWasBomb)bombChance=0;
+const isBomb=Math.random()<bombChance;
+lastWasBomb=isBomb;
+if(isBomb)goldDry=0;else goldDry++;
 const r=isBomb?20+Math.random()*10:12+Math.random()*28;
 let b=null;
 for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
 if(!b){if(bubbles.length>=MAXB)return;b={};bubbles.push(b);}
-b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&Math.random()<.06;if(b.gold)b.hue=48;b.mega=!isBomb&&!b.gold&&r>=32&&Math.random()<.3;
+b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5)*(1+diffLvl*.028);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&(goldDry>=16||Math.random()<.06);if(b.gold){goldDry=0;b.hue=48;}b.mega=!isBomb&&!b.gold&&r>=32&&Math.random()<.3;
 }
 function addBubble(x,y,r,hue){let b=null;
 for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
@@ -200,7 +206,7 @@ for(const b of bubbles)b.on=false;
 for(const p of particles)p.life=0;
 for(const f of floaters)f.life=0;
 for(const g2 of rings)g2.life=0;
-shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;roundMaxCombo=0;
+shake=0;combo=0;comboEnd=0;lastPop=0;spawnT=1;roundPops=0;roundMaxCombo=0;diffLvl=0;lastWasBomb=false;goldDry=0;
 document.getElementById('score').textContent=0;
 showTime(false);
 document.getElementById('start').classList.add('hidden');
@@ -287,7 +293,7 @@ t+=dt;
 if(combo>0&&performance.now()>comboEnd)combo=0;
 if(state==='play'){
 spawnT-=dt;
-const interval=Math.max(.3,.75-(ROUND_TIME-timeLeft)*.013);
+const interval=Math.max(.3,.75-diffLvl*.075);
 if(spawnT<=0){spawnT=interval;spawn();}
 }
 for(let i=0;i<bubbles.length;i++){
