@@ -17,7 +17,7 @@
 {"id":17,"game":"bubble-pop.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"done"}
 {"id":18,"game":"bubble-pop.html","pass":2,"theme":"juice audit: respect gamesMuted, cap DOM, no layout jank","status":"done"}
 {"id":19,"game":"bubble-pop.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"done"}
-{"id":20,"game":"bubble-pop.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"pending"}
+{"id":20,"game":"bubble-pop.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done"}
 {"id":21,"game":"bubble-pop.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"pending"}
 {"id":22,"game":"bubble-pop.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
 {"id":23,"game":"bubble-pop.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
