@@ -121,6 +121,21 @@ document.addEventListener('touchstart', resumeAudio, {once:true});
 
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){try{muted=localStorage.getItem('gamesMuted')==='1'}catch(e){}if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+function layer(freq, dur, type, vol, slide, delay) {
+  try {
+    muted = localStorage.getItem('gamesMuted') === '1';
+    if (muted) return;
+    const c = ensureAudio(); if (c.state === 'suspended') c.resume(); const t = c.currentTime + (delay || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.07, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch (e) {}
+}
 let comboTimer = null;
 function showCombo(txt, ms) {
   const el = document.getElementById('comboText');
@@ -128,12 +143,15 @@ function showCombo(txt, ms) {
   if (comboTimer) clearTimeout(comboTimer);
   comboTimer = setTimeout(() => { el.textContent = ''; comboTimer = null; }, ms);
 }
-function sfxPlace() { sfx('pop'); }
-function sfxClear() { sfx('coin'); }
-function sfxCombo(n) { sfx('levelup'); }
-function sfxGameOver() { sfx('lose'); }
-function sfxSelect() { sfx('tap'); }
-function sfxUndo() { sfx('whoosh'); }
+function sfxPlace() { sfx('pop'); layer(160, 0.07, 'sine', 0.06, 90); }
+function sfxClear() { sfx('coin'); layer(880, 0.09, 'triangle', 0.05, 1320); }
+function sfxCombo(n) {
+  sfx('levelup');
+  [523, 659, 784, 1047].slice(0, Math.min(4, n || 3)).forEach((f, i) => layer(f, 0.12, 'triangle', 0.06, f * 1.5, i * 0.06));
+}
+function sfxGameOver() { sfx('lose'); layer(220, 0.4, 'sawtooth', 0.08, 70); layer(160, 0.5, 'square', 0.05, 55, 0.15); }
+function sfxSelect() { sfx('tap'); layer(980, 0.04, 'triangle', 0.04); }
+function sfxUndo() { sfx('whoosh'); layer(500, 0.14, 'sine', 0.05, 180); }
 // ==================== BLOCK SHAPES ====================
 
 const SHAPES = [
@@ -347,6 +365,8 @@ function placePieceAt(pieceIdx, row, col) {
     if (particles.length > 500) particles.splice(0, particles.length - 500);
     bombsPlaced++;
     sfx('boom');
+    layer(120, 0.3, 'sine', 0.12, 45);
+    layer(90, 0.35, 'triangle', 0.08, 40, 0.05);
     shakeAmount = Math.max(shakeAmount, 2);
     showCombo('💣 BOOM!', 1500);
   }
@@ -374,6 +394,8 @@ if (linesCleared > 0) {
       sparks++;
       try { localStorage.setItem('blockblast_sparks', String(sparks)); } catch (e) {}
       sfx('levelup');
+      layer(1568, 0.1, 'sine', 0.05, 2093);
+      layer(2093, 0.12, 'sine', 0.04, 2637, 0.07);
     }
 
     if (linesCleared >= 4) sfxCombo(linesCleared);
