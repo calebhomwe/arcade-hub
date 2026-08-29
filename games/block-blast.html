@@ -265,12 +265,28 @@ function initGrid() {
   drawPieces();
 }
 
+function shapeCells(s) { return s.flat().reduce((a, b) => a + b, 0); }
+function pickShape() {
+  const early = moveHistory.length < 8;
+  const fill = grid.filter(Boolean).length / (GRID * GRID);
+  const maxCells = early ? 5 : (fill > 0.42 ? 6 : (fill > 0.28 ? 9 : 12));
+  for (let t = 0; t < 8; t++) {
+    const s = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    if (shapeCells(s) <= maxCells) return s;
+  }
+  return [[1]];
+}
+function fitsSomewhere(shape) {
+  for (let r = 0; r <= GRID - shape.length; r++)
+    for (let c = 0; c <= GRID - shape[0].length; c++)
+      if (canPlace(grid, shape, r, c)) return true;
+  return false;
+}
 function generatePieces() {
   const p = [];
   for (let i = 0; i < 3; i++) {
-    const shapeIdx = Math.floor(Math.random() * SHAPES.length);
     const colorIdx = Math.floor(Math.random() * COLORS.length);
-    p.push({ shape: SHAPES[shapeIdx].map(r => [...r]), color: COLORS[colorIdx], used: false });
+    p.push({ shape: pickShape().map(r => [...r]), color: COLORS[colorIdx], used: false });
   }
   if (blastCharge >= BLAST_MAX) {
     p[1] = { shape: [[1]], color: BOMB_COLOR, used: false, bomb: true };
@@ -278,6 +294,15 @@ function generatePieces() {
     sfx('levelup');
   }
   if (Math.random() < 0.12) p[2].star = true;
+  if (!hasAnyMoves(grid, p)) {
+    const SMALLS = SHAPES.filter(s => shapeCells(s) <= 3);
+    for (let t = 0; t < 12 && !hasAnyMoves(grid, p); t++) {
+      const i = Math.floor(Math.random() * 3);
+      if (p[i].bomb) continue;
+      const cand = SMALLS[Math.floor(Math.random() * SMALLS.length)];
+      if (cand && fitsSomewhere(cand)) p[i] = { shape: cand.map(r => [...r]), color: p[i].color, used: false, star: p[i].star };
+    }
+  }
   return p;
 }
 
