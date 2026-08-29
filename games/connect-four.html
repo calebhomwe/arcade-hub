@@ -7,13 +7,13 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{background:radial-gradient(900px 600px at 50% -20%,#0369a1,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
 .back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
-h1{font-size:26px;font-weight:900;letter-spacing:-1px}
+h1{font-size:26px;font-weight:900;letter-spacing:-1px;background:linear-gradient(90deg,#f472b6,#fb923c,#facc15,#4ade80,#38bdf8,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hud{display:flex;gap:14px;align-items:center;font-weight:900;font-size:15px}
 .hud .p1{color:#f87171}.hud .p2{color:#facc15}
 .turn{font-size:14px;color:#94a3b8;font-weight:700}
-#board{position:relative;width:min(94vw,420px,calc((100dvh - 225px)*7/6));background:linear-gradient(180deg,#1d4ed8,#1e40af);border-radius:18px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,.55);touch-action:manipulation}
+#board{position:relative;width:min(94vw,420px,calc((100dvh - 225px)*7/6));background:linear-gradient(180deg,#1d4ed8,#1e40af);border-radius:18px;padding:10px;box-shadow:0 0 0 2px rgba(167,139,250,.35),0 0 34px rgba(167,139,250,.16),0 20px 60px rgba(0,0,0,.55);touch-action:manipulation}
 .holes{contain:layout paint}
 .holes{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .hole{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#0f172a,#020617);box-shadow:inset 0 4px 8px rgba(0,0,0,.7)}
@@ -36,7 +36,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .mute:active{transform:scale(.92)}
 .streak{font-size:12px;color:#7dd3fc;font-weight:800;letter-spacing:.02em}
 .ov .sub{color:#cbd5e1;font-size:16px}
-.banner{position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,.95);border:2px solid #334155;padding:16px 32px;border-radius:16px;font-size:24px;font-weight:900;z-index:30;animation:banner .3s ease}
+.banner{position:fixed;top:20%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,.95);border:2px solid #a78bfa;box-shadow:0 0 24px rgba(167,139,250,.35);padding:16px 32px;border-radius:16px;font-size:24px;font-weight:900;z-index:30;animation:banner .3s ease}
 @keyframes banner{0%{scale:.6;opacity:0}100%{scale:1;opacity:1}}
 @keyframes boardshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 #board.shake{animation:boardshake .3s}
