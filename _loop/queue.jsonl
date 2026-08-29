@@ -3,7 +3,7 @@
 {"id":3,"game":"block-blast.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"done"}
 {"id":4,"game":"block-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done"}
 {"id":5,"game":"block-blast.html","pass":5,"theme":"micro-animations: press-scale buttons, score pop, card entrance","status":"done"}
-{"id":6,"game":"block-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"pending"}
+{"id":6,"game":"block-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done"}
 {"id":7,"game":"block-blast.html","pass":7,"theme":"difficulty/pacing curve: fair ramp, pressure without rage","status":"pending"}
 {"id":8,"game":"block-blast.html","pass":8,"theme":"celebration + stats: distinct win/lose show, best-score persistence","status":"pending"}
 {"id":9,"game":"brick-breaker.html","pass":1,"theme":"kit juice integration (win/lose/hit/click hooks)","status":"pending"}

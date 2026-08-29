@@ -53,7 +53,7 @@ h1 {
 .scoreBox .value.bump { animation: bbBump 0.35s ease; }
 
 .btn {
-  padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
+  min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
   background: linear-gradient(160deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
   color: #e5e7eb; font-weight: 700; font-size: 0.85rem; cursor: pointer;
   transition: all 0.15s; white-space: nowrap; font-family: inherit;
@@ -81,10 +81,10 @@ h1 {
     <div class="scoreBox"><div class="label">Combo</div><div class="value combo" id="comboVal">0</div></div>
     <div class="scoreBox small"><div class="label">Blast</div><div class="value blast" id="blastVal">0/5</div></div>
   </div>
-  <canvas id="gridCanvas"></canvas>
+  <canvas id="gridCanvas" role="img" aria-label="Block Blast 8x8 grid"></canvas>
   <div id="comboText"></div>
   <div id="piecesArea"></div>
-  <div id="status">Select a block, then tap the grid</div>
+  <div id="status" aria-live="polite">Select a block, then tap the grid</div>
   <div id="controls">
     <button class="btn" id="btnUndo">↩ Undo</button>
     <button class="btn primary" id="btnReset">🔄 New Game</button>
@@ -833,7 +833,7 @@ function getGridCell(e) {
 }
 
 canvas.addEventListener('click', (e) => {
-  if (gameOver) return;
+  if (gameOver) { Kit.click(); initGrid(); return; }
   const cell = getGridCell(e);
   if (!cell) { hoverCell = null; drawGrid(); return; }
   if (selectedPiece < 0) return;
@@ -863,7 +863,7 @@ canvas.addEventListener('touchmove', (e) => {
 
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
-  if (gameOver) return;
+  if (gameOver) { Kit.click(); initGrid(); return; }
   const cell = getGridCell(e.touches[0]);
   if (!cell) { hoverCell = null; drawGrid(); return; }
   hoverCell = cell;

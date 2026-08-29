@@ -3,3 +3,4 @@
 {"cycle":3,"task_id":3,"game":"block-blast.html","pass":3,"theme":"audio layering: action whoosh, score blip, fail sting","status":"done","commit":"6b491d2","tests":"0 Uncaught + render ok"}
 {"cycle":4,"task_id":4,"game":"block-blast.html","pass":4,"theme":"visual polish: palette/contrast/glow consistency vs hub","status":"done","tests":"0 Uncaught + render ok"}
 {"cycle":5,"task_id":5,"game":"block-blast.html","pass":5,"theme":"micro-animations","status":"done","tests":"0 Uncaught + render ok"}
+{"cycle":6,"task_id":6,"game":"block-blast.html","pass":6,"theme":"UX: 44px hit targets, status clarity, restart flow","status":"done","commit":"next","tests":"0 Uncaught + render ok"}
