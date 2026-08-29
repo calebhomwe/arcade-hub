@@ -40,7 +40,17 @@ h1 {
 .pieceSlot canvas { display: block; }
 
 #status { font-size: 0.85rem; font-weight: 700; text-align: center; color: #cbd5e1; min-height: 20px; }
-#comboText { font-size: 0.75rem; font-weight: 700; color: #facc15; min-height: 18px; text-align: center; }
+#comboText { font-size: 0.75rem; font-weight: 700; color: #facc15; min-height: 18px; text-align: center; animation: bbFade 1.5s ease; }
+@keyframes bbFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes bbPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes bbBump { 0%, 100% { transform: none; text-shadow: none; } 30% { transform: scale(1.35); text-shadow: 0 0 14px rgba(250, 204, 21, 0.8); } }
+@keyframes bbBreathe { 0%, 100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); } 50% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.75); } }
+.pieceSlot { transition: opacity 0.35s ease; }
+.pieceSlot.fresh { animation: bbPop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) backwards; }
+.pieceSlot.fresh:nth-child(2) { animation-delay: 0.07s; }
+.pieceSlot.fresh:nth-child(3) { animation-delay: 0.14s; }
+.pieceSlot.selected { animation: bbBreathe 0.9s ease-in-out infinite; }
+.scoreBox .value.bump { animation: bbBump 0.35s ease; }
 
 .btn {
   padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
@@ -697,14 +707,18 @@ function drawGrid() {
   ctx.restore();
 }
 
+let traySig = '';
 function drawPieces() {
   const area = document.getElementById('piecesArea');
   area.innerHTML = '';
+  const sig = pieces.map(p => (p.color || '') + p.shape.length + p.shape[0].length + (p.bomb ? 'b' : '') + (p.star ? 's' : '')).join('|');
+  const fresh = sig !== traySig;
+  traySig = sig;
 
   for (let i = 0; i < pieces.length; i++) {
     const piece = pieces[i];
     const slot = document.createElement('div');
-    slot.className = 'pieceSlot' + (i === selectedPiece ? ' selected' : '') + (piece.used ? ' used' : '');
+    slot.className = 'pieceSlot' + (i === selectedPiece ? ' selected' : '') + (piece.used ? ' used' : '') + (fresh ? ' fresh' : '');
     slot.dataset.index = i;
 
     const pc = document.createElement('canvas');
@@ -784,7 +798,11 @@ function rankName(n) {
 }
 
 function updateUI() {
-  document.getElementById('scoreVal').textContent = score;
+  const sv = document.getElementById('scoreVal');
+  if (sv.textContent !== String(score)) {
+    sv.classList.remove('bump'); void sv.offsetWidth; sv.classList.add('bump');
+  }
+  sv.textContent = score;
   document.getElementById('bestVal').textContent = bestScore;
   document.getElementById('comboVal').textContent = comboCount;
   document.getElementById('blastVal').textContent = (bombsPlaced ? '💣' + bombsPlaced + ' ' : '') + blastCharge + '/' + BLAST_MAX;
@@ -855,6 +873,8 @@ canvas.addEventListener('touchstart', (e) => {
 
 canvas.addEventListener('mouseleave', () => { hoverCell = null; drawGrid(); });
 
+const _cbt = document.getElementById('comboText');
+new MutationObserver(() => { _cbt.style.animation = 'none'; void _cbt.offsetWidth; _cbt.style.animation = ''; }).observe(_cbt, { childList: true, characterData: true, subtree: true });
 document.getElementById('btnUndo').addEventListener('click', () => { Kit.click(); undo(); });
 document.getElementById('btnReset').addEventListener('click', () => { Kit.click(); initGrid(); });
 
