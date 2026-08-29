@@ -10,6 +10,8 @@ if (Test-Path $lock) {
   if ($age.TotalMinutes -lt 35) { exit 0 }
 }
 Set-Content -Path $lock -Value (Get-Date -Format o)
+Add-Content $log "[$(Get-Date -Format o)] START"
+Set-Location $repo
 try {
   $budgetFile = Join-Path $repo '_loop\budget.json'
   $b = Get-Content $budgetFile -Raw | ConvertFrom-Json
@@ -21,8 +23,6 @@ try {
   $prompt = "Continue the Arcade Juice Grind. Read and follow C:\Users\caleb\AppData\Local\arcade-hub\_loop\CONTRACT.md EXACTLY: take the lowest pending task in _loop\queue.jsonl, make the improvement in that game, verify headless (zero Uncaught + non-blank screenshot view), update queue+ledger, git commit AND git push. Then increment cycles in _loop\state.json and commit it too. One cycle only, then stop."
   $out = & $exe run -m alibaba-token-plan/qwen3.8-flash --title "arcade-juice-cycle" $prompt 2>&1 | Out-String
   Add-Content $log "[$(Get-Date -Format o)]`n$out"
-  $st.cycles += 1
-  $st | ConvertTo-Json | Set-Content $stFile
 } finally {
   Remove-Item $lock -ErrorAction SilentlyContinue
 }
