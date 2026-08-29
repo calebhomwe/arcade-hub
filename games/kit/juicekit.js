@@ -9,7 +9,7 @@
     document.body.appendChild(layer);
   }
   const st = document.createElement('style');
-  st.textContent = '@keyframes kitP{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--kx)),calc(-50% + var(--ky))) scale(.2);opacity:0}}@keyframes kitT{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-160%) scale(1);opacity:0}}@keyframes kitCard{0%{transform:translate(-50%,-50%) scale(0);opacity:0}14%{transform:translate(-50%,-50%) scale(1.12);opacity:1}22%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{transform:translate(-50%,-70%);opacity:0}}@keyframes kitShake{0%,100%{transform:none}20%{transform:translate(6px,-4px)}40%{transform:translate(-6px,4px)}60%{transform:translate(4px,3px)}80%{transform:translate(-4px,-3px)}}@keyframes kitFlash{0%{opacity:.55}100%{opacity:0}}.kit-shake{animation:kitShake .3s linear;}';
+  st.textContent = 'html{scrollbar-color:#334155 #0f0f23}::-webkit-scrollbar{width:10px}::-webkit-scrollbar-track{background:#0f0f23}::-webkit-scrollbar-thumb{background:#334155;border-radius:5px}@keyframes kitP{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--kx)),calc(-50% + var(--ky))) scale(.2);opacity:0}}@keyframes kitT{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-160%) scale(1);opacity:0}}@keyframes kitCard{0%{transform:translate(-50%,-50%) scale(0);opacity:0}14%{transform:translate(-50%,-50%) scale(1.12);opacity:1}22%{transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{transform:translate(-50%,-70%);opacity:0}}@keyframes kitShake{0%,100%{transform:none}20%{transform:translate(6px,-4px)}40%{transform:translate(-6px,4px)}60%{transform:translate(4px,3px)}80%{transform:translate(-4px,-3px)}}@keyframes kitFlash{0%{opacity:.55}100%{opacity:0}}.kit-shake{animation:kitShake .3s linear;}';
   document.head.appendChild(st);
   let ctx = null;
   let combo = 0;
@@ -20,8 +20,13 @@
     return ctx;
   }
   function mutedNow() {
+    try { if (typeof muted !== 'undefined' && muted) return true; } catch (e) {}
     try { return localStorage.getItem('gamesMuted') === '1'; } catch (e) { return false; }
   }
+  window.addEventListener('load', function () {
+    try { if (localStorage.getItem('gamesMuted') === '1' && typeof muted !== 'undefined' && !muted) muted = true; } catch (e) {}
+    try { const mb = document.getElementById('muteBtn'); if (mb) mb.addEventListener('click', function () { try { localStorage.setItem('gamesMuted', (typeof muted !== 'undefined' && muted) ? '1' : '0'); } catch (e) {} }); } catch (e) {}
+  });
   function tone(freq, dur, type, vol, slide) {
     if (mutedNow()) return;
     try {
