@@ -43,3 +43,4 @@
 {"cycle":47,"task_id":39,"game":"connect-four.html","pass":7,"theme":"difficulty/pacing","status":"done","commit":"pending","tests":"fixed hard-mode dead button + unbeatable AI; normal 30/25pct blunder, hard perfect; syntax OK + 0 Uncaught"}
 {"cycle":48,"task_id":40,"game":"connect-four.html","pass":8,"theme":"celebration + stats","status":"done","tests":"GIANT SLAYER/ON FIRE tiers, lifetime record on over screen; syntax OK + 0 Uncaught. connect-four 8/8 COMPLETE"}
 {"cycle":49,"task_id":42,"game":"dino-dash.html","pass":2,"theme":"juice audit","status":"done","tests":"HUB-WIDE: kit now reads per-game muted var + syncs gamesMuted on muteBtn click + dark scrollbars; dino audit passed (probe: kit over nb:999, 0 Uncaught)"}
+{"cycle":50,"task_id":43,"game":"dino-dash.html","pass":3,"theme":"audio layering","status":"done","tests":"jump 420Hz / double-jump 640Hz / pass-by 220Hz tones (fixed tone() delay-vs-slide misuse); syntax OK + 0 Uncaught"}

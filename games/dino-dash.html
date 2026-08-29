@@ -104,8 +104,8 @@ hudBestEl.textContent='BEST '+Math.floor(best);
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function spd(){return 300+Math.min(dist*.045,340);}
 function jump(){
-if(dino.grounded){dino.vy=-560;dino.grounded=false;dino.jumps=1;snd('jump');dino.pop=1;dust(dino.x+12,GY,6);}
-else if(dino.jumps<2){dino.vy=-470;dino.jumps=2;snd('jump');dino.pop=1;burst(dino.x+dino.w/2,dino.y+dino.h,6,'#a7f3d0');}
+if(dino.grounded){dino.vy=-560;dino.grounded=false;dino.jumps=1;snd('jump');tone(420,0.09,'square',0.05);dino.pop=1;dust(dino.x+12,GY,6);}
+else if(dino.jumps<2){dino.vy=-470;dino.jumps=2;snd('jump');tone(640,0.1,'square',0.05);dino.pop=1;burst(dino.x+dino.w/2,dino.y+dino.h,6,'#a7f3d0');}
 }
 function duck(){if(dino.grounded)dino.duck=.45;else dino.vy=Math.max(dino.vy,420);}
 function startGame(){Kit.click();state='play';dist=0;obs=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnT=1;flash=0;lastMile=0;lastFd=-1;lastBv=-1;cleared=0;shield=0;invuln=0;featherT=7;feathers.length=0;bonesRun=0;boneT=4;bones.length=0;lastMedal=0;medalsRun=0;magnetT=0;magT=9;magnets.length=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};}
@@ -158,7 +158,7 @@ else if(shield>0){shield--;invuln=1.2;shake=Math.max(shake,5);sfx('boom');burst(
 else die();
 }
 if(px<ox+ow&&px+pw>ox){const g=(py>=oy+oh)?py-(oy+oh):(oy>=py+ph)?oy-(py+ph):0;if(g>0)o.mg=Math.min(o.mg===undefined?999:o.mg,g);}
-if(!o.passed&&ox+ow<px){o.passed=true;cleared++;if(o.mg!==undefined&&o.mg<16){dist+=10;ftext(dino.x+44,dino.y-14,'CLOSE! +10','#fbbf24');snd('near');}}
+if(!o.passed&&ox+ow<px){o.passed=true;cleared++;tone(220,0.06,'sawtooth',0.035);if(o.mg!==undefined&&o.mg<16){dist+=10;ftext(dino.x+44,dino.y-14,'CLOSE! +10','#fbbf24');snd('near');}}
 }
 featherT-=dt*s/300;
 if(featherT<=0){featherT=7+Math.random()*4;feathers.push({x:W+20,y:GY-66-Math.random()*16});}
