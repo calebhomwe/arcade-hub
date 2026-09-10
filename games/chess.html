@@ -281,12 +281,19 @@ body.th-gold {
 
 .modal-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:56;background:#111827;color:#e5e7eb;border-radius:14px;padding:14px;width:min(92vw,430px);max-height:70vh;overflow-y:auto;display:none;box-shadow:0 18px 60px rgba(0,0,0,.55)}
 .modal-panel.show{display:block}
-#learnTabs{display:flex;gap:6px;margin-bottom:8px}
+#learnTabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 #learnTabs .btn.active{outline:2px solid #facc15}
 #learnList .lp-item{border-top:1px solid rgba(255,255,255,.12);padding:8px 2px;font-size:13px;line-height:1.45}
 #learnList .lp-item:first-of-type{border-top:none}
+#learnList{overflow-x:hidden}
+#learnPanel{overflow-x:hidden}
 #learnList .lp-sub{opacity:.78;font-size:12px;margin-top:2px}
-#learnList .lp-moves{font-family:ui-monospace,monospace;font-size:12px;color:#93c5fd;margin:3px 0}
+#learnList .lp-tag{font-size:11px;opacity:.7;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:1px 7px;margin-left:4px}
+#learnList .lp-play{margin-top:6px;font-size:12px;padding:4px 10px}
+#trapCaption{display:none;max-width:480px;width:100%;margin:6px auto 0;padding:8px 10px;border-radius:10px;background:rgba(15,23,42,.9);border:1px solid rgba(250,204,21,.45);font-size:13px;line-height:1.45;text-align:left}
+#trapCaption .tc-side{font-size:11px;opacity:.75;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:1px 7px;margin-left:4px}
+#trapCaption .tc-sub{opacity:.85;font-size:12px;margin-top:4px}
+#learnList .lp-moves{font-family:ui-monospace,monospace;font-size:12px;color:#93c5fd;margin:3px 0;overflow-wrap:anywhere;word-break:break-word}
 .row-center{display:flex;gap:8px;justify-content:center;margin-top:10px}
 
 </style>
@@ -311,7 +318,7 @@ body.th-gold {
   </div>
 </div>
 
-<div id="status">White to move</div>
+<div id="status">White to move</div><div id="trapCaption"></div>
 <div id="setupHint"></div>
 <div id="tip"></div>
 <div id="score">White: <b id="scoreW">0</b> pts | Black: <b id="scoreB">0</b> pts</div>
@@ -344,7 +351,7 @@ body.th-gold {
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
 </div>
 
-<div id="learnPanel" class="modal-panel"><div class="lp-tabs" id="learnTabs"><button class="btn" data-cat="combos">🏛️ Combos</button><button class="btn" data-cat="routes">🗺️ Openings</button><button class="btn" data-cat="endgames">♚ Endgames</button><button class="btn" data-cat="quiz">❓ Quiz</button></div><div id="learnList"></div><div class="row-center"><button class="btn" id="btnLearnClose">✖ Close</button></div></div>
+<div id="learnPanel" class="modal-panel"><div class="lp-tabs" id="learnTabs"><button class="btn" data-cat="combos">🏛️ Combos</button><button class="btn" data-cat="routes">🗺️ Openings</button><button class="btn" data-cat="endgames">♚ Endgames</button><button class="btn" data-cat="quiz">❓ Quiz</button><button class="btn" data-cat="tips">💡 Tips</button><button class="btn" data-cat="traps">🪤 Traps</button></div><div id="learnList"></div><div class="row-center"><button class="btn" id="btnLearnClose">✖ Close</button></div></div>
 <div id="controls">
   <button class="btn" id="btnHint" title="Show a hint — the best move arrowed">💡<span class="btn-label">Hint</span></button>
   <button class="btn" id="btnTeach" title="Coach mode — highlight threats and piece values">📖<span class="btn-label">Coach</span></button>
@@ -856,6 +863,56 @@ const ROUTES = [{"branch":"vs 1.e4","lines":[{"name":"Petrov (Russian) Defense",
 const ENDGAME2 = [{"name":"Lucena Bridge (KRP vs KR)","rule":"King in front of your pawn, rook cutting the enemy king one file away; build the bridge: Rook to rook-file's 4th?? exact: park rook on the file NEXT to yours? Canonical steps: 1. push pawn to 7th 2. shelter king on promotion file 3. swing rook over as the shield (the 'bridge') 4. promote."},{"name":"Philidor Draw (KRP vs KR)","rule":"Defender's rook waits on the 3rd rank until the pawn steps to the 6th — then slide the rook to the last rank and check from behind forever."},{"name":"Opposition in action","rule":"Whoever must move loses ground. Seize the key squares IN FRONT of your pawn using the opposition, never wasting a tempo."},{"name":"Two Bishops Mate","rule":"Corner the king by fencing with bishops a knight-move apart — walls advance every turn; mate arrives near the edge. Learn the wall pattern."},{"name":"Bishop + Knight Mate","rule":"Drive the king into the bishop-colored corner: force, knight-guard, force. Study the 'w-box' shrinking drill."},{"name":"KQ vs K method","rule":"Queen a knight-move away from their king shrinks the box every move; escort your king up; mate at the edge. No stalemate traps."},{"name":"KR vs K box","rule":"Cut the king off with the rook, shrink the cage two ranks/files at a time with king support, deliver mate in the corner zone."},{"name":"Rook behind passed pawns","rule":"Tarrasch forever: behind YOURS it pushes them; behind THEIRS it rails them in."},{"name":"Pawn breakthrough","rule":"v-formation 3-vs-3: sacrifice the outer pawns to queen the middle one first (b6!? axb6 a6! bxa6 c6!)."},{"name":"Queen endings golden rule","rule":"Perpetual-check danger doubles: push passed pawns ONLY when the enemy queen cannot slither into a fortress or repetition."}];
 
 const QUIZ = [{"q":"Opponent has an unmoved f7-g7-h7 wall. What must you audit before EVERY trade?","a":"Back-rank air holes — do you have luft (h3/h6) or a guardian?"},{"q":"Knight on c3, enemy queen just arrived on b5. First question you ask?","a":"Am I pinned? What's behind it — my king, queen, or material?"},{"q":"You're two pawns up but cramped. Trade pieces or pawns?","a":"Pieces — simplify toward a winning pawn endgame."},{"q":"You spot a juicy capture. Before grabbing, you run...","a":"Checks-captures-threatens for the OPPONENT'S reply first."},{"q":"Enemy queen invaded on h5 early. Cheapest defense usually?","a":"...g6 (kick with tempo, open the bishop) — never reflex ...Nf6 into Qxf7#"},{"q":"Your opponent offers a wing pawn. Best habit?","a":"Ask what file/line it OPENS toward your king before accepting rent-free gifts."},{"q":"You castled; they didn't (king center). Your plan?","a":"Open the center FAST — that king is a target begging for it."},{"q":"What's 'hope chess'?","a":"Playing a move that only works if they miss your threat. Assume they see it."},{"q":"Your rook has been staring at the enemy king with nothing happening. Upgrade idea?","a":"Lift it (Rf3-g3/h3 style) or double up — motion over staring contests."},{"q":"Simplest legal way to save a losing position?","a":"Go activity-hunting: trade INTO closed mess, set one trap, take perpetuals."},{"q":"What single habit adds ~200 rating points below 1500 fastest?","a":"Blunder-check mantra every move: his checks/captures/threats, then mine."},{"q":"Endgame reached, several pawns left. First priority?","a":"ACTIVATE THE KING — it's a fighting piece now, escort it toward pawns."}];
+const TRAPS = [{"name": "Scholar's Mate", "opening": "Bishop's Opening", "side": "White", "moves": "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "hook": "Queen and bishop both stare at f7, the one square only the king defends.", "punish": "4.Qxf7# - the four-move mate every beginner loses to exactly once.", "avoid": "Answer 3.Qh5 with 3...g6!. The queen has no good square and you gain time hitting her."}, {"name": "Legal's Mate", "opening": "Italian / Philidor", "side": "White", "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 d7d6 b1c3 c8g4 f3e5 g4d1 c4f7 e8e7 c3d5", "hook": "White hangs the queen on purpose. Taking it is mate in two.", "punish": "7.Nd5# - a mate delivered by two minor pieces while Black owns the queen.", "avoid": "After 5.Nxe5, play 5...Nxe5! and win a clean pawn instead of grabbing the queen."}, {"name": "Blackburne Shilling Gambit", "opening": "Italian Game", "side": "Black", "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 c6d4 f3e5 d8g5 e5f7 g5g2 h1f1 g2e4 c4e2 d4f3", "hook": "3...Nd4 offers the e5 pawn. Blackburne is said to have won a shilling a time with it.", "punish": "7...Nf3# - a smothered-style mate with White's whole army still at home.", "avoid": "Meet 3...Nd4 with 4.Nxd4! exd4 5.O-O. White is simply better; the greedy 4.Nxe5 loses."}, {"name": "Fried Liver Attack", "opening": "Two Knights Defence", "side": "White", "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 g8f6 f3g5 d7d5 e4d5 f6d5 g5f7 e8f7 d1f3", "hook": "A knight sacrifice on f7 that drags the black king into the open board.", "punish": "6.Nxf7! Kxf7 7.Qf3+ and the king walks; Black must defend precisely to survive.", "avoid": "Play the Fritz/Ulvestad 5...Na5! instead of 5...Nxd5 and Black is fine."}, {"name": "Stafford Gambit Trap", "opening": "Petrov / Stafford", "side": "Black", "moves": "e2e4 e7e5 g1f3 g8f6 f3e5 b8c6 e5c6 d7c6 d2d3 f8c5 c1g5 f6e4 g5d8 c5f2 e1e2 c8g4", "hook": "Black gives a pawn for two raking bishops aimed straight at f2.", "punish": "8...Bg4# - mate in the middle of the board on move eight.", "avoid": "Don't grab with 6.Bg5. Play 6.Be2 and h3; White keeps the extra pawn safely."}, {"name": "Englund Gambit Trap", "opening": "Englund Gambit", "side": "Black", "moves": "d2d4 e7e5 d4e5 b8c6 g1f3 d8e7 c1f4 e7b4 f4d2 b4b2 d2c3 f8b4 d1d2 b4c3 d2c3 b2c1", "hook": "Black's queen raids b2 while White's pieces trip over each other.", "punish": "8...Qxc1# - the queen mates on the square White's own bishop vacated.", "avoid": "4.Bf4 is the mistake. Play 4.Nc3! or 4.Bg5 and the b2 pawn is poisoned for Black."}, {"name": "Elephant Trap", "opening": "Queen's Gambit Declined", "side": "Black", "moves": "d2d4 d7d5 c2c4 e7e6 b1c3 g8f6 c1g5 b8d7 c4d5 e6d5 c3d5 f6d5 g5d8 f8b4 d1d2 b4d2 e1d2 e8d8", "hook": "The d5 knight looks pinned and free. It isn't.", "punish": "6...Nxd5! 7.Bxd8 Bb4+ regains the queen and leaves Black a whole piece up.", "avoid": "Just don't take on d5. Play 6.e3 and White has a normal, pleasant position."}, {"name": "Kieninger Trap", "opening": "Budapest Gambit", "side": "Black", "moves": "d2d4 g8f6 c2c4 e7e5 d4e5 f6g4 c1f4 b8c6 g1f3 f8b4 b1d2 d8e7 a2a3 g4e5 a3b4 e5d3", "hook": "Black's knights come back for the e5 pawn while the White king sits on e1.", "punish": "8...Nd3# - smothered mate on move eight, a piece down.", "avoid": "6.Nbd2 is the loser. Play 6.Nc3! and White holds the extra pawn."}, {"name": "Siberian Trap", "opening": "Smith-Morra Gambit", "side": "Black", "moves": "e2e4 c7c5 d2d4 c5d4 c2c3 d4c3 b1c3 b8c6 g1f3 e7e6 f1c4 d8c7 e1g1 g8f6 d1e2 f6g4 h2h3 c6d4", "hook": "Black's queen on c7 and knight on g4 quietly build a battery on h2.", "punish": "9...Nd4! forks the queen on e2; White loses her to stop mate on h2.", "avoid": "Don't play Qe2 with a black knight eyeing g4. 8.h3 first kills the whole idea."}, {"name": "Fishing Pole Trap", "opening": "Ruy Lopez / Berlin", "side": "Black", "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6 e1g1 f6g4 h2h3 h7h5 h3g4 h5g4", "hook": "Black dangles the g4 knight like bait. Taking it rips open the h-file.", "punish": "6.hxg4?? hxg4 and White cannot stop ...Qh4 with mate down the h-file.", "avoid": "Leave the knight alone. 5.d4! or 5.Re1 and Black's stunt just loses a piece."}, {"name": "Noah's Ark Trap", "opening": "Ruy Lopez", "side": "Black", "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 d7d6 d2d4 b7b5 a4b3 c6d4 f3d4 e5d4 d1d4 c7c5 d4d5 c8e6 d5c6 e6d7 c6d5 c5c4", "hook": "Three black pawns creep forward and build a box around White's light-squared bishop.", "punish": "...c5, ...c4 and the b3 bishop has no square left. A piece for three pawn moves.", "avoid": "Don't take on d4 with the queen. 8.Nxd4 or 8.c3 keeps the bishop's escape route open."}, {"name": "Lasker Trap", "opening": "Albin Counter-Gambit", "side": "Black", "moves": "d2d4 d7d5 c2c4 e7e5 d4e5 d5d4 e2e3 f8b4 c1d2 d4e3 d2b4 e3f2 e1e2", "hook": "Black's d-pawn crashes through to f2 while both kings are still in the centre.", "punish": "7...fxg1=N+! - an under-promotion to a knight, on move seven, and Black wins.", "avoid": "4.e3 is the whole mistake. Play 4.Nf3! and the Albin is harmless."}, {"name": "Napoleon's Trap", "opening": "Danvers / Parham Attack", "side": "White", "moves": "e2e4 e7e5 d1h5 b8c6 f1c4 g8f6 h5f7", "hook": "The queen comes out on move two. Napoleon reportedly won this way against an automaton.", "punish": "4.Qxf7# - developing a knight is natural and loses on the spot.", "avoid": "Meet 2.Qh5 with 2...Nc6 and then 3...g6, hitting the queen every time she lands."}, {"name": "Scholar's Punished", "opening": "Bishop's Opening", "side": "Black", "moves": "e2e4 e7e5 f1c4 b8c6 d1h5 g7g6 h5e5 c6e5", "hook": "The other half of Scholar's Mate: what happens when the attacker gets greedy.", "punish": "3...g6! hits the queen and frees the bishop; 4.Qxe5?? Nxe5 just drops her.", "avoid": "If you are White, retreat 4.Qf3 and accept you have wasted two tempi."}];
+let trapTimer = null;
+function stopTrap(){ if (trapTimer) { clearInterval(trapTimer); trapTimer = null; } }
+function playTrap(idx){
+  const t = TRAPS[idx];
+  if (!t) return;
+  stopTrap();
+  document.getElementById('learnPanel').classList.remove('show');
+  resetGame();
+  botEnabled = false;
+  const seq = t.moves.split(' ');
+  const cap = document.getElementById('trapCaption');
+  cap.style.display = 'block';
+  cap.innerHTML = '<b>' + t.name + '</b> <span class="tc-side">' + t.side + ' to punish</span><div class="tc-sub">' + t.hook + '</div>';
+  let i = 0;
+  trapTimer = setInterval(() => {
+    if (i >= seq.length) {
+      stopTrap();
+      cap.innerHTML = '<b>' + t.name + '</b><div class="tc-sub"><b>Punish:</b> ' + t.punish + '</div><div class="tc-sub"><b>Avoid:</b> ' + t.avoid + '</div>';
+      return;
+    }
+    const mv = seq[i++];
+    const from = (8 - parseInt(mv[1], 10)) * 8 + (mv.charCodeAt(0) - 97);
+    const to = (8 - parseInt(mv[3], 10)) * 8 + (mv.charCodeAt(2) - 97);
+    if (!ChessMods.api.playMove(from, to)) {
+      stopTrap();
+      cap.innerHTML = '<b>' + t.name + '</b><div class="tc-sub">Line stops at ' + mv + '</div>';
+      return;
+    }
+    updateUI(); draw();
+  }, 720);
+}
+window.__trapCheck = function(){
+  const out = [];
+  for (let k = 0; k < TRAPS.length; k++) {
+    resetGame();
+    botEnabled = false;
+    const seq = TRAPS[k].moves.split(' ');
+    let played = 0, bad = '';
+    for (const mv of seq) {
+      const from = (8 - parseInt(mv[1], 10)) * 8 + (mv.charCodeAt(0) - 97);
+      const to = (8 - parseInt(mv[3], 10)) * 8 + (mv.charCodeAt(2) - 97);
+      if (!ChessMods.api.playMove(from, to)) { bad = mv; break; }
+      played++;
+    }
+    out.push({ name: TRAPS[k].name, played: played, total: seq.length, bad: bad, over: ChessMods.api.isOver() });
+  }
+  resetGame();
+  return out;
+};
 function openLearn(){
   document.getElementById('learnPanel').classList.add('show');
   const btns = document.querySelectorAll('#learnTabs button');
@@ -866,11 +923,15 @@ const LEARN_CATS = {
   combos: () => ({ title: '🏛️ Immortal Combinations', rows: COMBOS.map(c => '<b>'+c.game+'</b> ('+c.year+')<div class="lp-moves">'+c.combo+'</div><div class="lp-sub">'+c.moral+'</div>') }),
   routes: () => ({ title: '🗺️ Opening Roadmaps', rows: ROUTES.map(b => '<div class="lp-group"><b>'+b.branch+'</b>' + b.lines.map(l => '<div class="lp-block"><b>'+l.name+'</b><div class="lp-moves">'+l.moves+'</div><div class="lp-sub">'+l.plan+'</div></div>').join('') + '</div>') }),
   endgames: () => ({ title: '♚ Endgame Commandments', rows: ENDGAME2.map(e => '<b>'+e.name+'</b><div class="lp-sub">'+e.rule+'</div>') }),
-  quiz: () => ({ title: '❓ Rapid-Fire Quiz', rows: QUIZ.map(q => '<b>Q:</b> '+q.q+'<div class="lp-sub"><b>A:</b> '+q.a+'</div>') })
+  quiz: () => ({ title: '❓ Rapid-Fire Quiz', rows: QUIZ.map(q => '<b>Q:</b> '+q.q+'<div class="lp-sub"><b>A:</b> '+q.a+'</div>') }),
+  tips: () => ({ title: '💡 Every Tip (' + TIPS.length + ')', rows: TIPS.map(t => t) }),
+  traps: () => ({ title: '🪤 Opening Traps', rows: TRAPS.map((t, i) => '<b>'+t.name+'</b> <span class="lp-tag">'+t.opening+'</span><div class="lp-sub">'+t.hook+'</div><div class="lp-moves">'+t.moves+'</div><div class="lp-sub"><b>Punish:</b> '+t.punish+'</div><div class="lp-sub"><b>Avoid:</b> '+t.avoid+'</div><button class="btn lp-play" data-trap="'+i+'">▶ Play it out</button>') })
 };
 function renderLearn(cat){
   const c = LEARN_CATS[cat]();
-  document.getElementById('learnList').innerHTML = '<h3 style="margin:4px 0">'+c.title+'</h3>' + c.rows.map(r => '<div class="lp-item">'+r+'</div>').join('');
+  const list = document.getElementById('learnList');
+  list.innerHTML = '<h3 style="margin:4px 0">'+c.title+'</h3>' + c.rows.map(r => '<div class="lp-item">'+r+'</div>').join('');
+  list.querySelectorAll('.lp-play').forEach(b => b.addEventListener('click', () => playTrap(parseInt(b.dataset.trap, 10))));
 }
 
 // ==================== GAME STATE ====================
