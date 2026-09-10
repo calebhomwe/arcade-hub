@@ -1628,15 +1628,17 @@ function updateUI() {
   const bCap = game.capturedByBlack.map(p => CH[p]).join('');
   document.getElementById('captured').innerHTML = `<span style="color:${getCssVar('--bPiece')}">${bCap}</span> <span style="color:${getCssVar('--wPiece')};text-shadow:0 0 3px #000">${wCap}</span>`;
   const ml = document.getElementById('moveList');
+  const plies = [];
+  for (let i = 1; i < game.moveHistory.length; i++) {
+    if (game.moveHistory[i].lastMove) plies.push(game.moveHistory[i].lastMove);
+  }
+  if (game.lastMove) plies.push(game.lastMove);
   const moves = [];
-  for (let i = 0; i < game.moveHistory.length; i++) {
-    const h = game.moveHistory[i];
-    if (h.lastMove) {
-      const from = String.fromCharCode(97 + col(h.lastMove.from)) + (8 - row(h.lastMove.from));
-      const to = String.fromCharCode(97 + col(h.lastMove.to)) + (8 - row(h.lastMove.to));
-      if (i % 2 === 0) moves.push(`<span>${Math.floor(i/2)+1}.</span> ${from}${to}`);
-      else moves[moves.length-1] += ` ${from}${to}`;
-    }
+  for (let i = 0; i < plies.length; i++) {
+    const from = String.fromCharCode(97 + col(plies[i].from)) + (8 - row(plies[i].from));
+    const to = String.fromCharCode(97 + col(plies[i].to)) + (8 - row(plies[i].to));
+    if (i % 2 === 0) moves.push(`<span>${Math.floor(i/2)+1}.</span> ${from}${to}`);
+    else moves[moves.length-1] += ` ${from}${to}`;
   }
   ml.innerHTML = moves.slice(-6).join(' &nbsp;');
   updateSetupHint();
