@@ -657,6 +657,7 @@ a.back:hover{ color:var(--cc-text)!important; }
 .cc-iconrow, #controls > .sel, #controls > .juice-wrap{ flex:1 1 100%; }
 .btn-primary{ background:var(--cc-green)!important; color:#1C1B18!important; font-weight:800!important;
   border-color:var(--cc-green)!important; justify-content:center; min-height:46px; }
+.cc-av .av-ic{ width:22px; height:22px; margin:auto; }
 .cc-capimg{ width:16px; height:16px; vertical-align:-3px; margin-right:-4px; }
 .cc-capglyph{ font-size:.95rem; margin-right:-2px; }
 .cc-iconrow{ display:grid; grid-template-columns:repeat(auto-fit, minmax(62px, 1fr)); gap:6px; width:100%; }
@@ -752,7 +753,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <div id="ccMain">
   <div id="boardCol">
   <div class="cc-player" id="ccTop">
-    <div class="cc-av" id="ccAvTop">🤖</div>
+    <div class="cc-av" id="ccAvTop" aria-hidden="true"></div>
     <div class="cc-pmeta">
       <div class="cc-pname" id="ccNameTop">Bot <span class="cc-rating" id="ccRateTop">1200</span></div>
       <div class="cc-cap"><span id="capTop"></span><span class="cc-adv" id="advTop"></span></div>
@@ -775,7 +776,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   </div>
 </div>
   <div class="cc-player" id="ccBottom">
-    <div class="cc-av" id="ccAvBot">🧑</div>
+    <div class="cc-av" id="ccAvBot" aria-hidden="true"></div>
     <div class="cc-pmeta">
       <div class="cc-pname" id="ccNameBot">You <span class="cc-rating" id="ccRateBot">1200</span></div>
       <div class="cc-cap"><span id="capBot"></span><span class="cc-adv" id="advBot"></span></div>
@@ -2689,8 +2690,10 @@ function getSquareFromEvent(e) {
 
 function handleClick(sq) {
   if (performance.now() - annotSuppressClick < 350) return;
-  if (clearAnnotations()) return;
-  if (previewing()) { endPreview(); return; }
+  // one click clears whatever is on the board: annotations first, then a preview
+  const hadAnnotations = clearAnnotations();
+  if (previewing()) { endPreview(); if (!hadAnnotations) return; }
+  if (hadAnnotations) return;
   if (game.gameOver || pendingPromo) return;
   if (botEnabled && game.turn === botColor && botThinking) return;
   if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null; draw(); return; }
@@ -2941,7 +2944,7 @@ function updateSetupHint() {
     const botName = botColor === CL.WHITE ? 'White' : 'Black';
     const youName = botColor === CL.WHITE ? 'Black' : 'White';
     const dif = botDifficulty === 0 ? 'Easy' : botDifficulty === 1 ? 'Medium' : 'Hard';
-    el.textContent = '🤖 You play ' + youName + ' · Bot is ' + botName + ' (' + dif + ')';
+    el.textContent = 'You play ' + youName + ' · Bot is ' + botName + ' (' + dif + ')';
   } else {
     el.textContent = '👤 2 Player mode';
   }
@@ -3974,6 +3977,9 @@ document.getElementById('themeSel').addEventListener('change', function() { appl
   applyTheme(theme);
 })();
 
+const PERSON_ICON = '<svg class="ic av-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>';
+const BOT_ICON = '<svg class="ic av-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="7.5" width="16" height="12" rx="3"/><path d="M12 3.5v4M8.5 12.5h.01M15.5 12.5h.01M9.5 16.5h5"/></svg>';
+
 function refreshOpponentCard() {
   const val = document.getElementById('botSel').value;
   const names = { off: ['Player 2', ''], easy: ['Bot · Easy', '800'], medium: ['Bot · Medium', '1200'], hard: ['Bot · Hard', '1600'] };
@@ -3982,7 +3988,7 @@ function refreshOpponentCard() {
   const avEl = document.getElementById('ccAvTop');
   if (nameEl) nameEl.firstChild.nodeValue = pick[0] + ' ';
   if (rateEl) rateEl.textContent = pick[1];
-  if (avEl) avEl.textContent = val === 'off' ? '\u{1F9D1}' : '\u{1F916}';
+  if (avEl) avEl.innerHTML = val === 'off' ? PERSON_ICON : BOT_ICON;
 }
 document.getElementById('botSel').addEventListener('change', function() {
   const val = this.value;
