@@ -275,6 +275,115 @@ body.th-graphite {
   --accent: #81b64c;
   --accent2: #e0b040;
 }
+
+body.th-marble {
+  --lt: #f0efe9;
+  --dk: #a8a49c;
+  --ltSel: #f2ef8f;
+  --dkSel: #c3bd6a;
+  --ltLast: #e9e6bd;
+  --dkLast: #b3ae94;
+  --ltChk: #e0705a;
+  --dkChk: #a8402f;
+  --ltHint: #dcd9c0;
+  --dkHint: #918d84;
+  --wPiece: #ffffff;
+  --bPiece: #38352f;
+  --wStroke: #55524c;
+  --bStroke: #141210;
+  --accent: #8a8f98;
+  --accent2: #e0b040;
+}
+body.th-sky {
+  --lt: #e6eef7;
+  --dk: #8fa9c9;
+  --ltSel: #f5f08c;
+  --dkSel: #c2c465;
+  --ltLast: #e4e8b8;
+  --dkLast: #9aabb8;
+  --ltChk: #e37461;
+  --dkChk: #a94132;
+  --ltHint: #cfe0f0;
+  --dkHint: #7590ae;
+  --wPiece: #ffffff;
+  --bPiece: #31404f;
+  --wStroke: #516172;
+  --bStroke: #101820;
+  --accent: #5b8fb0;
+  --accent2: #f2b134;
+}
+body.th-dusk {
+  --lt: #d9cfc4;
+  --dk: #6e5f74;
+  --ltSel: #f0e68a;
+  --dkSel: #a89a5e;
+  --ltLast: #e0d3ab;
+  --dkLast: #857190;
+  --ltChk: #dd6f57;
+  --dkChk: #9e3a2c;
+  --ltHint: #cbbfc9;
+  --dkHint: #5d5062;
+  --wPiece: #fdf8f3;
+  --bPiece: #2e2733;
+  --wStroke: #5a5159;
+  --bStroke: #120f15;
+  --accent: #a98cc4;
+  --accent2: #f2b134;
+}
+body.th-sepia {
+  --lt: #efe3ce;
+  --dk: #b09472;
+  --ltSel: #f2e68a;
+  --dkSel: #c9ab5f;
+  --ltLast: #e9dcae;
+  --dkLast: #b8a07c;
+  --ltChk: #dd7154;
+  --dkChk: #a03e2b;
+  --ltHint: #e0cfae;
+  --dkHint: #9a7f5f;
+  --wPiece: #fffaf0;
+  --bPiece: #43372a;
+  --wStroke: #6b5b47;
+  --bStroke: #191309;
+  --accent: #b08a55;
+  --accent2: #e0b040;
+}
+body.th-coral {
+  --lt: #fbe9e1;
+  --dk: #d98f7a;
+  --ltSel: #f7ef94;
+  --dkSel: #d4b167;
+  --ltLast: #f2e2b4;
+  --dkLast: #d5a08c;
+  --ltChk: #c94f3d;
+  --dkChk: #93321f;
+  --ltHint: #f3d7c8;
+  --dkHint: #c07a64;
+  --wPiece: #fffaf7;
+  --bPiece: #4a2f28;
+  --wStroke: #6e4f45;
+  --bStroke: #1c0f0b;
+  --accent: #e07a5f;
+  --accent2: #f2b134;
+}
+body.th-steel {
+  --lt: #dfe3e6;
+  --dk: #7c868f;
+  --ltSel: #eceb84;
+  --dkSel: #aab063;
+  --ltLast: #dfe0ae;
+  --dkLast: #8d959b;
+  --ltChk: #d76752;
+  --dkChk: #9c392a;
+  --ltHint: #cdd4d9;
+  --dkHint: #69727a;
+  --wPiece: #ffffff;
+  --bPiece: #2c3238;
+  --wStroke: #515961;
+  --bStroke: #0f1215;
+  --accent: #6d8ea8;
+  --accent2: #e0b040;
+}
 body.th-emerald {
   --lt: #eeeeda;
   --dk: #779556;
@@ -541,6 +650,12 @@ a.back:hover{ color:var(--cc-text)!important; }
     <option value="icysea">🧊 Icy Sea</option>
     <option value="walnut">🪵 Walnut</option>
     <option value="graphite">✏️ Graphite</option>
+    <option value="marble">🗿 Marble</option>
+    <option value="sky">☁️ Sky</option>
+    <option value="dusk">🌆 Dusk</option>
+    <option value="sepia">📜 Sepia</option>
+    <option value="coral">🪸 Coral</option>
+    <option value="steel">⚙️ Steel</option>
     <option value="slate">⬛ Slate</option>
     <option value="candy">🍬 Candy</option>
     <option value="gold">🏅 Gold</option>
@@ -744,17 +859,64 @@ function sfx(name){
   try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){try{tone(660,0.07,'sine',0.12);}catch(e){}});}catch(e){try{tone(660,0.07,'sine',0.12);}catch(e2){}}
 }
 
-function sfxMove() { sfx('move'); }
-
-function sfxCapture() { sfx('capture'); }
-
-function sfxCheck() { sfx('check'); }
-
-function sfxCheckmate() { sfx('lose'); }
-
-function sfxCastle() { sfx('whoosh'); }
-
-function sfxPromote() { sfx('levelup'); }
+// Chess piece sounds are synthesised, not sampled: a short filtered-noise
+// "thock" (the piece hitting the board) layered with a low sine body. The
+// arcade .wav set stays available for the juice mods and UI blips.
+function _woodThock(f0, f1, dur, vol, delay) {
+  noise(dur, vol, 'lowpass', f0, f1, delay);
+  tone(f0 * 0.16, dur * 1.5, 'sine', vol * 0.55, { delay: delay, attack: 0.002, glideTo: f0 * 0.1 });
+}
+function sfxMove() {
+  if (muted) return;
+  try {
+    const opponent = (typeof game !== 'undefined' && typeof botEnabled !== 'undefined' && botEnabled && game.turn === botColor);
+    if (opponent) _woodThock(900, 320, 0.055, 0.30, 0);
+    else _woodThock(1250, 430, 0.048, 0.34, 0);
+  } catch (e) { try { _woodThock(1250, 430, 0.048, 0.34, 0); } catch (e2) {} }
+}
+function sfxCapture() {
+  if (muted) return;
+  try {
+    noise(0.085, 0.38, 'bandpass', 2300, 650, 0);
+    noise(0.045, 0.22, 'lowpass', 1100, 380, 0.012);
+    tone(150, 0.10, 'sine', 0.26, { attack: 0.002, glideTo: 80 });
+  } catch (e) {}
+}
+function sfxCastle() {
+  if (muted) return;
+  try { _woodThock(1150, 400, 0.045, 0.30, 0); _woodThock(980, 350, 0.05, 0.28, 0.10); } catch (e) {}
+}
+function sfxCheck() {
+  if (muted) return;
+  try {
+    tone(1245, 0.085, 'triangle', 0.26, { attack: 0.003 });
+    tone(1661, 0.10, 'triangle', 0.22, { delay: 0.085, attack: 0.003 });
+  } catch (e) {}
+}
+function sfxPromote() {
+  if (muted) return;
+  try {
+    tone(784, 0.09, 'triangle', 0.22, { attack: 0.003 });
+    tone(988, 0.09, 'triangle', 0.22, { delay: 0.07, attack: 0.003 });
+    tone(1319, 0.16, 'triangle', 0.24, { delay: 0.14, attack: 0.003 });
+  } catch (e) {}
+}
+function sfxCheckmate() {
+  if (muted) return;
+  try {
+    tone(523, 0.16, 'triangle', 0.26, { attack: 0.004 });
+    tone(415, 0.18, 'triangle', 0.25, { delay: 0.14, attack: 0.004 });
+    tone(311, 0.34, 'triangle', 0.26, { delay: 0.30, attack: 0.005 });
+    noise(0.20, 0.10, 'lowpass', 600, 180, 0.30);
+  } catch (e) {}
+}
+function sfxGameStart() {
+  if (muted) return;
+  try {
+    tone(392, 0.10, 'triangle', 0.20, { attack: 0.004 });
+    tone(587, 0.16, 'triangle', 0.22, { delay: 0.09, attack: 0.004 });
+  } catch (e) {}
+}
 
 function sfxSelect() {
   if (muted) return;
@@ -1857,8 +2019,10 @@ function executeMove(move) {
   game.turn = 1 - game.turn;
   if (move.castle) castleUsedThisGame = true;
 
-  if (isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
+  if (isInCheck(game.board, game.turn) && !game.gameOver) {
     sfxCheck();
+  }
+  if (isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
     const kingSq = game.board.findIndex(p => p === P(PT.KING, game.turn));
     if (kingSq >= 0) {
       const kr = flip ? 7 - row(kingSq) : row(kingSq), kc = flip ? 7 - col(kingSq) : col(kingSq);
@@ -1892,7 +2056,7 @@ function executeMove(move) {
   } else if (recordPosition(game) >= 3) {
     game.gameOver = true;
     game.result = 'Draw — threefold repetition!'; sfxDraw();
-  } else if (move.castle && juiceLevel > 30) { triggerShake(0.5); sfxCastle(); }
+  } else if (move.castle) { sfxCastle(); if (juiceLevel > 30) triggerShake(0.5); }
 
   ChessMods.emit('move', {
     from: move.from, to: move.to,
@@ -2145,6 +2309,7 @@ function checkPuzzleSolution(move) {
 // ==================== RESET / UNDO ====================
 
 function resetGame() {
+  try { sfxGameStart(); } catch (e) {}
   clearBotTimers();
   botThinking = false;
   closeReview();

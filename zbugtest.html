@@ -96,6 +96,24 @@ document.getElementById('f').addEventListener('load', function(){
       var badT = traps.filter(function(t){ return t.played !== t.total; });
       chk('all 14 trap lines legal', badT.length === 0 && traps.length === 14, traps.length + ' bad=' + badT.length);
 
+      var opts = d.querySelectorAll('#themeSel option'), badTheme = [];
+      for (var t = 0; t < opts.length; t++) {
+        sel.value = opts[t].value; sel.dispatchEvent(new w.Event('change', {bubbles:true}));
+        var cs = w.getComputedStyle(d.body);
+        var lt = cs.getPropertyValue('--lt').trim(), dk = cs.getPropertyValue('--dk').trim();
+        if (!lt || !dk || lt === dk) badTheme.push(opts[t].value + '(' + lt + '/' + dk + ')');
+      }
+      chk('all themes define a board palette', badTheme.length === 0, opts.length + ' themes, bad=' + badTheme.join(','));
+      sel.value = 'emerald'; sel.dispatchEvent(new w.Event('change', {bubbles:true}));
+      var sounds = ['sfxMove','sfxCapture','sfxCastle','sfxCheck','sfxPromote','sfxCheckmate','sfxGameStart','sfxIllegal'];
+      var missing = [], threw = [];
+      for (var si = 0; si < sounds.length; si++) {
+        if (typeof w[sounds[si]] !== 'function') { missing.push(sounds[si]); continue; }
+        try { w[sounds[si]](); } catch (e) { threw.push(sounds[si] + ':' + e.message); }
+      }
+      chk('all chess sounds defined', missing.length === 0, missing.join(','));
+      chk('no sound throws', threw.length === 0, threw.join(','));
+
       document.getElementById('out').textContent = R.join('\n');
       var fails = R.filter(function(r){ return r.indexOf('FAIL') === 0; });
       document.title = fails.length === 0 ? ('ALLPASS:' + R.length) : ('FAILS:' + fails.length);
