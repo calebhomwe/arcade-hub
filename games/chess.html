@@ -2252,8 +2252,9 @@ function commitAnnotation(e) {
   if (!annotDrag) return;
   const from = annotDrag.from, to = annotDrag.to === null ? from : annotDrag.to;
   const col = annotDrag.colour;
+  const wasTouch = !!(annotDrag && annotDrag.touch);
   annotDrag = null;
-  annotSuppressClick = performance.now();
+  if (wasTouch) annotSuppressClick = performance.now();
   if (from < 0 || to < 0) return;
   if (from === to) {
     if (annotSquares[from]) delete annotSquares[from];
@@ -3255,6 +3256,7 @@ function resetGame() {
   if (clockEnabled) clockStart();
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
   premove = null;
+  annotArrows = []; annotSquares = {}; annotDrag = null; annotLongPress = null;
   mlCache.n = -1;
   pendingPromo = null; hidePromoUI();
   particles = []; flashSquares = []; textPops = []; clickRings = [];
@@ -3576,7 +3578,7 @@ canvas.addEventListener('pointerdown', e => {
   if (e.pointerType === 'touch') lastTouchTs = Date.now();
   if (e.button === 2) {
     const sq = getSquareFromEvent(e);
-    if (sq >= 0) { annotDrag = { from: sq, to: sq, colour: annotColour(e) }; draw(); }
+    if (sq >= 0) { annotDrag = { from: sq, to: sq, colour: annotColour(e), touch: false }; draw(); }
     e.preventDefault();
     return;
   }
@@ -3588,7 +3590,7 @@ canvas.addEventListener('pointerdown', e => {
         x: x, y: y,
         timer: setTimeout(() => {
           annotLongPress = null;
-          annotDrag = { from: sq, to: sq, colour: annotColour({}) };
+          annotDrag = { from: sq, to: sq, colour: annotColour({}), touch: true };
           dragState = null;
           selectedSquare = -1; legalMoves = [];
           draw();
@@ -3626,6 +3628,9 @@ canvas.addEventListener('pointercancel', () => {
 canvas.addEventListener('pointermove', e => { if (dragState) { e.preventDefault(); moveDrag(e); } }, { passive: false });
 document.addEventListener('pointermove', e => { if (dragState) moveDrag(e); }, { passive: true });
 document.addEventListener('pointerup', e => {
+  // an annotation gesture never moves a piece, and must not be cleared by the
+  // click fallback that follows it
+  if (e.button === 2 || annotDrag || annotLongPress || performance.now() - annotSuppressClick < 350) return;
   if (dragState) { endDrag(e); return; }
   handleClick(getSquareFromEvent(e));
 });
@@ -4576,10 +4581,13 @@ window.__chessTest = function (caseId) {
     },
     annotate: function () {
       fresh();
-      add('annotations start empty', annotArrows.length === 0 && Object.keys(annotSquares).length === 0, 'clean');
-      const cv = canvas.getBoundingClientRect();
-      const sc = canvas.width / cv.width;
+      annotArrows = []; annotSquares = {}; annotDrag = null; annotSuppressClick = 0;
+      add('a new game starts with a clean board', annotArrows.length === 0 && Object.keys(annotSquares).length === 0, 'clean');
       const at = sq => {
+        // measure per event: earlier cases can leave the page scrolled
+        try { canvas.scrollIntoView({ block: 'center' }); } catch (e) {}
+        const cv = canvas.getBoundingClientRect();
+        const sc = canvas.width / cv.width;
         const r = flip ? 7 - row(sq) : row(sq), c = flip ? 7 - col(sq) : col(sq);
         return { clientX: cv.left + (padding + c * sqSize + sqSize / 2) / sc, clientY: cv.top + (padding + r * sqSize + sqSize / 2) / sc };
       };
@@ -4588,9 +4596,11 @@ window.__chessTest = function (caseId) {
         canvas.dispatchEvent(new PointerEvent(type, Object.assign({ bubbles: true, cancelable: true, button: 2, buttons: 2, pointerId: 9, pointerType: 'mouse', clientX: p.clientX, clientY: p.clientY }, extra || {})));
       };
       ev('pointerdown', sq('e2'));
+      add('right-press starts an annotation gesture', !!annotDrag, annotDrag ? nm(annotDrag.from) : 'none');
       ev('pointermove', sq('e4'));
       ev('pointerup', sq('e4'), { buttons: 0 });
       add('a right-drag draws an arrow', annotArrows.length === 1 && annotArrows[0].from === sq('e2') && annotArrows[0].to === sq('e4'), JSON.stringify(annotArrows));
+      add('an annotation survives the click fallback', annotArrows.length === 1, annotArrows.length + ' arrows');
       ev('pointerdown', sq('h5'));
       ev('pointerup', sq('h5'), { buttons: 0 });
       add('a right-click marks a square', !!annotSquares[sq('h5')], Object.keys(annotSquares).length + ' squares');
