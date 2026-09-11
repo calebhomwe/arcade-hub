@@ -131,6 +131,8 @@
       dispatch();
     },
     setMeme: function (id, on) { state.sounds[id] = !!on; write(KEY_SOUND, state.sounds); dispatch(); },
+    setCaption: function (id, on) { state.caps[id] = !!on; write(KEY_CAP, state.caps); dispatch(); },
+    captionPacks: function () { return state.captions; },
     setPack: function (id, on) {
       state.packs[id] = !!on;
       var cat = state.catalog;
@@ -267,6 +269,8 @@
       '.meme-row .meme-when{margin-left:auto;font-size:.62rem;color:var(--cc-muted);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:6px}' +
       '.meme-play{border:0;background:rgba(255,255,255,.1);color:inherit;border-radius:7px;padding:3px 7px;cursor:pointer;font-size:.75rem}' +
       '.meme-play:hover{background:var(--accent);color:#0b0b12}' +
+      '.meme-section{margin:12px 0 4px;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-muted)}' +
+      '.meme-cap-row .meme-when{max-width:46%;text-align:right}' +
       '.meme-foot{margin-top:8px;font-size:.64rem;color:var(--cc-muted);text-align:center}' +
       '.meme-flag{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);padding:8px 16px;border-radius:14px;background:rgba(8,8,18,.86);border:2px solid var(--accent);color:#fff;font-weight:800;font-size:clamp(.8rem,3.4vw,1.05rem);z-index:24;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:memeFlag 2.4s ease forwards}' +
       '@keyframes memeFlag{0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.8)}12%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.04)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}';
@@ -279,6 +283,24 @@
     var close = panel.querySelector('#btnMemeClose');
     if (close) close.addEventListener('click', hide);
     panel.addEventListener('click', function (e) { if (e.target === panel) hide(); });
+    panel.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) return;
+      var sound = t.getAttribute('data-sound');
+      var pack = t.getAttribute('data-pack-toggle');
+      var cap = t.getAttribute('data-caption');
+      if (sound) API.setMeme(sound, t.checked);
+      else if (pack) { API.setPack(pack, t.checked); render(false); }
+      else if (cap) API.setCaption(cap, t.checked);
+    });
+    panel.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) return;
+      var play = t.getAttribute('data-play');
+      var solo = t.getAttribute('data-pack-solo');
+      if (play) { API.preview(play); e.preventDefault(); }
+      else if (solo) { API.setPackOnly(solo); render(false); e.preventDefault(); }
+    });
     var master = panel.querySelector('#memeMaster');
     if (master) master.addEventListener('change', function () { state.on = !!this.checked; write(KEY_MASTER, state.on); refreshCount(); });
     var allOn = panel.querySelector('#memeAllOn');
@@ -336,6 +358,19 @@
             '<span class="meme-when">' + (WHEN_LABEL[s.when] || s.when) + '</span></label>';
         }
         html += '</div></div>';
+      }
+      html += '<div class="meme-section">Reaction captions</div>';
+      var caps = state.captions;
+      var capIds = [];
+      for (var cid in caps) capIds.push(cid);
+      if (!capIds.length) html += '<div class="meme-row">No caption packs loaded</div>';
+      for (var ci = 0; ci < capIds.length; ci++) {
+        var cp = caps[capIds[ci]];
+        var capOn = state.caps[capIds[ci]] !== false;
+        html += '<label class="meme-row meme-cap-row">' +
+          '<input type="checkbox" data-caption="' + capIds[ci] + '"' + (capOn ? ' checked' : '') + '>' +
+          '<span>' + (cp.emoji || '💬') + ' ' + esc(cp.name || capIds[ci]) + '</span>' +
+          '<span class="meme-when">' + esc(cp.desc || '') + '</span></label>';
       }
       list.innerHTML = html;
     }

@@ -3165,6 +3165,16 @@ window.__chessTest = function (caseId) {
       })(), 'toggle respected');
       M.setMeme(first.id, true);
       M.close();
+      const capBoxes = panel.querySelectorAll('[data-caption]');
+      add('caption packs are selectable too', capBoxes.length >= 3, capBoxes.length + ' caption packs');
+      if (capBoxes.length) {
+        const capId = capBoxes[0].getAttribute('data-caption');
+        capBoxes[0].checked = false;
+        capBoxes[0].dispatchEvent(new Event('change', { bubbles: true }));
+        add('unchecking a caption pack persists', (function () { try { return JSON.parse(localStorage.getItem('cmm-caps') || '{}')[capId] === false; } catch (e) { return false; } })(), capId);
+        capBoxes[0].checked = true;
+        capBoxes[0].dispatchEvent(new Event('change', { bubbles: true }));
+      }
       add('the selector panel closes', !panel.classList.contains('show'), 'closed');
       let audioLog = [];
       let spyOk = false;
