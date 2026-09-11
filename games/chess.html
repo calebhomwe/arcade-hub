@@ -1966,6 +1966,25 @@ let selectedSquare = -1;
 let legalMoves = [];
 let castleSelect = false;
 let redoStack = [];
+let premove = null;
+let premoveDelay = 140;
+function clearPremove() { if (!premove) return; premove = null; draw(); }
+function tryPremove() {
+  if (!premove || game.gameOver) { clearPremove(); return; }
+  const want = premove;
+  const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+  const match = legal.find(m => m.from === want.from && m.to === want.to);
+  premove = null;
+  if (!match) { flashTip('\u26A0\uFE0F Premove cancelled'); draw(); return; }
+  if (match.promo) { match.promoPiece = want.promoPiece || PT.QUEEN; }
+  const run = () => {
+    if (game.gameOver || game.turn === botColor) return;
+    executeMove(match);
+    selectedSquare = -1; legalMoves = []; hintArrow = null;
+    draw();
+  };
+  if (premoveDelay > 0) setTimeout(run, premoveDelay); else run();
+}
 let kbSquare = -1;
 let hintArrow = null;
 let teachMode = false;
@@ -2377,6 +2396,14 @@ function drawBoard() {
     }
   }
 
+  if (premove) {
+    for (const psq of [premove.from, premove.to]) {
+      const pr = flip ? 7 - row(psq) : row(psq), pc = flip ? 7 - col(psq) : col(psq);
+      ctx.fillStyle = 'rgba(56,189,248,0.38)';
+      ctx.fillRect(padding + pc * sqSize, padding + pr * sqSize, sqSize, sqSize);
+    }
+  }
+
   if (inCheck && kingIdx >= 0) {
     const kr = flip ? 7 - row(kingIdx) : row(kingIdx), kc = flip ? 7 - col(kingIdx) : col(kingIdx);
     const cx = padding + kc * sqSize + sqSize / 2, cy = padding + kr * sqSize + sqSize / 2;
@@ -2664,10 +2691,37 @@ function handleClick(sq) {
   if (performance.now() - annotSuppressClick < 350) return;
   if (clearAnnotations()) return;
   if (previewing()) { endPreview(); return; }
-  if (game.gameOver || pendingPromo || botThinking) return;
-  if (botEnabled && game.turn === botColor) return;
+  if (game.gameOver || pendingPromo) return;
+  if (botEnabled && game.turn === botColor && botThinking) return;
   if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null; draw(); return; }
   if (kbSquare < 0) kbSquare = sq;
+
+  // while the bot thinks the player may queue one move (a premove)
+  if (botEnabled && game.turn === botColor && !botThinking) {
+    const mine = 1 - botColor;
+    if (selectedSquare >= 0) {
+      const mv = legalMoves.find(m => m.to === sq);
+      if (mv) {
+        premove = { from: mv.from, to: mv.to, promoPiece: mv.promo ? PT.QUEEN : undefined };
+        selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
+        sfxSelect();
+        draw();
+        return;
+      }
+    }
+    const own = game.board[sq];
+    if (own && pColor(own) === mine) {
+      selectedSquare = sq;
+      legalMoves = getLegalMoves(game.board, sq, game.epTarget, game.castlingRights);
+      sfxSelect();
+      hintArrow = null;
+      draw();
+      return;
+    }
+    selectedSquare = -1; legalMoves = [];
+    draw();
+    return;
+  }
 
   const piece = game.board[sq];
   if (selectedSquare >= 0) {
@@ -3056,6 +3110,7 @@ function doBotMove() {
   if (move.promo) move.promoPiece = PT.QUEEN;
   executeMove(move);
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
+  if (premove) tryPremove();
 }
 
 // ==================== PUZZLE MODE ====================
@@ -3196,6 +3251,7 @@ function resetGame() {
   refreshClocks();
   if (clockEnabled) clockStart();
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
+  premove = null;
   mlCache.n = -1;
   pendingPromo = null; hidePromoUI();
   particles = []; flashSquares = []; textPops = []; clickRings = [];
@@ -4460,6 +4516,34 @@ window.__chessTest = function (caseId) {
       const t1 = performance.now();
       draw();
       add('a frame draws quickly', (performance.now() - t1) < 40, (performance.now() - t1).toFixed(1) + 'ms');
+    },
+    premove: function () {
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botThinking = false;
+      const savedDelay = premoveDelay;
+      premoveDelay = 0;
+      play(['e2e4']);
+      botThinking = false;
+      add('premove mode is active on the bot turn', game.turn === botColor, 'turn=' + game.turn);
+      tapSquare(sq('g1'));
+      add('a piece can be picked during the bot turn', selectedSquare === sq('g1'), 'sel=' + nm(selectedSquare));
+      tapSquare(sq('f3'));
+      add('a premove is queued', !!premove && premove.from === sq('g1') && premove.to === sq('f3'), JSON.stringify(premove));
+      const pliesBefore = collectPlies().length;
+      play(['e7e5']);
+      botThinking = false;
+      tryPremove();
+      add('the premove plays itself once it is legal', collectPlies().length === pliesBefore + 2 && game.board[sq('f3')] === P(PT.KNIGHT, 0), collectPlies().length + ' plies');
+      add('the premove is consumed', premove === null, 'cleared');
+      tapSquare(sq('f3'));
+      tapSquare(sq('h4'));
+      play(['b8c6']);
+      botThinking = false;
+      tryPremove();
+      add('an illegal premove is discarded safely', game.board[sq('h4')] !== P(PT.KNIGHT, 0), 'discarded');
+      premoveDelay = savedDelay;
+      botEnabled = false; botThinking = false;
+      fresh();
     },
     prefs: function () {
       fresh();
