@@ -608,6 +608,42 @@ a.back:hover{ color:var(--cc-text)!important; }
 #moveList .ml-cur{ background:rgba(129,182,76,.28); border-radius:3px; }
 #moveList .ml-row:hover{ background:rgba(255,255,255,.06); border-radius:4px; }
 
+/* ---- start screen ---- */
+#startScreen{ position:fixed; inset:0; z-index:44; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(1200px 700px at 50% -10%, #3A3835 0%, #262522 45%, #1B1A17 100%);
+  padding:calc(16px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); overflow-y:auto; }
+#startScreen.hidden{ display:none; }
+.ss-card{ width:min(100%,430px); text-align:center; }
+#startScreen{ box-sizing:border-box; }
+.ss-brand{ font-size:clamp(1.8rem,7vw,2.4rem); font-weight:900; letter-spacing:-.02em; color:#fff; }
+.ss-tag{ color:var(--cc-muted); font-size:.86rem; margin:4px 0 16px; }
+.ss-label{ text-align:left; font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--cc-muted); margin:14px 0 6px; }
+.ss-row{ display:grid; gap:8px; }
+.ss-modes{ grid-template-columns:repeat(4,1fr); }
+.ss-times{ grid-template-columns:repeat(3,1fr); }
+.ss-mode, .ss-time{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  min-height:62px; border-radius:10px; border:2px solid transparent; background:rgba(255,255,255,.06);
+  color:#e9e7e2; font:700 .72rem/1.1 system-ui; cursor:pointer; padding:8px 4px; }
+.ss-time{ min-height:44px; font-size:.78rem; }
+.ss-mode:hover, .ss-time:hover{ background:rgba(255,255,255,.12); }
+.ss-mode.active, .ss-time.active{ border-color:var(--cc-green); background:rgba(129,182,76,.18); }
+.ss-ico{ font-size:1.4rem; }
+.ss-play{ display:block; width:100%; margin-top:18px; min-height:56px; border:0; border-radius:10px;
+  background:var(--cc-green); color:#1C1B18; font:900 1.15rem/1 system-ui; cursor:pointer;
+  box-shadow:0 6px 0 #5d8a34; }
+.ss-play:hover{ filter:brightness(1.05); }
+.ss-play:active{ transform:translateY(2px); box-shadow:0 3px 0 #5d8a34; }
+.ss-links{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
+.ss-link{ min-height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
+  color:#cbd5e1; font:700 .7rem/1.1 system-ui; cursor:pointer; }
+.ss-link:hover{ background:rgba(255,255,255,.12); }
+.ss-foot{ margin-top:14px; color:var(--cc-muted); font-size:.66rem; }
+.cc-brand{ background:none; border:0; padding:0; cursor:pointer; font:inherit; }
+.cc-brand:hover{ opacity:.8; }
+@media (max-width:430px){
+  .ss-modes{ grid-template-columns:repeat(2,1fr); }
+}
 #btnReset .btn-label{ display:inline; }
 #controls #btnReset{ padding:11px 12px!important; min-height:44px; }
 #learnPanel .lp-tabs{ margin-top:22px; }
@@ -648,9 +684,38 @@ a.back:hover{ color:var(--cc-text)!important; }
 </style>
 </head>
 <body>
+<div id="startScreen" role="dialog" aria-modal="true" aria-label="Start a game">
+  <div class="ss-card">
+    <div class="ss-brand">♟ CHESS</div>
+    <div class="ss-tag" id="ssTag">Play chess against the bot or a friend</div>
+    <div class="ss-label">Opponent</div>
+    <div class="ss-row ss-modes" role="group" aria-label="Opponent">
+      <button class="ss-mode" data-mode="easy"><span class="ss-ico">🙂</span><span class="ss-name">Easy</span></button>
+      <button class="ss-mode active" data-mode="medium"><span class="ss-ico">🤖</span><span class="ss-name">Medium</span></button>
+      <button class="ss-mode" data-mode="hard"><span class="ss-ico">😈</span><span class="ss-name">Hard</span></button>
+      <button class="ss-mode" data-mode="off"><span class="ss-ico">👥</span><span class="ss-name">2 players</span></button>
+    </div>
+    <div class="ss-label">Time control</div>
+    <div class="ss-row ss-times" role="group" aria-label="Time control">
+      <button class="ss-time" data-min="0">∞ Unlimited</button>
+      <button class="ss-time" data-min="1">1 min</button>
+      <button class="ss-time active" data-min="3">3 min</button>
+      <button class="ss-time" data-min="5">5 min</button>
+      <button class="ss-time" data-min="10">10 min</button>
+    </div>
+    <button class="ss-play" id="ssPlay">▶ Play</button>
+    <div class="ss-links">
+      <button class="ss-link" id="ssPuzzles">🧩 Puzzles</button>
+      <button class="ss-link" id="ssLearn">🧠 Learn</button>
+      <button class="ss-link" id="ssMemes">😂 Memes</button>
+      <button class="ss-link" id="ssStats">📈 Stats</button>
+    </div>
+    <div class="ss-foot">Board, pieces, sound and difficulty stay changeable in the game.</div>
+  </div>
+</div>
 <div id="ccApp">
   <header id="ccHeader">
-    <div class="cc-brand">♟ CHESS JUICE</div>
+    <button class="cc-brand" id="btnMenu" title="Back to the start screen">♟ CHESS</button>
     <div class="cc-sub">Play · Learn · Traps · Puzzles</div>
   </header>
   <div id="ccMain">
@@ -1736,7 +1801,7 @@ let teachThreatCache = { board: null, set: null };
 
 let clockEnabled = false;
 let clockWhite = 180, clockBlack = 180;
-const CLOCK_START = 180;
+let CLOCK_START = 180;
 const CLOCK_INC = 2;
 let clockTick = null;
 function fmtClock(s) {
@@ -3360,6 +3425,96 @@ juiceSlider.addEventListener('input', () => {
   draw();
 });
 
+// ==================== START SCREEN ====================
+
+(function startScreen() {
+  const screen = document.getElementById('startScreen');
+  const playBtn = document.getElementById('ssPlay');
+  if (!screen || !playBtn) return;
+  const modeBtns = Array.from(screen.querySelectorAll('.ss-mode'));
+  const timeBtns = Array.from(screen.querySelectorAll('.ss-time'));
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('chessStart') || '{}') || {}; } catch (e) { saved = {}; }
+  let mode = saved.mode || (document.getElementById('botSel') ? document.getElementById('botSel').value : 'medium');
+  let minutes = (saved.min === undefined || saved.min === null) ? 3 : Number(saved.min);
+  let resume = false;
+
+  function paint() {
+    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    timeBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.min) === minutes));
+    const tag = document.getElementById('ssTag');
+    if (tag) {
+      const who = mode === 'off' ? '2 players' : mode.charAt(0).toUpperCase() + mode.slice(1) + ' bot';
+      tag.textContent = (minutes === 0 ? 'Unlimited' : minutes + ' min') + ' \u00b7 ' + who;
+    }
+    playBtn.textContent = resume ? '\u25B6 Resume' : '\u25B6 Play';
+  }
+
+  function persist() {
+    try { localStorage.setItem('chessStart', JSON.stringify({ mode: mode, min: minutes })); } catch (e) {}
+  }
+
+  function apply() {
+    const botSel = document.getElementById('botSel');
+    if (botSel && botSel.value !== mode) {
+      botSel.value = mode;
+      botSel.dispatchEvent(new Event('change'));
+    }
+    const clockBtn = document.getElementById('btnClock');
+    clockEnabled = minutes > 0;
+    CLOCK_START = minutes > 0 ? minutes * 60 : 180;
+    clockStop();
+    if (clockEnabled) {
+      clockWhite = CLOCK_START; clockBlack = CLOCK_START;
+      document.body.classList.add('cc-clocks');
+      refreshClocks();
+      clockStart();
+    } else {
+      document.body.classList.remove('cc-clocks');
+    }
+    if (clockBtn) clockBtn.classList.toggle('active', clockEnabled);
+    persist();
+  }
+
+  window.showStartScreen = function (show) {
+    const on = show === undefined ? true : !!show;
+    resume = on && game.moveHistory.length > 0 && !game.gameOver;
+    if (on) {
+      if (clockEnabled) clockStop();
+      screen.classList.remove('hidden');
+      paint();
+      setTimeout(() => { try { playBtn.focus({ preventScroll: true }); } catch (e) {} }, 30);
+    } else {
+      screen.classList.add('hidden');
+      if (clockEnabled && !game.gameOver) clockStart();
+    }
+    if (typeof window.syncModalState === 'function') window.syncModalState();
+  };
+
+  window.startGame = function (opts) {
+    const o = opts || {};
+    apply();
+    if (!resume || o.forceNew) resetGame();
+    window.showStartScreen(false);
+  };
+
+  window.startScreenChoice = function () { return { mode: mode, minutes: minutes }; };
+
+  modeBtns.forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; resume = false; paint(); persist(); }));
+  timeBtns.forEach(b => b.addEventListener('click', () => { minutes = Number(b.dataset.min); paint(); persist(); }));
+  playBtn.addEventListener('click', () => window.startGame());
+  const link = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => { window.startGame(); fn(); }); };
+  link('ssPuzzles', () => document.getElementById('btnPuzzle').click());
+  link('ssLearn', () => document.getElementById('btnLearn').click());
+  link('ssMemes', () => { if (window.ChessMemes) window.ChessMemes.open(); });
+  link('ssStats', () => document.getElementById('btnStats').click());
+  const menu = document.getElementById('btnMenu');
+  if (menu) menu.addEventListener('click', () => window.showStartScreen(true));
+
+  paint();
+  resume = false;
+})();
+
 // ==================== SELF TEST (live regression harness, call window.__chessTest()) ====================
 
 function hitTestSquare(s) {
@@ -3383,6 +3538,8 @@ function tapSquare(s) {
 }
 
 window.__chessTest = function (caseId) {
+  const ss = document.getElementById('startScreen');
+  if (ss && caseId !== 'start') ss.classList.add('hidden');
   const res = { case: caseId || 'all', checks: [], pass: 0, fail: 0 };
   const add = (name, ok, detail) => { res.checks.push({ name: name, ok: !!ok, detail: String(detail || '') }); if (ok) res.pass++; else res.fail++; };
   const sq = s => (8 - parseInt(s[1], 10)) * 8 + (s.charCodeAt(0) - 97);
@@ -3400,7 +3557,11 @@ window.__chessTest = function (caseId) {
   const sig = () => game.board.map(p => p ? CH[p] : '.').join('');
   const K = (c, s) => game.board[sq(s)] === P(PT.KING, c);
   const R = (c, s) => game.board[sq(s)] === P(PT.ROOK, c);
-  const fresh = () => { resetGame(); botEnabled = false; botThinking = false; clearBotTimers(); };
+  const fresh = () => {
+    const ss = document.getElementById('startScreen');
+    if (ss) ss.classList.add('hidden');
+    resetGame(); botEnabled = false; botThinking = false; clearBotTimers();
+  };
   const setupFen = fen => {
     const parts = fen.split(' '), board = new Array(64).fill(0);
     parts[0].split('/').forEach((rankStr, r) => {
@@ -3514,6 +3675,38 @@ window.__chessTest = function (caseId) {
       }
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
+    },
+    start: function () {
+      const s = document.getElementById('startScreen');
+      add('a start screen exists', !!s, s ? 'present' : 'missing');
+      window.showStartScreen(true);
+      add('the start screen shows on load', !s.classList.contains('hidden'), 'visible');
+      add('it offers four opponents', s.querySelectorAll('.ss-mode').length === 4, s.querySelectorAll('.ss-mode').length + ' modes');
+      add('it offers five time controls', s.querySelectorAll('.ss-time').length === 5, s.querySelectorAll('.ss-time').length + ' controls');
+      const tooSmall = Array.from(s.querySelectorAll('button')).filter(b => b.getBoundingClientRect().height < 44);
+      add('every start-screen control is a 44px touch target', tooSmall.length === 0, tooSmall.length + ' under 44px');
+      add('the Play button is present', !!document.getElementById('ssPlay'), 'Play');
+      const hard = s.querySelector('.ss-mode[data-mode=hard]');
+      hard.click();
+      add('picking an opponent marks it', hard.classList.contains('active'), 'hard');
+      const five = s.querySelector('.ss-time[data-min="5"]');
+      five.click();
+      add('picking a time control marks it', five.classList.contains('active'), '5 min');
+      add('the start screen remembers the choice', (function () { try { const v = JSON.parse(localStorage.getItem('chessStart')); return v.mode === 'hard' && v.min === 5; } catch (e) { return false; } })(), 'saved');
+      const tag = document.getElementById('ssTag').textContent;
+      add('the summary line reflects the choice', /5 min/.test(tag) && /Hard/.test(tag), tag);
+      document.getElementById('ssPlay').click();
+      add('Play hides the start screen', s.classList.contains('hidden'), 'hidden');
+      add('Play applies the opponent', document.getElementById('botSel').value === 'hard', 'bot=' + document.getElementById('botSel').value);
+      add('Play applies the time control', CLOCK_START === 300 && clockEnabled === true, 'clock=' + CLOCK_START + 's enabled=' + clockEnabled);
+      add('the clock strip is visible in game', document.body.classList.contains('cc-clocks'), 'strip');
+      clockEnabled = false; clockStop(); CLOCK_START = 180;
+      document.body.classList.remove('cc-clocks');
+      const bs = document.getElementById('botSel');
+      bs.value = 'medium';
+      bs.dispatchEvent(new Event('change'));
+      window.showStartScreen(false);
+      fresh();
     },
     bank: function () {
       fresh();
