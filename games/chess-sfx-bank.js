@@ -100,7 +100,9 @@
       if (!SETS[name] || name === currentSet) return false;
       currentSet = name;
       try { localStorage.setItem(KEY_SET, name); } catch (e) {}
-      catalog = null; buffers = {};
+      // keep the previous catalogue playable until the new one arrives, so
+      // switching sets never leaves the game silent
+      buffers = {};
       load();
       return true;
     },
