@@ -613,15 +613,15 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div class="cc-clock" id="clockB">3:00</div>
   </div>
 <div id="gameWrap">
-  <canvas id="board"></canvas>
-  <div id="promoOverlay">
+  <canvas id="board" tabindex="0" role="application" aria-label="Chess board. Use arrow keys to move the cursor, Enter or Space to select a piece and complete a move."></canvas>
+  <div id="promoOverlay" role="dialog" aria-modal="true" aria-label="Choose a promotion piece">
     <div id="promoCard">
       <span>Promote pawn to:</span>
       <div class="promo-row">
-        <button class="btn promo-btn" data-piece="2" title="Queen"><span class="promo-glyph">♛</span><span class="promo-label">Queen</span></button>
-        <button class="btn promo-btn" data-piece="3" title="Rook"><span class="promo-glyph">♜</span><span class="promo-label">Rook</span></button>
-        <button class="btn promo-btn" data-piece="4" title="Bishop"><span class="promo-glyph">♝</span><span class="promo-label">Bishop</span></button>
-        <button class="btn promo-btn" data-piece="5" title="Knight"><span class="promo-glyph">♞</span><span class="promo-label">Knight</span></button>
+        <button class="btn promo-btn" data-piece="2" title="Promote to Queen" aria-label="Promote to Queen"><span class="promo-glyph">♛</span><span class="promo-label">Queen</span></button>
+        <button class="btn promo-btn" data-piece="3" title="Promote to Rook" aria-label="Promote to Rook"><span class="promo-glyph">♜</span><span class="promo-label">Rook</span></button>
+        <button class="btn promo-btn" data-piece="4" title="Promote to Bishop" aria-label="Promote to Bishop"><span class="promo-glyph">♝</span><span class="promo-label">Bishop</span></button>
+        <button class="btn promo-btn" data-piece="5" title="Promote to Knight" aria-label="Promote to Knight"><span class="promo-glyph">♞</span><span class="promo-label">Knight</span></button>
       </div>
       <button class="btn" id="promoCancel" title="Cancel promotion">✖ Cancel</button>
     </div>
@@ -635,9 +635,9 @@ a.back:hover{ color:var(--cc-text)!important; }
     </div>
     <div class="cc-clock" id="clockW">3:00</div>
   </div>
-  <div id="status">White to move</div><div id="trapCaption"></div>
+  <div id="status" role="status" aria-live="polite">White to move</div><div id="trapCaption"></div>
   <div id="setupHint"></div>
-  <div id="tip"></div>
+  <div id="tip" role="status" aria-live="polite"></div>
   </div>
   <aside id="sideCol">
     <div class="cc-card">
@@ -708,9 +708,9 @@ a.back:hover{ color:var(--cc-text)!important; }
   </div>
 </div>
 
-<div id="puzzlePanel"><h3>🧩 Puzzle Mode</h3><p id="puzzleDesc"></p><button class="btn" id="btnPuzzleHint" title="Show a hint for this puzzle">💡 Show Hint</button><button class="btn" id="btnPuzzleSkip" title="Skip to the next puzzle">⏭ Skip</button><button class="btn" id="btnPuzzleExit" title="Exit puzzle mode">🚪 Exit</button></div>
+<div id="puzzlePanel" role="dialog" aria-modal="true" aria-label="Puzzle mode"><h3>🧩 Puzzle Mode</h3><p id="puzzleDesc"></p><button class="btn" id="btnPuzzleHint" title="Show a hint for this puzzle">💡 Show Hint</button><button class="btn" id="btnPuzzleSkip" title="Skip to the next puzzle">⏭ Skip</button><button class="btn" id="btnPuzzleExit" title="Exit puzzle mode">🚪 Exit</button></div>
 
-<div id="reviewPanel">
+<div id="reviewPanel" role="dialog" aria-modal="true" aria-label="Game review">
   <button class="btn panel-exit-btn" id="btnReviewClose" title="Exit review">🚪 Exit</button>
   <h3>📊 Game Review</h3>
   <div id="reviewResult">🔍 Analyzing…</div>
@@ -718,7 +718,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <div id="reviewList"></div>
 </div>
 
-<div id="statsPanel">
+<div id="statsPanel" role="dialog" aria-modal="true" aria-label="Your stats">
   <button class="btn panel-exit-btn" id="btnStatsClose" title="Exit stats">🚪 Exit</button>
   <h3>📈 Your Stats</h3>
   <div class="stat-line"><span>🎮 Games (vs bot)</span><b id="statGames">0</b></div>
@@ -733,7 +733,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
 </div>
 
-<div id="learnPanel" class="modal-panel"><button class="btn panel-exit-btn" id="btnLearnClose" title="Exit learning mode">🚪 Exit</button><div class="lp-tabs" id="learnTabs"><button class="btn" data-cat="combos">🏛️ Combos</button><button class="btn" data-cat="routes">🗺️ Openings</button><button class="btn" data-cat="endgames">♚ Endgames</button><button class="btn" data-cat="quiz">❓ Quiz</button><button class="btn" data-cat="tips">💡 Tips</button><button class="btn" data-cat="traps">🪤 Traps</button></div><div id="learnList"></div></div>
+<div id="learnPanel" class="modal-panel" role="dialog" aria-modal="true" aria-label="Chess academy"><button class="btn panel-exit-btn" id="btnLearnClose" title="Exit learning mode">🚪 Exit</button><div class="lp-tabs" id="learnTabs"><button class="btn" data-cat="combos">🏛️ Combos</button><button class="btn" data-cat="routes">🗺️ Openings</button><button class="btn" data-cat="endgames">♚ Endgames</button><button class="btn" data-cat="quiz">❓ Quiz</button><button class="btn" data-cat="tips">💡 Tips</button><button class="btn" data-cat="traps">🪤 Traps</button></div><div id="learnList"></div></div>
 
 </div>
 
@@ -1606,6 +1606,7 @@ let flip = false;
 let selectedSquare = -1;
 let legalMoves = [];
 let castleSelect = false;
+let kbSquare = -1;
 let hintArrow = null;
 let teachMode = false;
 let juiceLevel = 50;
@@ -1716,6 +1717,7 @@ function drawBoard() {
   const kingIdx = game.board.findIndex(p => p === P(PT.KING, game.turn));
   const inCheck = isInCheck(game.board, game.turn);
   const legalSet = new Set(legalMoves.map(m => m.to));
+  const kbOn = kbSquare >= 0 && document.activeElement === canvas;
   let castleDropSq = -1;
   if (dragState) {
     const rs = rookCastleFrom(dragState.from);
@@ -1741,6 +1743,12 @@ function drawBoard() {
         ctx.strokeStyle = isLight ? getCssVar('--ltLast') : getCssVar('--dkLast');
         ctx.lineWidth = lw;
         ctx.strokeRect(x + lw/2, y + lw/2, sqSize - lw, sqSize - lw);
+      }
+      if (kbOn && i === kbSquare) {
+        const lw = Math.max(2, sqSize * 0.06);
+        ctx.strokeStyle = cssAlpha(getCssVar('--accent'), 0.95);
+        ctx.lineWidth = lw;
+        ctx.strokeRect(x + lw / 2, y + lw / 2, sqSize - lw, sqSize - lw);
       }
       if (i === castleDropSq) {
         const cx = x + sqSize/2, cy = y + sqSize/2;
@@ -1990,6 +1998,7 @@ function handleClick(sq) {
   if (game.gameOver || pendingPromo || botThinking) return;
   if (botEnabled && game.turn === botColor) return;
   if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null; draw(); return; }
+  if (kbSquare < 0) kbSquare = sq;
 
   const piece = game.board[sq];
   if (selectedSquare >= 0) {
@@ -2680,6 +2689,28 @@ canvas.addEventListener('click', e => {
   handleClick(getSquareFromEvent(e));
 });
 
+canvas.addEventListener('keydown', e => {
+  if (game.gameOver || pendingPromo || botThinking) return;
+  if (kbSquare < 0) { kbSquare = game.turn === CL.WHITE ? 60 : 4; draw(); e.preventDefault(); return; }
+  const k = e.key;
+  const step = (dr, dc) => {
+    const r = Math.min(7, Math.max(0, row(kbSquare) + dr));
+    const c = Math.min(7, Math.max(0, col(kbSquare) + dc));
+    kbSquare = idx(r, c);
+    draw();
+  };
+  if (k === 'ArrowLeft') { step(0, -1); }
+  else if (k === 'ArrowRight') { step(0, 1); }
+  else if (k === 'ArrowUp') { step(-1, 0); }
+  else if (k === 'ArrowDown') { step(1, 0); }
+  else if (k === 'Escape') { selectedSquare = -1; legalMoves = []; castleSelect = false; draw(); }
+  else if (k === 'f' || k === 'F') { flip = !flip; draw(); }
+  else if (k === 'Enter' || k === ' ') { handleClick(kbSquare); }
+  else return;
+  e.preventDefault();
+});
+canvas.addEventListener('focus', () => { if (kbSquare < 0) kbSquare = game.turn === CL.WHITE ? 60 : 4; draw(); });
+canvas.addEventListener('blur', () => { kbSquare = -1; draw(); });
 document.getElementById('btnHint').addEventListener('click', showHint);
 document.getElementById('btnTeach').addEventListener('click', () => { teachMode = !teachMode; document.getElementById('btnTeach').classList.toggle('active', teachMode); draw(); });
 document.getElementById('btnTeach').classList.toggle('active', teachMode);
@@ -2964,6 +2995,27 @@ window.__chessTest = function (caseId) {
       }
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
+    },
+    keyboard: function () {
+      setupFen('7k/8/8/8/8/8/4P3/4K3 w - - 0 1');
+      botThinking = false; botEnabled = false;
+      canvas.focus();
+      add('canvas takes keyboard focus', document.activeElement === canvas, document.activeElement ? document.activeElement.id : 'none');
+      const send = key => canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
+      kbSquare = -1;
+      send('ArrowUp');
+      add('first arrow sets the cursor on e1', nm(kbSquare) === 'e1', nm(kbSquare));
+      send('ArrowUp');
+      add('arrow key steps the cursor to e2', nm(kbSquare) === 'e2', nm(kbSquare));
+      send('Enter');
+      add('Enter selects the piece under the cursor', selectedSquare === sq('e2'), 'sel=' + nm(selectedSquare) + ' legal=' + legalMoves.map(m => nm(m.to)).join(','));
+      send('ArrowUp'); send('ArrowUp');
+      add('cursor walks up to e4', nm(kbSquare) === 'e4', nm(kbSquare));
+      send('Enter');
+      add('Enter plays the move under the cursor', game.board[sq('e4')] === P(PT.PAWN, 0), 'e4=' + game.board[sq('e4')] + ' e2=' + game.board[sq('e2')] + ' turn=' + game.turn);
+      kbSquare = sq('h8'); send('Enter');
+      add('keyboard cursor tracks the pointer path too', kbSquare >= 0, nm(kbSquare));
+      canvas.blur();
     },
     perft: function () {
       let nodes = 0;
