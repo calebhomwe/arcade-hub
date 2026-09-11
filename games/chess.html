@@ -517,6 +517,9 @@ canvas{ border-radius:4px!important; }
   background:var(--cc-panel); color:var(--cc-muted); padding:4px 12px; border-radius:4px; }
 body.cc-clocks .cc-clock{ display:block; }
 .cc-clock.clock-on{ background:#F6F6F4; color:#25241F; text-shadow:none; }
+.cc-clock.clock-low{ background:#F7E7A8; color:#3A2C05; }
+.cc-clock.clock-crit{ background:#E86A5C; color:#2A0A06; animation: clockCrit 1s ease-in-out infinite; }
+@keyframes clockCrit { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 
 #sideCol{ display:flex; flex-direction:column; gap:12px; min-width:0; }
 .cc-card{ background:var(--cc-panel); border-radius:6px; overflow:hidden; }
@@ -657,7 +660,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnTeach" title="Coach mode — highlight threats and piece values">📖<span class="btn-label">Coach</span></button>
   <button class="btn" id="btnFlip" title="Flip the board 180°">🔃<span class="btn-label">Flip</span></button>
   <button class="btn" id="btnUndo" title="Undo the last move">↩<span class="btn-label">Undo</span></button>
-  <button class="btn" id="btnClock" title="Toggle the 3-minute blitz clock">⚡<span class="btn-label">Clock</span></button>
+  <button class="btn" id="btnClock" title="Toggle the 3-minute blitz clock (2s increment per move)">⚡<span class="btn-label">Clock</span></button>
   <button class="btn" id="btnReset" title="Start a new game"><span class="btn-label">New Game</span></button>
   <button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
 <button class="btn" id="btnLearn" title="Open the Chess Academy: combos, openings, endgames, quiz"><span>🧠</span><span class="btn-label">Learn</span></button>
@@ -1635,6 +1638,7 @@ let teachThreatCache = { board: null, set: null };
 let clockEnabled = false;
 let clockWhite = 180, clockBlack = 180;
 const CLOCK_START = 180;
+const CLOCK_INC = 2;
 let clockTick = null;
 function fmtClock(s) {
   const m = Math.floor(s / 60), r = s % 60;
@@ -1647,6 +1651,12 @@ function refreshClocks() {
   const act = game.turn === CL.WHITE;
   w.classList.toggle('clock-on', act);
   b.classList.toggle('clock-on', !act);
+  w.classList.toggle('clock-low', clockWhite <= 20);
+  w.classList.toggle('clock-crit', clockWhite <= 10);
+  b.classList.toggle('clock-low', clockBlack <= 20);
+  b.classList.toggle('clock-crit', clockBlack <= 10);
+  w.title = 'White clock' + (clockEnabled ? ' (+' + CLOCK_INC + 's per move)' : '');
+  b.title = 'Black clock' + (clockEnabled ? ' (+' + CLOCK_INC + 's per move)' : '');
 }
 function clockStop() { if (clockTick) { clearInterval(clockTick); clockTick = null; } }
 function clockStart() { clockStop(); clockTick = setInterval(clockTickFn, 1000); }
@@ -1655,6 +1665,8 @@ function clockTickFn() {
   if (game.gameOver) { clockStop(); return; }
   if (game.turn === CL.WHITE) clockWhite--; else clockBlack--;
   refreshClocks();
+  const active = game.turn === CL.WHITE ? clockWhite : clockBlack;
+  if (active <= 10 && active > 0 && !muted) { try { sfx('tick'); } catch (e) {} }
   if (clockWhite <= 0 || clockBlack <= 0) {
     if (clockWhite <= 0) clockWhite = 0;
     if (clockBlack <= 0) clockBlack = 0;
@@ -2202,7 +2214,13 @@ function executeMove(move) {
     else game.capturedByBlack.push(captured);
   }
   game.halfmoveClock = (captured || pType(game.board[move.to]) === PT.PAWN) ? 0 : (game.halfmoveClock || 0) + 1;
+  const mover = game.turn;
   game.turn = 1 - game.turn;
+  if (clockEnabled && !puzzleMode) {
+    if (mover === CL.WHITE) clockWhite = Math.min(CLOCK_START, clockWhite + CLOCK_INC);
+    else clockBlack = Math.min(CLOCK_START, clockBlack + CLOCK_INC);
+    refreshClocks();
+  }
   if (move.castle) castleUsedThisGame = true;
 
   if (isInCheck(game.board, game.turn) && !game.gameOver) {
@@ -2707,11 +2725,41 @@ function runReview() {
   reviewTimer = setTimeout(step, 8);
 }
 
-function syncModalState() {
-  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
-  const open = ids.some(id => { const el = document.getElementById(id); return el && el.classList.contains('show'); });
-  document.body.classList.toggle('modal-open', open);
+const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
+let lastFocused = null;
+
+function openModals() {
+  return MODAL_IDS.map(id => document.getElementById(id)).filter(el => el && el.classList.contains('show'));
 }
+function syncModalState() {
+  const open = openModals().length > 0;
+  document.body.classList.toggle('modal-open', open);
+  if (open) {
+    if (!lastFocused) lastFocused = document.activeElement;
+    const top = openModals().pop();
+    if (top && !top.contains(document.activeElement)) {
+      const first = top.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (first) setTimeout(() => { try { first.focus({ preventScroll: true }); } catch (e) {} }, 0);
+    }
+  } else if (lastFocused) {
+    const back = lastFocused;
+    lastFocused = null;
+    setTimeout(() => { try { if (back && back.focus) back.focus({ preventScroll: true }); } catch (e) {} }, 0);
+  }
+}
+window.syncModalState = syncModalState;
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const open = openModals();
+  if (!open.length) return;
+  const top = open[open.length - 1];
+  const items = Array.from(top.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && (document.activeElement === first || !top.contains(document.activeElement))) { last.focus(); e.preventDefault(); }
+  else if (!e.shiftKey && (document.activeElement === last || !top.contains(document.activeElement))) { first.focus(); e.preventDefault(); }
+});
 
 function closeReview() {
   clearReviewTimer();
@@ -3166,6 +3214,46 @@ window.__chessTest = function (caseId) {
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
     },
+    clock: function () {
+      fresh();
+      const btn = document.getElementById('btnClock');
+      if (!clockEnabled) btn.click();
+      add('the clock toggles on', clockEnabled === true && document.body.classList.contains('cc-clocks'), 'on');
+      clockWhite = 100; clockBlack = 100; refreshClocks();
+      add('the clock renders mm:ss', document.getElementById('clockW').textContent === '1:40', document.getElementById('clockW').textContent);
+      clockWhite = 15; refreshClocks();
+      add('low time is flagged', document.getElementById('clockW').classList.contains('clock-low'), 'clock-low');
+      clockWhite = 8; refreshClocks();
+      add('critical time is flagged', document.getElementById('clockW').classList.contains('clock-crit'), 'clock-crit');
+      setupFen('7k/8/8/8/8/8/4P3/4K3 w - - 0 1');
+      clockEnabled = true; clockWhite = 100; clockBlack = 100; refreshClocks();
+      play(['e2e4']);
+      add('a move earns the increment', clockWhite === 102 && clockBlack === 100, 'white=' + clockWhite + ' black=' + clockBlack);
+      clockEnabled = false; document.body.classList.remove('cc-clocks');
+      clockWhite = CLOCK_START; clockBlack = CLOCK_START; refreshClocks();
+      clockStop();
+    },
+    a11y: function () {
+      fresh();
+      const M = window.ChessMemes;
+      if (!M) return add('meme module present for the dialog test', false, 'missing');
+      M.open();
+      const panel = document.getElementById('memePanel');
+      add('an open dialog marks the page modal', document.body.classList.contains('modal-open'), 'modal-open');
+      const items = Array.from(panel.querySelectorAll('button, input')).filter(el => !el.disabled && el.offsetParent !== null);
+      add('the dialog exposes focusable controls', items.length > 5, items.length + ' focusable');
+      if (items.length > 1) {
+        items[items.length - 1].focus();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+        add('Tab wraps inside the open dialog', document.activeElement === items[0], document.activeElement === items[0] ? 'wrapped to first' : 'escaped to ' + (document.activeElement && document.activeElement.id));
+        items[0].focus();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }));
+        add('Shift+Tab wraps backwards', document.activeElement === items[items.length - 1], 'backwards');
+      }
+      M.close();
+      add('closing the dialog clears the modal state', !document.body.classList.contains('modal-open'), 'cleared');
+      fresh();
+    },
     motion: function () {
       fresh();
       const btn = document.getElementById('btnMotion');
@@ -3224,6 +3312,13 @@ window.__chessTest = function (caseId) {
       })(), 'toggle respected');
       M.setMeme(first.id, true);
       M.close();
+      const rateBtns = panel.querySelectorAll('[data-rate]');
+      add('meme frequency is selectable', rateBtns.length === 3, rateBtns.length + ' rate options');
+      if (rateBtns.length === 3) {
+        rateBtns[2].click();
+        add('choosing a meme rate persists', (function () { try { return JSON.parse(localStorage.getItem('cmm-rate')) === 'chaos'; } catch (e) { return false; } })(), 'rate=' + M.rate());
+        M.setRate('normal');
+      }
       const capBoxes = panel.querySelectorAll('[data-caption]');
       add('caption packs are selectable too', capBoxes.length >= 3, capBoxes.length + ' caption packs');
       if (capBoxes.length) {

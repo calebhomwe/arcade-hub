@@ -8,6 +8,8 @@
   var KEY_SOUND = 'cmm-sounds';
   var KEY_VOL = 'cmm-vol';
   var KEY_CAP = 'cmm-caps';
+  var KEY_RATE = 'cmm-rate';
+  var RATES = { rare: 2600, normal: 900, chaos: 250 };
   var RATE_MS = 900;
   var state = { on: true, packs: {}, sounds: {}, caps: {}, vol: 0.9, catalog: null, captions: {}, last: 0 };
   var buffers = {};
@@ -133,6 +135,14 @@
     setMeme: function (id, on) { state.sounds[id] = !!on; write(KEY_SOUND, state.sounds); dispatch(); },
     setCaption: function (id, on) { state.caps[id] = !!on; write(KEY_CAP, state.caps); dispatch(); },
     captionPacks: function () { return state.captions; },
+    setRate: function (name) {
+      if (!RATES[name]) return;
+      state.rate = name;
+      RATE_MS = RATES[name];
+      write(KEY_RATE, name);
+      render(false);
+    },
+    rate: function () { return state.rate; },
     setPack: function (id, on) {
       state.packs[id] = !!on;
       var cat = state.catalog;
@@ -241,6 +251,11 @@
       '<button class="btn" id="memeAllOn">\u2705 All on</button>' +
       '<button class="btn" id="memeAllOff">\u274C All off</button>' +
       '</div>' +
+      '<div class="meme-rate" id="memeRate" role="group" aria-label="How often memes fire">' +
+      '<button class="btn" data-rate="rare">\uD83D\uDC22 Rare</button>' +
+      '<button class="btn" data-rate="normal">\uD83D\uDE42 Normal</button>' +
+      '<button class="btn" data-rate="chaos">\uD83D\uDD25 Chaos</button>' +
+      '</div>' +
       '<div class="meme-list" id="memeList"></div>' +
       '<div class="meme-foot" id="memeFoot">Every meme is an original synthesised sound generated for this game.</div>';
     document.body.appendChild(panel);
@@ -257,6 +272,9 @@
       '.meme-vol-val{min-width:38px;text-align:right;color:var(--cc-muted);font-weight:700}' +
       '.meme-tools{display:flex;gap:6px;margin:8px 0}' +
       '.meme-tools .btn{flex:1;justify-content:center}' +
+      '.meme-rate{display:flex;gap:6px;margin:0 0 8px}' +
+      '.meme-rate .btn{flex:1;justify-content:center;font-size:.72rem}' +
+      '.meme-rate .btn.active{background:var(--accent);color:#0b0b12;border-color:var(--accent)}' +
       '.meme-pack{margin:8px 0;border:1px solid rgba(255,255,255,.1);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.03)}' +
       '.meme-pack-head{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.05);font-weight:700;font-size:.82rem}' +
       '.meme-pack-head input{width:18px;height:18px;accent-color:var(--accent)}' +
@@ -298,8 +316,10 @@
       if (!t || !t.getAttribute) return;
       var play = t.getAttribute('data-play');
       var solo = t.getAttribute('data-pack-solo');
+      var rate = t.getAttribute('data-rate');
       if (play) { API.preview(play); e.preventDefault(); }
       else if (solo) { API.setPackOnly(solo); render(false); e.preventDefault(); }
+      else if (rate) { API.setRate(rate); e.preventDefault(); }
     });
     var master = panel.querySelector('#memeMaster');
     if (master) master.addEventListener('change', function () { state.on = !!this.checked; write(KEY_MASTER, state.on); refreshCount(); });
@@ -376,8 +396,13 @@
     }
     var val = panel.querySelector('#memeVolVal');
     if (val) val.textContent = Math.round(state.vol * 100) + '%';
+    var rateWrap = panel.querySelector('#memeRate');
+    if (rateWrap) Array.prototype.forEach.call(rateWrap.querySelectorAll('[data-rate]'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-rate') === state.rate);
+    });
     refreshCount();
     if (show) panel.classList.add('show');
+    if (show && typeof window.syncModalState === 'function') window.syncModalState();
   }
 
   function esc(s) {
@@ -389,6 +414,7 @@
   function hide() {
     var panel = document.getElementById('memePanel');
     if (panel) panel.classList.remove('show');
+    if (typeof window.syncModalState === 'function') window.syncModalState();
   }
 
   function flag(text) {
@@ -434,6 +460,8 @@
     state.packs = read(KEY_PACK, {}) || {};
     state.sounds = read(KEY_SOUND, {}) || {};
     state.vol = read(KEY_VOL, 0.9);
+    state.rate = read(KEY_RATE, 'normal');
+    RATE_MS = RATES[state.rate] || 900;
     if (window.__MEME_CAPTIONS) adoptCaptions(window.__MEME_CAPTIONS);
     const inline = loadInline();
     if (!inline) {
