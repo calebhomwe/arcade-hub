@@ -1,0 +1,25 @@
+{
+  "cell": 512,
+  "pieces": [
+    {
+      "id": "w_knight",
+      "file": "w_knight.png",
+      "bbox": [
+        144,
+        162,
+        244,
+        313
+      ]
+    },
+    {
+      "id": "w_rook",
+      "file": "w_rook.png",
+      "bbox": [
+        144,
+        120,
+        187,
+        355
+      ]
+    }
+  ]
+}

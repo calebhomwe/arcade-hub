@@ -454,7 +454,7 @@
   function adoptCatalog(json) {
     state.catalog = json;
     for (var i = 0; i < json.packs.length; i++) {
-      if (state.packs[json.packs[i].id] === undefined) state.packs[json.packs[i].id] = json.packs[i].on !== false;
+      if (state.packs[json.packs[i].id] === undefined) state.packs[json.packs[i].id] = json.packs[i].on === true;
       for (var j = 0; j < json.packs[i].sounds.length; j++) {
         var s = json.packs[i].sounds[j];
         if (state.sounds[s.id] === undefined) state.sounds[s.id] = true;
@@ -467,14 +467,14 @@
   function adoptCaptions(json) {
     state.captions = json || {};
     state.caps = read(KEY_CAP, {}) || {};
-    for (var id in state.captions) if (state.caps[id] === undefined) state.caps[id] = true;
+    for (var id in state.captions) if (state.caps[id] === undefined) state.caps[id] = false;
   }
   function loadInline() {
     if (window.__MEME_BANK && window.__MEME_BANK.packs) { adoptCatalog(window.__MEME_BANK); return true; }
     return false;
   }
   function load() {
-    state.on = read(KEY_MASTER, true);
+    state.on = read(KEY_MASTER, false);
     state.packs = read(KEY_PACK, {}) || {};
     state.sounds = read(KEY_SOUND, {}) || {};
     state.vol = read(KEY_VOL, 0.9);

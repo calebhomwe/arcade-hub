@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "sounds": [
+    {
+      "id": "move",
+      "label": "Move",
+      "file": "move.wav",
+      "ms": 130,
+      "kind": "move"
+    },
+    {
+      "id": "move-2",
+      "label": "Move (alt 2)",
+      "file": "move-2.wav",
+      "ms": 130,
+      "kind": "move"
+    },
+    {
+      "id": "move-3",
+      "label": "Move (alt 3)",
+      "file": "move-3.wav",
+      "ms": 130,
+      "kind": "move"
+    },
+    {
+      "id": "capture",
+      "label": "Capture",
+      "file": "capture.wav",
+      "ms": 220,
+      "kind": "capture"
+    },
+    {
+      "id": "capture-2",
+      "label": "Capture (alt 2)",
+      "file": "capture-2.wav",
+      "ms": 220,
+      "kind": "capture"
+    },
+    {
+      "id": "capture-3",
+      "label": "Capture (alt 3)",
+      "file": "capture-3.wav",
+      "ms": 220,
+      "kind": "capture"
+    },
+    {
+      "id": "castle",
+      "label": "Castle",
+      "file": "castle.wav",
+      "ms": 220,
+      "kind": "castle"
+    },
+    {
+      "id": "check",
+      "label": "Check",
+      "file": "check.wav",
+      "ms": 260,
+      "kind": "check"
+    },
+    {
+      "id": "promote",
+      "label": "Promote",
+      "file": "promote.wav",
+      "ms": 440,
+      "kind": "promote"
+    },
+    {
+      "id": "game-end-win",
+      "label": "Game End (Win)",
+      "file": "game-end-win.wav",
+      "ms": 440,
+      "kind": "game-end-win"
+    },
+    {
+      "id": "game-end-loss",
+      "label": "Game End (Loss)",
+      "file": "game-end-loss.wav",
+      "ms": 450,
+      "kind": "game-end-loss"
+    },
+    {
+      "id": "illegal",
+      "label": "Illegal Move",
+      "file": "illegal.wav",
+      "ms": 190,
+      "kind": "illegal"
+    },
+    {
+      "id": "low-time-tick",
+      "label": "Low Time Tick",
+      "file": "low-time-tick.wav",
+      "ms": 30,
+      "kind": "tick"
+    },
+    {
+      "id": "game-start",
+      "label": "Game Start",
+      "file": "game-start.wav",
+      "ms": 240,
+      "kind": "game-start"
+    }
+  ]
+}

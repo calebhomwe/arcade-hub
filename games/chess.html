@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chess Juice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#302E2B">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chess">
+<title>Chess</title>
 <style>
 :root {
   --bg1:#1e1b4b; --bg2:#0f0f23; --bg3:#07070f;
@@ -26,8 +32,9 @@ body.th-warm { --lt:#ffe0b2; --dk:#bf6e4e; --ltSel:#ffcc80; --dkSel:#9e5530; --l
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: radial-gradient(1200px 800px at 50% -10%, var(--bg1) 0%, var(--bg2) 45%, var(--bg3) 100%);
-  min-height: 100vh; color: #e5e7eb; display: flex; flex-direction: column; align-items: center;
-  padding: 12px 8px 24px; overflow-x: hidden; user-select: none;
+  min-height: 100vh; min-height: 100dvh; color: #e5e7eb; display: flex; flex-direction: column; align-items: center;
+  padding: calc(12px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+  overflow-x: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 h1 {
   font-size: clamp(1.4rem, 4.5vw, 2rem); font-weight: 900; letter-spacing: -0.02em;
@@ -36,7 +43,7 @@ h1 {
 }
 .subtitle { color: #64748b; font-size: 0.75rem; margin-bottom: 6px; }
 
-#gameWrap { position: relative; width: min(92vw, calc(92vh - 180px), 480px); aspect-ratio: 1; touch-action: none; }
+#gameWrap { position: relative; width: min(92vw, calc(92vh - 180px), 480px); width: min(92vw, calc(92dvh - 180px), 480px); aspect-ratio: 1; touch-action: none; }
 canvas { display: block; width: 100%; height: 100%; border-radius: 12px;
   box-shadow: 0 0 0 2px rgba(167,139,250,0.3), 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(167,139,250,0.15); }
 
@@ -90,6 +97,9 @@ body.modal-open #ccApp { filter: saturate(0.85) brightness(0.45); transition: fi
 .sfx-vol-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 85%; border-radius: 6px; background: #38bdf8; }
 .sfx-vol-track:focus-visible { outline: 2px solid #a78bfa; outline-offset: 3px; }
 .sfx-vol-val { min-width: 38px; text-align: right; color: #94a3b8; font-weight: 700; font-size: 0.7rem; }
+.sfx-set-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.sfx-set-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; }
+.sfx-set-wrap .sel { flex: 1; }
 .juice-wrap { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 .juice-wrap label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; white-space: nowrap; }
 .juice-wrap input[type=range] { -webkit-appearance: none; width: 60px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #4ade80, #facc15, #f472b6, #ef4444); outline: none; }
@@ -470,6 +480,14 @@ body.th-gold {
 
 .modal-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:56;background:#111827;color:#e5e7eb;border-radius:14px;padding:14px;width:min(92vw,430px);max-height:70vh;overflow-y:auto;display:none;box-shadow:0 18px 60px rgba(0,0,0,.55)}
 .modal-panel.show{display:block}
+.over-result{ font-size:1.05rem; font-weight:800; margin:2px 0 6px; }
+.over-result.win{ color:#81b64c; }
+.over-result.loss{ color:#e2635a; }
+.over-result.draw{ color:#c9c6bf; }
+.over-detail{ font-size:.78rem; color:var(--cc-muted); margin-bottom:10px; }
+.over-actions{ display:flex; gap:8px; }
+.over-actions .btn{ flex:1; justify-content:center; }
+#btnRematch{ background:var(--cc-green)!important; color:#1C1B18!important; font-weight:800!important; border-color:var(--cc-green)!important; }
 #learnTabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 #learnTabs .btn.active{outline:2px solid #facc15}
 #learnList .lp-item{border-top:1px solid rgba(255,255,255,.12);padding:8px 2px;font-size:13px;line-height:1.45}
@@ -493,6 +511,7 @@ body.th-gold {
   --cc-green:#81B64C; --cc-green-h:#95C95A;
   --cc-btn:#3C3A38; --cc-btn-h:#4A4845;
   --cc-boardmax:min(100%, calc(100vh - 250px), 560px);
+  --cc-boardmax-d:min(100%, calc(100dvh - 250px), 560px);
 }
 body{ background:var(--cc-bg)!important; color:var(--cc-text); display:block!important; padding:0!important; }
 #ccApp{ max-width:1120px; margin:0 auto; padding:10px 12px 28px; }
@@ -503,7 +522,7 @@ body{ background:var(--cc-bg)!important; color:var(--cc-text); display:block!imp
 @keyframes ccSubPop { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: 1; transform: none; } 100% { opacity: 1; } }
 #ccMain{ display:grid; grid-template-columns:minmax(0,1fr) 322px; gap:16px; align-items:start; }
 #boardCol{ display:flex; flex-direction:column; min-width:0; }
-#gameWrap{ width:var(--cc-boardmax)!important; max-width:100%!important; margin:0 auto; }
+#gameWrap{ width:var(--cc-boardmax)!important; width:var(--cc-boardmax-d, var(--cc-boardmax))!important; max-width:100%!important; margin:0 auto; }
 canvas{ border-radius:4px!important; }
 
 .cc-player{ display:flex; align-items:center; gap:9px; padding:6px 2px; width:var(--cc-boardmax); max-width:100%; margin:0 auto; }
@@ -608,6 +627,13 @@ a.back:hover{ color:var(--cc-text)!important; }
   #ccMain{ grid-template-columns:minmax(0,1fr) 300px; }
   :root{ --cc-boardmax:min(100%, calc(100vh - 120px), 460px); }
 }
+/* iPhone: use the dynamic viewport so the iOS Safari toolbars cannot clip the board */
+@supports (height: 100dvh) {
+  @media (max-width:430px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 300px)); } }
+  @media (min-width:431px) and (max-width:880px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 210px), 620px); } }
+  @media (min-width:881px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 200px), 720px); } }
+  @media (max-height:600px) and (min-width:700px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 120px), 460px); } }
+}
 </style>
 </head>
 <body>
@@ -710,8 +736,8 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnStats" title="Your stats">📈 <span class="btn-label">Stats</span></button>
   <div class="juice-wrap">
     <label for="juiceSlider">🧃</label>
-    <input type="range" id="juiceSlider" min="0" max="100" value="50" step="5">
-    <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">50</span>
+    <input type="range" id="juiceSlider" min="0" max="100" value="15" step="5">
+    <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">15</span>
   </div>
   <div class="sfx-vol-wrap">
     <span aria-hidden="true">🔊</span>
@@ -719,6 +745,13 @@ a.back:hover{ color:var(--cc-text)!important; }
       <div class="sfx-vol-fill" id="sfxVolFill"></div>
     </div>
     <span id="sfxVolVal" class="sfx-vol-val">85%</span>
+  </div>
+  <div class="sfx-set-wrap">
+    <label for="sfxSetSel" class="sfx-set-label">Sound</label>
+    <select class="sel" id="sfxSetSel" title="Chess sound set">
+      <option value="natural">Natural</option>
+      <option value="crisp">Crisp</option>
+    </select>
   </div>
     </div>
     <div class="cc-card">
@@ -754,6 +787,17 @@ a.back:hover{ color:var(--cc-text)!important; }
   <div class="stat-line"><span>🎖️ Badges</span><b id="statBadges">0/0</b></div>
   <div class="stat-line"><span>🔥 Puzzle rush best</span><b id="statRush">0</b></div>
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
+</div>
+
+<div id="overModal" class="modal-panel" role="dialog" aria-modal="true" aria-label="Game over">
+  <h3 id="overTitle">Game over</h3>
+  <div id="overResult" class="over-result"></div>
+  <div id="overDetail" class="over-detail"></div>
+  <div class="over-actions">
+    <button class="btn" id="btnRematch" title="Play another game against the same opponent">↻ Rematch</button>
+    <button class="btn" id="btnOverReview" title="Analyse this game">📊 Review</button>
+    <button class="btn" id="btnOverClose">Close</button>
+  </div>
 </div>
 
 <div id="learnPanel" class="modal-panel" role="dialog" aria-modal="true" aria-label="Chess academy"><button class="btn panel-exit-btn" id="btnLearnClose" title="Exit learning mode">🚪 Exit</button><div class="lp-tabs" id="learnTabs"><button class="btn" data-cat="combos">🏛️ Combos</button><button class="btn" data-cat="routes">🗺️ Openings</button><button class="btn" data-cat="endgames">♚ Endgames</button><button class="btn" data-cat="quiz">❓ Quiz</button><button class="btn" data-cat="tips">💡 Tips</button><button class="btn" data-cat="traps">🪤 Traps</button></div><div id="learnList"></div></div>
@@ -915,6 +959,13 @@ function sfx(name){
 // Chess piece sounds are synthesised, not sampled: a short filtered-noise
 // "thock" (the piece hitting the board) layered with a low sine body. The
 // arcade .wav set stays available for the juice mods and UI blips.
+function bankPlay(name) {
+  try {
+    const b = window.SfxBank;
+    if (!b || !b.ready || !b.ready()) return false;
+    return b.play(name) === true;
+  } catch (e) { return false; }
+}
 function _woodThock(f0, f1, dur, vol, delay) {
   noise(dur, vol, 'lowpass', f0, f1, delay);
   tone(f0 * 0.16, dur * 1.5, 'sine', vol * 0.55, { delay: delay, attack: 0.002, glideTo: f0 * 0.1 });
@@ -943,6 +994,7 @@ function _pan(delay, pan) {
 }
 function sfxMove() {
   if (muted) return;
+  if (bankPlay('move')) return;
   var opponent = (typeof game !== 'undefined' && typeof botEnabled !== 'undefined' && botEnabled && game.turn === botColor);
   var base = opponent ? 880 * _jitter(0.05) : 1240 * _jitter(0.04);
   var spread = (Math.random() * 2 - 1) * 0.3;
@@ -952,6 +1004,7 @@ function sfxMove() {
 }
 function sfxCapture() {
   if (muted) return;
+  if (bankPlay('capture')) return;
   var heavy = false;
   try {
     var piece = (typeof game !== 'undefined' && game.moveHistory && game.moveHistory.length) ? game.board[game.lastMove ? game.lastMove.to : -1] : 0;
@@ -972,6 +1025,7 @@ function sfxCapture() {
 }
 function sfxCastle() {
   if (muted) return;
+  if (bankPlay('castle')) return;
   var v = _vel();
   _woodThock(1180 * _jitter(0.03), 400, 0.045, 0.30 * v, 0);
   _woodThock(960 * _jitter(0.03), 340, 0.052, 0.29 * v, 0.10);
@@ -980,6 +1034,7 @@ function sfxCastle() {
 }
 function sfxCheck() {
   if (muted) return;
+  if (bankPlay('check')) return;
   var v = _vel();
   tone(1319 * _jitter(0.02), 0.075, 'triangle', 0.24 * v, { attack: 0.003 });
   tone(1661 * _jitter(0.02), 0.085, 'triangle', 0.21 * v, { delay: 0.075, attack: 0.003 });
@@ -988,6 +1043,7 @@ function sfxCheck() {
 }
 function sfxPromote() {
   if (muted) return;
+  if (bankPlay('promote')) return;
   var v = _vel();
   [784, 988, 1175, 1568].forEach(function (f, i) {
     tone(f * _jitter(0.015), i === 3 ? 0.20 : 0.09, 'triangle', (i === 3 ? 0.24 : 0.20) * v, { delay: i * 0.07, attack: 0.003 });
@@ -997,6 +1053,7 @@ function sfxPromote() {
 }
 function sfxCheckmate() {
   if (muted) return;
+  if (bankPlay('checkmate')) return;
   var v = _vel();
   tone(523, 0.16, 'triangle', 0.25 * v, { attack: 0.004 });
   tone(415, 0.18, 'triangle', 0.24 * v, { delay: 0.14, attack: 0.004 });
@@ -1006,6 +1063,7 @@ function sfxCheckmate() {
 }
 function sfxGameStart() {
   if (muted) return;
+  if (bankPlay('gameStart')) return;
   var v = _vel();
   tone(392 * _jitter(0.01), 0.10, 'triangle', 0.19 * v, { attack: 0.004 });
   tone(587 * _jitter(0.01), 0.13, 'triangle', 0.21 * v, { delay: 0.09, attack: 0.004 });
@@ -1022,6 +1080,7 @@ function sfxSelect() {
 
 function sfxIllegal() {
   if (muted) return;
+  if (bankPlay('illegal')) return;
   try {
     tone(110, 0.12, 'square', 0.11, { attack: 0.003, glideTo: 102 });
     tone(116, 0.12, 'square', 0.11, { attack: 0.003, glideTo: 108 });
@@ -1031,6 +1090,7 @@ function sfxIllegal() {
 
 function sfxWin() {
   if (muted) return;
+  if (bankPlay('gameWin')) return;
   try {
     arp([523, 659, 784, 1047, 1319], 0.105, 'square', 0.11);
     arp([523, 659, 784, 1047], 0.105, 'triangle', 0.13);
@@ -1041,6 +1101,7 @@ function sfxWin() {
 
 function sfxDraw() {
   if (muted) return;
+  if (bankPlay('gameDraw')) return;
   try {
     tone(349, 0.16, 'sine', 0.13);
     tone(349, 0.16, 'triangle', 0.06);
@@ -1051,6 +1112,7 @@ function sfxDraw() {
 
 function sfxHint() {
   if (muted) return;
+  if (bankPlay('hint')) return;
   try {
     ping([1568, 2093, 2637], 0.35, 0.05);
     arp([1047, 1319, 1568, 2093], 0.055, 'sine', 0.05);
@@ -1059,6 +1121,7 @@ function sfxHint() {
 
 function sfxCombo() {
   if (muted) return;
+  if (bankPlay('combo')) return;
   try {
     tone(660, 0.05, 'square', 0.09);
     tone(880, 0.05, 'square', 0.1, { delay: 0.05 });
@@ -1494,6 +1557,30 @@ function resultWinnerColor(){
   }
   return -1;
 }
+function showGameOver() {
+  const modal = document.getElementById('overModal');
+  if (!modal || puzzleMode || !game.gameOver) return;
+  const el = document.getElementById('overResult');
+  const detail = document.getElementById('overDetail');
+  const title = document.getElementById('overTitle');
+  const won = game.turn === botColor || !botEnabled;
+  const draw = game.result.indexOf('draw') >= 0 || game.result.indexOf('Stalemate') >= 0;
+  const isWin = !draw && game.result.indexOf('wins') >= 0 && won;
+  if (title) title.textContent = draw ? 'Draw' : (isWin ? 'You won' : 'You lost');
+  if (el) {
+    el.textContent = draw ? 'Drawn game' : (isWin ? 'Checkmate — you win' : 'Your king has fallen');
+    if (game.result.indexOf('on time') >= 0) el.textContent = isWin ? 'You win on time' : 'You lose on time';
+    el.className = 'over-result ' + (draw ? 'draw' : (isWin ? 'win' : 'loss'));
+  }
+  if (detail) {
+    const plies = collectPlies().length;
+    const botVal = document.getElementById('botSel') ? document.getElementById('botSel').value : 'medium';
+    detail.textContent = game.result + ' · ' + Math.ceil(plies / 2) + ' moves · ' + (botEnabled ? botVal + ' bot' : '2 players');
+  }
+  modal.classList.add('show');
+  if (typeof window.syncModalState === 'function') window.syncModalState();
+}
+
 function trackMatchEnd(){
   if (!botEnabled || puzzleMode) return;
   const wc=resultWinnerColor();
@@ -1696,7 +1783,7 @@ let castleSelect = false;
 let kbSquare = -1;
 let hintArrow = null;
 let teachMode = false;
-let juiceLevel = 50;
+let juiceLevel = 15;
 let pendingPromo = null;
 let comboCount = 0;
 let theme = (function(){ try { return localStorage.getItem('cjs-theme') || 'emerald'; } catch (e) { return 'emerald'; } })();
@@ -1750,6 +1837,61 @@ function getSqColor(r, c, isLight, kingIdx, inCheck) {
   return isLight ? getCssVar('--lt') : getCssVar('--dk');
 }
 
+const PIECE_IMG = {};
+const PIECE_BOX = {};
+const PIECE_FILES = { 1: 'king', 2: 'queen', 3: 'rook', 4: 'bishop', 5: 'knight', 6: 'pawn' };
+function alphaBox(img) {
+  try {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const g = cv.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, w, h).data;
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y++) {
+      const rowStart = y * w * 4;
+      for (let x = 0; x < w; x++) {
+        if (d[rowStart + x * 4 + 3] > 10) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    return maxX > minX ? { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 } : null;
+  } catch (e) { return null; }
+}
+function pieceScaleFactor() {
+  const king = PIECE_BOX[P(PT.KING, 0)] || PIECE_BOX[P(PT.KING, 1)];
+  if (!king || !king.h) return 0;
+  return (sqSize * 1.04) / king.h;
+}
+(function loadPieceImages() {
+  for (const p in PIECE_FILES) {
+    for (const colour of [0, 1]) {
+      const piece = (colour << 3) | Number(p);
+      const key = (colour === 0 ? 'w_' : 'b_') + PIECE_FILES[p];
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        PIECE_IMG[piece] = img;
+        const box = alphaBox(img);
+        if (box) PIECE_BOX[piece] = box;
+        pieceSpriteCache = {};
+        draw();
+      };
+      img.onerror = () => {};
+      img.src = 'assets/pieces/' + key + '.png';
+      PIECE_IMG['pending_' + piece] = img;
+    }
+  }
+})();
+function pieceImage(p) {
+  const img = PIECE_IMG[p];
+  return (img && img.complete && img.naturalWidth > 0) ? img : null;
+}
 function pieceSprite(p, juice, teach) {
   const sq = sqSize;
   const key = p + '|' + sq + '|' + Math.round(juice / 5) + '|' + (teach ? 1 : 0) + '|' + theme;
@@ -1762,6 +1904,38 @@ function pieceSprite(p, juice, teach) {
   c.scale(res, res);
   const cx = dim / 2, cy = dim / 2;
   c.textAlign = 'center'; c.textBaseline = 'middle';
+  const img = pieceImage(p);
+  if (img) {
+    const box = PIECE_BOX[p] || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+    let k = pieceScaleFactor();
+    if (!k) k = (sq * 1.04) / Math.max(1, box.h);
+    const dw = Math.max(1, box.w * k), dh = Math.max(1, box.h * k);
+    const bottom = cy + sq * 0.5;
+    const shW = Math.min(sq * 0.42, dw * 0.42), shH = Math.max(2, sq * 0.07);
+    const shY = bottom - shH * 0.5;
+    const grad = c.createRadialGradient(cx, shY, 0, cx, shY, shW);
+    grad.addColorStop(0, 'rgba(0,0,0,0.24)');
+    grad.addColorStop(0.65, 'rgba(0,0,0,0.1)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    c.save();
+    c.translate(cx, shY);
+    c.scale(1, shH / shW);
+    c.translate(-cx, -shY);
+    c.fillStyle = grad;
+    c.beginPath(); c.arc(cx, shY, shW, 0, Math.PI * 2); c.fill();
+    c.restore();
+    c.shadowColor = 'rgba(0,0,0,0.22)'; c.shadowBlur = sq * 0.05;
+    c.shadowOffsetX = 0; c.shadowOffsetY = sq * 0.02;
+    c.drawImage(img, box.x, box.y, box.w, box.h, cx - dw / 2, bottom - dh, dw, dh);
+    c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetX = 0; c.shadowOffsetY = 0;
+    if (teach && pType(p) !== PT.KING) {
+      c.font = `bold ${sq * 0.2}px system-ui`;
+      c.fillStyle = pColor(p) === CL.WHITE ? '#334155' : '#e2e8f0';
+      c.textAlign = 'right';
+      c.fillText(VAL[pType(p)], cx + sq * 0.4, cy + sq * 0.36);
+    }
+    return pieceSpriteCache[key] = sp;
+  }
   c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = sq * 0.06;
   c.shadowOffsetX = sq * 0.03; c.shadowOffsetY = sq * 0.04;
   c.font = `${sq * 0.72}px serif`;
@@ -1868,6 +2042,18 @@ function drawBoard() {
     }
   }
 
+  if (inCheck && kingIdx >= 0) {
+    const kr = flip ? 7 - row(kingIdx) : row(kingIdx), kc = flip ? 7 - col(kingIdx) : col(kingIdx);
+    const cx = padding + kc * sqSize + sqSize / 2, cy = padding + kr * sqSize + sqSize / 2;
+    const t = performance.now() < checkGlowUntil ? 0.75 + 0.25 * Math.sin(performance.now() / 120) : 1;
+    const grad = ctx.createRadialGradient(cx, cy, sqSize * 0.08, cx, cy, sqSize * 0.78);
+    grad.addColorStop(0, 'rgba(255,70,70,' + (0.92 * t) + ')');
+    grad.addColorStop(0.5, 'rgba(255,45,45,' + (0.5 * t) + ')');
+    grad.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(cx, cy, sqSize * 0.78, 0, Math.PI * 2); ctx.fill();
+  }
+
   if (hintArrow) {
     const fr = flip ? 7 - row(hintArrow.from) : row(hintArrow.from);
     const fc = flip ? 7 - col(hintArrow.from) : col(hintArrow.from);
@@ -1893,12 +2079,43 @@ function drawBoard() {
       const p = game.board[i];
       if (!p) continue;
       if (dragState && dragState.from === i) continue;
+      if (moveAnim && moveAnim.to === i) continue;
       const x = padding + c * sqSize + sqSize/2;
       const y = padding + r * sqSize + sqSize/2;
       const sp = pieceSprite(p, juiceLevel, teachMode);
       const dim = Math.ceil(sqSize * 1.8);
       ctx.drawImage(sp, x - dim/2, y - dim/2, dim, dim);
     }
+  }
+
+  if (captureAnims.length) {
+    const now = performance.now();
+    captureAnims = captureAnims.filter(a => now - a.t0 < a.dur);
+    for (const a of captureAnims) {
+      const t = Math.min(1, (now - a.t0) / a.dur);
+      const ar = flip ? 7 - row(a.sq) : row(a.sq), ac = flip ? 7 - col(a.sq) : col(a.sq);
+      const x = padding + ac * sqSize + sqSize/2, y = padding + ar * sqSize + sqSize/2;
+      const sp = pieceSprite(a.piece, juiceLevel, teachMode);
+      const dim = Math.ceil(sqSize * 1.8) * (1 - 0.35 * t);
+      ctx.globalAlpha = Math.max(0, 1 - t * 1.15);
+      ctx.drawImage(sp, x - dim/2, y - dim/2, dim, dim);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  if (moveAnim) {
+    const t = Math.min(1, (performance.now() - moveAnim.t0) / moveAnim.dur);
+    const e = 1 - Math.pow(1 - t, 3);
+    const fr = row(moveAnim.from), fc = col(moveAnim.from);
+    const tr = row(moveAnim.to), tc = col(moveAnim.to);
+    const r0 = flip ? 7 - fr : fr, c0 = flip ? 7 - fc : fc;
+    const r1 = flip ? 7 - tr : tr, c1 = flip ? 7 - tc : tc;
+    const x = padding + (c0 + (c1 - c0) * e) * sqSize + sqSize/2;
+    const y = padding + (r0 + (r1 - r0) * e) * sqSize + sqSize/2;
+    const sp = pieceSprite(moveAnim.piece, juiceLevel, teachMode);
+    const dim = Math.ceil(sqSize * 1.8);
+    ctx.drawImage(sp, x - dim/2, y - dim/2, dim, dim);
+    if (t >= 1) moveAnim = null;
   }
 
   // Dragged piece follows the cursor
@@ -1964,16 +2181,12 @@ function drawBoard() {
 
 function draw() {
   drawBoard();
-  if (particles.length > 0 || shakeAmount > 0.01 || flashSquares.length > 0 || textPops.length > 0 || clickRings.length > 0) {
-    if (!animFrame) animFrame = requestAnimationFrame(animLoop);
-  }
+  if (animActive()) { if (!animFrame) animFrame = requestAnimationFrame(animLoop); }
 }
 
 function animLoop() {
   animFrame = null; drawBoard();
-  if (particles.length > 0 || shakeAmount > 0.01 || flashSquares.length > 0 || textPops.length > 0 || clickRings.length > 0) {
-    animFrame = requestAnimationFrame(animLoop);
-  }
+  if (animActive()) animFrame = requestAnimationFrame(animLoop);
 }
 
 // ==================== JUICE EFFECTS ====================
@@ -2198,6 +2411,9 @@ function executeMove(move) {
     triggerShake(0.8);
   }
 
+  const animPiece = game.board[move.from];
+  const animCaptured = move.ep ? game.board[idx(row(move.from), col(move.to))] : game.board[move.to];
+  startMoveAnim(animPiece, move.from, move.to, animCaptured, move.ep ? idx(row(move.from), col(move.to)) : move.to);
   const { board: nb, ep, castling, captured } = makeMove(game.board, move, game);
   game.moveHistory.push({
     board: game.board, turn: game.turn, epTarget: game.epTarget,
@@ -2226,6 +2442,8 @@ function executeMove(move) {
 
   if (isInCheck(game.board, game.turn) && !game.gameOver) {
     sfxCheck();
+    checkGlowUntil = performance.now() + 900;
+    if (!animFrame) animFrame = requestAnimationFrame(animLoop);
   }
   if (isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
     const kingSq = game.board.findIndex(p => p === P(PT.KING, game.turn));
@@ -2273,7 +2491,7 @@ function executeMove(move) {
     win: game.gameOver && game.result.indexOf('wins') >= 0,
     combo: comboCount
   });
-  if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); }
+  if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); setTimeout(showGameOver, 900); }
   memeEvent(move, capturedPiece);
   updateUI();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
@@ -2402,6 +2620,21 @@ function showRandomTip() {
 }
 
 let mlCache = { n: -1 };
+let moveAnim = null;
+let captureAnims = [];
+let checkGlowUntil = 0;
+const MOVE_ANIM_MS = 135;
+function animActive() {
+  return particles.length > 0 || shakeAmount > 0.01 || flashSquares.length > 0 || textPops.length > 0 ||
+    clickRings.length > 0 || !!moveAnim || captureAnims.length > 0 || performance.now() < checkGlowUntil;
+}
+function startMoveAnim(piece, from, to, capturedPiece, capturedSq) {
+  if (reducedMotion) { moveAnim = null; return; }
+  const t0 = performance.now();
+  moveAnim = { piece, from, to, t0, dur: MOVE_ANIM_MS };
+  if (capturedPiece) captureAnims.push({ piece: capturedPiece, sq: capturedSq, t0, dur: MOVE_ANIM_MS + 40 });
+  if (!animFrame) animFrame = requestAnimationFrame(animLoop);
+}
 
 // ==================== BOT ====================
 
@@ -2734,7 +2967,7 @@ function runReview() {
   reviewTimer = setTimeout(step, 8);
 }
 
-const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
+const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel', 'overModal'];
 let lastFocused = null;
 
 function openModals() {
@@ -2950,6 +3183,15 @@ document.getElementById('btnPuzzleExit').addEventListener('click', exitPuzzleMod
 document.getElementById('btnLearn').addEventListener('click', openLearn);
 document.getElementById('btnLearnClose').addEventListener('click', closeLearn);
 document.querySelectorAll('#learnTabs button').forEach(b => b.addEventListener('click', () => { renderLearn(b.dataset.cat); document.querySelectorAll('#learnTabs button').forEach(x => x.classList.toggle('active', x === b)); }));
+(function wireGameOver() {
+  const hide = () => { const m = document.getElementById('overModal'); if (m) m.classList.remove('show'); if (window.syncModalState) window.syncModalState(); };
+  const close = document.getElementById('btnOverClose');
+  if (close) close.addEventListener('click', hide);
+  const rematch = document.getElementById('btnRematch');
+  if (rematch) rematch.addEventListener('click', () => { hide(); resetGame(); });
+  const rev = document.getElementById('btnOverReview');
+  if (rev) rev.addEventListener('click', () => { hide(); runReview(); });
+})();
 document.getElementById('btnStats').addEventListener('click', () => toggleStatsPanel());
 document.getElementById('btnStatsClose').addEventListener('click', closeStats);
 function toggleStatsPanel(force){
@@ -3054,6 +3296,45 @@ document.getElementById('btnPuzzleSkip').addEventListener('click', () => {
   if (label) label.textContent = Math.round(sfxVolume * 100) + '%';
   const fill = document.getElementById('sfxVolFill');
   if (fill) fill.style.width = Math.round(sfxVolume * 100) + '%';
+})();
+
+(function wireSfxSet() {
+  const sel = document.getElementById('sfxSetSel');
+  if (!sel) return;
+  const apply = () => {
+    const b = window.SfxBank;
+    if (b && b.set) sel.value = b.set();
+  };
+  apply();
+  sel.addEventListener('change', () => {
+    const b = window.SfxBank;
+    if (b && b.useSet) b.useSet(sel.value);
+    apply();
+  });
+  window.addEventListener('sfxbank', apply);
+})();
+
+(function wireUiSounds() {
+  let last = 0;
+  const play = name => {
+    const b = window.SfxBank;
+    if (!b || !b.play) return;
+    const now = performance.now();
+    if (now - last < 90) return;
+    last = now;
+    b.play(name);
+  };
+  document.addEventListener('click', e => {
+    const t = e.target && e.target.closest && e.target.closest('button, select, .sel, .btn');
+    if (t) play('uiClick');
+  }, true);
+  const fine = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (fine) {
+    document.addEventListener('pointerenter', e => {
+      const t = e.target && e.target.closest && e.target.closest('.btn, button');
+      if (t) play('uiHover');
+    }, true);
+  }
 })();
 
 const juiceSlider = document.getElementById('juiceSlider');
@@ -3222,6 +3503,77 @@ window.__chessTest = function (caseId) {
       }
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
+    },
+    bank: function () {
+      fresh();
+      const b = window.SfxBank;
+      add('the chess sound bank module is present', !!b, b ? 'present' : 'missing');
+      if (!b) return;
+      add('a chess sound manifest loaded', b.ready(), b.ready() ? 'catalog loaded' : 'no catalog');
+      const loaded = b.loaded();
+      add('every banked cue decodes to an audio buffer', loaded.total >= 12 && loaded.decoded === loaded.total, loaded.decoded + '/' + loaded.total + ' decoded');
+      add('the audio files are served', (function () {
+        const cat = b.catalog();
+        if (!cat) return false;
+        const bad = [];
+        for (const s of cat.sounds) {
+          try { const x = new XMLHttpRequest(); x.open('HEAD', s.src, false); x.send(); if (!(x.status === 200 || x.status === 0)) bad.push(s.file); }
+          catch (e) { bad.push(s.file); }
+        }
+        return bad.length === 0 ? true : bad.slice(0, 3).join(',');
+      })(), 'all bank files reachable');
+      add('the natural set is the default', b.set() === 'natural', b.set());
+      const sel = document.getElementById('sfxSetSel');
+      add('the sound-set selector is offered', !!sel && sel.options.length === 2, sel ? sel.options.length + ' sets' : 'missing');
+      add('no long-clip or doubling sound mod is loaded', !document.querySelector('script[src*="chess-sfx-hd"], script[src="chess-sfx.js"]'),
+        Array.from(document.querySelectorAll('script[src*="sfx"]')).map(s => s.getAttribute('src')).join(',') || 'none');
+      add('a banked cue actually plays', b.play('move') === true, 'move');
+      add('a cue with variations resolves', b.play('capture') === true, 'capture');
+      const original = b.set();
+      b.useSet('crisp');
+      add('switching sound sets persists', (function () { try { return localStorage.getItem('chessSfxSet') === 'crisp'; } catch (e) { return false; } })(), 'crisp');
+      b.useSet(original);
+    },
+    feel: function () {
+      fresh();
+      const wasReduced = reducedMotion;
+      reducedMotion = false;
+      add('the piece art files are wired', document.querySelector('meta[name=viewport]').content.indexOf('viewport-fit=cover') >= 0, 'viewport-fit');
+      add('the 3D pieces are loaded or fall back cleanly', (function () {
+        const loaded = Object.keys(PIECE_IMG).filter(k => k.indexOf('pending_') !== 0 && PIECE_IMG[k] && PIECE_IMG[k].complete && PIECE_IMG[k].naturalWidth > 0).length;
+        return loaded === 12 || loaded === 0;
+      })(), Object.keys(PIECE_IMG).filter(k => k.indexOf('pending_') !== 0).length + ' piece images ready');
+      play(['e2e4']);
+      add('a move starts a slide animation', !!moveAnim, moveAnim ? 'animating ' + nm(moveAnim.from) + '->' + nm(moveAnim.to) : 'none');
+      moveAnim = null; captureAnims = []; particles = []; flashSquares = []; textPops = []; clickRings = []; shakeAmount = 0; checkGlowUntil = 0;
+      add('the animation state can be cleared safely', !animActive(), 'idle');
+      setupFen('4k3/8/8/8/8/8/8/4K2R w K - 0 1');
+      play(['e1g1']);
+      const castled = game.board[sq('g1')] === P(PT.KING, 0) && game.board[sq('f1')] === P(PT.ROOK, 0);
+      add('castling animates the king', castled && !!moveAnim, castled ? 'castled, anim=' + (moveAnim ? nm(moveAnim.from) + '->' + nm(moveAnim.to) : 'none') : 'not castled');
+      moveAnim = null;
+      add('reduced motion suppresses the slide', (function () {
+        reducedMotion = true;
+        setupFen('4k3/8/8/8/8/8/8/4K2R w K - 0 1');
+        play(['e1g1']);
+        const off = !moveAnim;
+        reducedMotion = wasReduced;
+        return off;
+      })(), 'no animation when reduced');
+      setupFen('4k3/8/8/8/8/8/8/4K3 w - - 0 1');
+      const over = document.getElementById('overModal');
+      add('the game-over modal exists', !!over, over ? 'present' : 'missing');
+      game.gameOver = true; game.result = 'White wins by checkmate!';
+      showGameOver();
+      add('the game-over modal opens with a result', over.classList.contains('show') && document.getElementById('overResult').textContent.length > 3,
+        document.getElementById('overResult').textContent + ' / ' + document.getElementById('overTitle').textContent);
+      add('the result modal is marked as a dialog', over.getAttribute('role') === 'dialog' && over.getAttribute('aria-modal') === 'true', 'dialog');
+      add('the rematch button is offered', !!document.getElementById('btnRematch'), 'rematch');
+      document.getElementById('btnOverClose').click();
+      add('closing the result returns to the board', !over.classList.contains('show'), 'closed');
+      game.gameOver = false; game.result = '';
+      reducedMotion = wasReduced;
+      fresh();
     },
     perf: function () {
       fresh();
@@ -3466,9 +3818,8 @@ window.chessGame = function () {
 
 (function loadMods() {
   const mods = [
-    'chess-faces.js', 'chess-movement.js', 'chess-combo.js', 'chess-elim.js',
-    'chess-powerups.js', 'chess-celebration.js', 'chess-sfx-hd.js', 'chess-coach.js',
-    'chess-personality.js', 'chess-modes.js', 'audio/memes/catalog.js', 'chess-memes.js'
+    'chess-celebration.js', 'chess-coach.js',
+    'chess-personality.js', 'chess-modes.js', 'chess-sfx-bank.js', 'audio/memes/catalog.js', 'chess-memes.js'
   ];
   let loaded = 0, failed = 0;
   mods.forEach(src => {
@@ -3514,7 +3865,7 @@ window.chessGame = function () {
 })();
 
 (function watchModals() {
-  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
+  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel', 'overModal'];
   const mo = new MutationObserver(() => syncModalState());
   const observe = () => ids.forEach(id => { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
   observe();
