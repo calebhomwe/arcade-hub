@@ -799,6 +799,7 @@ a.back:hover{ color:var(--cc-text)!important; }
     <button class="btn" id="btnSettings" title="Settings" aria-haspopup="dialog">⚙️<span class="btn-label">Settings</span></button>
     <button class="btn" id="btnResign" title="Resign this game">🏳️<span class="btn-label">Resign</span></button>
   </div>
+    <div id="gameOptions" hidden>
     <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
     <option value="neon">🌃 Neon</option>
@@ -878,7 +879,8 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn panel-exit-btn" id="btnSettingsClose" title="Close settings">🚪 Exit</button>
   <h3>⚙️ Settings</h3>
   <div class="set-group">
-    <div class="set-label">Opponent</div>
+    <div class="set-label">Game</div>
+    <div id="gameOptionsHost"></div>
     <div class="set-row"><button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
     <button class="btn" id="btnMotion" title="Full effects — tap to reduce motion" aria-pressed="false"><span>🎞️</span><span class="btn-label">Motion</span></button></div>
     <div class="set-row"><button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
@@ -3384,6 +3386,15 @@ document.querySelectorAll('#learnTabs button').forEach(b => b.addEventListener('
     const el = e.target && e.target.closest && e.target.closest('[data-ply]');
     if (el) { go(el); e.preventDefault(); }
   });
+})();
+
+(function relocateGameOptions() {
+  const opts = document.getElementById('gameOptions');
+  const host = document.getElementById('gameOptionsHost');
+  if (!opts || !host) return;
+  opts.hidden = false;
+  host.appendChild(opts);
+  opts.querySelectorAll('select').forEach(s => { s.style.width = '100%'; s.style.marginBottom = '8px'; });
 })();
 
 (function wireResign() {
