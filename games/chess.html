@@ -2007,7 +2007,7 @@ function alphaBox(img) {
 function pieceScaleFactor() {
   const king = PIECE_BOX[P(PT.KING, 0)] || PIECE_BOX[P(PT.KING, 1)];
   if (!king || !king.h) return 0;
-  return (sqSize * 1.04) / king.h;
+  return (sqSize * 0.88) / king.h;
 }
 (function loadPieceImages() {
   for (const p in PIECE_FILES) {
@@ -2059,7 +2059,7 @@ function pieceSource(p) {
       if (d[i + 3] === 0) continue;
       for (let k = 0; k < 3; k++) {
         let v = d[i + k] / 255;
-        v = white ? Math.min(1, Math.max(0, (v - 0.09) / 0.83)) : Math.min(1, Math.max(0, (v - 0.015) * 0.9));
+        v = white ? Math.min(1, Math.max(0, (v - 0.05) / 0.74)) : Math.min(1, Math.max(0, (v - 0.02) * 0.88));
         d[i + k] = Math.round(v * 255);
       }
     }
@@ -2103,13 +2103,13 @@ function pieceSprite(p, juice, teach) {
   if (img) {
     const box = PIECE_BOX[p] || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
     let k = pieceScaleFactor();
-    if (!k) k = (sq * 1.06) / Math.max(1, box.h);
+    if (!k) k = (sq * 0.88) / Math.max(1, box.h);
     const dw = Math.max(1, box.w * k), dh = Math.max(1, box.h * k);
-    const dx = cx - dw / 2, dy = cy + sq * 0.5 - dh;
+    const dx = cx - dw / 2, dy = cy + sq * 0.43 - dh;
     const white = pColor(p) === CL.WHITE;
     // ground shadow
-    const shW = Math.min(sq * 0.42, dw * 0.42), shH = Math.max(2, sq * 0.07);
-    const shY = cy + sq * 0.5 - shH * 0.5;
+    const shW = Math.min(sq * 0.4, dw * 0.42), shH = Math.max(2, sq * 0.065);
+    const shY = cy + sq * 0.43 - shH * 0.5;
     const grad = c.createRadialGradient(cx, shY, 0, cx, shY, shW);
     grad.addColorStop(0, 'rgba(0,0,0,0.26)');
     grad.addColorStop(0.6, 'rgba(0,0,0,0.11)');
@@ -2122,6 +2122,7 @@ function pieceSprite(p, juice, teach) {
     c.beginPath(); c.arc(cx, shY, shW, 0, Math.PI * 2); c.fill();
     c.restore();
     // crisp edge: dark outline on the light pieces, a faint rim on the dark ones
+    const src = pieceSource(p);
     const sil = pieceSilhouette(p, white ? 'rgba(24,24,30,0.62)' : 'rgba(255,255,255,0.2)');
     if (sil) {
       const ow = Math.max(1, sq * (white ? 0.042 : 0.03));
@@ -2129,7 +2130,8 @@ function pieceSprite(p, juice, teach) {
     }
     c.shadowColor = 'rgba(0,0,0,0.2)'; c.shadowBlur = sq * 0.04;
     c.shadowOffsetX = 0; c.shadowOffsetY = sq * 0.015;
-    c.drawImage(img, box.x, box.y, box.w, box.h, dx, dy, dw, dh);
+    if (src) c.drawImage(src, dx, dy, dw, dh);
+    else c.drawImage(img, box.x, box.y, box.w, box.h, dx, dy, dw, dh);
     c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetX = 0; c.shadowOffsetY = 0;
     if (teach && pType(p) !== PT.KING) {
       c.font = `bold ${sq * 0.2}px system-ui`;
@@ -3691,6 +3693,21 @@ juiceSlider.addEventListener('input', () => {
     if (target.nodeType === 1) target.parentNode.replaceChild(svg, target);
     else btn.replaceChild(svg, target);
   }
+  const PARTY = ICONS.btnMemes;
+  const sweep = () => {
+    const row = document.getElementById('controls');
+    if (!row) return;
+    row.querySelectorAll('button').forEach(b => {
+      if (b.querySelector('svg')) return;
+      const t = Array.prototype.slice.call(b.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
+      if (!t) return;
+      const holder = document.createElement('span');
+      holder.innerHTML = b.id && ICONS[b.id] ? ICONS[b.id] : PARTY;
+      b.replaceChild(holder.firstElementChild, t);
+    });
+  };
+  setTimeout(sweep, 600);
+  setTimeout(sweep, 2500);
   const st = document.createElement('style');
   st.textContent = '.ic{ width:20px; height:20px; display:block; }' +
     '.cc-iconrow .btn .ic{ width:22px; height:22px; }' +
