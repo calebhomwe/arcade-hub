@@ -82,6 +82,13 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 12px;
 .btn-label { font-size: 0.55rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.02em; line-height: 1.1; }
 @media (max-width: 430px) { .btn-label { display: none; } }
 
+body.modal-open #ccApp { filter: saturate(0.85) brightness(0.45); transition: filter 0.18s; }
+#ccApp { transition: filter 0.18s; }
+.sfx-vol-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.78rem; }
+.sfx-vol-track { position: relative; flex: 1; height: 10px; border-radius: 6px; background: rgba(255,255,255,0.12); cursor: pointer; }
+.sfx-vol-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 85%; border-radius: 6px; background: #38bdf8; }
+.sfx-vol-track:focus-visible { outline: 2px solid #a78bfa; outline-offset: 3px; }
+.sfx-vol-val { min-width: 38px; text-align: right; color: #94a3b8; font-weight: 700; font-size: 0.7rem; }
 .juice-wrap { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 .juice-wrap label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; white-space: nowrap; }
 .juice-wrap input[type=range] { -webkit-appearance: none; width: 60px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #4ade80, #facc15, #f472b6, #ef4444); outline: none; }
@@ -651,6 +658,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnReset" title="Start a new game"><span class="btn-label">New Game</span></button>
   <button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
 <button class="btn" id="btnLearn" title="Open the Chess Academy: combos, openings, endgames, quiz"><span>🧠</span><span class="btn-label">Learn</span></button>
+<button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
     <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
     <option value="neon">🌃 Neon</option>
@@ -696,6 +704,13 @@ a.back:hover{ color:var(--cc-text)!important; }
     <label for="juiceSlider">🧃</label>
     <input type="range" id="juiceSlider" min="0" max="100" value="50" step="5">
     <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">50</span>
+  </div>
+  <div class="sfx-vol-wrap">
+    <span aria-hidden="true">🔊</span>
+    <div class="sfx-vol-track" id="sfxVolTrack" role="slider" tabindex="0" aria-label="Sound effect volume" aria-valuemin="0" aria-valuemax="100">
+      <div class="sfx-vol-fill" id="sfxVolFill"></div>
+    </div>
+    <span id="sfxVolVal" class="sfx-vol-val">85%</span>
   </div>
     </div>
     <div class="cc-card">
@@ -776,6 +791,7 @@ function _sfxResume() {
   } catch (e) {}
 }
 
+let sfxVolume = (function () { const v = parseFloat(localStorage.getItem('chessSfxVol')); return isNaN(v) ? 0.85 : Math.min(1, Math.max(0, v)); })();
 function _sfxOut() {
   var ctx = ensureAudio();
   if (!_sfxMasterGain) {
@@ -787,10 +803,22 @@ function _sfxOut() {
     comp.release.value = 0.18;
     comp.connect(ctx.destination);
     _sfxMasterGain = ctx.createGain();
-    _sfxMasterGain.gain.value = 0.85;
+    _sfxMasterGain.gain.value = sfxVolume;
     _sfxMasterGain.connect(comp);
   }
   return { ctx: ctx, out: _sfxMasterGain };
+}
+function setSfxVolume(v) {
+  sfxVolume = Math.min(1, Math.max(0, Number(v) || 0));
+  try { localStorage.setItem('chessSfxVol', String(sfxVolume)); } catch (e) {}
+  if (_sfxMasterGain) { try { _sfxMasterGain.gain.setTargetAtTime(sfxVolume, _sfxMasterGain.context.currentTime, 0.02); } catch (e) {} }
+  const fill = document.getElementById('sfxVolFill');
+  if (fill) fill.style.width = Math.round(sfxVolume * 100) + '%';
+  const label = document.getElementById('sfxVolVal');
+  if (label) label.textContent = Math.round(sfxVolume * 100) + '%';
+}
+function sfxOutNode() {
+  try { var m = _sfxOut(); return m && m.out ? m.out : null; } catch (e) { return null; }
 }
 
 function tone(freq, dur, type, vol, opts) {
@@ -883,56 +911,98 @@ function _woodThock(f0, f1, dur, vol, delay) {
   noise(dur, vol, 'lowpass', f0, f1, delay);
   tone(f0 * 0.16, dur * 1.5, 'sine', vol * 0.55, { delay: delay, attack: 0.002, glideTo: f0 * 0.1 });
 }
+// Layered synthesis: each event is a body + transient + tail, and the harmonic
+// notes come from a small musical vocabulary so the set sounds composed rather
+// than assembled. Every layer is independently guarded so one failure never
+// silences the rest of a cue.
+function _jitter(amount) { return 1 + (Math.random() * 2 - 1) * (amount == null ? 0.03 : amount); }
+function _vel() { return (typeof juiceLevel === 'number' ? 0.9 + juiceLevel / 100 * 0.25 : 1); }
+function _pan(delay, pan) {
+  try {
+    var m = _sfxOut(), c = m.ctx;
+    var used = false;
+    return function (node, vol) {
+      if (used) return node;
+      used = true;
+      var g = c.createGain();
+      g.gain.value = vol == null ? 1 : vol;
+      var p = c.createStereoPanner ? c.createStereoPanner() : null;
+      if (p) { p.pan.value = pan; node.connect(g); g.connect(p); p.connect(m.out); }
+      else { node.connect(g); g.connect(m.out); }
+      return g;
+    };
+  } catch (e) { return function (n) { return n; }; }
+}
 function sfxMove() {
   if (muted) return;
-  try {
-    const opponent = (typeof game !== 'undefined' && typeof botEnabled !== 'undefined' && botEnabled && game.turn === botColor);
-    if (opponent) _woodThock(900, 320, 0.055, 0.30, 0);
-    else _woodThock(1250, 430, 0.048, 0.34, 0);
-  } catch (e) { try { _woodThock(1250, 430, 0.048, 0.34, 0); } catch (e2) {} }
+  var opponent = (typeof game !== 'undefined' && typeof botEnabled !== 'undefined' && botEnabled && game.turn === botColor);
+  var base = opponent ? 880 * _jitter(0.05) : 1240 * _jitter(0.04);
+  var spread = (Math.random() * 2 - 1) * 0.3;
+  try { noise(0.035, 0.10 * _vel(), 'highpass', 3800, 6200, 0); } catch (e) {}
+  _woodThock(base, base * 0.34, opponent ? 0.055 : 0.046, (opponent ? 0.30 : 0.35) * _vel(), 0);
+  try { tone(base * 0.19 * _jitter(0.02), 0.05, 'sine', 0.10 * _vel(), { delay: 0.004, attack: 0.002, glideTo: base * 0.12 }); } catch (e) {}
 }
 function sfxCapture() {
   if (muted) return;
+  var heavy = false;
   try {
-    noise(0.085, 0.38, 'bandpass', 2300, 650, 0);
-    noise(0.045, 0.22, 'lowpass', 1100, 380, 0.012);
-    tone(150, 0.10, 'sine', 0.26, { attack: 0.002, glideTo: 80 });
+    var piece = (typeof game !== 'undefined' && game.moveHistory && game.moveHistory.length) ? game.board[game.lastMove ? game.lastMove.to : -1] : 0;
+    heavy = piece && pType(piece) === PT.ROOK || piece && pType(piece) === PT.QUEEN;
   } catch (e) {}
+  var v = _vel();
+  try { noise(0.07, 0.34 * v, 'bandpass', 2600 * _jitter(0.06), 640, 0); } catch (e) {}
+  try { noise(0.04, 0.20 * v, 'lowpass', 1200, 360, 0.012); } catch (e) {}
+  tone(168 * _jitter(0.05), 0.11, 'sine', 0.28 * v, { attack: 0.002, glideTo: 78 });
+  if (heavy) {
+    try { noise(0.10, 0.16 * v, 'lowpass', 500, 150, 0.02); } catch (e) {}
+    tone(82, 0.26, 'sine', 0.22 * v, { delay: 0.02, attack: 0.004, glideTo: 44 });
+    tone(311, 0.10, 'triangle', 0.10 * v, { delay: 0.03, attack: 0.003 });
+  } else {
+    tone(415, 0.08, 'triangle', 0.09 * v, { delay: 0.02, attack: 0.003 });
+    tone(622, 0.10, 'triangle', 0.07 * v, { delay: 0.07, attack: 0.003 });
+  }
 }
 function sfxCastle() {
   if (muted) return;
-  try { _woodThock(1150, 400, 0.045, 0.30, 0); _woodThock(980, 350, 0.05, 0.28, 0.10); } catch (e) {}
+  var v = _vel();
+  _woodThock(1180 * _jitter(0.03), 400, 0.045, 0.30 * v, 0);
+  _woodThock(960 * _jitter(0.03), 340, 0.052, 0.29 * v, 0.10);
+  try { noise(0.16, 0.05 * v, 'bandpass', 3200, 900, 0.02); } catch (e) {}
+  tone(196, 0.16, 'sine', 0.08 * v, { delay: 0.06, attack: 0.004 });
 }
 function sfxCheck() {
   if (muted) return;
-  try {
-    tone(1245, 0.085, 'triangle', 0.26, { attack: 0.003 });
-    tone(1661, 0.10, 'triangle', 0.22, { delay: 0.085, attack: 0.003 });
-  } catch (e) {}
+  var v = _vel();
+  tone(1319 * _jitter(0.02), 0.075, 'triangle', 0.24 * v, { attack: 0.003 });
+  tone(1661 * _jitter(0.02), 0.085, 'triangle', 0.21 * v, { delay: 0.075, attack: 0.003 });
+  try { noise(0.05, 0.07 * v, 'highpass', 5200, 3600, 0); } catch (e) {}
+  sub(58, 0.20, 0.16 * v, 0.02);
 }
 function sfxPromote() {
   if (muted) return;
-  try {
-    tone(784, 0.09, 'triangle', 0.22, { attack: 0.003 });
-    tone(988, 0.09, 'triangle', 0.22, { delay: 0.07, attack: 0.003 });
-    tone(1319, 0.16, 'triangle', 0.24, { delay: 0.14, attack: 0.003 });
-  } catch (e) {}
+  var v = _vel();
+  [784, 988, 1175, 1568].forEach(function (f, i) {
+    tone(f * _jitter(0.015), i === 3 ? 0.20 : 0.09, 'triangle', (i === 3 ? 0.24 : 0.20) * v, { delay: i * 0.07, attack: 0.003 });
+  });
+  try { noise(0.22, 0.06 * v, 'highpass', 6000, 3000, 0.21); } catch (e) {}
+  sub(98, 0.24, 0.14 * v, 0.21);
 }
 function sfxCheckmate() {
   if (muted) return;
-  try {
-    tone(523, 0.16, 'triangle', 0.26, { attack: 0.004 });
-    tone(415, 0.18, 'triangle', 0.25, { delay: 0.14, attack: 0.004 });
-    tone(311, 0.34, 'triangle', 0.26, { delay: 0.30, attack: 0.005 });
-    noise(0.20, 0.10, 'lowpass', 600, 180, 0.30);
-  } catch (e) {}
+  var v = _vel();
+  tone(523, 0.16, 'triangle', 0.25 * v, { attack: 0.004 });
+  tone(415, 0.18, 'triangle', 0.24 * v, { delay: 0.14, attack: 0.004 });
+  tone(311, 0.20, 'triangle', 0.25 * v, { delay: 0.30, attack: 0.004 });
+  tone(155, 0.48, 'sine', 0.26 * v, { delay: 0.44, attack: 0.006, glideTo: 92 });
+  try { noise(0.24, 0.10 * v, 'lowpass', 700, 170, 0.44); } catch (e) {}
 }
 function sfxGameStart() {
   if (muted) return;
-  try {
-    tone(392, 0.10, 'triangle', 0.20, { attack: 0.004 });
-    tone(587, 0.16, 'triangle', 0.22, { delay: 0.09, attack: 0.004 });
-  } catch (e) {}
+  var v = _vel();
+  tone(392 * _jitter(0.01), 0.10, 'triangle', 0.19 * v, { attack: 0.004 });
+  tone(587 * _jitter(0.01), 0.13, 'triangle', 0.21 * v, { delay: 0.09, attack: 0.004 });
+  tone(784 * _jitter(0.01), 0.20, 'triangle', 0.19 * v, { delay: 0.19, attack: 0.004 });
+  sub(98, 0.22, 0.13 * v, 0);
 }
 
 function sfxSelect() {
@@ -2158,9 +2228,44 @@ function executeMove(move) {
     combo: comboCount
   });
   if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); }
+  memeEvent(move, capturedPiece);
   updateUI();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
   showRandomTip();
+}
+
+function memeEvent(move, capturedPiece) {
+  if (!window.ChessMemes || !window.ChessMemes.ready()) return;
+  const wasMine = (1 - game.turn) !== botColor || !botEnabled;
+  let name = null;
+  if (game.gameOver) {
+    if (game.result.indexOf('checkmate') >= 0) name = game.turn === botColor || !botEnabled ? 'win' : 'lose';
+    else if (game.result.indexOf('draw') >= 0) name = 'draw';
+  }
+  if (!name && comboCount >= 3 && capturedPiece) name = 'combo3';
+  if (!name && move.castle) name = 'castle';
+  if (!name && move.promo) name = 'promote';
+  if (!name && (capturedPiece || move.ep)) name = 'capture';
+  if (!name && game.gameOver) name = 'checkmate';
+  if (!name && isInCheck(game.board, game.turn)) name = 'check';
+  if (!name && wasMine) name = blunderCheck(move);
+  if (!name) return;
+  window.ChessMemes.fire(name, { mine: wasMine });
+}
+
+function blunderCheck(move) {
+  try {
+    const before = game.moveHistory[game.moveHistory.length - 1];
+    if (!before) return null;
+    const best = findBestMove(before.board, before.turn, before.epTarget, before.castlingRights, 2, 'balanced');
+    if (!best) return null;
+    const playedAfter = makeMove(before.board, move, { castlingRights: before.castlingRights });
+    const bestAfter = makeMove(before.board, best, { castlingRights: before.castlingRights });
+    const pc = before.turn;
+    const playedScore = evaluate(playedAfter.board, 'balanced') * (pc === CL.WHITE ? 1 : -1);
+    const bestScore = evaluate(bestAfter.board, 'balanced') * (pc === CL.WHITE ? 1 : -1);
+    return (bestScore - playedScore) >= 250 ? 'blunder' : null;
+  } catch (e) { return null; }
 }
 
 function updateSetupHint() {
@@ -2421,6 +2526,7 @@ function resetGame() {
   castleUsedThisGame = false;
   puzzleMode = false; puzzleIndex = -1;
   ChessMods.emit('reset', {});
+  setTimeout(() => { if (window.ChessMemes) window.ChessMemes.fire('start'); }, 350);
   if (prevBotEnabled !== null) { botEnabled = prevBotEnabled; prevBotEnabled = null; }
   document.getElementById('puzzlePanel').classList.remove('show');
   document.getElementById('tip').textContent = '';
@@ -2438,11 +2544,12 @@ function undo() {
   pendingPromo = null; hidePromoUI();
   comboCount = Math.max(0, comboCount - 1);
   if (clockEnabled) clockStart();
+  if (window.ChessMemes) window.ChessMemes.fire('undo');
   updateUI(); draw();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
 }
 
-function showHint() { sfxHint();
+function showHint() { sfxHint(); if (window.ChessMemes) window.ChessMemes.fire('hint');
   if (game.gameOver || pendingPromo) return;
   const best = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 2, 'balanced');
   if (best) { hintArrow = best; legalMoves = []; selectedSquare = -1; draw(); }
@@ -2573,6 +2680,12 @@ function runReview() {
   reviewTimer = setTimeout(step, 8);
 }
 
+function syncModalState() {
+  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
+  const open = ids.some(id => { const el = document.getElementById(id); return el && el.classList.contains('show'); });
+  document.body.classList.toggle('modal-open', open);
+}
+
 function closeReview() {
   clearReviewTimer();
   document.getElementById('reviewPanel').classList.remove('show');
@@ -2603,6 +2716,7 @@ window.addEventListener('keydown', e => {
   closeLearn();
   closeStats();
   exitPuzzleMode();
+  if (window.ChessMemes && window.ChessMemes.close) window.ChessMemes.close();
 });
 
 // ==================== EVENT LISTENERS ====================
@@ -2742,6 +2856,10 @@ if (muted) {
 }
 document.getElementById('btnPuzzleExit').addEventListener('click', exitPuzzleMode);
 
+(function () {
+  const mb = document.getElementById('btnMemes');
+  if (mb) mb.addEventListener('click', () => { if (window.ChessMemes) window.ChessMemes.toggle(); });
+})();
 document.getElementById('btnLearn').addEventListener('click', openLearn);
 document.getElementById('btnLearnClose').addEventListener('click', closeLearn);
 document.querySelectorAll('#learnTabs button').forEach(b => b.addEventListener('click', () => { renderLearn(b.dataset.cat); document.querySelectorAll('#learnTabs button').forEach(x => x.classList.toggle('active', x === b)); }));
@@ -2828,6 +2946,28 @@ document.getElementById('btnPuzzleSkip').addEventListener('click', () => {
     setTimeout(() => loadPuzzle(puzzleIndex + 1), 1200);
   }
 });
+
+(function wireSfxVolume() {
+  const track = document.getElementById('sfxVolTrack');
+  if (!track) return;
+  const label = document.getElementById('sfxVolVal');
+  const apply = v => {
+    setSfxVolume(v);
+    if (label) label.textContent = Math.round(sfxVolume * 100) + '%';
+  };
+  const fromEvent = e => {
+    const r = track.getBoundingClientRect();
+    apply((e.clientX - r.left) / Math.max(1, r.width));
+  };
+  track.addEventListener('pointerdown', fromEvent);
+  track.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { apply(sfxVolume - 0.1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { apply(sfxVolume + 0.1); e.preventDefault(); }
+  });
+  if (label) label.textContent = Math.round(sfxVolume * 100) + '%';
+  const fill = document.getElementById('sfxVolFill');
+  if (fill) fill.style.width = Math.round(sfxVolume * 100) + '%';
+})();
 
 const juiceSlider = document.getElementById('juiceSlider');
 const juiceVal = document.getElementById('juiceVal');
@@ -2996,6 +3136,57 @@ window.__chessTest = function (caseId) {
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
     },
+    memes: function () {
+      fresh();
+      const M = window.ChessMemes;
+      add('meme engine is loaded', !!M, M ? 'ready=' + M.ready() : 'missing');
+      if (!M) return;
+      const cat = M.catalog();
+      add('meme catalog loaded from the manifest', !!cat && cat.packs && cat.packs.length >= 4,
+        cat ? cat.packs.length + ' packs / ' + cat.packs.reduce((n, p) => n + p.sounds.length, 0) + ' sounds' : 'no catalog');
+      if (!cat) return;
+      const first = cat.packs[0].sounds[0];
+      add('every meme has a resolved audio path', cat.packs.every(p => p.sounds.every(s => typeof s.src === 'string' && s.src.indexOf('audio/memes/') === 0)), first.src);
+      add('the audio files are served', (function () { const x = new XMLHttpRequest(); try { x.open('HEAD', first.src, false); x.send(); return x.status === 200 || x.status === 0; } catch (e) { return false; } })(), first.src);
+      M.open();
+      const panel = document.getElementById('memePanel');
+      add('the selector panel opens', !!panel && panel.classList.contains('show'), panel ? 'show=' + panel.classList.contains('show') : 'missing');
+      const boxes = panel.querySelectorAll('[data-sound]');
+      const packBoxes = panel.querySelectorAll('[data-pack-toggle]');
+      add('every meme has its own checkbox', boxes.length === cat.packs.reduce((n, p) => n + p.sounds.length, 0), boxes.length + ' meme boxes');
+      add('every pack has its own checkbox', packBoxes.length === cat.packs.length, packBoxes.length + ' pack boxes');
+      add('the panel has a preview button per meme', panel.querySelectorAll('[data-play]').length === boxes.length, panel.querySelectorAll('[data-play]').length + ' play buttons');
+      M.setMeme(first.id, false);
+      add('unchecking a meme persists', (function () { try { return JSON.parse(localStorage.getItem('cmm-sounds') || '{}')[first.id] === false; } catch (e) { return false; } })(), first.id);
+      add('the meme fires only when enabled', (function () {
+        M.fire('capture', { silent: true, force: true });
+        const blocked = !M.state().sounds[first.id];
+        return blocked;
+      })(), 'toggle respected');
+      M.setMeme(first.id, true);
+      M.close();
+      add('the selector panel closes', !panel.classList.contains('show'), 'closed');
+      let audioLog = [];
+      let spyOk = false;
+      try {
+        ensureAudio();
+        const patch = (name, tag) => { const orig = audioCtx[name].bind(audioCtx); audioCtx[name] = function () { audioLog.push(tag); return orig.apply(null, arguments); }; };
+        patch('createOscillator', 'osc');
+        patch('createBufferSource', 'noise');
+        patch('createGain', 'gain');
+        patch('createBiquadFilter', 'filter');
+        spyOk = true;
+      } catch (e) { spyOk = false; }
+      const cues = [['sfxMove', 'move'], ['sfxCapture', 'capture'], ['sfxCheck', 'check'], ['sfxPromote', 'promote'], ['sfxCheckmate', 'mate'], ['sfxCastle', 'castle'], ['sfxGameStart', 'start'], ['sfxWin', 'win'], ['sfxDraw', 'draw'], ['sfxHint', 'hint'], ['sfxCombo', 'combo'], ['sfxSelect', 'select'], ['sfxIllegal', 'illegal']];
+      const empty = [];
+      for (const [fn, name] of cues) {
+        audioLog = [];
+        try { window[fn](); } catch (e) {}
+        if (audioLog.length === 0) empty.push(name);
+      }
+      add('the audio graph spy is armed', spyOk, spyOk ? 'AudioContext patched' : 'AudioContext unavailable');
+      add('every cue builds audio nodes, not just avoids throwing', spyOk && empty.length === 0, empty.length ? 'silent cues: ' + empty.join(',') : '13/13 cues produced nodes');
+    },
     keyboard: function () {
       setupFen('7k/8/8/8/8/8/4P3/4K3 w - - 0 1');
       botThinking = false; botEnabled = false;
@@ -3039,11 +3230,36 @@ window.__chessTest = function (caseId) {
 // ==================== INIT ====================
 
 
+window._sfxOut = _sfxOut;
+window.sfxEvent = function (name) {
+  try {
+    if (name === 'capture') sfxCapture();
+    else if (name === 'check') sfxCheck();
+    else if (name === 'castle') sfxCastle();
+    else if (name === 'promote') sfxPromote();
+    else if (name === 'move') sfxMove();
+    else if (name === 'mate') sfxCheckmate();
+    else if (name === 'start') sfxGameStart();
+    else if (name === 'win') sfxWin();
+    else if (name === 'draw') sfxDraw();
+    else if (name === 'select') sfxSelect();
+    else if (name === 'illegal') sfxIllegal();
+    else if (name === 'hint') sfxHint();
+    else if (name === 'combo') sfxCombo();
+  } catch (e) {}
+};
+window.chessGame = function () {
+  return {
+    turn: game.turn, over: game.gameOver, result: game.result, bot: botEnabled,
+    juice: juiceLevel, muted: muted, history: game.moveHistory.length
+  };
+};
+
 (function loadMods() {
   const mods = [
     'chess-faces.js', 'chess-movement.js', 'chess-combo.js', 'chess-elim.js',
-    'chess-powerups.js', 'chess-celebration.js', 'chess-sfx.js', 'chess-coach.js',
-    'chess-personality.js', 'chess-modes.js'
+    'chess-powerups.js', 'chess-celebration.js', 'chess-sfx-hd.js', 'chess-coach.js',
+    'chess-personality.js', 'chess-modes.js', 'audio/memes/catalog.js', 'chess-memes.js'
   ];
   let loaded = 0, failed = 0;
   mods.forEach(src => {
@@ -3053,6 +3269,15 @@ window.__chessTest = function (caseId) {
     s.onerror = () => { failed++; console.warn('[chess-mod] missing:', src); };
     document.body.appendChild(s);
   });
+})();
+
+(function watchModals() {
+  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel'];
+  const mo = new MutationObserver(() => syncModalState());
+  const observe = () => ids.forEach(id => { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
+  observe();
+  const late = setInterval(() => { if (document.getElementById('memePanel')) { observe(); clearInterval(late); syncModalState(); } }, 600);
+  setTimeout(() => clearInterval(late), 8000);
 })();
 
 refreshCssCache();

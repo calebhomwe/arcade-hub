@@ -1,0 +1,177 @@
+{
+ "hype": {
+  "name": "Hype Squad",
+  "emoji": "🔥",
+  "desc": "Short shout-outs when things go right",
+  "byEvent": {
+   "capture": [
+    "FREE!",
+    "GET IN!",
+    "NOM NOM",
+    "THAT'S MINE",
+    "SNATCHED"
+   ],
+   "check": [
+    "OH NO",
+    "HE'S COOKED",
+    "RUN",
+    "TICK TOCK",
+    "SWEATY"
+   ],
+   "checkmate": [
+    "GG!",
+    "TOO EASY",
+    "BOOM",
+    "SIT DOWN",
+    "CLEAN"
+   ],
+   "win": [
+    "LET'S GO!",
+    "GG WP",
+    "ANOTHER ONE",
+    "BUILT DIFFERENT"
+   ],
+   "combo3": [
+    "ON FIRE!",
+    "COMBO!",
+    "UNSTOPPABLE"
+   ],
+   "promote": [
+    "QUEEN ME",
+    "PROMOTED!",
+    "LEVEL UP"
+   ],
+   "castle": [
+    "SAFE HOUSE",
+    "TURTLE UP"
+   ],
+   "start": [
+    "NEW GAME, NEW ME",
+    "RUN IT BACK"
+   ],
+   "hint": [
+    "COACH SAYS...",
+    "PRO TIP TIME"
+   ]
+  }
+ },
+ "rage": {
+  "name": "Rage Quit",
+  "emoji": "😤",
+  "desc": "For when the position falls apart",
+  "byEvent": {
+   "blunder": [
+    "WHY DID I DO THAT",
+    "I MEANT TO DO THAT",
+    "NO NO NO",
+    "MISCLICK",
+    "MY HAND SLIPPED"
+   ],
+   "lose": [
+    "UNINSTALL",
+    "I WASN'T READY",
+    "REMATCH",
+    "LAG",
+    "MY CAT JUMPED ON THE BOARD"
+   ],
+   "capture": [
+    "HOW DARE YOU",
+    "RUDE",
+    "OK WOW"
+   ],
+   "check": [
+    "I'M FINE",
+    "THIS IS FINE",
+    "TOTALLY FINE"
+   ],
+   "draw": [
+    "A DRAW? REALLY?",
+    "NOBODY WON"
+   ],
+   "undo": [
+    "TAKEBACK",
+    "DIDN'T HAPPEN",
+    "ERASE THAT"
+   ]
+  }
+ },
+ "nerd": {
+  "name": "Chess Nerd",
+  "emoji": "🤓",
+  "desc": "Quietly judging your opening theory",
+  "byEvent": {
+   "start": [
+    "THEORY TIME",
+    "LET'S SEE THE PREP",
+    "1.e4?"
+   ],
+   "hint": [
+    "THE ENGINE LIKES THIS",
+    "BOOK MOVE"
+   ],
+   "blunder": [
+    "THAT LOSES A TEMPO",
+    "INACCURACY",
+    "EVAL BAR DIPPED"
+   ],
+   "check": [
+    "FORCED",
+    "ONLY MOVE"
+   ],
+   "checkmate": [
+    "RESIGNATION WAS BETTER",
+    "MATE IN ONE"
+   ],
+   "promote": [
+    "NEW QUEEN, NEW PROBLEMS"
+   ],
+   "castle": [
+    "KING SAFETY FIRST"
+   ],
+   "capture": [
+    "MATERIAL IS MATERIAL"
+   ]
+  }
+ },
+ "wholesome": {
+  "name": "Wholesome",
+  "emoji": "🌱",
+  "desc": "Encouragement, no matter how bad it gets",
+  "byEvent": {
+   "blunder": [
+    "EVERYONE DOES THAT",
+    "STILL WINNING",
+    "GREAT LEARNING MOMENT"
+   ],
+   "lose": [
+    "YOU'LL GET THEM NEXT TIME",
+    "GOOD GAME THOUGH",
+    "THAT WAS CLOSE"
+   ],
+   "capture": [
+    "NICE ONE",
+    "WELL SPOTTED",
+    "CLEAN TACTIC"
+   ],
+   "check": [
+    "STAY CALM",
+    "DEEP BREATH",
+    "YOU'VE GOT THIS"
+   ],
+   "checkmate": [
+    "BEAUTIFUL",
+    "WELL PLAYED",
+    "TEXTBOOK"
+   ],
+   "win": [
+    "PROUD OF YOU",
+    "WHAT A GAME",
+    "TAKE THE TROPHY"
+   ],
+   "draw": [
+    "HONOURABLE DRAW",
+    "NOBODY BLINKED"
+   ]
+  }
+ }
+}
