@@ -3349,6 +3349,14 @@ window.__chessTest = function (caseId) {
       })(), 'toggle respected');
       M.setMeme(first.id, true);
       M.close();
+      const prevAll = panel.querySelector('#memePreviewAll');
+      add('the panel can audition the whole selection', !!prevAll, prevAll ? 'Preview all present' : 'missing');
+      if (prevAll) {
+        const played = M.previewAll();
+        add('preview-all queues every enabled meme', played > 0, played + ' memes queued');
+        add('preview-all shows the clip name on the board', !!document.querySelector('.meme-flag'), document.querySelector('.meme-flag') ? document.querySelector('.meme-flag').textContent : 'no flag');
+        const f = document.querySelector('.meme-flag'); if (f) f.remove();
+      }
       const rateBtns = panel.querySelectorAll('[data-rate]');
       add('meme frequency is selectable', rateBtns.length === 3, rateBtns.length + ' rate options');
       if (rateBtns.length === 3) {

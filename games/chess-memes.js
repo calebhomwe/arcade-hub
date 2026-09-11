@@ -143,6 +143,21 @@
       render(false);
     },
     rate: function () { return state.rate; },
+    previewAll: function () {
+      var cat = state.catalog;
+      if (!cat) return 0;
+      var list = [];
+      for (var i = 0; i < cat.packs.length; i++) {
+        var p = cat.packs[i];
+        if (state.packs[p.id] === false) continue;
+        for (var j = 0; j < p.sounds.length; j++) if (state.sounds[p.sounds[j].id] !== false) list.push(p.sounds[j]);
+      }
+      list.forEach(function (s, k) {
+        var run = function () { flag(s.emoji ? s.emoji + ' ' + s.label : s.label); playSound(s) || playFallback(s); };
+        if (k === 0) run(); else setTimeout(run, k * 650);
+      });
+      return list.length;
+    },
     setPack: function (id, on) {
       state.packs[id] = !!on;
       var cat = state.catalog;
@@ -250,6 +265,7 @@
       '<div class="meme-tools">' +
       '<button class="btn" id="memeAllOn">\u2705 All on</button>' +
       '<button class="btn" id="memeAllOff">\u274C All off</button>' +
+      '<button class="btn" id="memePreviewAll">\u25B6 Preview all</button>' +
       '</div>' +
       '<div class="meme-rate" id="memeRate" role="group" aria-label="How often memes fire">' +
       '<button class="btn" data-rate="rare">\uD83D\uDC22 Rare</button>' +
@@ -327,6 +343,8 @@
     if (allOn) allOn.addEventListener('click', function () { API.setAll(true); render(false); });
     var allOff = panel.querySelector('#memeAllOff');
     if (allOff) allOff.addEventListener('click', function () { API.setAll(false); render(false); });
+    var prevAll = panel.querySelector('#memePreviewAll');
+    if (prevAll) prevAll.addEventListener('click', function () { API.previewAll(); });
     var track = panel.querySelector('#memeVolTrack');
     if (track) {
       var setFromEvent = function (e) {
