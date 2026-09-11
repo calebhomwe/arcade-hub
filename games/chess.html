@@ -548,6 +548,7 @@ body.cc-clocks .cc-clock{ display:block; }
 #moveList{ max-width:none!important; max-height:212px!important; text-align:left!important; padding:8px 12px!important;
   font-size:.78rem!important; color:var(--cc-text)!important; line-height:1.7!important; }
 #moveList span{ color:var(--cc-muted)!important; }
+#moveList .ml-empty{ color:var(--cc-muted)!important; }
 #score{ padding:0 12px 6px; justify-content:flex-start!important; color:var(--cc-muted)!important; }
 #metaStats{ padding:0 12px 10px; text-align:left!important; color:var(--cc-muted)!important; }
 #status{ width:var(--cc-boardmax); max-width:100%; margin:0 auto; text-align:left!important;
@@ -607,6 +608,11 @@ a.back:hover{ color:var(--cc-text)!important; }
 #moveList .ml-mv{ color:var(--cc-text)!important; font-weight:600; font-family:inherit; }
 #moveList .ml-cur{ background:rgba(129,182,76,.28); border-radius:3px; }
 #moveList .ml-row:hover{ background:rgba(255,255,255,.06); border-radius:4px; }
+#moveList .ml-empty{ color:var(--cc-muted); font-size:.72rem; padding:2px 0; }
+#moveList .ml-mv{ cursor:pointer; padding:0 3px; border-radius:3px; }
+#moveList .ml-mv:hover{ background:rgba(255,255,255,.12); }
+#moveList .ml-pre{ background:rgba(56,189,248,.3); color:#e8f4ff!important; }
+#moveList .ml-mv:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
 /* ---- start screen ---- */
 #startScreen{ position:fixed; inset:0; z-index:44; display:flex; align-items:center; justify-content:center;
@@ -791,6 +797,7 @@ a.back:hover{ color:var(--cc-text)!important; }
     <button class="btn" id="btnReview" title="Review this game">📊<span class="btn-label">Review</span></button>
     <button class="btn" id="btnStats" title="Your stats">📈<span class="btn-label">Stats</span></button>
     <button class="btn" id="btnSettings" title="Settings" aria-haspopup="dialog">⚙️<span class="btn-label">Settings</span></button>
+    <button class="btn" id="btnResign" title="Resign this game">🏳️<span class="btn-label">Resign</span></button>
   </div>
     <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
@@ -1633,7 +1640,7 @@ function renderLearn(cat){
 // ==================== GAME STATE ====================
 
 let game = {
-  board: initBoard(), turn: CL.WHITE, epTarget: null,
+  board: initBoard(), turn: CL.WHITE, epTarget: null, resignedBy: null,
   castlingRights: { K: true, Q: true, k: true, q: true },
   moveHistory: [], lastMove: null,
   capturedByWhite: [], capturedByBlack: [],
@@ -1678,9 +1685,26 @@ function showGameOver() {
   const el = document.getElementById('overResult');
   const detail = document.getElementById('overDetail');
   const title = document.getElementById('overTitle');
-  const won = game.turn === botColor || !botEnabled;
+  const resigned = game.resignedBy !== undefined && game.resignedBy !== null;
   const draw = game.result.indexOf('draw') >= 0 || game.result.indexOf('Stalemate') >= 0;
-  const isWin = !draw && game.result.indexOf('wins') >= 0 && won;
+  const won = game.turn === botColor || !botEnabled;
+  const isWin = !draw && !resigned && game.result.indexOf('wins') >= 0 && won;
+  if (resigned) {
+    const sideName = game.resignedBy === CL.WHITE ? 'White' : 'Black';
+    const youResigned = botEnabled ? game.resignedBy !== botColor : true;
+    if (title) title.textContent = youResigned ? 'You resigned' : sideName + ' resigned';
+    if (el) {
+      el.textContent = youResigned ? 'You lost by resignation' : sideName + ' lost by resignation';
+      el.className = 'over-result loss';
+    }
+    if (detail) {
+      const plies = collectPlies().length;
+      detail.textContent = game.result + ' \u00b7 ' + Math.ceil(plies / 2) + ' moves';
+    }
+    modal.classList.add('show');
+    if (typeof window.syncModalState === 'function') window.syncModalState();
+    return;
+  }
   if (title) title.textContent = draw ? 'Draw' : (isWin ? 'You won' : 'You lost');
   if (el) {
     el.textContent = draw ? 'Drawn game' : (isWin ? 'Checkmate — you win' : 'Your king has fallen');
@@ -1947,7 +1971,7 @@ function getSqColor(r, c, isLight, kingIdx, inCheck) {
   if (selectedSquare === i) return isLight ? getCssVar('--ltSel') : getCssVar('--dkSel');
   if (hintArrow && (hintArrow.from === i || hintArrow.to === i)) return isLight ? getCssVar('--ltHint') : getCssVar('--dkHint');
   if (pendingPromo && pendingPromo.from === i) return isLight ? getCssVar('--ltSel') : getCssVar('--dkSel');
-  if (game.lastMove && game.lastMove.to === i) return isLight ? getCssVar('--ltLast') : getCssVar('--dkLast');
+  if (game.lastMove && (game.lastMove.to === i || game.lastMove.from === i)) return isLight ? getCssVar('--ltLast') : getCssVar('--dkLast');
   if (kingIdx === i && inCheck) return isLight ? getCssVar('--ltChk') : getCssVar('--dkChk');
   return isLight ? getCssVar('--lt') : getCssVar('--dk');
 }
@@ -2433,6 +2457,7 @@ function getSquareFromEvent(e) {
 }
 
 function handleClick(sq) {
+  if (previewing()) { endPreview(); return; }
   if (game.gameOver || pendingPromo || botThinking) return;
   if (botEnabled && game.turn === botColor) return;
   if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null; draw(); return; }
@@ -2710,11 +2735,18 @@ function updateUI() {
       const bSan = plies[i + 1] ? sanOf(plies[i + 1]) : '';
       const wCur = (i === plies.length - 1) ? ' ml-cur' : '';
       const bCur = (i + 1 === plies.length - 1) ? ' ml-cur' : '';
+      const wPly = i, bPly = i + 1;
+      const wPre = previewPlyIndex === wPly ? ' ml-pre' : '';
+      const bPre = (plies[i + 1] && previewPlyIndex === bPly) ? ' ml-pre' : '';
+      const btn = (san, cur, pre, ply, has) => has
+        ? '<span class="ml-mv' + cur + pre + '" role="button" tabindex="0" data-ply="' + ply + '" title="Show the position after ' + san + '">' + san + '</span>'
+        : '<span class="ml-mv' + cur + '"></span>';
       rows += '<div class="ml-row"><span class="ml-no">' + (i / 2 + 1) + '.</span>'
-            + '<span class="ml-mv' + wCur + '" title="Move ' + (i + 1) + '">' + wSan + '</span>'
-            + '<span class="ml-mv' + bCur + '" title="Move ' + (i + 2) + '">' + bSan + '</span></div>';
+            + btn(wSan, wCur, wPre, wPly, true)
+            + btn(bSan, bCur, bPre, bPly, !!plies[i + 1])
+            + '</div>';
     }
-    ml.innerHTML = rows;
+    ml.innerHTML = rows || '<div class="ml-empty">No moves yet — White to play.</div>';
     mlCache.n = plies.length;
     const cur = ml.querySelector('.ml-cur');
     if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) { ml.scrollTop = ml.scrollHeight; } }
@@ -2741,6 +2773,35 @@ function showRandomTip() {
 }
 
 let mlCache = { n: -1 };
+let previewPlyIndex = -1;
+let liveGame = null;
+function previewing() { return !!liveGame; }
+function endPreview() {
+  if (!liveGame) return;
+  game = liveGame;
+  liveGame = null;
+  previewPlyIndex = -1;
+  mlCache.n = -1;
+  updateUI();
+  draw();
+}
+function previewChessPly(ply) {
+  const live = liveGame || game;
+  const hist = live.moveHistory;
+  if (ply < 0 || ply >= hist.length) { endPreview(); return; }
+  const source = (ply === hist.length - 1) ? live : hist[ply + 1];
+  liveGame = live;
+  previewPlyIndex = ply;
+  game = Object.assign({}, source, {
+    board: source.board.slice(),
+    moveHistory: live.moveHistory,
+    gameOver: true,
+    result: ''
+  });
+  mlCache.n = -1;
+  updateUI();
+  draw();
+}
 let moveAnim = null;
 let captureAnims = [];
 let checkGlowUntil = 0;
@@ -2915,7 +2976,7 @@ function resetGame() {
   botThinking = false;
   closeReview();
   game = {
-    board: initBoard(), turn: CL.WHITE, epTarget: null,
+    board: initBoard(), turn: CL.WHITE, epTarget: null, resignedBy: null,
     castlingRights: { K: true, Q: true, k: true, q: true },
     moveHistory: [], lastMove: null,
     capturedByWhite: [], capturedByBlack: [],
@@ -3167,6 +3228,7 @@ let lastPress = -1;
 let lastReleaseTs = 0;
 
 function startDrag(e) {
+  if (previewing()) { endPreview(); return; }
   if (game.gameOver || pendingPromo || botThinking) return;
   if (botEnabled && game.turn === botColor) return;
   const sq = getSquareFromEvent(e);
@@ -3305,6 +3367,46 @@ document.getElementById('btnPuzzleExit').addEventListener('click', exitPuzzleMod
 document.getElementById('btnLearn').addEventListener('click', openLearn);
 document.getElementById('btnLearnClose').addEventListener('click', closeLearn);
 document.querySelectorAll('#learnTabs button').forEach(b => b.addEventListener('click', () => { renderLearn(b.dataset.cat); document.querySelectorAll('#learnTabs button').forEach(x => x.classList.toggle('active', x === b)); }));
+(function wireMoveListPreview() {
+  const ml = document.getElementById('moveList');
+  if (!ml) return;
+  const go = el => {
+    const ply = parseInt(el.getAttribute('data-ply'), 10);
+    if (isNaN(ply)) return;
+    if (previewPlyIndex === ply) endPreview(); else previewChessPly(ply);
+  };
+  ml.addEventListener('click', e => {
+    const el = e.target && e.target.closest && e.target.closest('[data-ply]');
+    if (el) go(el);
+  });
+  ml.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target && e.target.closest && e.target.closest('[data-ply]');
+    if (el) { go(el); e.preventDefault(); }
+  });
+})();
+
+(function wireResign() {
+  const btn = document.getElementById('btnResign');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (game.gameOver || previewing()) return;
+    const side = game.turn;
+    endPreview();
+    game.gameOver = true;
+    game.resignedBy = side;
+    game.result = (side === CL.WHITE ? 'White' : 'Black') + ' resigned';
+    try { if (side === botColor || !botEnabled) sfxWin(); else sfxCheckmate(); } catch (e) {}
+    try { if (window.ChessMemes) window.ChessMemes.fire('lose', { force: true }); } catch (e) {}
+    trackMatchEnd();
+    trackStatsEnd(game.result);
+    unlockBadges();
+    updateUI();
+    draw();
+    showGameOver();
+  });
+})();
+
 (function wireSettings() {
   const btn = document.getElementById('btnSettings');
   const panel = document.getElementById('settingsPanel');
@@ -3845,6 +3947,69 @@ window.__chessTest = function (caseId) {
       const t1 = performance.now();
       draw();
       add('a frame draws quickly', (performance.now() - t1) < 40, (performance.now() - t1).toFixed(1) + 'ms');
+    },
+    resign: function () {
+      fresh();
+      play(['e2e4']);
+      const btn = document.getElementById('btnResign');
+      add('a resign action is offered', !!btn, btn ? 'present' : 'missing');
+      if (!btn) return;
+      btn.click();
+      add('resigning ends the game', game.gameOver === true, 'over=' + game.gameOver);
+      add('the result names the resigning side', /resigned/.test(game.result), game.result);
+      const over = document.getElementById('overModal');
+      add('the result dialog opens', over.classList.contains('show'), 'shown');
+      add('the dialog explains the resignation', /resign/i.test(document.getElementById('overResult').textContent) || /resign/i.test(document.getElementById('overTitle').textContent),
+        document.getElementById('overTitle').textContent + ' / ' + document.getElementById('overResult').textContent);
+      document.getElementById('btnOverClose').click();
+      add('closing returns to the board', !over.classList.contains('show'), 'closed');
+      fresh();
+      add('a new game clears the resignation', game.resignedBy === null && game.gameOver === false, 'clean');
+    },
+    lastmove: function () {
+      fresh();
+      setupFen('7k/8/8/8/8/8/4P3/4K3 w - - 0 1');
+      play(['e2e4']);
+      add('both squares of the last move are marked', (function () {
+        const light = (r, c) => (r + c) % 2 === 0;
+        const colourAt = i => getSqColor(row(i), col(i), light(row(i), col(i)), -1, false);
+        const last = getCssVar('--ltLast'), darkLast = getCssVar('--dkLast');
+        const fromIsLast = colourAt(sq('e2')) === (light(row(sq('e2')), col(sq('e2'))) ? last : darkLast);
+        const toIsLast = colourAt(sq('e4')) === (light(row(sq('e4')), col(sq('e4'))) ? last : darkLast);
+        return fromIsLast && toIsLast;
+      })(), 'from and to highlighted');
+      add('an unrelated square keeps its board colour', (function () {
+        const light = (r, c) => (r + c) % 2 === 0;
+        const i = sq('a5');
+        const expected = light(row(i), col(i)) ? getCssVar('--lt') : getCssVar('--dk');
+        return getSqColor(row(i), col(i), light(row(i), col(i)), -1, false) === expected;
+      })(), 'a5 normal');
+    },
+    preview: function () {
+      fresh();
+      play(['e2e4', 'e7e5', 'g1f3']);
+      const ml = document.getElementById('moveList');
+      const items = ml.querySelectorAll('[data-ply]');
+      add('every move is clickable', items.length === 3, items.length + ' move buttons');
+      add('moves carry their ply index', items[2].getAttribute('data-ply') === '2', 'ply=' + items[2].getAttribute('data-ply'));
+      const liveBoard = sig();
+      items[0].click();
+      add('clicking a move replays that position', previewing() && game.board[sq('e4')] === P(PT.PAWN, 0), 'pawn on e4=' + (game.board[sq('e4')] === P(PT.PAWN, 0)));
+      add('the previewed move is highlighted', !!ml.querySelector('.ml-pre'), 'ml-pre');
+      add('previewing blocks accidental moves', (function () {
+        const before = game.board.slice();
+        handleClick(sq('e4'));
+        return !previewing();
+      })(), 'any board interaction returns to the live game');
+      add('the live position is restored intact', sig() === liveBoard, 'unchanged');
+      ml.querySelector('[data-ply="1"]').click();
+      add('a second click previews again', previewing(), 'previewing');
+      add('the full move list stays visible while previewing', ml.querySelectorAll('[data-ply]').length === 3, ml.querySelectorAll('[data-ply]').length + ' buttons');
+      add('an empty move slot is not a button', ml.querySelectorAll('[role="button"]').length === 3, ml.querySelectorAll('[role="button"]').length + ' buttons');
+      endPreview();
+      add('ending the preview returns to live play', !previewing() && !game.gameOver, 'live');
+      play(['b8c6']);
+      add('play continues normally afterwards', collectPlies().length === 4, collectPlies().length + ' plies');
     },
     moves: function () {
       fresh();

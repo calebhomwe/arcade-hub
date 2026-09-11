@@ -2,23 +2,123 @@
   "cell": 512,
   "pieces": [
     {
+      "id": "b_pawn",
+      "file": "b_pawn.png",
+      "bbox": [
+        133,
+        201,
+        209,
+        289
+      ]
+    },
+    {
+      "id": "b_bishop",
+      "file": "b_bishop.png",
+      "bbox": [
+        133,
+        140,
+        209,
+        350
+      ]
+    },
+    {
+      "id": "b_knight",
+      "file": "b_knight.png",
+      "bbox": [
+        133,
+        107,
+        278,
+        383
+      ]
+    },
+    {
+      "id": "b_rook",
+      "file": "b_rook.png",
+      "bbox": [
+        133,
+        69,
+        209,
+        421
+      ]
+    },
+    {
+      "id": "b_queen",
+      "file": "b_queen.png",
+      "bbox": [
+        133,
+        55,
+        209,
+        435
+      ]
+    },
+    {
+      "id": "b_king",
+      "file": "b_king.png",
+      "bbox": [
+        133,
+        23,
+        209,
+        467
+      ]
+    },
+    {
+      "id": "w_pawn",
+      "file": "w_pawn.png",
+      "bbox": [
+        133,
+        201,
+        209,
+        289
+      ]
+    },
+    {
+      "id": "w_bishop",
+      "file": "w_bishop.png",
+      "bbox": [
+        133,
+        140,
+        209,
+        350
+      ]
+    },
+    {
       "id": "w_knight",
       "file": "w_knight.png",
       "bbox": [
-        144,
-        162,
-        244,
-        313
+        133,
+        107,
+        278,
+        383
       ]
     },
     {
       "id": "w_rook",
       "file": "w_rook.png",
       "bbox": [
-        144,
-        120,
-        187,
-        355
+        133,
+        69,
+        209,
+        421
+      ]
+    },
+    {
+      "id": "w_queen",
+      "file": "w_queen.png",
+      "bbox": [
+        133,
+        55,
+        209,
+        435
+      ]
+    },
+    {
+      "id": "w_king",
+      "file": "w_king.png",
+      "bbox": [
+        133,
+        23,
+        209,
+        467
       ]
     }
   ]
