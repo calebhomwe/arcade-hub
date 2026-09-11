@@ -1,0 +1,19 @@
+CONTEXT - Windows PC. Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe. Node v24 at C:\Users\caleb\nodejs\node-v24.18.0-win-x64\node.exe. Reusable tooling: node _loop/tests/serve8137.js serves the repo on 127.0.0.1:8137 (copy it to your own name if you prefer); _loop/tests/cdp-eval.js drives real headless Chrome: 'node cdp-eval.js <url> <expression> [screenshot.png] [waitMs]' prints the evaluated value plus a console error count. IMPORTANT: --window-size cannot go below about 500 CSS px on this machine, so to measure a phone use an iframe pinned to the exact CSS size inside a host page (see _loop/shots/startshot.html for the pattern that works).
+
+PROJECT: C:\Users\caleb\AppData\Local\arcade-hub\games\chess.html - a single-file canvas chess game styled after chess.com. Live: https://calebhomwe.github.io/arcade-hub/games/chess.html
+
+OWNER FEEDBACK (verbatim): 'needs more refinement', 'improve this by comparing to the real game, except improve ours, ours can be different if need be', 'the new pawns look rough'. A separate agent is fixing the piece renders - do not touch games/assets/pieces or games/chess.html.
+
+YOUR TASK - a hard-nosed, comparison-driven refinement audit of OUR game. Compare it against real chess.com (use web_search/web_fetch for chess.com's current UI, and reason from what a strong chess app does) and produce a prioritised list of concrete improvements. Where chess.com is not the best answer, say what is better and why - the owner explicitly allows ours to differ.
+
+WHAT TO DO
+1. Look at our current state yourself. Read these screenshots with your image tool first: _loop/shots/pieces_board.png, _loop/shots/startss_390.png, _loop/tests/live_board_v3.png, _loop/tests/live_start2.png, _loop/shots/meme_panel.png. Then drive the live page or a local copy with cdp-eval.js and take your own screenshots at 390x844 (phone) and 1280x900 (desktop), including: the start screen, the initial board, mid-game, a piece being dragged, check, the result dialog, and each panel (Learn, Stats, Review, Memes).
+2. Audit these areas and rate each against chess.com: board colours and coordinate treatment; piece rendering, size relative to the square, shadow; move/selection/last-move/check highlights and their exact colours; the sidebar (our current one has Hint/Coach/Flip/Undo/Clock, New Game, Party/Sound/Learn/Memes/Motion, then select boxes, then Review/Stats - is that the right information hierarchy for a chess app?); the player cards (avatar, name, rating, captured pieces, clock); the move list (columns, current-move emphasis, scrolling); the result dialog; the start screen; empty/loading states; and anything that looks like arcade noise left over.
+3. For EVERY finding give: the exact selector or code location, what chess.com does (with a source URL when you can find one), what we should do instead, and a concrete CSS/JS patch (a .diff or a precise description the parent can apply). Prefer many small, safe, high-impact changes over one risky rewrite.
+4. Rank by impact and mark anything that is a genuine bug (wrong colour, clipped text, unreachable control, missing state) separately from taste.
+
+DELIVERABLES
+1. C:\Users\caleb\AppData\Local\arcade-hub\_loop\research\chesscom-refine-audit.md - the full report: what you actually saw (with the screenshot filenames you took), the ranked findings, the patches, and what you could not verify.
+2. C:\Users\caleb\AppData\Local\arcade-hub\_loop\refine\ - your probes, screenshots and any patched copies of chess.html you used to prove a fix.
+
+RULES: do not edit games/chess.html, games/chess-*.js or games/assets/** (the parent is the only writer there). To prove a patch, copy chess.html into _loop/refine/ and patch the copy. Every claim needs the command you ran and what it printed. Say explicitly what you could not verify.

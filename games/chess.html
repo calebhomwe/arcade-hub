@@ -44,8 +44,8 @@ h1 {
 .subtitle { color: #64748b; font-size: 0.75rem; margin-bottom: 6px; }
 
 #gameWrap { position: relative; width: min(92vw, calc(92vh - 180px), 480px); width: min(92vw, calc(92dvh - 180px), 480px); aspect-ratio: 1; touch-action: none; }
-canvas { display: block; width: 100%; height: 100%; border-radius: 12px;
-  box-shadow: 0 0 0 2px rgba(167,139,250,0.3), 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(167,139,250,0.15); }
+canvas { display: block; width: 100%; height: 100%; border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.45), 0 10px 26px rgba(0,0,0,0.45); }
 
 #promoOverlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); border-radius: 12px; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
 #promoOverlay.show { display: flex; }
@@ -644,6 +644,25 @@ a.back:hover{ color:var(--cc-text)!important; }
 @media (max-width:430px){
   .ss-modes{ grid-template-columns:repeat(2,1fr); }
 }
+/* sidebar hierarchy: one primary action, then compact icon rows */
+#controls{ display:flex!important; flex-wrap:wrap; gap:8px!important; align-items:stretch; }
+#btnReset{ flex:1 1 60%; }
+#controls > .btn:not(#btnReset){ flex:0 0 auto; min-width:44px; }
+.cc-iconrow, #controls > .sel, #controls > .juice-wrap{ flex:1 1 100%; }
+.btn-primary{ background:var(--cc-green)!important; color:#1C1B18!important; font-weight:800!important;
+  border-color:var(--cc-green)!important; justify-content:center; min-height:46px; }
+.cc-capimg{ width:16px; height:16px; vertical-align:-3px; margin-right:-4px; }
+.cc-capglyph{ font-size:.95rem; margin-right:-2px; }
+.cc-iconrow{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; width:100%; }
+.cc-iconrow .btn{ flex-direction:column; gap:2px; padding:8px 4px!important; font-size:.68rem; min-height:52px; }
+.cc-iconrow .btn .btn-label{ font-size:.6rem; }
+.set-group{ margin-top:12px; }
+.set-label{ font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--cc-muted); margin-bottom:6px; }
+.set-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.set-row .btn{ justify-content:center; }
+#settingsPanel .sel, #settingsPanel .juice-wrap{ width:100%; }
+#settingsPanel .juice-wrap{ justify-content:space-between; }
 #btnReset .btn-label{ display:inline; }
 #controls #btnReset{ padding:11px 12px!important; min-height:44px; }
 #learnPanel .lp-tabs{ margin-top:22px; }
@@ -759,16 +778,20 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div class="cc-card">
       <div class="cc-card-head">Game</div>
 <div id="controls">
-  <button class="btn" id="btnHint" title="Show a hint — the best move arrowed">💡<span class="btn-label">Hint</span></button>
-  <button class="btn" id="btnTeach" title="Coach mode — highlight threats and piece values">📖<span class="btn-label">Coach</span></button>
-  <button class="btn" id="btnFlip" title="Flip the board 180°">🔃<span class="btn-label">Flip</span></button>
-  <button class="btn" id="btnUndo" title="Undo the last move">↩<span class="btn-label">Undo</span></button>
-  <button class="btn" id="btnClock" title="Toggle the 3-minute blitz clock (2s increment per move)">⚡<span class="btn-label">Clock</span></button>
-  <button class="btn" id="btnReset" title="Start a new game"><span class="btn-label">New Game</span></button>
-  <button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
-<button class="btn" id="btnLearn" title="Open the Chess Academy: combos, openings, endgames, quiz"><span>🧠</span><span class="btn-label">Learn</span></button>
-<button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
-<button class="btn" id="btnMotion" title="Full effects — tap to reduce motion" aria-pressed="false"><span>🎞️</span><span class="btn-label">Motion</span></button>
+  <button class="btn btn-primary" id="btnReset" title="Start a new game">♟ <span class="btn-label">New Game</span></button>
+  <div class="cc-iconrow" role="group" aria-label="In-game actions">
+    <button class="btn" id="btnHint" title="Show a hint — the best move arrowed">💡<span class="btn-label">Hint</span></button>
+    <button class="btn" id="btnTeach" title="Coach mode — highlight threats and piece values">📖<span class="btn-label">Coach</span></button>
+    <button class="btn" id="btnFlip" title="Flip the board 180°">🔃<span class="btn-label">Flip</span></button>
+    <button class="btn" id="btnUndo" title="Undo the last move">↩<span class="btn-label">Undo</span></button>
+    <button class="btn" id="btnClock" title="Toggle the blitz clock (2s increment per move)">⚡<span class="btn-label">Clock</span></button>
+  </div>
+  <div class="cc-iconrow" role="group" aria-label="Panels">
+    <button class="btn" id="btnPuzzle" title="Puzzle mode — find the best move">🧩<span class="btn-label">Puzzle</span></button>
+    <button class="btn" id="btnReview" title="Review this game">📊<span class="btn-label">Review</span></button>
+    <button class="btn" id="btnStats" title="Your stats">📈<span class="btn-label">Stats</span></button>
+    <button class="btn" id="btnSettings" title="Settings" aria-haspopup="dialog">⚙️<span class="btn-label">Settings</span></button>
+  </div>
     <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
     <option value="neon">🌃 Neon</option>
@@ -807,28 +830,6 @@ a.back:hover{ color:var(--cc-text)!important; }
     <option value="defensive">🛡️ Defensive</option>
     <option value="tricky">🎭 Tricky</option>
   </select>
-  <button class="btn" id="btnPuzzle" title="Puzzle mode — find the best move">🧩<span class="btn-label">Puzzle</span></button>
-  <button class="btn" id="btnReview" title="Review Game">📊 <span class="btn-label">Review</span></button>
-  <button class="btn" id="btnStats" title="Your stats">📈 <span class="btn-label">Stats</span></button>
-  <div class="juice-wrap">
-    <label for="juiceSlider">🧃</label>
-    <input type="range" id="juiceSlider" min="0" max="100" value="15" step="5">
-    <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">15</span>
-  </div>
-  <div class="sfx-vol-wrap">
-    <span aria-hidden="true">🔊</span>
-    <div class="sfx-vol-track" id="sfxVolTrack" role="slider" tabindex="0" aria-label="Sound effect volume" aria-valuemin="0" aria-valuemax="100">
-      <div class="sfx-vol-fill" id="sfxVolFill"></div>
-    </div>
-    <span id="sfxVolVal" class="sfx-vol-val">85%</span>
-  </div>
-  <div class="sfx-set-wrap">
-    <label for="sfxSetSel" class="sfx-set-label">Sound</label>
-    <select class="sel" id="sfxSetSel" title="Chess sound set">
-      <option value="natural">Natural</option>
-      <option value="crisp">Crisp</option>
-    </select>
-  </div>
     </div>
     <div class="cc-card">
       <div class="cc-card-head">Moves</div>
@@ -863,6 +864,44 @@ a.back:hover{ color:var(--cc-text)!important; }
   <div class="stat-line"><span>🎖️ Badges</span><b id="statBadges">0/0</b></div>
   <div class="stat-line"><span>🔥 Puzzle rush best</span><b id="statRush">0</b></div>
   <button class="btn" id="btnStatsReset" title="Erase all saved stats">🗑 Reset Stats</button>
+</div>
+
+
+<div id="settingsPanel" class="modal-panel" role="dialog" aria-modal="true" aria-label="Settings">
+  <button class="btn panel-exit-btn" id="btnSettingsClose" title="Close settings">🚪 Exit</button>
+  <h3>⚙️ Settings</h3>
+  <div class="set-group">
+    <div class="set-label">Opponent</div>
+    <div class="set-row"><button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
+    <button class="btn" id="btnMotion" title="Full effects — tap to reduce motion" aria-pressed="false"><span>🎞️</span><span class="btn-label">Motion</span></button></div>
+    <div class="set-row"><button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
+    <button class="btn" id="btnLearn" title="Open the Chess Academy"><span>🧠</span><span class="btn-label">Learn</span></button></div>
+  </div>
+  <div class="set-group">
+    <div class="set-label">Sound</div>
+    <div class="sfx-vol-wrap">
+      <span aria-hidden="true">🔊</span>
+      <div class="sfx-vol-track" id="sfxVolTrack" role="slider" tabindex="0" aria-label="Sound effect volume" aria-valuemin="0" aria-valuemax="100">
+        <div class="sfx-vol-fill" id="sfxVolFill"></div>
+      </div>
+      <span id="sfxVolVal" class="sfx-vol-val">85%</span>
+    </div>
+    <div class="sfx-set-wrap">
+      <label for="sfxSetSel" class="sfx-set-label">Chess sounds</label>
+      <select class="sel" id="sfxSetSel" title="Chess sound set">
+        <option value="natural">Natural</option>
+        <option value="crisp">Crisp</option>
+      </select>
+    </div>
+  </div>
+  <div class="set-group">
+    <div class="set-label">Effects</div>
+    <div class="juice-wrap">
+      <label for="juiceSlider">🧃</label>
+      <input type="range" id="juiceSlider" min="0" max="100" value="15" step="5">
+      <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">15</span>
+    </div>
+  </div>
 </div>
 
 <div id="overModal" class="modal-panel" role="dialog" aria-modal="true" aria-label="Game over">
@@ -2644,11 +2683,17 @@ function updateUI() {
   for (const p of game.capturedByBlack) bScore += VAL[pType(p)] || 0;
   document.getElementById('scoreW').textContent = wScore;
   document.getElementById('scoreB').textContent = bScore;
-  const wCap = game.capturedByWhite.map(p => CH[p]).join('');
-  const bCap = game.capturedByBlack.map(p => CH[p]).join('');
+  const pieceIcon = p => {
+    const img = pieceImage(p);
+    const key = (pColor(p) === CL.WHITE ? 'w_' : 'b_') + PIECE_FILES[pType(p)];
+    if (img) return '<img class="cc-capimg" src="assets/pieces/' + key + '.png" alt="">';
+    return '<span class="cc-capglyph" style="color:' + getCssVar(pColor(p) === CL.WHITE ? '--wPiece' : '--bPiece') + '">' + CH[p] + '</span>';
+  };
+  const wCap = game.capturedByWhite.map(pieceIcon).join('');
+  const bCap = game.capturedByBlack.map(pieceIcon).join('');
   const capBotEl = document.getElementById('capBot'), capTopEl = document.getElementById('capTop');
-  if (capBotEl) capBotEl.innerHTML = `<span style="color:${getCssVar('--bPiece')}">${wCap}</span>`;
-  if (capTopEl) capTopEl.innerHTML = `<span style="color:${getCssVar('--wPiece')};text-shadow:0 0 3px #000">${bCap}</span>`;
+  if (capBotEl) capBotEl.innerHTML = wCap;
+  if (capTopEl) capTopEl.innerHTML = bCap;
   const topCard = document.getElementById('ccTop'), botCard = document.getElementById('ccBottom');
   if (topCard) topCard.classList.toggle('cc-turn', game.turn === CL.BLACK && !game.gameOver);
   if (botCard) botCard.classList.toggle('cc-turn', game.turn === CL.WHITE && !game.gameOver);
@@ -3043,14 +3088,15 @@ function runReview() {
   reviewTimer = setTimeout(step, 8);
 }
 
-const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel', 'overModal'];
+const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'promoOverlay', 'memePanel', 'overModal', 'settingsPanel'];
+const SHEET_IDS = ['puzzlePanel'];
 let lastFocused = null;
 
 function openModals() {
   return MODAL_IDS.map(id => document.getElementById(id)).filter(el => el && el.classList.contains('show'));
 }
 function syncModalState() {
-  const open = openModals().length > 0;
+  const open = openModals().length > 0 || SHEET_IDS.some(id => { const el = document.getElementById(id); return el && el.classList.contains('show'); });
   document.body.classList.toggle('modal-open', open);
   if (open) {
     if (!lastFocused) lastFocused = document.activeElement;
@@ -3259,6 +3305,17 @@ document.getElementById('btnPuzzleExit').addEventListener('click', exitPuzzleMod
 document.getElementById('btnLearn').addEventListener('click', openLearn);
 document.getElementById('btnLearnClose').addEventListener('click', closeLearn);
 document.querySelectorAll('#learnTabs button').forEach(b => b.addEventListener('click', () => { renderLearn(b.dataset.cat); document.querySelectorAll('#learnTabs button').forEach(x => x.classList.toggle('active', x === b)); }));
+(function wireSettings() {
+  const btn = document.getElementById('btnSettings');
+  const panel = document.getElementById('settingsPanel');
+  if (!btn || !panel) return;
+  const open = on => { panel.classList.toggle('show', on); if (window.syncModalState) window.syncModalState(); };
+  btn.addEventListener('click', () => open(!panel.classList.contains('show')));
+  const close = document.getElementById('btnSettingsClose');
+  if (close) close.addEventListener('click', () => open(false));
+  panel.addEventListener('click', e => { if (e.target === panel) open(false); });
+})();
+
 (function wireGameOver() {
   const hide = () => { const m = document.getElementById('overModal'); if (m) m.classList.remove('show'); if (window.syncModalState) window.syncModalState(); };
   const close = document.getElementById('btnOverClose');
@@ -3404,13 +3461,7 @@ document.getElementById('btnPuzzleSkip').addEventListener('click', () => {
     const t = e.target && e.target.closest && e.target.closest('button, select, .sel, .btn');
     if (t) play('uiClick');
   }, true);
-  const fine = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  if (fine) {
-    document.addEventListener('pointerenter', e => {
-      const t = e.target && e.target.closest && e.target.closest('.btn, button');
-      if (t) play('uiHover');
-    }, true);
-  }
+  // hover sounds were removed: they fired constantly while moving the mouse
 })();
 
 const juiceSlider = document.getElementById('juiceSlider');
@@ -4070,7 +4121,7 @@ window.chessGame = function () {
 })();
 
 (function watchModals() {
-  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel', 'overModal'];
+  const ids = ['reviewPanel', 'statsPanel', 'learnPanel', 'puzzlePanel', 'promoOverlay', 'memePanel', 'overModal', 'settingsPanel'];
   const mo = new MutationObserver(() => syncModalState());
   const observe = () => ids.forEach(id => { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
   observe();
