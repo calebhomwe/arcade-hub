@@ -6,20 +6,20 @@
   if (!wrap) return;
   const Q = {
     balanced: {
-      cap: ['A fair trade... for me.', 'I will take that, thank you.', 'Material is merely a number. My number.'],
-      chk: ['Check. Nothing personal.', 'A balanced position requires pressure.'],
-      lose: ['I meant to do that.', 'A planned sacrifice. Obviously.', 'You call that winning? I call it redistribution.'],
-      nerv: ['Hmm. Recalculating.', 'That was... within expectations.'],
-      win: ['Equilibrium achieved: I win, you lose.', 'A balanced outcome for me.'],
-      salt: ['The balance was off. It happens.']
+      cap: ['A fair trade... for me.', 'I will take that, thank you.', 'Material is merely a number. My number.', 'That piece looked lonely on your side.', 'Consider it a donation to the cause.', 'Free samples! How generous of you.'],
+      chk: ['Check. Nothing personal.', 'A balanced position requires pressure.', 'Your king would like a word.', 'Just a nudge. Keep it symmetric.', 'Check — the vibes are shifting.'],
+      lose: ['I meant to do that.', 'A planned sacrifice. Obviously.', 'You call that winning? I call it redistribution.', 'Statistically, that was a great move.', 'I am losing on purpose. For research.', 'Bold of you to assume I blundered.'],
+      nerv: ['Hmm. Recalculating.', 'That was... within expectations.', 'Interesting. Interesting. Concerning.', 'My evaluation bar just flinched.', 'One moment, consulting the vibes.'],
+      win: ['Equilibrium achieved: I win, you lose.', 'A balanced outcome for me.', 'Perfectly balanced. As all things should be.', 'The math liked me today.', 'Good game. The scoreboard agrees with me.'],
+      salt: ['The balance was off. It happens.', 'I want a recount.', 'Rematch. Immediately. Best of nine.', 'The board was clearly tilted.']
     },
     aggressive: {
-      cap: ['YOUR PIECES ARE MINE 😈', 'I eat pieces for breakfast!', 'ATTACK IS THE BEST DEFENSE!'],
-      chk: ['CHECK! FEEL THE PRESSURE!', 'NO MERCY!'],
-      lose: ['A TRAP! I MEANT IT AS A TRAP!', 'I am not losing, I am reloading!'],
-      nerv: ['You dare attack ME?', 'Grrr... fine. Take it.'],
-      win: ['TOTAL DOMINATION! 💥', 'I warned you to fear the attack!'],
-      salt: ['Impossible! I attack, therefore I am!']
+      cap: ['YOUR PIECES ARE MINE 😈', 'I eat pieces for breakfast!', 'ATTACK IS THE BEST DEFENSE!', 'THANK YOU FOR THE GIFT 🎁', 'CRUNCH. Delicious.', 'Another one for the collection!'],
+      chk: ['CHECK! FEEL THE PRESSURE!', 'NO MERCY!', 'RUN. IT MAKES IT FUNNIER.', 'YOUR KING IS SWEATING!', 'SAY GOODBYE TO YOUR ROOK!'],
+      lose: ['A TRAP! I MEANT IT AS A TRAP!', 'I am not losing, I am reloading!', 'TEMPORARY SETBACK!', 'I HAVE PLENTY MORE PIECES!', 'THIS IS FINE! THIS IS FINE!'],
+      nerv: ['You dare attack ME?', 'Grrr... fine. Take it.', 'RUDE. ABSOLUTELY RUDE.', 'I WAS DISTRACTED.'],
+      win: ['TOTAL DOMINATION! 💥', 'I warned you to fear the attack!', 'SIT DOWN. IT IS OVER.', 'ATTACK WINS AGAIN. SHOCKING.', 'GG. EZ. NEXT.'],
+      salt: ['Impossible! I attack, therefore I am!', 'THE HORSE WAS SUPPOSED TO WIN!', 'REMATCH. NOW.', 'I BLAME THE LAG.']
     },
     defensive: {
       cap: ['Oops, you left that hanging.', 'I prefer defense... but free is free.', 'Turtling pays dividends.'],

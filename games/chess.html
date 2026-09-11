@@ -82,6 +82,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 12px;
 .btn-label { font-size: 0.55rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.02em; line-height: 1.1; }
 @media (max-width: 430px) { .btn-label { display: none; } }
 
+body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
 body.modal-open #ccApp { filter: saturate(0.85) brightness(0.45); transition: filter 0.18s; }
 #ccApp { transition: filter 0.18s; }
 .sfx-vol-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.78rem; }
@@ -497,7 +498,9 @@ body{ background:var(--cc-bg)!important; color:var(--cc-text); display:block!imp
 #ccApp{ max-width:1120px; margin:0 auto; padding:10px 12px 28px; }
 #ccHeader{ display:flex; align-items:baseline; gap:10px; padding:4px 2px 10px; flex-wrap:wrap; }
 .cc-brand{ font-size:1.15rem; font-weight:800; letter-spacing:-.01em; color:var(--cc-text); }
-.cc-sub{ font-size:.72rem; color:var(--cc-muted); }
+.cc-sub{ font-size:.72rem; color:var(--cc-muted); transition: opacity .3s, color .3s; }
+.cc-sub-pop{ animation: ccSubPop .7s ease; color: #a78bfa; }
+@keyframes ccSubPop { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: 1; transform: none; } 100% { opacity: 1; } }
 #ccMain{ display:grid; grid-template-columns:minmax(0,1fr) 322px; gap:16px; align-items:start; }
 #boardCol{ display:flex; flex-direction:column; min-width:0; }
 #gameWrap{ width:var(--cc-boardmax)!important; max-width:100%!important; margin:0 auto; }
@@ -659,6 +662,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
 <button class="btn" id="btnLearn" title="Open the Chess Academy: combos, openings, endgames, quiz"><span>🧠</span><span class="btn-label">Learn</span></button>
 <button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
+<button class="btn" id="btnMotion" title="Full effects — tap to reduce motion" aria-pressed="false"><span>🎞️</span><span class="btn-label">Motion</span></button>
     <select class="sel" id="themeSel" title="Board theme">
     <option value="classic">🎨 Classic</option>
     <option value="neon">🌃 Neon</option>
@@ -1961,7 +1965,27 @@ function animLoop() {
 
 // ==================== JUICE EFFECTS ====================
 
+let reducedMotion = (function () {
+  try {
+    if (localStorage.getItem('chessMotion') === 'reduced') return true;
+    if (localStorage.getItem('chessMotion') === 'full') return false;
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { return false; }
+})();
+function setMotion(reduced) {
+  reducedMotion = !!reduced;
+  try { localStorage.setItem('chessMotion', reducedMotion ? 'reduced' : 'full'); } catch (e) {}
+  document.body.classList.toggle('reduced-motion', reducedMotion);
+  const btn = document.getElementById('btnMotion');
+  if (btn) {
+    btn.classList.toggle('active', reducedMotion);
+    btn.title = reducedMotion ? 'Reduced motion on — tap for full effects' : 'Full effects — tap to reduce motion';
+    const l = btn.querySelector('.btn-label');
+    if (l) l.textContent = reducedMotion ? 'Calm' : 'Motion';
+  }
+}
 function spawnParticles(x, y, count, color) {
+  if (reducedMotion) count = Math.min(count, 4);
   const c = Math.floor(count * (juiceLevel / 100));
   for (let i = 0; i < c; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -1970,14 +1994,17 @@ function spawnParticles(x, y, count, color) {
   }
   if (particles.length > 400) particles.splice(0, particles.length - 400);
 }
-function triggerShake(intensity) { shakeAmount = Math.max(shakeAmount, intensity * (juiceLevel / 100)); }
+function triggerShake(intensity) { if (reducedMotion) return; shakeAmount = Math.max(shakeAmount, intensity * (juiceLevel / 100)); }
 function triggerFlash(sq) { flashSquares.push({ sq, life: 0.8 * (juiceLevel / 100) }); }
 function spawnTextPop(x, y, text, color, size) {
   if (juiceLevel < 20) return;
   textPops.push({ x, y, text, color, size: size * (juiceLevel / 100), vy: 3 + (juiceLevel / 100) * 4, life: 1.0 });
   if (textPops.length > 20) textPops.splice(0, textPops.length - 20);
 }
-function bodyShake() { document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake'); }
+function bodyShake() {
+  if (reducedMotion) return;
+  document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+}
 
 function castleMoveFor(from, to) {
   return legalMoves.find(m => m.from === from && m.to === to && m.castle) || null;
@@ -2859,6 +2886,9 @@ document.getElementById('btnPuzzleExit').addEventListener('click', exitPuzzleMod
 (function () {
   const mb = document.getElementById('btnMemes');
   if (mb) mb.addEventListener('click', () => { if (window.ChessMemes) window.ChessMemes.toggle(); });
+  const mo = document.getElementById('btnMotion');
+  if (mo) mo.addEventListener('click', () => { setMotion(!reducedMotion); mo.setAttribute('aria-pressed', String(reducedMotion)); });
+  setMotion(reducedMotion);
 })();
 document.getElementById('btnLearn').addEventListener('click', openLearn);
 document.getElementById('btnLearnClose').addEventListener('click', closeLearn);
@@ -3136,6 +3166,30 @@ window.__chessTest = function (caseId) {
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
     },
+    motion: function () {
+      fresh();
+      const btn = document.getElementById('btnMotion');
+      add('the motion toggle exists', !!btn, btn ? btn.id : 'missing');
+      const before = reducedMotion;
+      setMotion(true);
+      add('reduced motion persists', (function () { try { return localStorage.getItem('chessMotion') === 'reduced'; } catch (e) { return false; } })(), 'stored');
+      add('the body carries the reduced-motion class', document.body.classList.contains('reduced-motion'), 'class');
+      const s0 = shakeAmount;
+      triggerShake(4);
+      add('reduced motion suppresses screen shake', shakeAmount === s0, 'shake=' + shakeAmount);
+      setMotion(false);
+      triggerShake(4);
+      add('full motion restores screen shake', shakeAmount > s0, 'shake=' + shakeAmount);
+      setMotion(before);
+    },
+    subtitles: function () {
+      const el = document.querySelector('.cc-sub');
+      add('the header subtitle exists', !!el && el.textContent.length > 4, el ? el.textContent : 'missing');
+      const hasKeyframes = Array.from(document.styleSheets).some(function (ss) {
+        try { return Array.from(ss.cssRules).some(function (r) { return r.name === 'ccSubPop'; }); } catch (e) { return false; }
+      });
+      add('the subtitle pop animation is defined', hasKeyframes, hasKeyframes ? 'ccSubPop found' : 'missing');
+    },
     memes: function () {
       fresh();
       const M = window.ChessMemes;
@@ -3147,7 +3201,12 @@ window.__chessTest = function (caseId) {
       if (!cat) return;
       const first = cat.packs[0].sounds[0];
       add('every meme has a resolved audio path', cat.packs.every(p => p.sounds.every(s => typeof s.src === 'string' && s.src.indexOf('audio/memes/') === 0)), first.src);
-      add('the audio files are served', (function () { const x = new XMLHttpRequest(); try { x.open('HEAD', first.src, false); x.send(); return x.status === 200 || x.status === 0; } catch (e) { return false; } })(), first.src);
+      const missing = [];
+      for (const p of cat.packs) for (const s of p.sounds) {
+        try { const x = new XMLHttpRequest(); x.open('HEAD', s.src, false); x.send(); if (!(x.status === 200 || x.status === 0)) missing.push(s.file + ' (' + x.status + ')'); }
+        catch (e) { missing.push(s.file + ' (threw)'); }
+      }
+      add('every banked audio file is actually served', missing.length === 0, missing.length ? missing.slice(0, 4).join(', ') + (missing.length > 4 ? ' +' + (missing.length - 4) + ' more' : '') : cat.packs.reduce((n, p) => n + p.sounds.length, 0) + ' files OK');
       M.open();
       const panel = document.getElementById('memePanel');
       add('the selector panel opens', !!panel && panel.classList.contains('show'), panel ? 'show=' + panel.classList.contains('show') : 'missing');
@@ -3279,6 +3338,31 @@ window.chessGame = function () {
     s.onerror = () => { failed++; console.warn('[chess-mod] missing:', src); };
     document.body.appendChild(s);
   });
+})();
+
+(function rotateSubtitles() {
+  const el = document.querySelector('.cc-sub');
+  if (!el) return;
+  const SUBS = [
+    'Play · Learn · Traps · Memes',
+    'Now with 35 memes and zero regrets',
+    'Your king is nervous, and he is right',
+    'Blunder responsibly',
+    'En passant is not a myth',
+    'The engine is watching. And judging.',
+    'Free elo, no refunds',
+    'Castle early, cry later',
+    'Tactics are just memes with consequences'
+  ];
+  const base = el.textContent;
+  let i = 0;
+  setInterval(() => {
+    if (reducedMotion) { el.textContent = base; return; }
+    i = (i + 1) % SUBS.length;
+    el.textContent = SUBS[i];
+    el.classList.add('cc-sub-pop');
+    setTimeout(() => el.classList.remove('cc-sub-pop'), 700);
+  }, 16000);
 })();
 
 (function watchModals() {
