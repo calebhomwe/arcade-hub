@@ -588,6 +588,7 @@ a.back:hover{ color:var(--cc-text)!important; }
 .ml-no{ color:var(--cc-muted)!important; font-weight:700; font-size:.74rem; }
 #moveList .ml-mv{ color:var(--cc-text)!important; font-weight:600; font-family:inherit; }
 #moveList .ml-cur{ background:rgba(129,182,76,.28); border-radius:3px; }
+#moveList .ml-row:hover{ background:rgba(255,255,255,.06); border-radius:4px; }
 
 #btnReset .btn-label{ display:inline; }
 #controls #btnReset{ padding:11px 12px!important; min-height:44px; }
@@ -2363,18 +2364,23 @@ function updateUI() {
   if (advTopEl) advTopEl.textContent = matDiff < 0 ? '+' + (-matDiff) : '';
   const ml = document.getElementById('moveList');
   const plies = collectPlies();
-  let rows = '';
-  for (let i = 0; i < plies.length; i += 2) {
-    const wSan = sanOf(plies[i]);
-    const bSan = plies[i + 1] ? sanOf(plies[i + 1]) : '';
-    const wCur = (i === plies.length - 1) ? ' ml-cur' : '';
-    const bCur = (i + 1 === plies.length - 1) ? ' ml-cur' : '';
-    rows += '<div class="ml-row"><span class="ml-no">' + (i / 2 + 1) + '.</span>'
-          + '<span class="ml-mv' + wCur + '">' + wSan + '</span>'
-          + '<span class="ml-mv' + bCur + '">' + bSan + '</span></div>';
+  if (mlCache.n !== plies.length) {
+    let rows = '';
+    for (let i = 0; i < plies.length; i += 2) {
+      const wSan = sanOf(plies[i]);
+      const bSan = plies[i + 1] ? sanOf(plies[i + 1]) : '';
+      const wCur = (i === plies.length - 1) ? ' ml-cur' : '';
+      const bCur = (i + 1 === plies.length - 1) ? ' ml-cur' : '';
+      rows += '<div class="ml-row"><span class="ml-no">' + (i / 2 + 1) + '.</span>'
+            + '<span class="ml-mv' + wCur + '" title="Move ' + (i + 1) + '">' + wSan + '</span>'
+            + '<span class="ml-mv' + bCur + '" title="Move ' + (i + 2) + '">' + bSan + '</span></div>';
+    }
+    ml.innerHTML = rows;
+    mlCache.n = plies.length;
+    const cur = ml.querySelector('.ml-cur');
+    if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) { ml.scrollTop = ml.scrollHeight; } }
+    else ml.scrollTop = ml.scrollHeight;
   }
-  ml.innerHTML = rows;
-  ml.scrollTop = ml.scrollHeight;
   updateSetupHint();
 }
 
@@ -2394,6 +2400,8 @@ function showRandomTip() {
   el.textContent = text;
   setTimeout(() => { if (el.textContent === text) el.textContent = ''; }, 6000);
 }
+
+let mlCache = { n: -1 };
 
 // ==================== BOT ====================
 
@@ -2565,6 +2573,7 @@ function resetGame() {
   refreshClocks();
   if (clockEnabled) clockStart();
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
+  mlCache.n = -1;
   pendingPromo = null; hidePromoUI();
   particles = []; flashSquares = []; textPops = []; clickRings = [];
   shakeAmount = 0; comboCount = 0;
@@ -3214,6 +3223,34 @@ window.__chessTest = function (caseId) {
       resetGame(); botEnabled = false;
       add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
     },
+    perf: function () {
+      fresh();
+      play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6', 'd2d3', 'd7d6']);
+      const t0 = performance.now();
+      for (let i = 0; i < 200; i++) updateUI();
+      const uiMs = performance.now() - t0;
+      add('200 UI refreshes stay responsive', uiMs < 500, Math.round(uiMs) + 'ms for 200 refreshes');
+      for (let i = 0; i < 20; i++) spawnParticles(100, 100, 200, '#fff');
+      add('the particle pool is capped', particles.length <= 400, particles.length + ' particles');
+      for (let i = 0; i < 60; i++) spawnTextPop(100, 100, 'x', '#fff', 12);
+      add('the text-pop pool is capped', textPops.length <= 20, textPops.length + ' pops');
+      const t1 = performance.now();
+      draw();
+      add('a frame draws quickly', (performance.now() - t1) < 40, (performance.now() - t1).toFixed(1) + 'ms');
+    },
+    moves: function () {
+      fresh();
+      play(['e2e4', 'e7e5', 'g1f3']);
+      const ml = document.getElementById('moveList');
+      const rows = ml.querySelectorAll('.ml-row').length;
+      add('the move list renders paired rows', rows === 2, rows + ' rows');
+      add('the move list uses SAN', /e4/.test(ml.textContent) && /Nf3/.test(ml.textContent), ml.textContent.replace(/\s+/g, ' ').trim().slice(0, 40));
+      add('the current move is highlighted', !!ml.querySelector('.ml-cur'), ml.querySelector('.ml-cur') ? ml.querySelector('.ml-cur').textContent : 'none');
+      const before = ml.innerHTML;
+      updateUI(); updateUI();
+      add('re-rendering the move list is idempotent', ml.innerHTML === before, 'stable');
+      add('a fresh game resets the list cache', (function () { resetGame(); botEnabled = false; updateUI(); return ml.querySelectorAll('.ml-row').length === 0; })(), 'cleared');
+    },
     clock: function () {
       fresh();
       const btn = document.getElementById('btnClock');
@@ -3449,12 +3486,20 @@ window.chessGame = function () {
     'Castle early, cry later',
     'Tactics are just memes with consequences'
   ];
+  const memeLine = () => {
+    try {
+      const M = window.ChessMemes;
+      const c = M && M.catalog && M.catalog();
+      if (c) return 'Now with ' + c.packs.reduce((n, p) => n + p.sounds.length, 0) + ' memes and zero regrets';
+    } catch (e) {}
+    return 'Now with memes and zero regrets';
+  };
   const base = el.textContent;
   let i = 0;
   setInterval(() => {
     if (reducedMotion) { el.textContent = base; return; }
     i = (i + 1) % SUBS.length;
-    el.textContent = SUBS[i];
+    el.textContent = (i === 1) ? memeLine() : SUBS[i];
     el.classList.add('cc-sub-pop');
     setTimeout(() => el.classList.remove('cc-sub-pop'), 700);
   }, 16000);
