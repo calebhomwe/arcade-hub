@@ -1,0 +1,59 @@
+[0] {
+ "name": "Fork",
+ "how": "One piece attacks two or more targets at once; knights fork best. Ex: Nd5-c7+ hits the king on e8 and the rook on a8 simultaneously."
+}
+
+[1] {
+ "name": "Pin",
+ "how": "A piece cannot or dare not move because something bigger stands behind it. Ex: Bf1-b5 pins the c6 knight against the e8 king."
+}
+
+[2] {
+ "name": "Skewer",
+ "how": "Attack the valuable piece, force it away, collect the cheap one behind it. Ex: Rb1-b8+ drives the king off a8, exposing the h8 rook."
+}
+
+[3] {
+ "name": "Discovered Attack",
+ "how": "Moving the front piece of an alignment unmasks the rear piece's attack, creating two threats in one. Ex: the d4 knight steps aside with check, freeing the b2 bishop's diagonal at g7."
+}
+
+[4] {
+ "name": "Double Attack",
+ "how": "One move threatens two unrelated things, usually by the queen. Ex: Qd1-a4+ hits the e8 king and the a5 pawn in a single stroke."
+}
+
+[5] {
+ "name": "Deflection",
+ "how": "Force the key defender away from its duty. Ex: Qd8+! forces Rxd8, leaving the back rank bare for Re1-e8#."
+}
+
+[6] {
+ "name": "Decoy",
+ "how": "Lure a piece onto a square where it dies or blocks fatally. Ex: Qg8+! Rxg8 drags the rook onto g8, clearing the way for Nf7#."
+}
+
+[7] {
+ "name": "Overload",
+ "how": "A defender guarding two jobs must abandon one. Ex: if the d1 queen guards both the back rank and the d4 knight, then Rxd4! Qxd4 Rd8#."
+}
+
+[8] {
+ "name": "Zwischenzug",
+ "how": "Insert an unexpected in-between move before the 'forced' reply. Ex: after Nxd5 comes Nxf7 Kxf7 Qf3+! - the check interrupts before taking back on d5."
+}
+
+[9] {
+ "name": "X-Ray",
+ "how": "A long-range piece strikes THROUGH an enemy piece at a target beyond. Ex: the d1 rook x-rays the d8 defender; once it moves, Rd8+ lands."
+}
+
+[10] {
+ "name": "Battery",
+ "how": "Doubling heavy pieces on one line so the rear gun fires when the front one deflects. Ex: Qd2 stacked behind Rd1, aimed down the d-file."
+}
+
+[11] {
+ "name": "Back-Rank Weakness",
+ "how": "Unmoved f7-g7-h7 (or f2-g2-h2) pawns seal the king, so one invader on the last rank mates. Ex: Rd8#. Cure: luft with h3/h6 or a back-rank guardian."
+}

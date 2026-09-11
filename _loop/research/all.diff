@@ -1,0 +1,69 @@
+diff --git a/games/chess.html b/games/chess.html
+index c96ff9a..08bf8ee 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1078,12 +1078,12 @@ function getLegalMoves(b, i, epTarget, castlingRights) {
+     const r = color === CL.WHITE ? 7 : 0;
+     if (i === idx(r,4) && !isInCheck(b, color)) {
+       const ks = color === CL.WHITE ? 'K' : 'k';
+-      if (castlingRights[ks] && !b[idx(r,5)] && !b[idx(r,6)] &&
++      if (castlingRights[ks] && b[idx(r,7)] === P(PT.ROOK,color) && !b[idx(r,5)] && !b[idx(r,6)] &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,5)}),color) &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,6)}),color))
+         legal.push({from:i, to:idx(r,6), capture:0, castle:'kingside'});
+       const qs = color === CL.WHITE ? 'Q' : 'q';
+-      if (castlingRights[qs] && !b[idx(r,3)] && !b[idx(r,2)] && !b[idx(r,1)] &&
++      if (castlingRights[qs] && b[idx(r,0)] === P(PT.ROOK,color) && !b[idx(r,3)] && !b[idx(r,2)] && !b[idx(r,1)] &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,3)}),color) &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,2)}),color))
+         legal.push({from:i, to:idx(r,2), capture:0, castle:'queenside'});
+@@ -1212,7 +1212,7 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
+ 
+ // ==================== PUZZLES ====================
+ 
+-const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is attacked twice.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"7k/8/8/8/8/8/8/6QK w - - 0 1","desc":"Find the checkmate in 1.","hint":"The queen delivers the final blow.","solution":"g1g7"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/3p4/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
++const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is attacked twice.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"7k/5K2/8/8/8/8/8/6Q1 w - - 0 1","desc":"Find the checkmate in 1.","hint":"The queen delivers the final blow.","solution":"g1g7"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
+ 
+ let puzzleIndex = -1;
+ let puzzleMode = false;
+@@ -1451,7 +1451,17 @@ function trackStatsEnd(resultText) {
+ function positionKey(board, turn, epTarget, castlingRights) {
+   let s = turn + '|';
+   for (let i = 0; i < 64; i++) s += board[i] ? CH[board[i]] : '.';
+-  s += '|' + (epTarget === null || epTarget === undefined ? '-' : epTarget);
++  let epk = '-';
++  if (epTarget !== null && epTarget !== undefined) {
++    const capRow = turn === CL.WHITE ? row(epTarget) + 1 : row(epTarget) - 1;
++    for (const dc of [-1, 1]) {
++      const c = col(epTarget) + dc;
++      if (c < 0 || c > 7) continue;
++      const i = idx(capRow, c);
++      if (pType(board[i]) === PT.PAWN && pColor(board[i]) === turn && getLegalMoves(board, i, epTarget, castlingRights).some(m => m.ep)) { epk = epTarget; break; }
++    }
++  }
++  s += '|' + epk;
+   s += '|' + (castlingRights.K?'K':'') + (castlingRights.Q?'Q':'') + (castlingRights.k?'k':'') + (castlingRights.q?'q':'');
+   return s;
+ }
+@@ -1506,7 +1516,8 @@ function hasInsufficientMaterial(board) {
+     const bish = pieces.filter(x => pType(x.p) === PT.BISHOP);
+     if (bish.length === 2 && !pieces.some(x => pType(x.p) !== PT.KING && pType(x.p) !== PT.BISHOP)) {
+       const cols = bish.map(b => ({ light: (row(b.i) + col(b.i)) % 2 === 0, w: pColor(b.p) }));
+-      if (cols[0].light !== cols[1].light && cols[0].w !== cols[1].w) return true;
++      if (cols[0].light === cols[1].light) return true;
++      if (cols[0].w !== cols[1].w) return true;
+     }
+   }
+   return false;
+@@ -2417,8 +2428,9 @@ function reconstructReviewMove(snap, raw) {
+   if (!piece) return m;
+   const t = pType(piece);
+   if (t === PT.KING) {
+-    if (raw.to === 62 || raw.to === 6) m.castle = 'kingside';
+-    else if (raw.to === 58 || raw.to === 2) m.castle = 'queenside';
++    const dc = col(raw.to) - col(raw.from);
++    if (dc === 2) m.castle = 'kingside';
++    else if (dc === -2) m.castle = 'queenside';
+   } else if (t === PT.PAWN) {
+     if (row(raw.to) === 0 || row(raw.to) === 7) { m.promo = true; m.promoPiece = PT.QUEEN; }
+     else if (Math.abs(col(raw.to) - col(raw.from)) === 1 && !snap.board[raw.to]) m.ep = true;

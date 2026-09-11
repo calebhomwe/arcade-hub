@@ -1,0 +1,49 @@
+[0] {
+ "name": "Theme Puzzle Surge",
+ "routine": "Ten minutes daily on ONE lichess puzzle theme — pins Monday, forks Tuesday, skewers Wednesday, discoveries Thursday, back-rank Friday. Fifteen puzzles, same motif, and log the one pattern that fooled you."
+}
+
+[1] {
+ "name": "Loss Autopsy Ritual",
+ "routine": "Twice weekly, twenty minutes on your most recent loss: mark the move where the evaluation flipped past 2, write down the thought you had there, trace back to the earliest root cause (often moves 8-12), and extract one rule into a notebook."
+}
+
+[2] {
+ "name": "Blindfold-Lite Squares",
+ "routine": "Name the color of any called-out square in under two seconds (is e6 light?), then trace knight tours aloud — Nb1-c3-d5-e7-g8 naming every hop and square color. Five minutes, ideal before sleep."
+}
+
+[3] {
+ "name": "Endgame Technique Reps",
+ "routine": "Daily: one K+Q vs K (walk the king to the edge, ladder with the queen a knight-move away) and one K+R vs K (box method, shrink the cage to two squares) against the engine from random positions. Target: mate inside thirty seconds, never near fifty moves."
+}
+
+[4] {
+ "name": "Opening One-Liner Cards",
+ "routine": "Memorize one PLAN sentence per reply — vs 1.e4: e5 sharp, c6 solid hit d5, c5 counterattack, e6 chain-and-break; vs 1.d4: d5 classical, Nf6 flexible, f5 space. Recite the relevant card before every game; plans survive where move-order memory fails."
+}
+
+[5] {
+ "name": "Annotated Master Game Method",
+ "routine": "Read one annotated game slowly and GUESS every move before revealing it. Score yourself, then classify each miss: right idea wrong square (fine) versus wrong plan entirely (study this). One game done this way beats ten skimmed."
+}
+
+[6] {
+ "name": "Slow Rapid Protocol",
+ "routine": "Cap training at two or three rapid games (15+10) per day, zero blitz on study days. Think on the opponent's clock, never move within the first five seconds, and review each game within the hour while the thoughts are fresh."
+}
+
+[7] {
+ "name": "Blunder-Check Mantra",
+ "routine": "Before EVERY move whisper the mantra — checks, captures, threats — opponent's first, then yours. Run it deliberately for twenty straight games until it fires automatically. This single habit is routinely worth 200 rating points below 1500."
+}
+
+[8] {
+ "name": "Pawn Break Radar",
+ "routine": "Every middlegame, list every legal-or-next pawn break for BOTH sides (c5, d5, f5, e6...). Ask which break favors MY pieces, then park rooks and queen behind the break you want — and watch for theirs."
+}
+
+[9] {
+ "name": "Candidate Discipline",
+ "routine": "In any position with tension, force three concrete candidate moves onto a mental list BEFORE choosing — checks first, then captures, then attacking moves. No impulse clicks for a full week; the ranking habit becomes permanent."
+}

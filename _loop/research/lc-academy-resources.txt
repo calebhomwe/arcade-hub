@@ -1,0 +1,71 @@
+[0] {
+ "name": "Lichess Studies",
+ "what": "Free interactive chess notebooks: build opening repertoires chapter by chapter, replay annotated master studies, share boards with friends.",
+ "url": "https://lichess.org/study"
+}
+
+[1] {
+ "name": "Lichess Practice",
+ "what": "Guided interactive drills with instant feedback: basic checkmates, key pawn endings, rook endings and tactic exercises - all free.",
+ "url": "https://lichess.org/practice"
+}
+
+[2] {
+ "name": "Lichess Opening Explorer & Analysis Board",
+ "what": "Browse millions of real master games move-by-move to see which replies actually score well, with unlimited Stockfish analysis built into the same board.",
+ "url": "https://lichess.org/analysis"
+}
+
+[3] {
+ "name": "Lichess Puzzles & Theme Trainer",
+ "what": "Unlimited free tactics filtered by theme - forks, pins, back rank, endgame technique - plus Puzzle Storm for speed drills.",
+ "url": "https://lichess.org/training"
+}
+
+[4] {
+ "name": "Lichess Insights",
+ "what": "Free personal analytics: results by opening, time control and phase of the game - replaces paid habit trackers. Swap in your username after /@/.",
+ "url": "https://lichess.org/@/yourname/insights"
+}
+
+[5] {
+ "name": "Chess.com Free Tier",
+ "what": "Free structured beginner lesson course plus limited daily game review - enough guided curriculum for your first several months.",
+ "url": "https://www.chess.com/lessons"
+}
+
+[6] {
+ "name": "GothamChess (YouTube)",
+ "what": "Best for openings made simple and wildly entertaining recaps that train blunder-awareness without feeling like homework.",
+ "url": "https://www.youtube.com/@GothamChess"
+}
+
+[7] {
+ "name": "Daniel Naroditsky Speedruns (YouTube)",
+ "what": "The best free window into HOW a grandmaster thinks: fully verbalized calculation and planning from beginner ratings upward.",
+ "url": "https://www.youtube.com/@DanielNaroditskyGM"
+}
+
+[8] {
+ "name": "John Bartholomew (YouTube)",
+ "what": "Chess Fundamentals series and Climbing the Rating Ladder: the classic free curriculum for steady, principled improvement.",
+ "url": "https://www.youtube.com/@JohnBartholomewChess"
+}
+
+[9] {
+ "name": "Hanging Pawns (YouTube)",
+ "what": "Deep dives on opening IDEAS behind every move, plus practical endgame technique playlists you can actually retain.",
+ "url": "https://www.youtube.com/@HangingPawnsCH"
+}
+
+[10] {
+ "name": "ChessNetwork (YouTube)",
+ "what": "Calm full-game commentaries and beginner series - great for watching complete master games explained move by move.",
+ "url": "https://www.youtube.com/@ChessNetwork"
+}
+
+[11] {
+ "name": "Free Classic Books",
+ "what": "Bobby Fischer Teaches Chess (programmed tactics method, ideal first book) and Simple Chess by Michael Stean (best free intro to strategy) - borrowable on Archive.org / Open Library.",
+ "url": "https://archive.org/search?query=Bobby+Fischer+Teaches+Chess"
+}

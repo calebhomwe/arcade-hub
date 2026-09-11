@@ -1,0 +1,14 @@
+diff --git a/games/chess.html b/games/chess.html
+index c96ff9a..a18b86f 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1506,7 +1506,8 @@ function hasInsufficientMaterial(board) {
+     const bish = pieces.filter(x => pType(x.p) === PT.BISHOP);
+     if (bish.length === 2 && !pieces.some(x => pType(x.p) !== PT.KING && pType(x.p) !== PT.BISHOP)) {
+       const cols = bish.map(b => ({ light: (row(b.i) + col(b.i)) % 2 === 0, w: pColor(b.p) }));
+-      if (cols[0].light !== cols[1].light && cols[0].w !== cols[1].w) return true;
++      if (cols[0].light === cols[1].light) return true;
++      if (cols[0].w !== cols[1].w) return true;
+     }
+   }
+   return false;

@@ -1,0 +1,10 @@
+[0] {"name":"Lucena Bridge (KRP vs KR)","rule":"King in front of your pawn, rook cutting the enemy king one file away; build the bridge: Rook to rook-file's 4th?? exact: park rook on the file NEXT to yours? Canonical steps: 1. push pawn to 7th 2. shelter king on promotion file 3. swing rook over as the shield (the 'bridge') 4. promote."}
+[1] {"name":"Philidor Draw (KRP vs KR)","rule":"Defender's rook waits on the 3rd rank until the pawn steps to the 6th — then slide the rook to the last rank and check from behind forever."}
+[2] {"name":"Opposition in action","rule":"Whoever must move loses ground. Seize the key squares IN FRONT of your pawn using the opposition, never wasting a tempo."}
+[3] {"name":"Two Bishops Mate","rule":"Corner the king by fencing with bishops a knight-move apart — walls advance every turn; mate arrives near the edge. Learn the wall pattern."}
+[4] {"name":"Bishop + Knight Mate","rule":"Drive the king into the bishop-colored corner: force, knight-guard, force. Study the 'w-box' shrinking drill."}
+[5] {"name":"KQ vs K method","rule":"Queen a knight-move away from their king shrinks the box every move; escort your king up; mate at the edge. No stalemate traps."}
+[6] {"name":"KR vs K box","rule":"Cut the king off with the rook, shrink the cage two ranks/files at a time with king support, deliver mate in the corner zone."}
+[7] {"name":"Rook behind passed pawns","rule":"Tarrasch forever: behind YOURS it pushes them; behind THEIRS it rails them in."}
+[8] {"name":"Pawn breakthrough","rule":"v-formation 3-vs-3: sacrifice the outer pawns to queen the middle one first (b6!? axb6 a6! bxa6 c6!)."}
+[9] {"name":"Queen endings golden rule","rule":"Perpetual-check danger doubles: push passed pawns ONLY when the enemy queen cannot slither into a fortress or repetition."}

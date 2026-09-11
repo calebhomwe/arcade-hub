@@ -1,0 +1,39 @@
+[0] {
+ "name": "Back-Rank Mate",
+ "pattern": "A rook or queen lands on the eighth rank while the king is walled in by his own f-g-h pawns. Defend with a luft move (h3/h6) or keep a rook guarding the back rank."
+}
+
+[1] {
+ "name": "Smothered Mate (Philidor's Legacy)",
+ "pattern": "Nf7+ Kg8 Nh6+ Kh8 Qg8+!! Rxg8 (forced - Nh6 guards g8) Nf7#: the knight mates a king buried behind his own rook and pawns."
+}
+
+[2] {
+ "name": "Ladder Mate",
+ "pattern": "Two heavy pieces chop off ranks one by one, herding the king to the edge: Ra7 confines him to the eighth, then Rb8 delivers mate. Repeat the staircase against any escape."
+}
+
+[3] {
+ "name": "Anastasia's Mate",
+ "pattern": "Ne7 guards g8 and g6; with the enemy g7 pawn stuck at home, any queen or rook check down the h-file is mate. Typical entry: Rxh7+! Kxh7 Qh5#."
+}
+
+[4] {
+ "name": "Boden's Mate",
+ "pattern": "Criss-crossed bishops: one checks along the long diagonal while its partner seals the flight square and the king's own pieces block the rest. Historic finish: ...Qxc3+! bxc3 Ba3#."
+}
+
+[5] {
+ "name": "Hook Mate",
+ "pattern": "Rook, knight and pawn form the hook: the rook mates on the edge shielded by its own pawn while the knight covers the final flight square. Sample: White Pg6, Nf6, Rh7# versus Kh8."
+}
+
+[6] {
+ "name": "Fool's Mate",
+ "pattern": "The fastest mate in chess: 1.f3 e5 2.g4?? Qh4# - two careless flank pushes expose the e1-h4 diagonal. Defense: never push f and g pawns before developing, and meet an early queen with g3."
+}
+
+[7] {
+ "name": "Scholar's Mate",
+ "pattern": "1.e4 e5 2.Bc4 Nc6 3.Qh5 eyes f7. As Black defend with 3...g6! (kicks the queen, then Nf6 develops safely) or 3...Qe7 - never 3...Nf6?? which allows Qxf7#."
+}

@@ -1,0 +1,13 @@
+diff --git a/games/chess.html b/games/chess.html
+index c96ff9a..6d73a70 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1078,7 +1078,7 @@ function getLegalMoves(b, i, epTarget, castlingRights) {
+     const r = color === CL.WHITE ? 7 : 0;
+     if (i === idx(r,4) && !isInCheck(b, color)) {
+       const ks = color === CL.WHITE ? 'K' : 'k';
+-      if (castlingRights[ks] && !b[idx(r,5)] && !b[idx(r,6)] &&
++      if (castlingRights[ks] && b[idx(r,7)] === P(PT.ROOK,color) && !b[idx(r,5)] && !b[idx(r,6)] &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,5)}),color) &&
+           !isInCheck(applyMove(b,{from:i,to:idx(r,6)}),color))
+         legal.push({from:i, to:idx(r,6), capture:0, castle:'kingside'});

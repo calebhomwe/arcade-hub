@@ -1,0 +1,49 @@
+[0] {
+ "name": "Moving the Same Piece Twice Early",
+ "fix": "Count developed pieces every opening move. Moving an already-developed piece again before four pieces are out and you are castled is burned tempo — demand a concrete reason (winning material, stopping a threat) or develop someone new."
+}
+
+[1] {
+ "name": "Early Queen Sorties",
+ "fix": "Queen out before the minors gets chased around while Black develops WITH tempo. Keep her home until knights and bishops are out and castling is done; if she must emerge, choose her retreat square BEFORE she steps forward."
+}
+
+[2] {
+ "name": "Ignoring Opponent Threats",
+ "fix": "After every enemy move complete the sentence: that threatens... even when it seems harmless. Below 1200 most games are lost to missed ONE-move threats; building this reflex is cheaper than any tactic course."
+}
+
+[3] {
+ "name": "Pawn Grabbing Into Development Attacks",
+ "fix": "That free wing pawn opens lines pointed AT your king. Before taking any flank pawn, count enemy attackers versus your defenders around the king — development debt collects compound interest and the pawn rarely survives the invoice."
+}
+
+[4] {
+ "name": "Passive Rooks",
+ "fix": "Rooks belong on open or half-open files, behind passed pawns, on the seventh — not decorating h1 and a1. Get one rook active by move fifteen, connect them, assign each a file with a target."
+}
+
+[5] {
+ "name": "King Stuck in the Center",
+ "fix": "Castle by move ten in nearly every opening. Every additional center-king move multiplies the tactics against you — forks on d1/f1, pins, open files. If you must walk, march toward the side with fewer enemy pieces, not fewer pawns."
+}
+
+[6] {
+ "name": "Trading Blindly",
+ "fix": "Captures feel decisive but helpful trades empower the SURVIVORS. Trade only when it removes their best attacker, buries your worst piece, or steers to an endgame your king and pawns win. Otherwise keep the tension."
+}
+
+[7] {
+ "name": "Hope Chess",
+ "fix": "If your move only works when the opponent misses the best reply, it is hope chess. Assume they find it, then re-examine. Scan their checks, captures, and threats before committing — wishing is not a defensive resource."
+}
+
+[8] {
+ "name": "Piece Hoarding on the Back Rank",
+ "fix": "Knights on b1/g1 and bishops on c1/f1 are spectators — you are effectively playing a piece down. Set the rule: every minor off the starting square before serious planning begins, or traded with purpose."
+}
+
+[9] {
+ "name": "Tunnel Vision on Your Own Plan",
+ "fix": "Executing your three-move plan while ignoring their two-move counterplan loses to anyone paying attention. Alternate lenses each move: their plan, your plan, forcing moves for both sides — THEN choose. Prophylaxis is offense."
+}

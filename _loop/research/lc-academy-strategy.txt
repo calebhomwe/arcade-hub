@@ -1,0 +1,39 @@
+[0] {
+ "name": "Pawn Structures",
+ "detail": "Read the structure, get the plan: isolated pawns grant activity but need defending; doubled pawns live or die by the open file; backward pawns leak the square in front; passed pawns are gold to push."
+}
+
+[1] {
+ "name": "Open Files & Outposts",
+ "detail": "Occupy open files with doubled rooks, and plant knights on outposts - squares shielded by your own pawns that enemy pawns can never attack again."
+}
+
+[2] {
+ "name": "Piece Activity Over Material",
+ "detail": "Count developed pieces, not captured pawns. Returning a pawn to finish development and seize open lines is almost always a bargain."
+}
+
+[3] {
+ "name": "Weak Squares",
+ "detail": "Pawns can be defended but holes cannot: squares near the king and in your strong color complex reward permanent piece occupation, not visits."
+}
+
+[4] {
+ "name": "When To Trade",
+ "detail": "Ahead in material: trade pieces, keep pawns. Behind: trade pawns, keep pieces. Cramped: trade anything you can. Mid-attack: never trade away your attackers."
+}
+
+[5] {
+ "name": "Prophylaxis",
+ "detail": "The strongest move often prevents rather than reacts: each turn identify the opponent's idea and quietly strangle it before it exists."
+}
+
+[6] {
+ "name": "Space Advantage",
+ "detail": "More space means fewer trades, patient maneuvering and slow squeezing; the cramped side should seek exchanges and freeing pawn breaks."
+}
+
+[7] {
+ "name": "Attacking The Castled King",
+ "detail": "Same-side castling: piece play and careful file-opening while keeping your pawn cover intact. Opposite wings: race with pawn storms - but only once the center is locked or firmly yours."
+}

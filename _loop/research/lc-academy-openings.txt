@@ -1,0 +1,119 @@
+[0] {
+ "name": "Italian Game (Giuoco Pianissimo)",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3 g8f6 d2d3 d7d6 e1g1",
+ "idea": "Fast natural development aiming at f7; the quiet c3+d3 setup keeps every option open while firmly controlling the center."
+}
+
+[1] {
+ "name": "Ruy Lopez (Closed Morphy)",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7",
+ "idea": "Pressure the knight defending e5, build the classic d3+c3 pawn duo, then expand slowly on the kingside."
+}
+
+[2] {
+ "name": "Vienna Game",
+ "moves": "e2e4 e7e5 b1c3 g8f6 f2f4 d7d5 f4e5 f6e4 g1f3 f8e7 d2d4",
+ "idea": "A delayed King's Gambit with knight support: strike at f4 to rip open the center while Black is still undeveloped."
+}
+
+[3] {
+ "name": "London System",
+ "moves": "d2d4 d7d5 g1f3 g8f6 c1f4 e7e6 e2e3 f8d6 f1d3 e8g8 b1d2",
+ "idea": "Low-theory solid triangle of pawns with the dark-squared bishop developed outside the chain, then break with e4 or c4."
+}
+
+[4] {
+ "name": "Queen's Gambit Declined (Orthodox)",
+ "moves": "d2d4 d7d5 c2c4 e7e6 b1c3 g8f6 c1g5 f8e7 e2e3 e8g8 g1f3 b8d7",
+ "idea": "Black keeps d5 guarded forever; White builds a big center and presses on the light squares with cxd5 and eventual e4."
+}
+
+[5] {
+ "name": "Sicilian Defense, Najdorf Intro",
+ "moves": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6",
+ "idea": "Black fights for the center from the wing; a7-a6 stops Nb5 and prepares dynamic ...e5 or ...e6 counterplay."
+}
+
+[6] {
+ "name": "Caro-Kann Defense (Classical)",
+ "moves": "e2e4 c7c6 d2d4 d7d5 b1c3 d5e4 c3e4 c8f5 e4g3 f5g6 h2h4 h7h6 g1f3 b8d7",
+ "idea": "Challenge e4 with solid c6 support, get the good light-squared bishop outside the chain before playing e6."
+}
+
+[7] {
+ "name": "French Defense (Steinitz)",
+ "moves": "e2e4 e7e6 d2d4 d7d5 b1c3 g8f6 e4e5 f6d7 f2f4 c7c5",
+ "idea": "Black accepts a closed center, then undermines White's pawn chain with ...c5 and later ...f6 counterplay."
+}
+
+[8] {
+ "name": "Scandinavian Defense",
+ "moves": "e2e4 d7d5 e4d5 d8d5 b1c3 d5a5 d2d4 g8f6 g1f3 c7c6",
+ "idea": "An instant center strike: the queen exits safely to a5 and Black develops behind solid c6 and e6 walls."
+}
+
+[9] {
+ "name": "King's Indian Defense (Classical)",
+ "moves": "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7 e2e4 d7d6 g1f3 e8g8 f1e2 e7e5",
+ "idea": "Hypermodern: concede the center, fianchetto the dragon bishop, then detonate the position with ...e5 and ...f5 storms."
+}
+
+[10] {
+ "name": "Vienna Gambit",
+ "moves": "e2e4 e7e5 b1c3 g8f6 f2f4 exf4 g1f3 d7d5 e4d5 f6d5 f1c4",
+ "idea": "Toss the f-pawn for the center and open lines, racing pieces to f7 and d5 before Black can consolidate the extra material."
+}
+
+[11] {
+ "name": "Scotch Game",
+ "moves": "e2e4 e7e5 g1f3 b8c6 d2d4 e5d4 f3d4 g8f6 d4c6 b7c6 e4e5 d8e7 d1e2 f6d5 c2c4",
+ "idea": "Crack the center open immediately for easy piece play, gaining space with e5 and c4 while Black's light-squared bishop hunts for a job."
+}
+
+[12] {
+ "name": "Ponziani Opening",
+ "moves": "e2e4 e7e5 g1f3 b8c6 c2c3 g8f6 d2d4 f6e4 d4d5",
+ "idea": "Quietly assemble the ideal c3-d4 center and punish sloppy replies with a sudden d5 wedge — rare enough at club level that opponents improvise on move four."
+}
+
+[13] {
+ "name": "Anti-Sicilian Alapin",
+ "moves": "e2e4 c7c5 c2c3 g8f6 e4e5 f6d5 d2d4 c5d4 g1f3",
+ "idea": "Dodge Open Sicilian theory by building the big d4-e5 pawn duo, then lean on the half-open c-file when Black's expansion leaves d5 sensitive."
+}
+
+[14] {
+ "name": "Accelerated Dragon",
+ "moves": "e2e4 c7c5 g1f3 b8c6 d2d4 c5d4 f3d4 g7g6 b1c3 f8g7",
+ "idea": "Skip ...d6 to save a tempo for the g6 fianchetto, then strike the center with one huge ...d5 break — while dodging White's c4 Maroczy Bind."
+}
+
+[15] {
+ "name": "Grünfeld Intro",
+ "moves": "d2d4 g8f6 c2c4 g7g6 b1c3 d7d5 c4d5 f6d5 e2e4 d5c3 b2c3 f8g7",
+ "idea": "Hypermodern bait: let White build the giant pawn center, then dismantle it with ...Bg7, ...c5 and queen pressure down the long diagonal."
+}
+
+[16] {
+ "name": "Slav Defense",
+ "moves": "d2d4 d7d5 c2c4 c7c6 g1f3 g8f6 b1c3 e7e6",
+ "idea": "Hold d5 with ...c6 instead of burying the light bishop, keeping ...Bf5 alive and a rock-solid structure to counterpunch from."
+}
+
+[17] {
+ "name": "Nimzo-Indian Intro",
+ "moves": "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4 e2e3 e8g8",
+ "idea": "Pin the c3 knight to fight for e4, then offer ...Bxc3 to saddle White with doubled pawns and spend the middlegame mining those weaknesses."
+}
+
+[18] {
+ "name": "Dutch Stonewall",
+ "moves": "d2d4 f7f5 g1f3 g8f6 g2g3 e7e6 f1g2 f8e7 e1g1 e8g8",
+ "idea": "Wedge e6+f5 for lasting kingside space, aim at the Ne4 outpost and a rook-lift attack — accepting the bad dark squares as tuition."
+}
+
+[19] {
+ "name": "Pirc Defense",
+ "moves": "e2e4 d7d6 d2d4 g8f6 b1c3 g7g6 g1f3 f8g7 f1e2 e8g8",
+ "idea": "Hand White the center on purpose, fianchetto the dragon bishop, then topple the overextended e4/d4 pair with ...e5 or ...c5 counterstrikes."
+}

@@ -576,24 +576,6 @@ a.back:hover{ color:var(--cc-text)!important; }
 #moveList .ml-mv{ color:var(--cc-text)!important; font-weight:600; font-family:inherit; }
 #moveList .ml-cur{ background:rgba(129,182,76,.28); border-radius:3px; }
 
-#btnReset .btn-label{ display:inline; }
-#controls #btnReset{ padding:11px 12px!important; min-height:44px; }
-#learnPanel .lp-tabs{ margin-top:22px; }
-#tip{ color:var(--cc-muted)!important; }
-.juice-wrap input[type=range]{ height:21px; padding:8px 0; background-clip:content-box; }
-.juice-wrap input[type=range]:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-@keyframes checkPulse{ 0%,100%{ color:#ff6b6b; text-shadow:0 0 8px rgba(239,68,68,.4);} 50%{ color:#ffb3b3; text-shadow:0 0 16px rgba(239,68,68,.8);} }
-@media (max-width:880px){
-  #puzzlePanel{ position:fixed; left:8px; right:8px; bottom:8px; width:auto; margin:0!important; max-height:38vh; z-index:45;
-    box-shadow:0 10px 30px rgba(0,0,0,.65); }
-}
-@media (max-width:430px){
-  #controls .btn, #controls .sel{ min-height:38px; }
-}
-@media (max-height:600px) and (min-width:700px){
-  #ccMain{ grid-template-columns:minmax(0,1fr) 300px; }
-  :root{ --cc-boardmax:min(100%, calc(100vh - 120px), 460px); }
-}
 </style>
 </head>
 <body>
@@ -693,7 +675,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   <button class="btn" id="btnReview" title="Review Game">📊 <span class="btn-label">Review</span></button>
   <button class="btn" id="btnStats" title="Your stats">📈 <span class="btn-label">Stats</span></button>
   <div class="juice-wrap">
-    <label for="juiceSlider">🧃</label>
+    <label>🧃</label>
     <input type="range" id="juiceSlider" min="0" max="100" value="50" step="5">
     <span id="juiceVal" style="font-size:0.7rem;font-weight:700;color:#a78bfa;min-width:24px;">50</span>
   </div>
@@ -1230,7 +1212,7 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
 
 // ==================== PUZZLES ====================
 
-const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is loose and undefended - ...d5 both defends it and hits the c4 bishop.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1","desc":"Find the checkmate in 1.","hint":"The black king is trapped behind its own pawns.","solution":"a1a8"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
+const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is loose and undefended - ...d5 both defends it and hits the c4 bishop.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"7k/5K2/8/8/8/8/8/6Q1 w - - 0 1","desc":"Find the checkmate in 1.","hint":"The queen delivers the final blow.","solution":"g1g7"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
 
 let puzzleIndex = -1;
 let puzzleMode = false;
@@ -2601,8 +2583,6 @@ window.addEventListener('keydown', e => {
 // --- drag & drop (mouse + touch + pen via Pointer Events) ---
 let dragState = null;
 let lastTouchTs = 0;
-let lastPress = -1;
-let lastReleaseTs = 0;
 
 function startDrag(e) {
   if (game.gameOver || pendingPromo || botThinking) return;
@@ -2610,20 +2590,15 @@ function startDrag(e) {
   const sq = getSquareFromEvent(e);
   if (sq < 0 || !game.board[sq] || pColor(game.board[sq]) !== game.turn) return;
   const tapCastle = castleByRookTap(selectedSquare, sq);
-  const tapMove = tapCastle || (selectedSquare >= 0 ? legalMoves.find(m => m.to === sq) || null : null);
-  const tapPromo = !!(tapMove && tapMove.promo);
-  const prevPress = lastPress;
-  lastPress = sq;
   selectedSquare = sq;
   legalMoves = getLegalMoves(game.board, sq, game.epTarget, game.castlingRights);
   let dragFrom = sq;
   castleSelect = false;
-  let dragSelect = sq, dragLegal = legalMoves;
   if (pType(game.board[sq]) === PT.ROOK) {
     const kingSq = kingCastleFrom(sq);
-    if (kingSq >= 0) { dragFrom = kingSq; dragSelect = kingSq; castleSelect = true; dragLegal = getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights); }
+    if (kingSq >= 0) { dragFrom = kingSq; selectedSquare = kingSq; castleSelect = true; legalMoves = getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights); }
   }
-  dragState = { from: dragFrom, press: sq, tapCastle, tapMove, tapPromo, prevPress, sel: dragSelect, legal: dragLegal, x: e.clientX, y: e.clientY };
+  dragState = { from: dragFrom, press: sq, tapCastle, x: e.clientX, y: e.clientY };
   hintArrow = null;
   draw();
 }
@@ -2637,48 +2612,47 @@ function moveDrag(e) {
 function endDrag(e) {
   if (!dragState) return;
   const sq = getSquareFromEvent(e);
-  const from = dragState.from, press = dragState.press, tapCastle = dragState.tapCastle;
-  const tapMove = dragState.tapMove, tapPromo = dragState.tapPromo, prevPress = dragState.prevPress;
-  const dragSel = dragState.sel, dragLegal = dragState.legal;
+  const from = dragState.from;
+  const press = dragState.press;
+  const tapCastle = dragState.tapCastle;
   const rookSq = rookCastleFrom(from);
   dragState = null;
-  if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; draw(); return; }
-  const dragMove = (sq !== press) ? (dragLegal.find(m => m.to === sq) || castlingRookDrag(dragLegal.find(m => m.castle)) || null) : null;
-  const direct = (sq === prevPress && tapMove) ? tapMove
-    : (dragMove ? dragMove
-      : ((sq === rookSq && press === from) ? (dragLegal.find(m => m.castle) || null)
-        : ((sq === press && tapMove) ? tapMove : null)));
-  if (direct) {
-    if (direct.promo) { pendingPromo = direct; showPromoUI(); return; }
-    executeMove(direct);
-    selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
-    lastPress = -1; lastReleaseTs = Date.now();
-    if (puzzleMode) checkPuzzleSolution(direct);
-    draw(); return;
+  if (sq >= 0) {
+    let move = legalMoves.find(m => m.to === sq) || castlingRookDrag(legalMoves.find(m => m.castle));
+    if (!move && sq === rookSq && press === from) move = legalMoves.find(m => m.castle) || null;
+    if (!move && tapCastle && sq === press) move = tapCastle;
+    if (move) {
+      if (move.promo) { pendingPromo = move; showPromoUI(); return; }
+      executeMove(move);
+      selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
+      if (puzzleMode) checkPuzzleSolution(move);
+      draw(); return;
+    }
   }
-  if (tapPromo) { lastReleaseTs = Date.now(); return; }
-  selectedSquare = dragSel;
-  legalMoves = dragLegal;
+  if (sq >= 0 && game.board[sq] && pColor(game.board[sq]) === game.turn) {
+    selectedSquare = sq;
+    castleSelect = false;
+    legalMoves = getLegalMoves(game.board, sq, game.epTarget, game.castlingRights);
+    if (pType(game.board[sq]) === PT.ROOK) {
+      const kingSq = kingCastleFrom(sq);
+      if (kingSq >= 0) { selectedSquare = kingSq; castleSelect = true; legalMoves = getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights); }
+    }
+  } else {
+    selectedSquare = -1; legalMoves = []; castleSelect = false;
+  }
   draw();
 }
 
 canvas.addEventListener('pointerdown', e => {
   if (e.pointerType === 'touch') lastTouchTs = Date.now();
+  if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (_) {} }
   startDrag(e);
 });
 canvas.addEventListener('pointermove', e => { if (dragState) { e.preventDefault(); moveDrag(e); } }, { passive: false });
-document.addEventListener('pointermove', e => { if (dragState) moveDrag(e); }, { passive: true });
-document.addEventListener('pointerup', e => {
-  if (dragState) { endDrag(e); return; }
-  handleClick(getSquareFromEvent(e));
-});
-document.addEventListener('pointercancel', () => { if (!dragState) return; dragState = null; selectedSquare = -1; legalMoves = []; castleSelect = false; lastPress = -1; draw(); });
-canvas.addEventListener('click', e => {
-  const now = Date.now();
-  if (now - lastTouchTs < 400) { lastPress = getSquareFromEvent(e); return; }
-  if (now - lastReleaseTs < 600) return;
-  handleClick(getSquareFromEvent(e));
-});
+canvas.addEventListener('pointerup', e => { endDrag(e); });
+canvas.addEventListener('pointercancel', () => { dragState = null; selectedSquare = -1; legalMoves = []; castleSelect = false; draw(); });
+canvas.addEventListener('click', e => { if (Date.now() - lastTouchTs < 400) return; handleClick(getSquareFromEvent(e)); });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); lastTouchTs = Date.now(); handleClick(getSquareFromEvent(e.touches[0])); }, { passive: false });
 
 document.getElementById('btnHint').addEventListener('click', showHint);
 document.getElementById('btnTeach').addEventListener('click', () => { teachMode = !teachMode; document.getElementById('btnTeach').classList.toggle('active', teachMode); draw(); });
@@ -2810,182 +2784,7 @@ juiceSlider.addEventListener('input', () => {
   draw();
 });
 
-// ==================== SELF TEST (live regression harness, call window.__chessTest()) ====================
-
-function hitTestSquare(s) {
-  const cv = canvas.getBoundingClientRect();
-  const sc = canvas.width / cv.width;
-  const rr = flip ? 7 - row(s) : row(s), cc = flip ? 7 - col(s) : col(s);
-  const x = cv.left + (padding + cc * sqSize + sqSize / 2) / sc;
-  const y = cv.top + (padding + rr * sqSize + sqSize / 2) / sc;
-  return getSquareFromEvent({ clientX: x, clientY: y });
-}
-
-function tapSquare(s) {
-  const cv = canvas.getBoundingClientRect();
-  const sc = canvas.width / cv.width;
-  const rr = flip ? 7 - row(s) : row(s), cc = flip ? 7 - col(s) : col(s);
-  const x = cv.left + (padding + cc * sqSize + sqSize / 2) / sc;
-  const y = cv.top + (padding + rr * sqSize + sqSize / 2) / sc;
-  const el = document.elementFromPoint(x, y) || canvas;
-  try { el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: 1 })); } catch (err) {}
-  try { el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: 0 })); } catch (err) {}
-}
-
-window.__chessTest = function (caseId) {
-  const res = { case: caseId || 'all', checks: [], pass: 0, fail: 0 };
-  const add = (name, ok, detail) => { res.checks.push({ name: name, ok: !!ok, detail: String(detail || '') }); if (ok) res.pass++; else res.fail++; };
-  const sq = s => (8 - parseInt(s[1], 10)) * 8 + (s.charCodeAt(0) - 97);
-  const nm = i => String.fromCharCode(97 + col(i)) + (8 - row(i));
-  const legalNow = () => getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
-  const play = seq => {
-    for (const mv of seq) {
-      const from = sq(mv.slice(0, 2)), to = sq(mv.slice(2, 4));
-      const m = legalNow().find(x => x.from === from && x.to === to);
-      if (!m) return mv;
-      executeMove(m);
-    }
-    return null;
-  };
-  const sig = () => game.board.map(p => p ? CH[p] : '.').join('');
-  const K = (c, s) => game.board[sq(s)] === P(PT.KING, c);
-  const R = (c, s) => game.board[sq(s)] === P(PT.ROOK, c);
-  const fresh = () => { resetGame(); botEnabled = false; botThinking = false; clearBotTimers(); };
-  const setupFen = fen => {
-    const parts = fen.split(' '), board = new Array(64).fill(0);
-    parts[0].split('/').forEach((rankStr, r) => {
-      let c = 0;
-      for (const ch of rankStr) {
-        if (ch >= '1' && ch <= '8') { c += parseInt(ch, 10); continue; }
-        const map = { k: PT.KING, q: PT.QUEEN, r: PT.ROOK, b: PT.BISHOP, n: PT.KNIGHT, p: PT.PAWN };
-        board[idx(r, c)] = P(map[ch.toLowerCase()], ch === ch.toUpperCase() ? CL.WHITE : CL.BLACK);
-        c++;
-      }
-    });
-    const cr = parts[2] || '';
-    game = {
-      board, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK, epTarget: null,
-      castlingRights: { K: cr.includes('K'), Q: cr.includes('Q'), k: cr.includes('k'), q: cr.includes('q') },
-      moveHistory: [], lastMove: null, capturedByWhite: [], capturedByBlack: [],
-      gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}
-    };
-    botEnabled = false; puzzleMode = false;
-    selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
-    updateUI(); draw();
-  };
-  const CASES = {
-    kingrook: function () {
-      fresh();
-      const bad = play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6']);
-      if (bad) return add('setup', false, bad);
-      tapSquare(sq('e1')); tapSquare(sq('h1'));
-      add('O-O by tapping king then rook', K(0, 'g1') && R(0, 'f1') && !game.board[sq('h1')], sig());
-    },
-    kingside: function () {
-      fresh();
-      const bad = play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6']);
-      if (bad) return add('setup', false, bad);
-      const offered = legalNow().some(m => m.from === sq('e1') && m.to === sq('g1'));
-      const hit1 = hitTestSquare(sq('e1')), hit2 = hitTestSquare(sq('g1'));
-      if (hit1 !== sq('e1') || hit2 !== sq('g1')) return add('tap coordinates resolve to the right squares', false, nm(hit1) + ',' + nm(hit2));
-      tapSquare(sq('e1'));
-      tapSquare(sq('g1'));
-      add('O-O by tapping king then g1', K(0, 'g1') && R(0, 'f1') && !game.board[sq('h1')], [60, 61, 62, 63].map(i => nm(i) + ':' + game.board[i]).join(' ') + (offered ? '' : ' | engine did not offer O-O'));
-    },
-    queenside: function () {
-      fresh();
-      const bad = play(['d2d4', 'd7d5', 'b1c3', 'b8c6', 'c1f4', 'c8f5', 'd1d2', 'd8d7']);
-      if (bad) return add('setup', false, bad);
-      tapSquare(sq('e1')); tapSquare(sq('c1'));
-      add('O-O-O by tapping king then c1', K(0, 'c1') && R(0, 'd1') && !game.board[sq('a1')], sig());
-    },
-    rooktap: function () {
-      fresh();
-      const bad = play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6']);
-      if (bad) return add('setup', false, bad);
-      tapSquare(sq('e1')); tapSquare(sq('h1'));
-      add('king-then-own-rook castles (touch path)', K(0, 'g1') && R(0, 'f1') && !game.board[sq('h1')], [60, 61, 62, 63].map(i => nm(i) + ':' + game.board[i]).join(' '));
-    },
-    blackcastle: function () {
-      setupFen('r3k2r/8/8/8/8/8/8/R3K2R b kq - 0 1');
-      const offered = legalNow().some(m => m.from === sq('e8') && m.to === sq('g8'));
-      add('black O-O is offered in a castling position', offered, offered ? 'offered' : 'not offered: ' + legalNow().map(m => nm(m.from) + nm(m.to)).join(','));
-      tapSquare(sq('e8')); tapSquare(sq('g8'));
-      add('black O-O by tapping king then g8', K(1, 'g8') && R(1, 'f8') && !game.board[sq('h8')], [4, 5, 6, 7].map(i => nm(i) + ':' + game.board[i]).join(' '));
-    },
-    refuse: function () {
-      fresh();
-      const bad = play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6', 'e1e2', 'f6g8', 'e2e1', 'g8f6', 'f3g1', 'f6g8']);
-      if (bad) return add('setup', false, bad);
-      tapSquare(sq('e1')); tapSquare(sq('h1'));
-      add('O-O refused once the king has moved', K(0, 'e1') && R(0, 'h1'), sig());
-    },
-    puzzle8: function () {
-      fresh();
-      loadPuzzle(8);
-      const mates = [];
-      for (let i = 0; i < 64; i++) {
-        if (!game.board[i] || pColor(game.board[i]) !== game.turn) continue;
-        for (const m of getLegalMoves(game.board, i, game.epTarget, game.castlingRights)) {
-          const after = makeMove(game.board, m, game);
-          const replies = getAllLegalMoves(after.board, 1 - game.turn, after.ep, after.castling);
-          if (isInCheck(after.board, 1 - game.turn) && replies.length === 0) mates.push(nm(m.from) + nm(m.to));
-        }
-      }
-      const legalKings = Math.abs(row(game.board.indexOf(P(PT.KING, 0))) - row(game.board.indexOf(P(PT.KING, 1)))) > 1
-        || Math.abs(col(game.board.indexOf(P(PT.KING, 0))) - col(game.board.indexOf(P(PT.KING, 1)))) > 1;
-      add('puzzle 8 position is legal (kings not adjacent)', legalKings, 'kingsAdjacent=' + !legalKings);
-      add('puzzle 8 offers exactly one mate in 1', mates.length === 1, mates.join(','));
-    },
-    traps: function () {
-      fresh();
-      const bad = [];
-      for (const t of TRAPS) {
-        resetGame(); botEnabled = false;
-        for (const mv of String(t.moves).split(/\s+/)) {
-          const m = legalNow().find(x => x.from === sq(mv.slice(0, 2)) && x.to === sq(mv.slice(2, 4)));
-          if (!m) { bad.push(t.name + ':' + mv); break; }
-          executeMove(m);
-        }
-      }
-      resetGame(); botEnabled = false;
-      add('all ' + TRAPS.length + ' trap lines replay legally', bad.length === 0, bad.join(' '));
-    },
-    acad: function () {
-      fresh();
-      const bad = [];
-      for (const t of (ACADEMY.traps || [])) {
-        resetGame(); botEnabled = false;
-        for (const mv of String(t.moves || '').split(/\s+/)) {
-          const m = legalNow().find(x => x.from === sq(mv.slice(0, 2)) && x.to === sq(mv.slice(2, 4)));
-          if (!m) { bad.push(t.name + ':' + mv); break; }
-          executeMove(m);
-        }
-      }
-      resetGame(); botEnabled = false;
-      add('all ' + (ACADEMY.traps || []).length + ' academy trap lines legal', bad.length === 0, bad.join(' '));
-    },
-    perft: function () {
-      let nodes = 0;
-      const walk = (b, colour, ep, cr, d) => {
-        if (d === 0) { nodes++; return; }
-        for (const m of getAllLegalMoves(b, colour, ep, cr)) {
-          const n = makeMove(b, m, { castlingRights: cr });
-          walk(n.board, 1 - colour, n.ep, n.castling, d - 1);
-        }
-      };
-      walk(initBoard(), 0, null, { K: true, Q: true, k: true, q: true }, 3);
-      add('perft(3) = 8902 (engine integrity)', nodes === 8902, nodes);
-    }
-  };
-  if (caseId && CASES[caseId]) CASES[caseId]();
-  else for (const k in CASES) { const n = res.checks.length; CASES[k](); res.checks.push({ name: k + ' group', ok: true, detail: (res.checks.length - n) + ' checks' }); }
-  res.ok = res.fail === 0;
-  return res;
-};
-
 // ==================== INIT ====================
-
 
 (function loadMods() {
   const mods = [

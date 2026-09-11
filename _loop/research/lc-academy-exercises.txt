@@ -1,0 +1,39 @@
+[0] {
+ "name": "Find-the-Fork Scan",
+ "task": "On any position, twenty seconds: name every pair of enemy pieces sitting a knight-jump apart or aligned on a line. Verify by physically tracing one knight route. Repeat daily until forks announce themselves."
+}
+
+[1] {
+ "name": "Pin-Breaking Checklist",
+ "task": "When pinned, run all five outs: capture the pinner, interpose, move the pinned piece anyway (discovered fire), shield the behind-target, add a second defender to the line. Club players see only option one — running all five finds resources everywhere."
+}
+
+[2] {
+ "name": "Back-Rank Audit",
+ "task": "Every single move ask: does my king have an air hole? Does theirs? Count back-rank defenders on both sides BEFORE any pawn push, rook lift, or queen trade — most back-rankers are self-inflicted one move early."
+}
+
+[3] {
+ "name": "King-Safety Scorecard",
+ "task": "Rate both kings 0-5: intact pawn shield +2, each open file beside the king -1, each enemy attacker in range -1, castled and connected +1. Higher score = attack THEM; your score lower = repair first. Ten seconds, prevents suicide attacks."
+}
+
+[4] {
+ "name": "Trade-Evaluation Quiz",
+ "task": "Before any trade ask three questions: whose REMAINING pieces improve (bad bishop leaving, knight outshining bishop)? Who gains tempo? Does this head toward an endgame MY king and pawns win? No good answers means decline the trade."
+}
+
+[5] {
+ "name": "Mate-Pattern Flashcards",
+ "task": "Drill these six until instant recognition: back-rank, smothered, Anastasia (Ne7 + rook down the h-file), Arabian (rook + knight in the corner), Boden (crossed bishops), ladder mates. Set each up blind on an empty board in thirty seconds, naming each piece's role aloud."
+}
+
+[6] {
+ "name": "Prophylaxis Question",
+ "task": "After every opponent move, literally ask: what did THAT move want? Immediate threat, next-move threat, or squares denied to me. If the honest answer is nothing, note it — you just earned a free tempo to execute your plan faster."
+}
+
+[7] {
+ "name": "Time-Budget Checkpoints",
+ "task": "Fix checkpoints: move 10 with 60% of clock left, move 20 with 40%, move 30 with 25%. Under ninety seconds? Switch to CCT-mode — only checks, captures, and simple solid moves — and let increment work. Audit the checkpoints after every rated game."
+}

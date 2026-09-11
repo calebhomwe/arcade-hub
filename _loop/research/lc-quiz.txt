@@ -1,0 +1,35 @@
+Q0: Opponent has an unmoved f7-g7-h7 wall. What must you audit before EVERY trade?
+   A: Back-rank air holes — do you have luft (h3/h6) or a guardian?
+
+Q1: Knight on c3, enemy queen just arrived on b5. First question you ask?
+   A: Am I pinned? What's behind it — my king, queen, or material?
+
+Q2: You're two pawns up but cramped. Trade pieces or pawns?
+   A: Pieces — simplify toward a winning pawn endgame.
+
+Q3: You spot a juicy capture. Before grabbing, you run...
+   A: Checks-captures-threatens for the OPPONENT'S reply first.
+
+Q4: Enemy queen invaded on h5 early. Cheapest defense usually?
+   A: ...g6 (kick with tempo, open the bishop) — never reflex ...Nf6 into Qxf7#
+
+Q5: Your opponent offers a wing pawn. Best habit?
+   A: Ask what file/line it OPENS toward your king before accepting rent-free gifts.
+
+Q6: You castled; they didn't (king center). Your plan?
+   A: Open the center FAST — that king is a target begging for it.
+
+Q7: What's 'hope chess'?
+   A: Playing a move that only works if they miss your threat. Assume they see it.
+
+Q8: Your rook has been staring at the enemy king with nothing happening. Upgrade idea?
+   A: Lift it (Rf3-g3/h3 style) or double up — motion over staring contests.
+
+Q9: Simplest legal way to save a losing position?
+   A: Go activity-hunting: trade INTO closed mess, set one trap, take perpetuals.
+
+Q10: What single habit adds ~200 rating points below 1500 fastest?
+   A: Blunder-check mantra every move: his checks/captures/threats, then mine.
+
+Q11: Endgame reached, several pawns left. First priority?
+   A: ACTIVATE THE KING — it's a fighting piece now, escort it toward pawns.

@@ -1,0 +1,16 @@
+diff --git a/games/chess.html b/games/chess.html
+index c96ff9a..e6d91d9 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -2417,8 +2417,9 @@ function reconstructReviewMove(snap, raw) {
+   if (!piece) return m;
+   const t = pType(piece);
+   if (t === PT.KING) {
+-    if (raw.to === 62 || raw.to === 6) m.castle = 'kingside';
+-    else if (raw.to === 58 || raw.to === 2) m.castle = 'queenside';
++    const dc = col(raw.to) - col(raw.from);
++    if (dc === 2) m.castle = 'kingside';
++    else if (dc === -2) m.castle = 'queenside';
+   } else if (t === PT.PAWN) {
+     if (row(raw.to) === 0 || row(raw.to) === 7) { m.promo = true; m.promoPiece = PT.QUEEN; }
+     else if (Math.abs(col(raw.to) - col(raw.from)) === 1 && !snap.board[raw.to]) m.ep = true;

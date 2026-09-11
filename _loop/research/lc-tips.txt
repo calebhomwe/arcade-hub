@@ -1,0 +1,175 @@
+0. Control the center first: e4, d4, e5 and d5 are the crossroads every attack and defense travels through.
+1. Develop knights before bishops: they are cheaper to place, and bishops want to see the pawn structure first.
+2. Don't move the same piece twice in the opening while other pieces still sit on their starting squares.
+3. Castle early - ideally inside the first 10 moves. An uncastled king ruins every good plan.
+4. Keep the queen home in the opening: an early sortie makes her a target every minor piece loves to chase.
+5. Connect the rooks: once castled, tuck the last rook behind the king so both rooks finally work together.
+6. Limit yourself to one or two central pawn moves in the opening; every extra push opens your own king.
+7. Develop toward the center: Nf3 hits e5 and d4, Nc3 hits d5 and e4. Edge knights like Na3 do nothing.
+8. Don't snatch flank pawns while behind in development - tempo beats material in the opening.
+9. Start with 1.e4 or 1.d4: both stake a central claim instantly and teach transferable skills.
+10. Answer 1.e4 with e5 or c5, answer 1.d4 with d5: strike or occupy the center, never passively drift.
+11. Before capturing a central pawn, count attackers versus defenders on that square.
+12. A knight on the rim is dim: edge squares cut its reach from 8 targets to 4 (corners allow just 2).
+13. Castle kingside by default; go queenside only when your plan needs the rook landing on d1 fast.
+14. Only spend a tempo on h3 or a3 if a bishop pins, harasses, or your structure truly needs it.
+15. Facing a pin? Unpin with tempo - push or counterattack - instead of shuffling backwards.
+16. If the opponent wastes moves attacking prematurely, punish with the fastest developing move that also defends.
+17. Learn ONE White opening and TWO Black defenses (vs e4 and vs d4) deeply, not ten systems shallowly.
+18. Play the board, not your memory: after each opponent move ask 'what changed and what does it threaten?'
+19. Park rooks on files that WILL open - guess which central pawn swap unlocks the position first.
+20. Memorize ideas plus the first 6-8 moves of your openings; deep theory you will never reach is wasted study.
+21. Every opening move should develop a piece, fight for the center, or enable castling - anything else needs a reason.
+22. After EVERY opponent move run the checklist: Checks, Captures, Threats - in that order, every single move.
+23. Blunder-check before touching a piece: what does my intended destination leave undefended or overloaded?
+24. Fork radar: whenever two enemy pieces sit one knight-jump apart, start hunting the fork square.
+25. Pins freeze: a pinned piece defends nothing - pin the defender, then pile onto the trapped target.
+26. Skewers are reversed pins: hit the valuable piece first and collect the cheap one hiding behind it.
+27. Discovered attacks are free tempi: line up bishop-behind-knight batteries, then move the front piece with a threat.
+28. LPDO: Loose Pieces Drop Off. Track every undefended piece on BOTH sides - that is where tactics live.
+29. Zwischenzug alert: before the obvious recapture, look for a stronger in-between check or threat.
+30. Deflection: if one defender guards two duties, force it to abandon one. Always count defenders first.
+31. Decoys lure victims to fatal squares - the smothered-mate finish Qg8+ Rxg8 Nf7# decoys the rook to g8.
+32. Overloads crack: a queen guarding the back rank AND a knight usually loses one of them. Test it every time.
+33. Build x-ray vision: see THROUGH pieces to targets beyond - when the blocker moves, the second hit lands.
+34. Scan for trapped pieces: rim knights and advanced bishops often have zero safe retreat squares.
+35. Ahead in material? Trade PIECES not pawns - every trade raises the value of your extra pawn.
+36. Solve 10 easy puzzles daily: pattern recognition beats deep calculation under 1500 Elo.
+37. Name motifs out loud when you spot them - 'knight fork on d5' - naming cements the pattern in memory.
+38. Enemy mate threats override everything: scan their forcing lines BEFORE your own plans.
+39. Sacrifices are not magic: verify the follow-up exists before sacrificing, never after.
+40. Give your king luft: one h3 or h6 pawn move creates an escape hatch against back-rank tricks.
+41. Look at EVERY check, even silly-looking ones - most missed wins hide inside the 'obviously bad' checks.
+42. Ask of every quiet enemy move: what does this prepare two moves from now?
+43. Winning a capture: count total attackers and defenders, including hidden ones lurking behind pinned pieces.
+44. Quiet positions still demand the checks-captures-threats scan - most tactics start from harmless-looking moves.
+45. An undefended queen one knight-jump from an enemy knight is a standing invitation - check for forks constantly.
+46. Activate the king in the endgame - he transforms into a fighting piece worth roughly four points.
+47. Opposition: kings face off one square apart; whoever must MOVE yields ground. Fight for it in pawn endings.
+48. Passed pawns must be pushed - each step forward roughly doubles their value.
+49. Tarrasch's rule: rooks belong BEHIND passed pawns, whether yours or the enemy's.
+50. Lucena technique: king in front of his rook pawn, rook parked on the 4th rank cutting off the enemy king, then interpose Rb4 to 'build the bridge'.
+51. Philidor draw: hold your rook on the third rank until the pawn advances, then check from behind forever.
+52. Winning rook endings: park the defending king two or more files away from the action - cut-off kings win games.
+53. In pawn races count tempi exactly: promote-with-check and stopping-their-promotion decide everything.
+54. Two connected passed pawns on the sixth rank defeat almost any single piece.
+55. Knight endings are pawn endings: knights travel slowly, so king activity counts double.
+56. Wrong-colored bishop: if your bishop can never control the promotion square, the position is drawn.
+57. Before trading into a pawn ending, count the race square by square for BOTH kings.
+58. Rooks on the seventh rank harvest pawns and cage kings - double them when the enemy king is boxed in.
+59. When totally winning, watch for stalemate - the losing side is actively hunting it.
+60. Underpromotion wins games: knight promotions fork, rook promotions dodge stalemate.
+61. Rule of the square: if the defending king can step into the pawn's promotion square, he catches the pawn.
+62. When lost, hunt fortresses: lock the position so superior force has no entrance. Draws are earned.
+63. Drill K+Q and K+R mates against the computer until each takes under 30 seconds without thinking.
+64. In multi-pawn endings the OUTSIDE passed pawn is the trump card - create it early.
+65. Blockade with the king planted in front of an enemy passed pawn; a blockaded pawn is half dead.
+66. A bad bishop sits buried behind its own pawns - trade it, reroute it, or free it before it suffocates.
+67. Outposts: knights on squares enemy pawns can never attack are worth a rook's worth of annoyance.
+68. Open files are rook highways; half-open files (their pawn gone) still carry heavy pressure - own them.
+69. Weak squares outlive weak pawns: holes near the king deserve permanent occupiers, not tourists.
+70. Isolated queen's pawn: the holder attacks with piece activity; the opponent blockades the pawn and simplifies.
+71. Judge doubled pawns by context: doubled pawns on the open file can be strength; doubled with no file is weakness.
+72. Backward pawns cannot be defended by pawns - pressure the SQUARE in front of them, not merely the pawn.
+73. With more space, avoid trades and maneuver; the cramped side begs for exchanges to breathe.
+74. Prophylaxis: every move ask 'what does my opponent want?' - then quietly take it away before it exists.
+75. Castled on opposite wings? Race with pawn storms. Same wing? Attack with pieces only, hands off your cover.
+76. Storm the king with pawns only when the center is locked or firmly yours - otherwise your own king pays.
+77. Behind in development? Stop grabbing pawns and get every piece into the game before opening lines.
+78. Improve your worst-placed piece every move - 'worst piece first' is the universal strategic plan.
+79. Best defense against a flank attack is a central counterstrike - meet wing play with d5 or e5 levers.
+80. Rook lifts (Rf3-g3 or Rf3-h3) smuggle a rook into kingside attacks along the third rank.
+81. Dominate one color complex, then trade off that color's defending bishop to deepen your grip.
+82. Strike pawn chains at their BASE: attack the least-defended pawn holding the whole structure up.
+83. Do not loosen your own king's pawn cover to win a tempo - structure around the king outlasts tricks.
+84. Open positions favor bishops, closed positions favor knights - trade accordingly, not by reflex.
+85. Own the bishop pair? Aim to open lines. Facing the pair? Close the position and trade one off.
+86. Physical blunder-check ritual: hands OFF the mouse until you have scanned checks, captures, threats both ways.
+87. Learn on rapid (10+0 or 15+10), not bullet - thinking time is where improvement actually happens.
+88. Review every loss for 2 minutes: find the move where it turned, name the lesson, close the tab. Done.
+89. A daily stack of 15 puzzles + 1 rapid game + a 2-minute review beats three hours of autopilot blitz.
+90. Never resign a clearly drawn position, and never celebrate a 'won' one - play the board to the handshake.
+91. Flag losses cost more rating than bad openings: budget seconds per move and premove nothing.
+92. Lost within 12 moves? That is tactics, not theory. Patch the leaks before shopping for new openings.
+93. Study YOUR losses, not just grandmaster brilliancies - your mistakes repeat, theirs feel distant.
+94. Struggle through your own analysis BEFORE clicking the engine - the wrestling is the workout.
+95. Three losses in a row equals tilt: stand up, drink water, walk away. Ratings recover, spirals do not.
+96. Set process goals - 'no early queen adventures this week' - not rating goals. Rating follows process.
+97. Keep your top recurring mistake on a sticky note and read it before each session.
+98. Blitz is dessert, rapid is dinner: enjoy blitz after study, never instead of it.
+99. When nothing is clear, improve structure or activate a piece - waiting moves lose less than hallucinated attacks.
+100. Trust the checklist over intuition until you are strong; intuition is ten thousand checklist repetitions.
+101. Watch fundamentals-level instruction (Bartholomew, Naroditsky low-rating speedruns), not only fun recaps.
+102. Board-vision drill: every few moves, name within 5 seconds everything attacked and defended near the action.
+103. Protect focus: mute chat, silence notifications, keep one tab open. Concentration is a trainable rating point.
+104. Cherish clean wins over lucky ones - reproducible wins are the ones that compound.
+105. Keep a one-line error log: date, blunder type, fix. Patterns surface within weeks and stop repeating.
+106. Know en passant: a pawn may capture sideways immediately after an adjacent enemy pawn makes its double-step leap.
+107. Promotion is not autopilot-queen: check first for stalemate tricks and knight-fork promotions.
+108. Castling rules: never castle through, out of, or into check; neither king nor rook may have moved yet.
+109. Draw weapons are real: threefold repetition and the 50-move rule rescue many worse positions.
+110. All tactics begin with geometry: shared ranks, files, diagonals, or knight-distance relationships.
+111. Silently recount material every few moves - surprise at move 40 means lazy counting at move 12.
+112. Your opponent blunders too: in worse positions, set small problems and complicate instead of folding.
+113. When attacks collide, the player who calculated deeper usually delivers the first check.
+114. A hundred rating points hide in king-and-pawn technique - endgame study is the cheapest Elo available.
+115. Under 800: stop giving away pieces. Almost every loss contains a free piece — hang nothing and the rating climbs by itself.
+116. 800-1000: convert material wins mechanically — trade pieces (not pawns), simplify to a won endgame, abandon flashy mates while anything hangs.
+117. 1000-1200: tactics decide 80% of your games inside two moves. Puzzle volume beats opening study at this band, no contest.
+118. 1200-1400: add prophylaxis. Ask what the opponent wants EVERY move; most peers still play only their own plan.
+119. 1400-1600: endgame technique pays double — opposition, Lucena, Philidor, king races. Free rating almost nobody studies.
+120. 1600+: shrink the blunder tax — one unchecked move per game costs roughly 150 points. Slow rapid, full CCT scans, no exceptions.
+121. Rating tracks skill gaps, not hours logged: thirty focused slow games teach more than three hundred blitz tosses.
+122. Monthly, play someone 200 above you AND someone 200 below — one shows your ceiling, the other trains punishing mistakes.
+123. Grind puzzles at 60-80% success: above that too easy, below that patterns cannot compound and motivation dies.
+124. Judge rating in blocks of fifty games, never day to day — short-term variance lies louder than your actual level.
+125. Calculate on their clock, decide on yours: starting a turn with the move already chosen means playing at double speed for free.
+126. Under thirty seconds, play only forcing or simple solid moves — hero calculations at time pressure are donations.
+127. Opening moves should cost under 10% of your clock. Burning minutes on move six means learn ONE line deeper, not ten shallower.
+128. Time trouble is usually plan-indecision, not slow calculation: pick a middlegame plan by move twelve and the clock relaxes.
+129. In winning positions spend sixty seconds finding the FORCED route — most upsets die when the winner plays speed-chess while winning.
+130. Defending bad positions? Steer toward complications and mutual time trouble, never clean simplification — scrambles are the underdog's friend.
+131. Train on increments: 15+10 or 10+5 build real decision habits; 3+0 trains panic and premove reflexes, not chess.
+132. Two losses in a row: mandatory ten-minute break. Three: session over. Tilt costs more rating than any opening hole ever will.
+133. Never queue immediately after a blunder-loss — you will play the revenge game angry and gift back another twenty points.
+134. Tilt tell: you are moving in under three seconds repeatedly. That is autopilot, not confidence. Stand up, water, walk, return.
+135. Say good move when the opponent finds the best reply — it resets frustration and forces objectivity in the same breath.
+136. Loss streaks are data, not identity: autopsy ONE loss properly instead of revenge-playing five sloppy ones.
+137. End every session on a win or a well-played draw — your brain bookmarks the final game and replays it tomorrow.
+138. Below 1200 play more than you study (70/30); above 1600 flip it — your games now expose specific gaps begging for targeted work.
+139. Study what actually loses your games, not what looks impressive on a course page — check your stats before buying anything.
+140. One White system plus one defense each versus e4 and d4, drilled deep, beats five trendy repertoires learned shallow.
+141. Puzzle rating up but game rating flat means you solve SLOWLY — add three-minute puzzle-rush sprints to build recall speed.
+142. Keep a one-page mistake ledger: recurring error, its fix, updated weekly. Read it before playing. Highest-ROI document you own.
+143. Lichess Insights over memory: filter to lost games and see which PHASE leaks points — train exactly there, nowhere else.
+144. Opening Explorer is not for memorizing: open a recent loss, find the first move where win rate craters, study that position deeply once.
+145. Use Learn From Your Mistakes after each game — it jumps to the eval swings; write one plain-language sentence per blunder.
+146. Load a lost position against the computer from BEFORE your blunder and beat the engine from there — conversion reps on demand.
+147. Run themed puzzle sets on your weakest motif — for most sub-1400 players that is skewers and discovered attacks, not forks.
+148. Save every instructive loss as a Study chapter tagged by mistake type, then reread the collection monthly — patterns repeat until named.
+149. In Explorer, play the top three master moves against yourself to FEEL why they score — kinship beats copying move orders.
+150. Tablebase the endgames you misplayed: seven-piece truth is free on lichess, and K+P technique is pure memorizable geometry.
+151. Follow one strong open tournament live on Broadcasts and guess every move — free grandmaster-paced training with stakes.
+152. Request engine analysis, then read ONLY the blunder marks — five minutes of targeted feedback beats forty minutes of engine dump.
+153. Trigger word LPDO — Loose Pieces Drop Off: count undefended pieces on BOTH sides every move; most tactics are loose-piece taxes.
+154. Trigger ALIGNMENT: two enemy pieces sharing a rank, file, or diagonal mean pin, skewer, battery, or discovery — scan lines, not pieces.
+155. Trigger GEOMETRY: lay an imaginary knight-jump grid over enemy royalty and queens — forks live on intersections, not on luck.
+156. Trigger BACK RANK: every pawn move near your king reopens old holes — audit flight squares after each push, yours and theirs.
+157. Trigger OVERLOAD: a defender guarding two jobs drops both — find the double-duty piece and threaten both jobs on the same move.
+158. Trigger DISCOVERY: when two of your pieces share a line with an enemy target, look for the front piece stepping aside WITH tempo.
+159. Trigger DEFLECTION: name the position's key defender, then capture, chase, or overload it — remove the guard and positions collapse.
+160. Trigger ZWISCHENZUG: inside any forcing sequence, hunt the in-between check or capture — intermediate moves fund free material at club level.
+161. Trigger TRADE FALLOUT: after every exchange ask what lost its defender — swaps silently disarm pawn chains and king shelters.
+162. Annotate one of your own WINS monthly: understanding why you won teaches you to manufacture it on purpose.
+163. Micro-blindfold habit: after each of your moves, close your eyes for two seconds and repaint the board in your head — visualization is trainable muscle.
+164. Lost position protocol: unbalance pawns, complicate, trade nothing — swindles feed on confusion and club opponents blink first.
+165. Winning position protocol is the mirror: trade everything except the advantage, extinguish counterplay first, race only when safe.
+166. Adopt ONE gambit as White for initiative reps — gambit decisions teach attack rhythm that no quiet line can simulate.
+167. Engine AFTER self-review, never before: guess your mistakes first; being confidently wrong makes the correction permanent.
+168. Sleep seven hours and hydrate before rated sessions — half of all tilt is fatigue wearing a chess costume.
+169. Central radar drill: in ten seconds name every piece attacking or defending d5 — center-square awareness kills one-move blunders.
+170. Quit openings you keep losing with before move ten — either the style fights your hand or you never learned its plans. Pick one, commit.
+171. Ten-second premove ritual: what changed, what is threatened, what is my least-defended piece. Answer all three, then move.
+172. Progress is a staircase: long plateaus, then jumps. A plateau means consolidation — keep reps honest and the step arrives on schedule.
+173. Review your opponent's best game of the night, not your own worst — studying quality from the winner's side teaches twice as fast.
+174. One new concept per study session maximum: one trap, one endgame, one plan. Depth of one thing beats skimming ten things every time.

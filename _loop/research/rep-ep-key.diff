@@ -1,0 +1,23 @@
+diff --git a/games/chess.html b/games/chess.html
+index c96ff9a..ab5154d 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1451,7 +1451,17 @@ function trackStatsEnd(resultText) {
+ function positionKey(board, turn, epTarget, castlingRights) {
+   let s = turn + '|';
+   for (let i = 0; i < 64; i++) s += board[i] ? CH[board[i]] : '.';
+-  s += '|' + (epTarget === null || epTarget === undefined ? '-' : epTarget);
++  let epk = '-';
++  if (epTarget !== null && epTarget !== undefined) {
++    const capRow = turn === CL.WHITE ? row(epTarget) + 1 : row(epTarget) - 1;
++    for (const dc of [-1, 1]) {
++      const c = col(epTarget) + dc;
++      if (c < 0 || c > 7) continue;
++      const i = idx(capRow, c);
++      if (pType(board[i]) === PT.PAWN && pColor(board[i]) === turn && getLegalMoves(board, i, epTarget, castlingRights).some(m => m.ep)) { epk = epTarget; break; }
++    }
++  }
++  s += '|' + epk;
+   s += '|' + (castlingRights.K?'K':'') + (castlingRights.Q?'Q':'') + (castlingRights.k?'k':'') + (castlingRights.q?'q':'');
+   return s;
+ }

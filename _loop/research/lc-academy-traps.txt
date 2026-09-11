@@ -1,0 +1,71 @@
+[0] {
+ "name": "Legal's Mate Bait",
+ "moves": "e2e4 e7e5 g1f3 d7d6 f1c4 c8g4 b1c3 g7g6 f3e5 g4d1 c4f7 e8e7 c3d5",
+ "punish": "Grab the queen with ...Bxd1?? and 6.Bxf7+ Ke7 7.Nd5# mates with three minor pieces while her majesty watches from d1. If 5...dxe5 6.Qxg4 just wins a piece. Lesson: a PINNED knight is not a MISSING knight."
+}
+
+[1] {
+ "name": "Fried Liver Setup",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 g8f6 f3g5 d7d5 e4d5 f6d5 g5f7 e8f7 d1f3 e8e6 b1c3",
+ "punish": "Taking on d5 with an uncastled king invites 6.Nxf7! Kxf7 7.Qf3+ Ke6 and the king gets hunted by Nc3, Re1 and Nd5+ while the d5-knight falls. Watch-for: any knight parked on d5 next to an unmoved king — calculate Nxf7 first. Safer: 5...Na5."
+}
+
+[2] {
+ "name": "Napoleon's Trap",
+ "moves": "e2e4 e7e5 d1h5 b8c6 f1c4 g8f6 h5f7",
+ "punish": "3...Nf6?? blocks nothing that matters: 4.Qxf7# — the classic Napoleon-vs-Automaton humiliation. Defend with 3...g6, 3...Qe7 or 3...Nh6. Every early queen sortie to h5/f3 asks exactly one question: is f7 (or e5) hanging right now?"
+}
+
+[3] {
+ "name": "Scholar's Attempt Punished (g6)",
+ "moves": "e2e4 e7e5 f1c4 b8c6 d1h5 g7g6 h5e5 c6e5",
+ "punish": "After 3...g6 hits the queen AND frees the bishop, greedy 4.Qxe5?? runs into 4...Nxe5 — the pawn was guarded. White retreats (4.Qf3) and Black develops ...Bg7/...Nf6 with an easy game. Rule: a pawn defended by a developed piece is never free."
+}
+
+[4] {
+ "name": "Noah's Ark Trap",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 d7d6 d2d4 b7b5 a4b3 c6d4 f3d4 e5d4 d1d4 c7c5 d4d5 c8e6 d5c6 c8d7 c6d5 c7c4",
+ "punish": "Steiner-Capablanca, Budapest 1929: the light bishop ends sealed behind the a6-b5-c4 arc — a2 blocked by its own pawn, a4 covered by b5, Bxc4 simply loses it. Capablanca converted in 32 moves. Watch-for: facing ...a6/...b5/...c5, play a4 or reroute BEFORE ...c4 shuts the door."
+}
+
+[5] {
+ "name": "Elephant Trap",
+ "moves": "d2d4 d7d5 c2c4 e7e6 b1c3 g8f6 c1g5 b8d7 c4d5 e6d5 c3d5 f6d5 g5d8 f8b4 d1d2 b4d2 e1d2 e8d8",
+ "punish": "White sniffs the 'free' pinned d5-knight: 6...Nxd5! 7.Bxd8 Bb4+ regains the queen with a discovered check and nets a piece (8.Qd2 Bxd2+ 9.Kxd2 Kxd8). Lesson: resolve every pin before counting captured material — the queen you win may be your own."
+}
+
+[6] {
+ "name": "Blackburne Shilling Gambit",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 c6d4 f3e5 d8g5",
+ "punish": "4.Nxe5?? walks into 4...Qg5! hitting loose g2 and d2 at once; the greedy 5.Nxf7 Qxg2 6.Rf1 Qxe4+ 7.Be2 even ends in 7...Nf3# with the king boxed by his own men. Meet 3...Nd4 with 4.Nxd4, 4.c3 or 4.O-O — never snatch e5 while your kingside sits undefended."
+}
+
+[7] {
+ "name": "Kostic Trap",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1c4 c6d4 f3e5 d8g5 e5f7 g5g2 h1f1 g2e4 c1e2 d4f3",
+ "punish": "Muhlock-Kostic, Cologne 1912 — the same Nd4 sting, played to the mate: 7...Nf3# lands with the king entombed by his own queen and pawns. This gambit is also nicknamed the Kostic Gambit. Trigger vocabulary: TWO loose kingside pawns plus an offered center pawn equals poison."
+}
+
+[8] {
+ "name": "Fishing Pole Idea",
+ "moves": "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6 e1g1 f6g4 h2h3 h7h5 h3g4 h5g4",
+ "punish": "Berlin bait: the h5 pawn hangs on a pole. Accept 6.hxg4?? hxg4 and YOU opened the h-file against YOUR king — ...Rh5, ...Qe7-h4 and the g-file storm arrive fast. Kick elsewhere (d4, d3, Re1) and let the pole rot. A poisoned flank pawn beats a free one every time."
+}
+
+[9] {
+ "name": "Siberian Trap",
+ "moves": "e2e4 c7c5 d2d4 c5d4 c2c3 d4c3 b1c3 b8c6 g1f3 e7e6 f1c4 d8c7 e1g1 g8f6 d1e2 f6g4 h2h3 g4d4",
+ "punish": "Smith-Morra nightmare: after 8...Ng4! 9.h3?? Nd4! threatens ...Nxf3+ and ...Qh2#, and 10.Nxd4 simply allows 10...Qh2#. Seen in Kolenbet-Schipkov 1987 and Tesinsky-Magerramov 1990. Watch-for: a queen staring at h2 across your half-built kingside; only precise 9.Nb5 survives."
+}
+
+[10] {
+ "name": "Englund Gambit Trap",
+ "moves": "d2d4 e7e5 d4e5 b8c6 g1f3 d8e7 c1f4 e7b4 c1d2 b4b2 d2c3 f8b4",
+ "punish": "Keeping the extra pawn with 6.Bc3?? loses to 6...Bb4!: 7.Bxb4 Nxb4 regains with crushing pressure, and 7.Qd2 Bxc3 8.Qxc3 Qc1# is back-rank execution by the b2-raider. Safe route was 6.Nc3. Moral: an extra pawn is cheap rent when your king still lives in the middle."
+}
+
+[11] {
+ "name": "Budapest (Kieninger) Trap",
+ "moves": "d2d4 g8f6 c2c4 e7e5 d4e5 f6g4 c1f4 b8c6 g1f3 f8b4 b1d2 d8e7 a2a3 g4e5 a3b4 e5d3",
+ "punish": "Rubinstein line, 1925 vintage: 7...Ngxe5! offers the knight back, and 8.axb4?? allows 8...Nd3# — a smothered-style mate with the king entombed by his own army. Even after 8.Nxe5 Nxe5, 9.axb4?? STILL mates, so White burns tempi on e3. Grabbing a bishop while a knight eyes d3 near an uncastled king is fatal."
+}

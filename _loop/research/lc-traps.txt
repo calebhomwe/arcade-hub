@@ -1,0 +1,83 @@
+[0] Scholar's Mate | Bishop's Opening | side=White
+moves: e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7
+hook: Queen and bishop both stare at f7, the one square only the king defends.
+punish: 4.Qxf7# - the four-move mate every beginner loses to exactly once.
+avoid: Answer 3.Qh5 with 3...g6!. The queen has no good square and you gain time hitting her.
+
+[1] Legal's Mate | Italian / Philidor | side=White
+moves: e2e4 e7e5 g1f3 b8c6 f1c4 d7d6 b1c3 c8g4 f3e5 g4d1 c4f7 e8e7 c3d5
+hook: White hangs the queen on purpose. Taking it is mate in two.
+punish: 7.Nd5# - a mate delivered by two minor pieces while Black owns the queen.
+avoid: After 5.Nxe5, play 5...Nxe5! and win a clean pawn instead of grabbing the queen.
+
+[2] Blackburne Shilling Gambit | Italian Game | side=Black
+moves: e2e4 e7e5 g1f3 b8c6 f1c4 c6d4 f3e5 d8g5 e5f7 g5g2 h1f1 g2e4 c4e2 d4f3
+hook: 3...Nd4 offers the e5 pawn. Blackburne is said to have won a shilling a time with it.
+punish: 7...Nf3# - a smothered-style mate with White's whole army still at home.
+avoid: Meet 3...Nd4 with 4.Nxd4! exd4 5.O-O. White is simply better; the greedy 4.Nxe5 loses.
+
+[3] Fried Liver Attack | Two Knights Defence | side=White
+moves: e2e4 e7e5 g1f3 b8c6 f1c4 g8f6 f3g5 d7d5 e4d5 f6d5 g5f7 e8f7 d1f3
+hook: A knight sacrifice on f7 that drags the black king into the open board.
+punish: 6.Nxf7! Kxf7 7.Qf3+ and the king walks; Black must defend precisely to survive.
+avoid: Play the Fritz/Ulvestad 5...Na5! instead of 5...Nxd5 and Black is fine.
+
+[4] Stafford Gambit Trap | Petrov / Stafford | side=Black
+moves: e2e4 e7e5 g1f3 g8f6 f3e5 b8c6 e5c6 d7c6 d2d3 f8c5 c1g5 f6e4 g5d8 c5f2 e1e2 c8g4
+hook: Black gives a pawn for two raking bishops aimed straight at f2.
+punish: 8...Bg4# - mate in the middle of the board on move eight.
+avoid: Don't grab with 6.Bg5. Play 6.Be2 and h3; White keeps the extra pawn safely.
+
+[5] Englund Gambit Trap | Englund Gambit | side=Black
+moves: d2d4 e7e5 d4e5 b8c6 g1f3 d8e7 c1f4 e7b4 f4d2 b4b2 d2c3 f8b4 d1d2 b4c3 d2c3 b2c1
+hook: Black's queen raids b2 while White's pieces trip over each other.
+punish: 8...Qxc1# - the queen mates on the square White's own bishop vacated.
+avoid: 4.Bf4 is the mistake. Play 4.Nc3! or 4.Bg5 and the b2 pawn is poisoned for Black.
+
+[6] Elephant Trap | Queen's Gambit Declined | side=Black
+moves: d2d4 d7d5 c2c4 e7e6 b1c3 g8f6 c1g5 b8d7 c4d5 e6d5 c3d5 f6d5 g5d8 f8b4 d1d2 b4d2 e1d2 e8d8
+hook: The d5 knight looks pinned and free. It isn't.
+punish: 6...Nxd5! 7.Bxd8 Bb4+ regains the queen and leaves Black a whole piece up.
+avoid: Just don't take on d5. Play 6.e3 and White has a normal, pleasant position.
+
+[7] Kieninger Trap | Budapest Gambit | side=Black
+moves: d2d4 g8f6 c2c4 e7e5 d4e5 f6g4 c1f4 b8c6 g1f3 f8b4 b1d2 d8e7 a2a3 g4e5 a3b4 e5d3
+hook: Black's knights come back for the e5 pawn while the White king sits on e1.
+punish: 8...Nd3# - smothered mate on move eight, a piece down.
+avoid: 6.Nbd2 is the loser. Play 6.Nc3! and White holds the extra pawn.
+
+[8] Siberian Trap | Smith-Morra Gambit | side=Black
+moves: e2e4 c7c5 d2d4 c5d4 c2c3 d4c3 b1c3 b8c6 g1f3 e7e6 f1c4 d8c7 e1g1 g8f6 d1e2 f6g4 h2h3 c6d4
+hook: Black's queen on c7 and knight on g4 quietly build a battery on h2.
+punish: 9...Nd4! forks the queen on e2; White loses her to stop mate on h2.
+avoid: Don't play Qe2 with a black knight eyeing g4. 8.h3 first kills the whole idea.
+
+[9] Fishing Pole Trap | Ruy Lopez / Berlin | side=Black
+moves: e2e4 e7e5 g1f3 b8c6 f1b5 g8f6 e1g1 f6g4 h2h3 h7h5 h3g4 h5g4
+hook: Black dangles the g4 knight like bait. Taking it rips open the h-file.
+punish: 6.hxg4?? hxg4 and White cannot stop ...Qh4 with mate down the h-file.
+avoid: Leave the knight alone. 5.d4! or 5.Re1 and Black's stunt just loses a piece.
+
+[10] Noah's Ark Trap | Ruy Lopez | side=Black
+moves: e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 d7d6 d2d4 b7b5 a4b3 c6d4 f3d4 e5d4 d1d4 c7c5 d4d5 c8e6 d5c6 e6d7 c6d5 c5c4
+hook: Three black pawns creep forward and build a box around White's light-squared bishop.
+punish: ...c5, ...c4 and the b3 bishop has no square left. A piece for three pawn moves.
+avoid: Don't take on d4 with the queen. 8.Nxd4 or 8.c3 keeps the bishop's escape route open.
+
+[11] Lasker Trap | Albin Counter-Gambit | side=Black
+moves: d2d4 d7d5 c2c4 e7e5 d4e5 d5d4 e2e3 f8b4 c1d2 d4e3 d2b4 e3f2 e1e2
+hook: Black's d-pawn crashes through to f2 while both kings are still in the centre.
+punish: 7...fxg1=N+! - an under-promotion to a knight, on move seven, and Black wins.
+avoid: 4.e3 is the whole mistake. Play 4.Nf3! and the Albin is harmless.
+
+[12] Napoleon's Trap | Danvers / Parham Attack | side=White
+moves: e2e4 e7e5 d1h5 b8c6 f1c4 g8f6 h5f7
+hook: The queen comes out on move two. Napoleon reportedly won this way against an automaton.
+punish: 4.Qxf7# - developing a knight is natural and loses on the spot.
+avoid: Meet 2.Qh5 with 2...Nc6 and then 3...g6, hitting the queen every time she lands.
+
+[13] Scholar's Punished | Bishop's Opening | side=Black
+moves: e2e4 e7e5 f1c4 b8c6 d1h5 g7g6 h5e5 c6e5
+hook: The other half of Scholar's Mate: what happens when the attacker gets greedy.
+punish: 3...g6! hits the queen and frees the bishop; 4.Qxe5?? Nxe5 just drops her.
+avoid: If you are White, retreat 4.Qf3 and accept you have wasted two tempi.

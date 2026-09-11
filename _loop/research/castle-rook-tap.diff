@@ -1,0 +1,53 @@
+diff --git a/games/chess.html b/games/chess.html
+index 6aa4249..bda9da8 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1901,6 +1901,15 @@ function kingCastleFrom(rookSq) {
+   if (castleMoveFor(kingSq, target)) return kingSq;
+   return -1;
+ }
++function castleByRookTap(kingSq, sq) {
++  if (kingSq < 0 || sq < 0) return null;
++  if (game.board[kingSq] !== P(PT.KING, game.turn)) return null;
++  if (game.board[sq] !== P(PT.ROOK, game.turn)) return null;
++  if (row(sq) !== row(kingSq)) return null;
++  const target = col(sq) === 7 ? idx(row(kingSq), 6) : col(sq) === 0 ? idx(row(kingSq), 2) : -1;
++  if (target < 0) return null;
++  return getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights).find(m => m.castle && m.from === kingSq && m.to === target) || null;
++}
+ function castlingRookDrag(move) {
+   if (!dragState || !move || !move.castle) return null;
+   const kingSq = move.from, r = row(kingSq), to = move.to;
+@@ -2585,6 +2594,7 @@ function startDrag(e) {
+   if (botEnabled && game.turn === botColor) return;
+   const sq = getSquareFromEvent(e);
+   if (sq < 0 || !game.board[sq] || pColor(game.board[sq]) !== game.turn) return;
++  const tapCastle = castleByRookTap(selectedSquare, sq);
+   selectedSquare = sq;
+   legalMoves = getLegalMoves(game.board, sq, game.epTarget, game.castlingRights);
+   let dragFrom = sq;
+@@ -2593,7 +2603,7 @@ function startDrag(e) {
+     const kingSq = kingCastleFrom(sq);
+     if (kingSq >= 0) { dragFrom = kingSq; selectedSquare = kingSq; castleSelect = true; legalMoves = getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights); }
+   }
+-  dragState = { from: dragFrom, x: e.clientX, y: e.clientY };
++  dragState = { from: dragFrom, press: sq, tapCastle, x: e.clientX, y: e.clientY };
+   hintArrow = null;
+   draw();
+ }
+@@ -2608,11 +2618,14 @@ function endDrag(e) {
+   if (!dragState) return;
+   const sq = getSquareFromEvent(e);
+   const from = dragState.from;
++  const press = dragState.press;
++  const tapCastle = dragState.tapCastle;
+   const rookSq = rookCastleFrom(from);
+   dragState = null;
+   if (sq >= 0) {
+     let move = legalMoves.find(m => m.to === sq) || castlingRookDrag(legalMoves.find(m => m.castle));
+-    if (!move && sq === rookSq) move = legalMoves.find(m => m.castle) || null;
++    if (!move && sq === rookSq && press === from) move = legalMoves.find(m => m.castle) || null;
++    if (!move && tapCastle && sq === press) move = tapCastle;
+     if (move) {
+       if (move.promo) { pendingPromo = move; showPromoUI(); return; }
+       executeMove(move);

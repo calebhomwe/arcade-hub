@@ -1,0 +1,47 @@
+﻿== engine-extract: C:/Users/caleb/AppData/Local/arcade-hub/_loop/shots/engfix-all.html
+const lines: {"PT":975,"CL":976,"P":977,"pType":978,"pColor":979,"CH":980,"VAL":986,"PST":1132,"SAN_LETTER":1284,"PUZZLES":1215}
+fn lines: {"initBoard":988,"cloneB":1000,"inB":1001,"idx":1002,"row":1003,"col":1004,"getPseudoMoves":1006,"isInCheck":1053,"applyMove":1065,"getLegalMoves":1067,"getAllLegalMoves":1095,"makeMove":1101,"evaluate":1141,"minimax":1163,"findBestMove":1194,"sqName":1285,"moveToSAN":1286,"positionKey":1451,"recordPosition":1469,"hasInsufficientMaterial":1507,"reconstructReviewMove":2425,"analyzeReviewEntry":2441,"_parseMoveToken":2300,"puzzleAnswerMatches":2324}
+FEN parser (loadPuzzle) at line 2264
+
+-- PERFT --
+startpos           exp [20,400,8902,197281] got [20,400,8902,197281] ok [true,true,true,true] ms [1,7,32,481]
+kiwipete           exp [48,2039,97862,4085603] got [48,2039,97862,4085603] ok [true,true,true,true] ms [0,10,245,29636]
+pos3-ep-pins       exp [14,191,2812,43238] got [14,191,2812,43238] ok [true,true,true,true] ms [0,0,16,294]
+pos4-promo-castle  exp [6,264,9467,422333] got [6,264,9467,422333] ok [true,true,true,true] ms [0,1,182,6497]
+pos5-promo-pins    exp [44,1486,62379,2103487] got [44,1486,62379,2103487] ok [true,true,true,true] ms [0,28,871,11099]
+pos6-quiet         exp [46,2079,89890,3894594] got [46,2079,89890,3894594] ok [true,true,true,true] ms [0,7,281,41469]
+
+-- PUZZLES (22) --
+parse-clean: 22/22; flagged: 12
+  #1 {"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","solution":"g1f3","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #2 {"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","solution":"d7d5","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #3 {"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","solution":"g1f1","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #4 {"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","solution":"e4d5","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #5 {"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","solution":"f1b5","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #6 {"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","solution":"e2e4","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #9 {"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","solution":"e4d5","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #13 {"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #16 {"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #19 {"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #20 {"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+  #21 {"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","turnOk":true,"castlingOk":true,"epOk":true,"boardOk":true,"refErrors":[],"checks":{"pawnsOnBackRank":false,"sideNotToMoveInCheck":false,"moverHasNoMoves":false,"solutionLegal":true,"solutionIsMate":false}}
+
+-- GAME END --
+  ok   fools-mate                       got checkmate expect checkmate
+  FAIL back-rank-mate                   got open expect checkmate
+  ok   classic-stalemate                got stalemate expect stalemate
+  ok   stalemate-a1                     got stalemate expect stalemate
+  ok   not-over                         got open expect open
+  ok   kvk                              got insufficient expect insufficient
+  ok   kbvk                             got insufficient expect insufficient
+  ok   knvk                             got insufficient expect insufficient
+  ok   kbpvk                            got open expect open
+  ok   kb-b-opposite-colours            got insufficient expect insufficient
+  FAIL kb-b-same-colour                 got insufficient expect insufficient-gap
+  FAIL kbb-same-side-same-colour        got insufficient expect insufficient-gap
+  ok   knvkn                            got open expect open
+  ok   knnvk                            got open expect open
+
+-- REVIEW reconstruction bogus-castle cases: 0 --
+
+-- HINT depth2: tested 9 problems 0 --

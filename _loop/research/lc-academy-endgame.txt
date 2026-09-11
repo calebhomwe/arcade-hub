@@ -1,0 +1,39 @@
+[0] {
+ "name": "King Activity",
+ "rule": "In the endgame the king becomes a fighter: centralize him early, escort pawns, raid enemy pawns. An active king routinely outweighs a spare pawn."
+}
+
+[1] {
+ "name": "Opposition",
+ "rule": "Kings facing each other one square apart: whoever must MOVE concedes ground. Win direct opposition to seize the invasion squares ahead of your pawn."
+}
+
+[2] {
+ "name": "Key Squares",
+ "rule": "Pre-marked squares that guarantee promotion when reached by the attacking king (or a draw when reached by the defender). Learn them for each pawn placement instead of guessing."
+}
+
+[3] {
+ "name": "Lucena Position",
+ "rule": "THE winning rook ending: king on the promotion square in front of his pawn, rook cutting off the enemy king (park it on the fourth rank); against the checks, interpose the rook in front - building the bridge."
+}
+
+[4] {
+ "name": "Philidor Position",
+ "rule": "THE saving rook ending: the defending rook waits on the third rank to stop the enemy king; once the pawn crosses to the sixth, swing the rook behind the pawn and check eternally for the draw."
+}
+
+[5] {
+ "name": "Rook Behind The Pawn",
+ "rule": "Tarrasch's rule: rooks belong behind passed pawns, friendly or enemy - maximum range forward or back, and they never block their own army."
+}
+
+[6] {
+ "name": "Pawn Breakthrough",
+ "rule": "Three-versus-three wall trick: sacrifice the outer pawns to queen the survivor - b6!? axb6 a6! bxa6 c6 and the c-pawn reaches home first."
+}
+
+[7] {
+ "name": "Knight Vs Bishop Endings",
+ "rule": "Minor-piece endings mirror pawn endings: king races decide everything. Bishops thrive in open positions, knights blockade in closed ones, and wrong-colored bishop rook-pawn positions are drawn."
+}

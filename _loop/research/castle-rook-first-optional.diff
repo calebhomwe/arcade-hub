@@ -1,0 +1,15 @@
+diff --git a/games/chess.html b/games/chess.html (APPLY ON TOP OF castle-rook-tap.diff)
+index bda9da8..7410739 100644
+--- a/games/chess.html
++++ b/games/chess.html
+@@ -1897,8 +1897,9 @@ function kingCastleFrom(rookSq) {
+   const r = row(rookSq), c = col(rookSq);
+   if (c !== 0 && c !== 7) return -1;
+   const kingSq = idx(r, 4);
++  if (game.board[kingSq] !== P(PT.KING, game.turn)) return -1;
+   const target = c === 7 ? idx(r, 6) : idx(r, 2);
+-  if (castleMoveFor(kingSq, target)) return kingSq;
++  if (getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights).some(m => m.castle && m.from === kingSq && m.to === target)) return kingSq;
+   return -1;
+ }
+ function castleByRookTap(kingSq, sq) {
