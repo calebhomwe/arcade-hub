@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>bugtest</title></head>
+<body style="margin:0;background:#111;color:#eee;font:12px monospace">
+<iframe id="f" src="games/chess.html" style="width:1100px;height:900px;border:0"></iframe>
+<pre id="out"></pre>
+<script>
+var R = [];
+function chk(name, cond, extra){ R.push((cond ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? ' [' + extra + ']' : '')); }
+function vis(d, id){ var e = d.getElementById(id); if (!e) return false; var s = d.defaultView.getComputedStyle(e); return s.display !== 'none' && s.visibility !== 'hidden'; }
+
+document.getElementById('f').addEventListener('load', function(){
+  var w = document.getElementById('f').contentWindow, d = w.document;
+  setTimeout(function(){
+    try {
+      // --- layout
+      var shell = d.getElementById('ccApp'), side = d.getElementById('sideCol'), bc = d.getElementById('boardCol');
+      chk('shell present', !!shell);
+      chk('two columns side-by-side', side && bc && Math.abs(side.getBoundingClientRect().top - bc.getBoundingClientRect().top) < 120);
+      var cv = d.getElementById('board');
+      chk('board square', Math.abs(cv.getBoundingClientRect().width - cv.getBoundingClientRect().height) < 2);
+      chk('board sizeable', cv.getBoundingClientRect().width > 400, Math.round(cv.getBoundingClientRect().width));
+      chk('no horizontal page scroll', d.documentElement.scrollWidth <= d.documentElement.clientWidth + 1,
+          d.documentElement.scrollWidth + '/' + d.documentElement.clientWidth);
+
+      // --- theme default + persistence
+      chk('default theme emerald', d.body.classList.contains('th-emerald'), d.body.className);
+      var stored = null; try { stored = w.localStorage.getItem('cjs-theme'); } catch(e){}
+      chk('theme persisted', stored === 'emerald', stored);
+
+      // --- theme change must NOT clobber other body classes (regression)
+      d.body.classList.add('cmd-party');
+      var sel = d.getElementById('themeSel');
+      sel.value = 'ocean'; sel.dispatchEvent(new w.Event('change', {bubbles:true}));
+      chk('theme switch keeps party class', d.body.classList.contains('cmd-party'), d.body.className);
+      chk('theme switch applies new theme', d.body.classList.contains('th-ocean'));
+      chk('old theme class removed', !d.body.classList.contains('th-emerald'));
+      d.body.classList.remove('cmd-party');
+      sel.value = 'emerald'; sel.dispatchEvent(new w.Event('change', {bubbles:true}));
+
+      // --- player strips
+      chk('opponent name tracks bot', (d.getElementById('ccNameTop').textContent || '').indexOf('Medium') >= 0,
+          d.getElementById('ccNameTop').textContent.trim());
+      chk('turn highlight on white', d.getElementById('ccBottom').classList.contains('cc-turn'));
+
+      // --- clocks hidden until enabled, then shown in strips
+      chk('clock hidden by default', !vis(d, 'clockW'));
+      d.getElementById('btnClock').click();
+      chk('clock visible after toggle', vis(d, 'clockW'));
+      chk('clock lives in player strip', d.getElementById('clockW').closest('.cc-player') !== null);
+      d.getElementById('btnClock').click();
+      chk('clock hidden after untoggle', !vis(d, 'clockW'));
+
+      // --- captured pieces + advantage
+      w.ChessMods.api.setBot(false);
+      w.ChessMods.api.playMove(52, 36); // e2e4
+      w.ChessMods.api.playMove(11, 27); // d7d5
+      w.ChessMods.api.playMove(36, 27); // exd5
+      w.updateUI();
+      chk('captured shown by player', (d.getElementById('capBot').textContent || '').length > 0,
+          JSON.stringify(d.getElementById('capBot').textContent));
+      chk('advantage badge', (d.getElementById('advBot').textContent || '').indexOf('+') === 0,
+          d.getElementById('advBot').textContent);
+
+      // --- panels open
+      d.getElementById('btnLearn').click();
+      chk('learn panel opens', vis(d, 'learnPanel'));
+      w.renderLearn('traps');
+      chk('traps render', d.querySelectorAll('#learnList .lp-play').length === 14,
+          d.querySelectorAll('#learnList .lp-play').length);
+      w.renderLearn('tips');
+      chk('tips render', d.querySelectorAll('#learnList .lp-item').length === 175,
+          d.querySelectorAll('#learnList .lp-item').length);
+      d.getElementById('btnLearnClose').click();
+      chk('learn panel closes', !vis(d, 'learnPanel'));
+
+      d.getElementById('btnStats').click();
+      chk('stats panel opens', vis(d, 'statsPanel'));
+      d.getElementById('btnStatsClose').click();
+
+      d.getElementById('btnReview').click();
+      chk('review panel opens', vis(d, 'reviewPanel'));
+      d.getElementById('btnReviewClose').click();
+
+      // --- core buttons still work
+      var before = d.getElementById('moveList').textContent;
+      d.getElementById('btnUndo').click();
+      chk('undo changes move list', d.getElementById('moveList').textContent !== before);
+      d.getElementById('btnFlip').click();
+      d.getElementById('btnFlip').click();
+      d.getElementById('btnReset').click();
+      chk('reset clears move list', d.getElementById('moveList').textContent.trim() === '',
+          JSON.stringify(d.getElementById('moveList').textContent.slice(0,30)));
+
+      // --- traps still legal after the reskin
+      var traps = w.__trapCheck();
+      var badT = traps.filter(function(t){ return t.played !== t.total; });
+      chk('all 14 trap lines legal', badT.length === 0 && traps.length === 14, traps.length + ' bad=' + badT.length);
+
+      document.getElementById('out').textContent = R.join('\n');
+      var fails = R.filter(function(r){ return r.indexOf('FAIL') === 0; });
+      document.title = fails.length === 0 ? ('ALLPASS:' + R.length) : ('FAILS:' + fails.length);
+    } catch(e) {
+      document.getElementById('out').textContent = R.join('\n') + '\nTHREW: ' + e.message + '\n' + e.stack;
+      document.title = 'THREW:' + e.message;
+    }
+  }, 900);
+});
+</script>
+</body></html>
