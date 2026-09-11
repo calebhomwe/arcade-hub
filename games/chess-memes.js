@@ -9,9 +9,10 @@
   var KEY_VOL = 'cmm-vol';
   var KEY_CAP = 'cmm-caps';
   var KEY_RATE = 'cmm-rate';
+  var KEY_SPEECH = 'cmm-speech';
   var RATES = { rare: 2600, normal: 900, chaos: 250 };
   var RATE_MS = 900;
-  var state = { on: true, packs: {}, sounds: {}, caps: {}, vol: 0.9, catalog: null, captions: {}, last: 0 };
+  var state = { on: true, packs: {}, sounds: {}, caps: {}, vol: 0.9, catalog: null, captions: {}, last: 0, speech: true };
   var buffers = {};
   var element = null;
   var audioCtx = null;
@@ -135,6 +136,15 @@
     setMeme: function (id, on) { state.sounds[id] = !!on; write(KEY_SOUND, state.sounds); dispatch(); },
     setCaption: function (id, on) { state.caps[id] = !!on; write(KEY_CAP, state.caps); dispatch(); },
     captionPacks: function () { return state.captions; },
+    speechAvailable: function () { return typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined'; },
+    speechOn: function () { return state.speech !== false; },
+    setSpeech: function (on) {
+      state.speech = !!on;
+      write(KEY_SPEECH, state.speech);
+      if (!state.speech) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+      dispatch();
+    },
+    speak: function (text) { return speakText(text); },
     setRate: function (name) {
       if (!RATES[name]) return;
       state.rate = name;
@@ -262,6 +272,11 @@
       '<div class="meme-vol-track" id="memeVolTrack" role="slider" tabindex="0" aria-label="Meme sound volume" aria-valuemin="0" aria-valuemax="100">' +
       '<div class="meme-vol-fill" id="memeVolFill"></div></div>' +
       '<span class="meme-vol-val" id="memeVolVal">90%</span></div>' +
+      '<div class="meme-voice">' +
+      '<label for="memeSpeech"><span>\uD83D\uDDE3\uFE0F Spoken voice lines</span></label>' +
+      '<input type="checkbox" id="memeSpeech" checked>' +
+      '<button class="btn" id="memeSpeechTest" title="Hear a sample">\u25B6 Test</button>' +
+      '</div>' +
       '<div class="meme-tools">' +
       '<button class="btn" id="memeAllOn">\u2705 All on</button>' +
       '<button class="btn" id="memeAllOff">\u274C All off</button>' +
@@ -286,6 +301,9 @@
       '.meme-vol-fill{position:absolute;left:0;top:0;bottom:0;width:90%;border-radius:6px;background:var(--accent)}' +
       '.meme-vol-track:focus-visible{outline:2px solid var(--accent);outline-offset:3px}' +
       '.meme-vol-val{min-width:38px;text-align:right;color:var(--cc-muted);font-weight:700}' +
+      '.meme-voice{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-size:.8rem;font-weight:700}' +
+      '.meme-voice input{width:18px;height:18px;accent-color:var(--accent)}' +
+      '.meme-voice button{margin-left:auto;font-size:.68rem;padding:4px 10px}' +
       '.meme-tools{display:flex;gap:6px;margin:8px 0}' +
       '.meme-tools .btn{flex:1;justify-content:center}' +
       '.meme-rate{display:flex;gap:6px;margin:0 0 8px}' +
@@ -339,6 +357,10 @@
     });
     var master = panel.querySelector('#memeMaster');
     if (master) master.addEventListener('change', function () { state.on = !!this.checked; write(KEY_MASTER, state.on); refreshCount(); });
+    var speech = panel.querySelector('#memeSpeech');
+    if (speech) speech.addEventListener('change', function () { API.setSpeech(!!this.checked); });
+    var speechTest = panel.querySelector('#memeSpeechTest');
+    if (speechTest) speechTest.addEventListener('click', function () { API.speak('Nice move. But can you keep it up?'); });
     var allOn = panel.querySelector('#memeAllOn');
     if (allOn) allOn.addEventListener('click', function () { API.setAll(true); render(false); });
     var allOff = panel.querySelector('#memeAllOff');
@@ -414,6 +436,10 @@
     }
     var val = panel.querySelector('#memeVolVal');
     if (val) val.textContent = Math.round(state.vol * 100) + '%';
+    var sp = panel.querySelector('#memeSpeech');
+    if (sp) { sp.checked = state.speech !== false; sp.disabled = !API.speechAvailable(); }
+    var spTest = panel.querySelector('#memeSpeechTest');
+    if (spTest) spTest.disabled = !API.speechAvailable();
     var rateWrap = panel.querySelector('#memeRate');
     if (rateWrap) Array.prototype.forEach.call(rateWrap.querySelectorAll('[data-rate]'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-rate') === state.rate);
@@ -435,6 +461,32 @@
     if (typeof window.syncModalState === 'function') window.syncModalState();
   }
 
+  // Real speech instead of formant synthesis: the browser's own voice reads the
+  // line, which sounds like a person and needs no audio files at all.
+  function speakText(text) {
+    if (!text || state.speech === false) return false;
+    if (typeof window.speechSynthesis === 'undefined' || typeof window.SpeechSynthesisUtterance === 'undefined') return false;
+    try {
+      var clean = String(text).replace(/[^A-Za-z0-9\s'!?.,-]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!clean) return false;
+      var u = new SpeechSynthesisUtterance(clean);
+      u.rate = 1.08; u.pitch = 1.0;
+      u.volume = Math.max(0.2, Math.min(1, state.vol));
+      var voices = window.speechSynthesis.getVoices() || [];
+      var pick = null;
+      for (var i = 0; i < voices.length; i++) {
+        var v = voices[i];
+        if (!v || !v.lang || !/^en/i.test(v.lang)) continue;
+        if (!pick) pick = v;
+        if (!v.localService) { pick = v; break; }
+      }
+      if (pick) u.voice = pick;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  }
+
   function flag(text) {
     if (!text) return;
     var wrap = document.getElementById('gameWrap');
@@ -448,6 +500,7 @@
   window.speakReaction = function (text) {
     if (!text) return;
     flag(text);
+    speakText(text);
   };
   window.memeCaption = flag;
 
@@ -478,6 +531,7 @@
     state.packs = read(KEY_PACK, {}) || {};
     state.sounds = read(KEY_SOUND, {}) || {};
     state.vol = read(KEY_VOL, 0.9);
+    state.speech = read(KEY_SPEECH, true);
     state.rate = read(KEY_RATE, 'normal');
     RATE_MS = RATES[state.rate] || 900;
     if (window.__MEME_CAPTIONS) adoptCaptions(window.__MEME_CAPTIONS);
