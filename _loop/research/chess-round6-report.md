@@ -38,3 +38,11 @@ go. This is exactly why the suite is run against the live build and not just loc
 - Nobody has listened to the audio; it is machine-verified (decode, level, envelope).
 - The bot is a heuristic minimax, not a rated engine.
 - No physical iPhone was used.
+## The second live-only failure (found after the report above)
+Running the whole suite in ONE page - which is how the live build is checked - exposed a real bug the
+per-case runner had hidden: a right-click (or long-press) annotation was committed and then instantly
+erased, because the document-level pointerup fallback (which exists so a tap always resolves) called
+handleClick, whose first act is to clear annotations. The per-case runner masked it because a previous
+case happened to leave dragState set, so endDrag ran instead. The fallback now ignores right-button
+presses and any in-flight annotation gesture, and a new game clears annotations too. Verified in both
+suite modes (163 checks each, 0 failures) and on the deployed build (163 passes, 0 console errors).
