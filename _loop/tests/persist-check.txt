@@ -1,0 +1,19 @@
+(function () {
+  const out = {};
+  try {
+    out.theme = document.documentElement.className + '|' + (document.body.dataset ? document.body.dataset.theme : '');
+    out.themeVar = getComputedStyle(document.body).getPropertyValue('--dk').trim();
+    out.pieceStyle = typeof pieceStyle !== 'undefined' ? pieceStyle : 'n/a';
+    out.coords = typeof showCoords !== 'undefined' ? showCoords : 'n/a';
+    out.tips = typeof coachTips !== 'undefined' ? coachTips : 'n/a';
+    out.coachOn = window.chessCoachOn;
+    out.flip = typeof flip !== 'undefined' ? flip : 'n/a';
+    out.volume = typeof sfxVolume !== 'undefined' ? sfxVolume : 'n/a';
+    out.bankSet = window.SfxBank && window.SfxBank.set ? window.SfxBank.set() : 'n/a';
+    out.pieceSelect = document.getElementById('setPieces') ? document.getElementById('setPieces').value : 'n/a';
+    out.coordCheckbox = document.getElementById('setCoords') ? document.getElementById('setCoords').checked : 'n/a';
+    out.tipsCheckbox = document.getElementById('setTips') ? document.getElementById('setTips').checked : 'n/a';
+    out.themeSel = document.getElementById('themeSel') ? document.getElementById('themeSel').value : 'n/a';
+  } catch (e) { out.error = e.message; }
+  return JSON.stringify(out);
+})()

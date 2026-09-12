@@ -1984,7 +1984,10 @@ function clockTickFn() {
     triggerShake(2);
     trackMatchEnd();
     trackStatsEnd(game.result);
+    unlockBadges();
     updateUI(); draw();
+    // a flag has no final move to watch, so the result is shown straight away
+    showGameOver();
   }
 }
 
@@ -5463,6 +5466,221 @@ window.__chessTest = function (caseId) {
       for (let i = 0; i < 64; i++) if (back[i] !== game.board[i]) { mismatch = 'square ' + i; break; }
       add('the exported FEN round-trips back to the same board', !mismatch && fen.split(' ').length === 6, mismatch || fen);
       add('the FEN names the side to move correctly', (fen.split(' ')[1] === 'b') === (game.turn === CL.BLACK), fen.split(' ')[1]);
+      fresh();
+    },
+    perftdeep: function () {
+      fresh();
+      const parseFen = fen => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        return {
+          b: b, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK,
+          cr: { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 },
+          ep: (parts[3] && parts[3] !== '-') ? idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97) : null
+        };
+      };
+      const count = (b, colour, ep, cr, d) => {
+        const moves = getAllLegalMoves(b, colour, ep, cr);
+        if (d === 1) return moves.length;
+        let n = 0;
+        for (const m of moves) {
+          const next = makeMove(b, m, { castlingRights: cr, epTarget: ep });
+          n += count(next.board, 1 - colour, next.ep, next.castling, d - 1);
+        }
+        return n;
+      };
+      const DEEP = [
+        ['position 3', '8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', 5, 674624],
+        ['kiwipete', 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', 4, 4085603]
+      ];
+      const lines = [];
+      let bad = 0;
+      for (const entry of DEEP) {
+        let got = -1;
+        try {
+          const st = parseFen(entry[1]);
+          const t0 = performance.now();
+          got = count(st.b, st.turn, st.ep, st.cr, entry[2]);
+          lines.push(entry[0] + ' d' + entry[2] + ' = ' + got + ' (want ' + entry[3] + ')');
+        } catch (e) { lines.push(entry[0] + ' THREW ' + e.message); }
+        if (got !== entry[3]) bad++;
+      }
+      add('deep perft matches (position 3 depth 5, Kiwipete depth 4)', bad === 0, lines.join(' | '));
+    },
+    hardening: function () {
+      fresh();
+      // --- clock flag ---
+      clockEnabled = true; CLOCK_START = 180;
+      clockWhite = 1; clockBlack = 120; game.turn = CL.WHITE;
+      document.getElementById('overModal').classList.remove('show');
+      clockStart();
+      add('the clock ticks while the game is live', clockTick !== null, 'ticking');
+      clockTickFn();
+      add('flagging ends the game with a time result', game.gameOver === true && /loses on time/i.test(game.result), game.result);
+      add('the clock stops when a flag falls', clockTick === null, 'stopped');
+      add('the flag dialog opens', document.getElementById('overModal').classList.contains('show'), 'result dialog');
+      add('the flagged side shows zero', clockWhite === 0, 'white=' + clockWhite);
+      clockEnabled = false; clockStop(); CLOCK_START = 180;
+      document.getElementById('overModal').classList.remove('show');
+
+      // --- bot thinking is interrupted cleanly by undo and by a new game ---
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1; botThinking = false;
+      play(['e2e4']);
+      scheduleBotMove();
+      add('the bot is thinking', botThinking === true || botTimer !== null, 'thinking');
+      let threw = null;
+      try { undo(); } catch (e) { threw = e.message; }
+      add('undo while the bot is thinking does not throw', !threw, threw || 'clean');
+      add('undo cancels the bot timers', botTimer === null && botThinkTimeout === null, 'timers cleared');
+      let threwNew = null;
+      try { resetGame(); } catch (e) { threwNew = e.message; }
+      add('a new game during bot thinking does not throw', !threwNew, threwNew || 'clean');
+
+      // --- premove promotion ---
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botThinking = false; botDifficulty = 1;
+      game = Object.assign({}, game, {
+        board: (function () { const b = new Array(64).fill(0); b[sq('b7')] = P(PT.PAWN, CL.WHITE); b[sq('e1')] = P(PT.KING, CL.WHITE); b[sq('e8')] = P(PT.KING, CL.BLACK); b[sq('a7')] = P(PT.PAWN, CL.BLACK); return b; })(),
+        turn: CL.BLACK, epTarget: null, castlingRights: { K: false, Q: false, k: false, q: false },
+        moveHistory: [], gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}
+      });
+      updateUI(); draw();
+      botThinking = false;
+      handleClick(sq('b7'));
+      handleClick(sq('b8'));
+      add('a premove can target the promotion square', !!premove && premove.to === sq('b8'), JSON.stringify(premove));
+      const savedDelay = premoveDelay;
+      premoveDelay = 0;
+      play(['a7a6']);
+      botThinking = false;
+      tryPremove();
+      add('the premove promotes to a queen', game.board[sq('b8')] === P(PT.QUEEN, CL.WHITE), 'b8=' + game.board[sq('b8')]);
+      premoveDelay = savedDelay;
+      botEnabled = false;
+
+      // --- resign then rematch, and the review stays safe on every ending ---
+      fresh();
+      document.getElementById('btnResign').click();
+      add('resigning opens the result dialog', document.getElementById('overModal').classList.contains('show'), 'dialog');
+      let rematchThrew = null;
+      try { document.getElementById('btnRematch').click(); } catch (e) { rematchThrew = e.message; }
+      add('rematch after a resignation starts a clean game', !rematchThrew && !game.gameOver && collectPlies().length === 0, rematchThrew || 'clean game');
+      const endings = ['resign', 'abort', 'timeout', 'repetition'];
+      let reviewThrew = null;
+      for (const kind of endings) {
+        try {
+          fresh();
+          botEnabled = false;
+          if (kind === 'resign') { document.getElementById('btnResign').click(); }
+          else if (kind === 'abort') { document.getElementById('btnResign').click(); }
+          else if (kind === 'timeout') { clockEnabled = true; clockWhite = 1; game.turn = CL.WHITE; clockTickFn(); clockEnabled = false; }
+          else { play(['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8']); }
+          if (typeof openReview === 'function') openReview();
+          if (typeof closeReview === 'function') closeReview();
+        } catch (e) { reviewThrew = kind + ': ' + e.message; break; }
+      }
+      add('review opens and closes after every kind of ending', !reviewThrew, reviewThrew || endings.join(', '));
+      document.getElementById('overModal').classList.remove('show');
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    rules2: function () {
+      fresh();
+      const parseFen = fen => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        return {
+          b: b, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK,
+          cr: { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 },
+          ep: (parts[3] && parts[3] !== '-') ? idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97) : null
+        };
+      };
+      const load = (fen, hud) => {
+        const st = parseFen(fen);
+        game = Object.assign({}, game, {
+          board: st.b, turn: st.turn, epTarget: st.ep, castlingRights: st.cr,
+          moveHistory: [], lastMove: null, gameOver: false, result: '',
+          halfmoveClock: hud === undefined ? 0 : hud, positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; pendingPromo = null; hidePromoUI();
+        updateUI(); draw();
+      };
+      const playFrom = (from, to) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights)
+          .find(m => m.from === sq(from) && m.to === sq(to));
+        if (!mv) return null;
+        executeMove(mv);
+        return mv;
+      };
+
+      // A1: mate delivered by the move that completes the fifty-move count still wins
+      load('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', 99);
+      playFrom('a1', 'a8');
+      add('checkmate on the hundredth halfmove beats the fifty-move draw', /checkmate/i.test(game.result), game.result);
+      // A2: the same counter without mate is a fifty-move draw
+      load('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', 99);
+      playFrom('a1', 'a2');
+      add('a quiet hundredth halfmove draws by the fifty-move rule', /fifty-move/i.test(game.result), game.result);
+
+      // B: the repetition key must include castling rights and en passant
+      const board = parseFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1').b;
+      const epSq = idx(2, 4);
+      add('the repetition key distinguishes castling rights',
+        positionKey(board, CL.WHITE, null, { K: true, Q: true, k: true, q: true }) !== positionKey(board, CL.WHITE, null, { K: false, Q: true, k: true, q: true }), 'rights included');
+      // FIDE 9.2.2: positions differ by en passant only if the capture is actually available
+      const epBoard = parseFen('4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1').b;
+      const rights = { K: false, Q: false, k: false, q: false };
+      add('the repetition key includes a capturable en passant target',
+        positionKey(epBoard, CL.WHITE, epSq, rights) !== positionKey(epBoard, CL.WHITE, null, rights), 'capturable ep counted');
+      add('the repetition key ignores an en passant target nobody can take',
+        positionKey(board, CL.WHITE, epSq, rights) === positionKey(board, CL.WHITE, null, rights), 'unreachable ep ignored');
+
+      // C: en passant that removes a checking pawn resolves the check
+      const epCheck = parseFen('8/8/8/3pP3/4K3/8/8/7k w - d6 0 2');
+      const epMoves = getAllLegalMoves(epCheck.b, epCheck.turn, epCheck.ep, epCheck.cr).filter(m => m.ep);
+      add('en passant is available while the checking pawn is capturable', epMoves.length === 1, epMoves.length + ' e.p. moves');
+      if (epMoves.length) {
+        const after = makeMove(epCheck.b, epMoves[0], { castlingRights: epCheck.cr, epTarget: epCheck.ep });
+        add('capturing en passant removes the check', !isInCheck(after.board, CL.WHITE), 'check gone');
+      }
+
+      // D: promotion that mates
+      const promMate = parseFen('7k/5KP1/7p/8/8/8/8/8 w - - 0 1');
+      const promos = getAllLegalMoves(promMate.b, promMate.turn, promMate.ep, promMate.cr).filter(m => m.promo && m.to === idx(0, 6));
+      let mating = false;
+      for (const m of promos) {
+        const after = makeMove(promMate.b, m, { castlingRights: promMate.cr, epTarget: promMate.ep });
+        if (isInCheck(after.board, CL.BLACK) && getAllLegalMoves(after.board, CL.BLACK, after.ep, after.castling).length === 0) { mating = true; break; }
+      }
+      add('a promotion can deliver checkmate', mating, promos.length + ' promoting moves to g8');
+
+      // E: castling is legal when only the rook is attacked
+      const rookAttacked = parseFen('4k2r/8/8/8/8/8/8/4K2R w K - 0 1');
+      const castles = getAllLegalMoves(rookAttacked.b, rookAttacked.turn, rookAttacked.ep, rookAttacked.cr).filter(m => m.castle === 'kingside');
+      add('castling is legal when the rook is attacked but the king is not', castles.length === 1, castles.length + ' castles');
       fresh();
     },
     rules: function () {

@@ -1,0 +1,24 @@
+(function () {
+  if (window.showStartScreen) window.showStartScreen(false);
+  const out = {};
+  try {
+    applyTheme('ocean');
+    setPieceStyle('classic');
+    setCoords(false);
+    setCoachTips(true);
+    if (!flip) { flip = true; persistFlip(); }
+    setSfxVolume(0.4);
+    const sel = document.getElementById('sfxSetSel');
+    if (sel && window.SfxBank && window.SfxBank.useSet) { sel.value = 'crisp'; window.SfxBank.useSet('crisp'); }
+    out.wrote = {
+      theme: localStorage.getItem('chessTheme'),
+      pieces: localStorage.getItem('chessPieces'),
+      coords: localStorage.getItem('chessCoords'),
+      tips: localStorage.getItem('chessTips'),
+      flip: localStorage.getItem('chessFlip'),
+      vol: localStorage.getItem('chessVolume') || localStorage.getItem('chessVol')
+    };
+    out.keys = Object.keys(localStorage).sort().join(',');
+  } catch (e) { out.error = e.message; }
+  return JSON.stringify(out);
+})()
