@@ -498,35 +498,66 @@ def knight_base_profile():
     ]
 
 
-# ---- knight: lofted neck + head ------------------------------------------- #
-# The neck is deliberately slimmer than the head mass: that contrast is what
-# reads as "horse" at 45 px.  Top silhouette = z + hh, bottom = z - hh.
-KNIGHT_SPINE = [
-    # x,      z,     half-width(Y), half-height(in-plane)
-    (0.000, 0.165, 0.088, 0.104),   # neck root, buried in the base collar
-    (0.006, 0.250, 0.084, 0.097),
-    (0.016, 0.335, 0.080, 0.091),
-    (0.030, 0.415, 0.077, 0.085),   # slender neck
-    (0.050, 0.485, 0.075, 0.081),
-    (0.078, 0.545, 0.076, 0.082),   # throat
-    (0.112, 0.592, 0.080, 0.089),   # jowl begins
-    (0.152, 0.620, 0.085, 0.096),   # cheek: widest part of the head
-    (0.196, 0.633, 0.084, 0.092),   # brow / skull top
-    (0.242, 0.627, 0.076, 0.078),   # stop (dip between forehead and nose)
-    (0.288, 0.611, 0.064, 0.066),   # muzzle
-    (0.334, 0.592, 0.052, 0.056),   # nose
-    (0.374, 0.572, 0.041, 0.046),   # nose bridge
-    (0.404, 0.554, 0.030, 0.034),   # muzzle tip
-    (0.420, 0.540, 0.016, 0.017),
+# ---- knight: horse head + neck -------------------------------------------- #
+# Side view: +X = muzzle, +Z = up.  Each key is
+#     (x, z, a, b, hw, pinch)
+#       a     in-plane reach toward the front (throat / jaw / chin)
+#       b     in-plane reach toward the back  (crest / mane / nose bridge)
+#       hw    half depth in Y at the section centre
+#       pinch pinches the crest side (0..0.5) so the top of the neck is a ridge
+# A lofted section reaches exactly centre +- a/b along e2, so this list *is* the
+# horse outline: length in x, height in z, muzzle carrying forward and down.
+KNIGHT_KEYS = [
+    (0.000, 0.178, 0.098, 0.104, 0.092, 0.30),   # root, buried in the collar
+    (0.002, 0.246, 0.106, 0.114, 0.098, 0.34),
+    (0.006, 0.314, 0.104, 0.118, 0.096, 0.38),
+    (0.012, 0.382, 0.098, 0.114, 0.091, 0.40),
+    (0.020, 0.448, 0.090, 0.108, 0.085, 0.40),
+    (0.032, 0.512, 0.086, 0.102, 0.081, 0.36),   # neck stays near-vertical
+    (0.050, 0.570, 0.079, 0.097, 0.076, 0.30),
+    (0.076, 0.618, 0.071, 0.094, 0.072, 0.20),   # throatlatch pinches in
+    (0.116, 0.644, 0.094, 0.094, 0.077, 0.08),   # jowl juts forward
+    (0.166, 0.664, 0.108, 0.100, 0.082, 0.02),   # cheek: widest part of head
+    (0.218, 0.682, 0.104, 0.104, 0.080, 0.00),   # skull / forehead
+    (0.268, 0.686, 0.095, 0.102, 0.072, 0.00),   # stop: the bend is here, at the poll
+    (0.310, 0.680, 0.086, 0.094, 0.064, 0.00),   # nose bridge keeps its depth
+    (0.346, 0.668, 0.078, 0.082, 0.056, 0.00),
+    (0.376, 0.652, 0.072, 0.074, 0.050, 0.00),   # nose
+    (0.400, 0.636, 0.067, 0.068, 0.044, 0.00),
+    (0.418, 0.620, 0.060, 0.061, 0.038, 0.00),   # blunt, bulbous nose end
+    (0.430, 0.604, 0.044, 0.045, 0.030, 0.00),
+    (0.436, 0.590, 0.020, 0.021, 0.015, 0.00),
+    (0.436, 0.580, 0.006, 0.006, 0.006, 0.00),   # lip
 ]
 
-# mane crest strength / pinch per spine index (0 = plain round section).
-KNIGHT_MANE = [0.30, 0.44, 0.54, 0.56, 0.50, 0.38, 0.20, 0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-KNIGHT_NARROW = [0.30, 0.40, 0.48, 0.50, 0.44, 0.34, 0.18, 0.04, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+KNIGHT_STEPS = 8          # spline samples per key of the lofted spine
+MANE_R = 0.017            # mane bead radius
+MANE_BEADS = 6            # scallops down the neck
+KNIGHT_DENSE = None       # filled lazily
+
+
+def spline_nd(keys, steps):
+    """Clamped Catmull-Rom through N-tuples -> dense list of N-tuples."""
+    P = [keys[0]] + list(keys) + [keys[-1]]
+    dim = len(keys[0])
+    out = []
+    for i in range(len(P) - 3):
+        for s in range(steps):
+            t = s / steps
+            t2, t3 = t * t, t * t * t
+            row = []
+            for d in range(dim):
+                p0, p1, p2, p3 = P[i][d], P[i + 1][d], P[i + 2][d], P[i + 3][d]
+                row.append(0.5 * ((2.0 * p1) + (-p0 + p2) * t
+                                  + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+                                  + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3))
+            out.append(tuple(row))
+    out.append(tuple(keys[-1]))
+    return out
 
 
 def frame_at(spine, i):
-    """Return (point, tangent, e1(Y), e2(back/up)) at spine index i."""
+    """Return (point, tangent, e1(Y), e2(crest/up)) at spine index i."""
     n = len(spine)
     a = spine[max(0, i - 1)]
     b = spine[min(n - 1, i + 1)]
@@ -540,47 +571,127 @@ def frame_at(spine, i):
     return Vector((spine[i][0], 0.0, spine[i][1])), t, e1, e2
 
 
-def ellipse_ring(center, e1, e2, hw, hh, n=48, mane=0.0, narrow=0.0):
-    """Elliptical section. mane/narrow stretch and pinch the +e2 side, which is
-    how the knight grows a carved mane crest instead of a separate fin."""
+def horse_section(center, e1, e2, a, b, hw, n=72, pinch=0.0):
+    """Asymmetric elliptical section: reach a toward -e2 (front), b toward +e2
+    (crest), half-depth hw in Y.  pinch thins the crest into a carved ridge."""
     pts = []
     for k in range(n):
-        a = 2.0 * math.pi * k / n
-        s, c = math.sin(a), math.cos(a)
+        ang = 2.0 * math.pi * k / n
+        s, c = math.sin(ang), math.cos(ang)
         back = max(0.0, s)
-        w = hw * (1.0 - narrow * back ** 1.1)
-        d = hh * (1.0 + mane * back ** 1.3)
-        pts.append(tuple(center + e1 * (w * c) + e2 * (d * s)))
+        w = hw * (1.0 - pinch * back ** 1.2)
+        d = (b * s) if s >= 0.0 else (a * s)
+        pts.append(tuple(center + e1 * (w * c) + e2 * d))
     return pts
 
 
-def knight_neck_head(bld, ring_n=64):
+def knight_dense():
+    global KNIGHT_DENSE
+    if KNIGHT_DENSE is None:
+        KNIGHT_DENSE = spline_nd(KNIGHT_KEYS, KNIGHT_STEPS)
+    return KNIGHT_DENSE
+
+
+def mane_crest(dense, i0, i1, samples):
+    """Sampled crest line: list of (point, e2, f) from the poll to the root.
+    The bead centre-line dives in and out of the crest so the shell shows as a
+    row of scallops welded onto the neck instead of a separate fin."""
+    n = len(dense)
+    out = []
+    for j in range(samples + 1):
+        f = j / samples
+        i = max(0, min(n - 1, int(round(i0 + (i1 - i0) * f))))
+        c, t, e1, e2 = frame_at(dense, i)
+        env = math.sin(math.pi * f) ** 0.55
+        bead = 0.5 + 0.5 * math.cos(2.0 * math.pi * MANE_BEADS * f)
+        # valleys stay proud of the crest so the mane is ONE ridge with a
+        # scalloped edge, not a string of separate beads
+        protrude = (0.011 + 0.024 * bead) * env - 0.014 * (1.0 - env)
+        out.append((c + e2 * (dense[i][3] + protrude - MANE_R), e2, f))
+    return out
+
+
+def add_mane(bld, dense, i_poll, i_root):
+    pts = mane_crest(dense, i_poll, i_root, 108)
     sections = []
-    for i, (x, z, hw, hh) in enumerate(KNIGHT_SPINE):
-        c, t, e1, e2 = frame_at(KNIGHT_SPINE, i)
-        wave = 1.0 + 0.12 * math.sin(i * 2.35) * min(1.0, KNIGHT_MANE[i] * 3.0)
-        sections.append(ellipse_ring(c, e1, e2, hw, hh, ring_n,
-                                     mane=KNIGHT_MANE[i] * wave,
-                                     narrow=KNIGHT_NARROW[i]))
+    for j, (m, e2, f) in enumerate(pts):
+        a = pts[max(0, j - 1)][0]
+        b = pts[min(len(pts) - 1, j + 1)][0]
+        t = b - a
+        if t.length < 1e-9:
+            t = Vector((0.0, 0.0, 1.0))
+        t.normalize()
+        u = Vector((0.0, 1.0, 0.0))
+        v = t.cross(u)
+        if v.length < 1e-9:
+            v = Vector((1.0, 0.0, 0.0))
+        v.normalize()
+        ring = []
+        for k in range(28):
+            ang = 2.0 * math.pi * k / 28
+            ring.append(tuple(m + u * (MANE_R * 0.85 * math.cos(ang))
+                              + v * (MANE_R * math.sin(ang))))
+        sections.append(ring)
     bld.add(*loft(sections, cap_start=True, cap_end=True))
 
-    # ---- ears: swept-back cones on top of the skull ----
+
+def add_ear(bld, base, lean_deg, splay_deg, side):
+    """A rounded ear wedge, leaned back (lean) and splayed out (splay)."""
+    keys = [(0.000, 0.000, False), (0.023, 0.006, False), (0.031, 0.020, False),
+            (0.029, 0.038, False), (0.023, 0.056, False), (0.015, 0.072, False),
+            (0.007, 0.083, False), (0.000, 0.089, False)]
+    v, f = lathe(build_profile(keys, 4), 36)
+    m = xform_matrix(loc=base,
+                     rot=(math.radians(-side * splay_deg), math.radians(lean_deg), 0.0),
+                     scale=(1.0, 0.60, 1.0))
+    bld.add(v, f, m)
+
+
+def carve_eye_sockets(verts, ex, ez, rx, rz, depth, hw_min):
+    out = []
+    for vv in verts:
+        p = Vector(vv)
+        d = 0.0
+        if abs(p.y) > hw_min:
+            exr = (p.x - ex) / rx
+            ezr = (p.z - ez) / rz
+            r2 = exr * exr + ezr * ezr
+            if r2 < 1.0:
+                d = depth * (1.0 - r2) ** 2
+        if d > 0.0:
+            p.y -= d * (1.0 if p.y > 0.0 else -1.0)
+        out.append(tuple(p))
+    return out
+
+
+def add_eyes(bld, ex, ez, y_face):
     for side in (-1.0, 1.0):
-        v, f = lathe(build_profile([(0.000, 0.000, False), (0.028, 0.007, False),
-                                    (0.030, 0.024, False), (0.017, 0.060, False),
-                                    (0.000, 0.092, False)], 4), 40)
-        m = xform_matrix(loc=(0.192, side * 0.049, 0.700),
-                         rot=(math.radians(-side * 12.0), math.radians(-24.0), 0.0))
+        v, f = lathe(ball_arc(0.0, 0.0, 1.0, -90.0, 90.0, 22, False), 40)
+        m = xform_matrix(loc=(ex, side * y_face, ez),
+                         rot=(math.radians(-side * 90.0), math.radians(-14.0), 0.0),
+                         scale=(0.030, 0.017, 0.015))
         bld.add(v, f, m)
 
-    # ---- eyes: a shallow dome set into each cheek ----
-    for side in (-1.0, 1.0):
-        v, f = lathe(build_profile([(0.000, -0.016, False), (0.013, -0.014, False),
-                                    (0.017, -0.003, False), (0.015, 0.008, False),
-                                    (0.000, 0.014, False)], 4), 32)
-        m = xform_matrix(loc=(0.222, side * 0.070, 0.612),
-                         rot=(math.radians(side * 76.0), 0.0, 0.0))
-        bld.add(v, f, m)
+
+def knight_neck_head(bld, ring_n=72):
+    dense = knight_dense()
+    sections = []
+    for i, k in enumerate(dense):
+        c, t, e1, e2 = frame_at(dense, i)
+        sections.append(horse_section(c, e1, e2, k[2], k[3], k[4], ring_n, k[5]))
+    head_verts, head_faces = loft(sections, cap_start=True, cap_end=True)
+    head_verts = carve_eye_sockets(head_verts, 0.238, 0.678, 0.058, 0.036, 0.014, 0.030)
+    bld.add(head_verts, head_faces)
+
+    # mane: a scalloped ridge from between the ears down the back to the collar
+    add_mane(bld, dense, KNIGHT_STEPS * 10, KNIGHT_STEPS // 2)
+
+    # two swept-back ear wedges, offset in x so both read in the side view
+    add_ear(bld, (0.196, -0.046, 0.740), -38.0, 16.0, -1.0)
+    add_ear(bld, (0.248, 0.046, 0.750), -38.0, 16.0, 1.0)
+
+    # eyes: an almond boss sunk into a shallow carved socket
+    add_eyes(bld, 0.238, 0.678, 0.058)
 
 
 def build_pieces():
@@ -817,6 +928,14 @@ def setup_scene(objs):
     sc.render.image_settings.compression = 40
     sc.render.use_persistent_data = True
     sc.render.filter_size = 1.5
+    # deterministic file bytes: Blender otherwise bakes the current date/time
+    # into PNG tEXt chunks, so two identical renders differ on disk.
+    for _attr in ("use_stamp", "use_stamp_date", "use_stamp_time", "use_stamp_render_time",
+                  "use_stamp_frame", "use_stamp_frame_range", "use_stamp_marker",
+                  "use_stamp_note", "use_stamp_sequencer_strip", "use_stamp_camera",
+                  "use_stamp_lens", "use_stamp_scene", "use_stamp_filename",
+                  "use_stamp_memory", "use_stamp_hostname"):
+        try_set(sc.render, _attr, False)
     try:
         sc.view_settings.view_transform = 'Standard'
     except Exception:
@@ -992,6 +1111,8 @@ if __name__ == "__main__":
         ONLY = argv[argv.index("--only") + 1].split(",")
     if "--no-shadow" in argv:
         NO_SHADOW = True
+    if "--outdir" in argv:
+        OUT_DIR = os.path.abspath(argv[argv.index("--outdir") + 1])
     try:
         main()
     except Exception:
