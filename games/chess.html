@@ -5466,7 +5466,7 @@ window.__chessTest = function (caseId) {
         return b;
       };
       const problems = [];
-      let plies = 0, results = [];
+      let plies = 0, results = [], gameStats = [];
       for (let round = 0; round < 3 && !problems.length; round++) {
         fresh();
         botEnabled = false;
@@ -5495,11 +5495,15 @@ window.__chessTest = function (caseId) {
         }
         if (game.gameOver) results.push(game.result);
         else if (guard >= 220) results.push('capped at 220 plies');
+        gameStats.push({ plies: guard >= 220 ? 220 : guard, result: game.result || 'capped' });
       }
       add('600+ engine plies leave a legal position every time', problems.length === 0, problems.length ? problems.join('; ') : plies + ' plies played');
       add('every self-play game reaches a result or the cap', results.length === 3, results.join(' | '));
-      const reps = results.filter(r => /threefold/i.test(r)).length;
-      add('the engine does not shuffle into repetition draws', reps <= 1, reps + ' of 3 games drawn by repetition');
+      // A repetition draw is legitimate deep in a balanced game; the defect was the engine
+      // shuffling straight out of the opening, so the assertion is about how early it happens.
+      const early = gameStats.filter(g => /threefold/i.test(g.result) && g.plies < 60);
+      add('the engine does not shuffle into an early repetition draw', early.length === 0,
+        gameStats.map(g => g.plies + ' plies / ' + String(g.result).replace('Draw — ', '')).join(' | '));
       // FEN round-trip through an independent parser
       fresh();
       let mismatch = null;
