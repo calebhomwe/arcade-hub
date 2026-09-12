@@ -99,6 +99,7 @@
     useSet: function (name) {
       if (!SETS[name] || name === currentSet) return false;
       currentSet = name;
+      CATALOG = SETS[name].url;          // without this the new set re-fetches the old one
       try { localStorage.setItem(KEY_SET, name); } catch (e) {}
       // keep the previous catalogue playable until the new one arrives, so
       // switching sets never leaves the game silent

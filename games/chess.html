@@ -1581,8 +1581,13 @@ const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR 
 let puzzleIndex = -1;
 let puzzleMode = false;
 let puzzleTimer = null;
-function clearPuzzleTimer() { if (puzzleTimer) { clearTimeout(puzzleTimer); puzzleTimer = null; } if (puzzleRollbackTimer) { clearTimeout(puzzleRollbackTimer); puzzleRollbackTimer = null; } }
+function clearPuzzleTimer() {
+  if (puzzleTimer) { clearTimeout(puzzleTimer); puzzleTimer = null; }
+  if (puzzleRollbackTimer) { clearTimeout(puzzleRollbackTimer); puzzleRollbackTimer = null; }
+  if (puzzleSkipTimer) { clearTimeout(puzzleSkipTimer); puzzleSkipTimer = null; }
+}
 let puzzleRollbackTimer = null;
+let puzzleSkipTimer = null;
 
 // ==================== TIPS ====================
 
@@ -1978,7 +1983,8 @@ function clockStop() { if (clockTick) { clearInterval(clockTick); clockTick = nu
 function clockStart() { clockStop(); clockTick = setInterval(clockTickFn, 1000); }
 function clockTickFn() {
   if (!clockEnabled || puzzleMode) return;
-  if (game.gameOver) { clockStop(); return; }
+  if (previewing()) return;              // previewing sets gameOver on a copy, not the real game
+  if (!game || game.gameOver) { clockStop(); return; }
   if (game.turn === CL.WHITE) clockWhite--; else clockBlack--;
   refreshClocks();
   const active = game.turn === CL.WHITE ? clockWhite : clockBlack;
@@ -2037,6 +2043,8 @@ let castleSelect = false;
 let redoStack = [];
 let premove = null;
 let premoveDelay = 140;
+let premoveTimer = null;
+function clearPremoveTimer() { if (premoveTimer) { clearTimeout(premoveTimer); premoveTimer = null; } }
 function clearPremove() { if (!premove) return; premove = null; draw(); }
 function tryPremove() {
   if (!premove || game.gameOver) { clearPremove(); return; }
@@ -2047,12 +2055,20 @@ function tryPremove() {
   if (!match) { flashTip('\u26A0\uFE0F Premove cancelled'); draw(); return; }
   if (match.promo) { match.promoPiece = want.promoPiece || PT.QUEEN; }
   const run = () => {
-    if (game.gameOver || game.turn === botColor) return;
-    executeMove(match);
+    premoveTimer = null;
+    if (!game || game.gameOver || game.turn === botColor) return;
+    // re-derive the move from the position as it is now: a reset or an undo may have
+    // happened during the delay, and executeMove does not validate
+    const current = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights)
+      .find(m => m.from === match.from && m.to === match.to);
+    if (!current) return;
+    if (current.promo) current.promoPiece = match.promoPiece || PT.QUEEN;
+    executeMove(current);
     selectedSquare = -1; legalMoves = []; hintArrow = null;
     draw();
   };
-  if (premoveDelay > 0) setTimeout(run, premoveDelay); else run();
+  clearPremoveTimer();
+  if (premoveDelay > 0) premoveTimer = setTimeout(run, premoveDelay); else run();
 }
 let kbSquare = -1;
 let hintArrow = null;
@@ -2731,6 +2747,8 @@ window.ChessMods = (function () {
       get turn() { return game.turn; },
       get board() { return game.board; },
       get gameOver() { return game.gameOver; },
+      get epTarget() { return game.epTarget; },
+      get castlingRights() { return game.castlingRights; },
       particles: (x, y, n, color) => spawnParticles(x, y, n, color),
       textPop: (x, y, t, c, s) => spawnTextPop(x, y, t, c, s),
       shake: n => triggerShake(n),
@@ -3121,6 +3139,13 @@ let mlCache = { n: -1 };
 let previewPlyIndex = -1;
 let liveGame = null;
 function previewing() { return !!liveGame; }
+function cancelPreview() {
+  // discard a preview without letting the abandoned game come back
+  liveGame = null;
+  previewPlyIndex = -1;
+  mlCache.n = -1;
+}
+
 function endPreview() {
   if (!liveGame) return;
   game = liveGame;
@@ -3211,6 +3236,7 @@ function doBotMove() {
 
 function loadPuzzle(index) {
   clearPuzzleTimer();
+  cancelPreview();
   if (index >= PUZZLES.length) {
     document.getElementById('tip').textContent = '🎉 All puzzles completed!';
     puzzleMode = false; document.getElementById('puzzlePanel').classList.remove('show');
@@ -3342,6 +3368,15 @@ function resetGame() {
   clearBotTimers();
   botThinking = false;
   closeReview();
+  // nothing belonging to the previous game may survive into this one
+  cancelPreview();
+  stopTrap();
+  clearPremoveTimer();
+  clearPuzzleTimer();
+  ACH_FLAGS = { combo3: false, castleWin: false };
+  dragState = null; lastPress = -1;
+  const trapCap = document.getElementById('trapCaption');
+  if (trapCap) trapCap.textContent = '';
   game = {
     board: initBoard(), turn: CL.WHITE, epTarget: null, resignedBy: null,
     castlingRights: { K: true, Q: true, k: true, q: true },
@@ -3379,6 +3414,8 @@ function undo() {
   clearBotTimers();
   botThinking = false;
   closeReview();
+  endPreview();
+  clearPremoveTimer();
   // snapshot before popping: the history array is mutated in place by pop()
   redoStack.push(Object.assign({}, game, { moveHistory: game.moveHistory.slice() }));
   if (redoStack.length > 30) redoStack.shift();
@@ -4147,7 +4184,8 @@ document.getElementById('btnPuzzleSkip').addEventListener('click', () => {
   RUSH.cur = 0;
   if (puzzleIndex >= 0 && puzzleIndex < PUZZLES.length) {
     document.getElementById('tip').textContent = '⏭ Solution: ' + PUZZLES[puzzleIndex].solution;
-    setTimeout(() => loadPuzzle(puzzleIndex + 1), 1200);
+    clearPuzzleTimer();
+    puzzleSkipTimer = setTimeout(() => { puzzleSkipTimer = null; if (puzzleMode) loadPuzzle(puzzleIndex + 1); }, 1200);
   }
 });
 
@@ -5595,6 +5633,87 @@ window.__chessTest = function (caseId) {
         executeMove(pick);
       }
       add('the engine never proposes an illegal move', !illegal, illegal ? 'illegal ' + illegal : '40 plies clean');
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    leaks: function () {
+      fresh();
+      botEnabled = false;
+
+      // 1. a preview must not be able to resurrect the old game after a reset
+      play(['e2e4', 'e7e5', 'g1f3']);
+      const items = document.querySelectorAll('#moveList [data-ply]');
+      if (items.length) items[0].click();
+      add('a preview is active before the reset', previewing(), 'previewing');
+      resetGame();
+      add('a reset discards the preview', !previewing() && liveGame === null, 'preview cleared');
+      handleClick(sq('e4'));
+      add('the board cannot revive the abandoned game', collectPlies().length === 0 && !game.gameOver, collectPlies().length + ' plies');
+
+      // 2. a Learn trap must stop playing when a new game starts
+      if (typeof playTrap === 'function') {
+        playTrap(0);
+        add('a trap playback is running', trapTimer !== null, 'interval running');
+        resetGame();
+        add('a reset stops the trap playback', trapTimer === null, 'stopped');
+      }
+
+      // 3. a queued premove must not fire into a new game
+      botEnabled = true; botColor = CL.BLACK; botThinking = false; botDifficulty = 1;
+      play(['e2e4']);
+      botThinking = false;
+      handleClick(sq('g1'));
+      handleClick(sq('f3'));
+      if (premove) {
+        tryPremove();
+        add('a premove timer is armed', premoveTimer !== null || premove === null, premoveTimer ? 'armed' : 'played');
+        resetGame();
+        add('a reset cancels an armed premove', premoveTimer === null && premove === null, 'cancelled');
+      } else {
+        add('a premove could be queued', false, 'no premove');
+      }
+      botEnabled = false;
+
+      // 4. previewing must not stop the clock
+      clockEnabled = true; CLOCK_START = 180;
+      fresh();
+      play(['e2e4', 'e7e5']);
+      clockWhite = 100; clockBlack = 100; refreshClocks();
+      const moves = document.querySelectorAll('#moveList [data-ply]');
+      if (moves.length) moves[0].click();
+      clockStart();
+      clockTickFn();
+      add('the clock keeps running while a move is previewed', clockTick !== null, clockTick ? 'ticking' : 'stopped');
+      add('previewing does not consume clock time', clockWhite === 100, 'white=' + clockWhite);
+      endPreview();
+      clockEnabled = false; clockStop(); CLOCK_START = 180;
+
+      // 5/6. per-game flags and drag state
+      ACH_FLAGS.combo3 = true; ACH_FLAGS.castleWin = true;
+      dragState = { from: 1, to: 2 };
+      resetGame();
+      add('achievement flags are cleared for a new game', ACH_FLAGS.combo3 === false && ACH_FLAGS.castleWin === false, JSON.stringify(ACH_FLAGS));
+      add('a mid-drag reset drops the drag', dragState === null, 'cleared');
+
+      // 7. skipping a puzzle schedules a cancellable load that cannot re-enter puzzle mode
+      loadPuzzle(0);
+      document.getElementById('btnPuzzleSkip').click();
+      add('skipping a puzzle is tracked', puzzleSkipTimer !== null, 'tracked');
+      resetGame();
+      add('a reset cancels a pending puzzle skip', puzzleSkipTimer === null, 'cancelled');
+      add('a cancelled skip cannot re-enter puzzle mode', puzzleMode === false, 'not in puzzle mode');
+
+      // 8. switching sound sets actually switches
+      if (window.SfxBank && window.SfxBank.useSet) {
+        const before = window.SfxBank.set();
+        const other = window.SfxBank.setNames().find(n => n !== before);
+        window.SfxBank.useSet(other);
+        add('switching sound sets changes the active set', window.SfxBank.set() === other, before + ' -> ' + window.SfxBank.set());
+        window.SfxBank.useSet(before);
+      } else {
+        add('the sound bank exposes set switching', false, 'no bank');
+      }
+
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
