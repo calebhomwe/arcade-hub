@@ -541,9 +541,10 @@ body.cc-clocks .cc-clock{ display:block; }
 
 #sideCol{ display:flex; flex-direction:column; gap:12px; min-width:0; }
 .cc-card{ background:var(--cc-panel); border-radius:6px; overflow:hidden; }
-.ml-nav{ float:right; display:inline-flex; gap:4px; }
-.ml-nav button{ width:30px; height:24px; border-radius:7px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
-  color:var(--cc-text); font:700 .9rem/1 system-ui; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.ml-nav{ display:inline-flex; gap:6px; }
+.ml-nav button{ width:44px; height:44px; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
+  color:var(--cc-text); font:700 1.15rem/1 system-ui; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.cc-card-head{ display:flex !important; align-items:center; justify-content:space-between; min-height:44px; }
 .ml-nav button:hover:not(:disabled){ background:rgba(255,255,255,.12); }
 .ml-nav button:disabled{ opacity:.35; cursor:default; }
 .cc-card-head{ background:var(--cc-head); color:var(--cc-muted); font-size:.68rem; font-weight:800;
