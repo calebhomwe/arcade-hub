@@ -2205,7 +2205,7 @@ function pieceSprite(p, juice, teach) {
     c.restore();
     // crisp edge: dark outline on the light pieces, a faint rim on the dark ones
     const src = pieceSource(p);
-    const sil = pieceSilhouette(p, white ? 'rgba(24,24,30,0.62)' : 'rgba(255,255,255,0.2)');
+    const sil = pieceSilhouette(p, white ? 'rgba(20,20,26,0.78)' : 'rgba(255,255,255,0.22)');
     if (sil) {
       const ow = Math.max(1, sq * (white ? 0.042 : 0.03));
       for (const [ox, oy] of OUTLINE8) c.drawImage(sil, dx + ox * ow, dy + oy * ow, dw, dh);
