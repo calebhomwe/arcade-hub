@@ -19,7 +19,7 @@
      "id": "bruh",
      "label": "Bruh",
      "file": "boom_bruh.wav",
-     "ms": 333,
+     "ms": 329,
      "when": "blunder"
     },
     {
@@ -260,7 +260,7 @@
      "id": "blunder",
      "label": "Blunder",
      "file": "tts_blunder.wav",
-     "ms": 441,
+     "ms": 437,
      "when": "blunder"
     },
     {
@@ -281,7 +281,7 @@
      "id": "gg",
      "label": "GG",
      "file": "tts_gg.wav",
-     "ms": 390,
+     "ms": 383,
      "when": "win"
     },
     {
@@ -339,7 +339,7 @@
      "id": "slot_win",
      "label": "Jackpot",
      "file": "forge_slot_win_trim.wav",
-     "ms": 2200,
+     "ms": 2195,
      "when": "win"
     },
     {
@@ -360,7 +360,7 @@
      "id": "dramatic_sting",
      "label": "Dramatic Sting",
      "file": "forge_dramatic_sting_trim.wav",
-     "ms": 2400,
+     "ms": 1266,
      "when": "castle"
     },
     {
@@ -381,7 +381,7 @@
      "id": "ding",
      "label": "Ding",
      "file": "forge_ding_trim.wav",
-     "ms": 1400,
+     "ms": 1398,
      "when": "combo3"
     },
     {
@@ -395,7 +395,7 @@
      "id": "sad_trombone2",
      "label": "Sad Trombone (HD)",
      "file": "forge_sad_trombone2_trim.wav",
-     "ms": 2600,
+     "ms": 2557,
      "when": "blunder"
     },
     {

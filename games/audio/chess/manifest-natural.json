@@ -1,91 +1,91 @@
 {
- "version": 1,
- "set": "natural",
- "label": "Natural",
- "sounds": [
-  {
-   "id": "move",
-   "label": "Move",
-   "file": "natural/move.wav",
-   "ms": 260
-  },
-  {
-   "id": "move-2",
-   "label": "Move (alt)",
-   "file": "natural/move-2.wav",
-   "ms": 260
-  },
-  {
-   "id": "capture",
-   "label": "Capture",
-   "file": "natural/capture.wav",
-   "ms": 340
-  },
-  {
-   "id": "capture-2",
-   "label": "Capture (alt)",
-   "file": "natural/capture-2.wav",
-   "ms": 380
-  },
-  {
-   "id": "castle",
-   "label": "Castle",
-   "file": "natural/castle.wav",
-   "ms": 360
-  },
-  {
-   "id": "check",
-   "label": "Check",
-   "file": "natural/check.wav",
-   "ms": 600
-  },
-  {
-   "id": "promote",
-   "label": "Promote",
-   "file": "natural/promote.wav",
-   "ms": 1000
-  },
-  {
-   "id": "illegal",
-   "label": "Illegal Move",
-   "file": "natural/illegal.wav",
-   "ms": 300
-  },
-  {
-   "id": "game-end-win",
-   "label": "Game End (Win)",
-   "file": "natural/game-end-win.wav",
-   "ms": 1400
-  },
-  {
-   "id": "game-end-loss",
-   "label": "Game End (Loss)",
-   "file": "natural/game-end-loss.wav",
-   "ms": 1400
-  },
-  {
-   "id": "game-start",
-   "label": "Game Start",
-   "file": "natural/game-start.wav",
-   "ms": 240
-  },
-  {
-   "id": "low-time-tick",
-   "label": "Low Time Tick",
-   "file": "natural/low-time-tick.wav",
-   "ms": 30
-  },
-  {
-   "id": "ui-click",
-   "label": "UI Click",
-   "file": "natural/ui-click.wav",
-   "ms": 200
-  },
-  {
-   "id": "ui-hover",
-   "label": "UI Hover",
-   "file": "natural/ui-hover.wav",
-   "ms": 160
-  }
- ]
+  "version": 1,
+  "set": "natural",
+  "label": "Natural",
+  "sounds": [
+    {
+      "id": "move",
+      "label": "Move",
+      "file": "natural/move.wav",
+      "ms": 194
+    },
+    {
+      "id": "move-2",
+      "label": "Move (alt)",
+      "file": "natural/move-2.wav",
+      "ms": 260
+    },
+    {
+      "id": "capture",
+      "label": "Capture",
+      "file": "natural/capture.wav",
+      "ms": 320
+    },
+    {
+      "id": "capture-2",
+      "label": "Capture (alt)",
+      "file": "natural/capture-2.wav",
+      "ms": 244
+    },
+    {
+      "id": "castle",
+      "label": "Castle",
+      "file": "natural/castle.wav",
+      "ms": 360
+    },
+    {
+      "id": "check",
+      "label": "Check",
+      "file": "natural/check.wav",
+      "ms": 600
+    },
+    {
+      "id": "promote",
+      "label": "Promote",
+      "file": "natural/promote.wav",
+      "ms": 1000
+    },
+    {
+      "id": "illegal",
+      "label": "Illegal Move",
+      "file": "natural/illegal.wav",
+      "ms": 300
+    },
+    {
+      "id": "game-end-win",
+      "label": "Game End (Win)",
+      "file": "natural/game-end-win.wav",
+      "ms": 1244
+    },
+    {
+      "id": "game-end-loss",
+      "label": "Game End (Loss)",
+      "file": "natural/game-end-loss.wav",
+      "ms": 1400
+    },
+    {
+      "id": "game-start",
+      "label": "Game Start",
+      "file": "natural/game-start.wav",
+      "ms": 240
+    },
+    {
+      "id": "low-time-tick",
+      "label": "Low Time Tick",
+      "file": "natural/low-time-tick.wav",
+      "ms": 30
+    },
+    {
+      "id": "ui-click",
+      "label": "UI Click",
+      "file": "natural/ui-click.wav",
+      "ms": 200
+    },
+    {
+      "id": "ui-hover",
+      "label": "UI Hover",
+      "file": "natural/ui-hover.wav",
+      "ms": 160
+    }
+  ]
 }
