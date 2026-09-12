@@ -1343,15 +1343,26 @@ function getPseudoMoves(b, i, epTarget) {
     const dir = color === CL.WHITE ? -1 : 1;
     const startR = color === CL.WHITE ? 6 : 1;
     const promoRank = color === CL.WHITE ? 0 : 7;
+    // A promotion is four distinct moves, not one that defaults to a queen. The search,
+    // the analysis and perft all need the real branching factor.
+    const pushPawn = (to, cap, promotable) => {
+      if (promotable) {
+        for (const pp of [PT.QUEEN, PT.ROOK, PT.BISHOP, PT.KNIGHT]) {
+          moves.push({ from: i, to: to, capture: cap, promo: true, promoPiece: pp });
+        }
+      } else {
+        moves.push({ from: i, to: to, capture: cap });
+      }
+    };
     const fwd = idx(r+dir, c);
     if (inB(r+dir, c) && !b[fwd]) {
-      moves.push({from:i, to:fwd, capture:0, promo: (r+dir===promoRank)});
+      pushPawn(fwd, 0, r + dir === promoRank);
       if (r === startR) { const fwd2 = idx(r+2*dir, c); if (!b[fwd2]) moves.push({from:i, to:fwd2, capture:0}); }
     }
     for (const dc of [-1, 1]) {
       if (inB(r+dir, c+dc)) {
         const t = idx(r+dir, c+dc);
-        if (b[t] && pColor(b[t]) === enemy) moves.push({from:i, to:t, capture:b[t], promo: (r+dir===promoRank)});
+        if (b[t] && pColor(b[t]) === enemy) pushPawn(t, b[t], r + dir === promoRank);
         if (epTarget !== null && epTarget === t && !b[t]) moves.push({from:i, to:t, capture:b[idx(r,c+dc)], ep:true});
       }
     }
@@ -1879,8 +1890,10 @@ function hasInsufficientMaterial(board) {
     const bish = pieces.filter(x => pType(x.p) === PT.BISHOP);
     if (bish.length === 2 && !pieces.some(x => pType(x.p) !== PT.KING && pType(x.p) !== PT.BISHOP)) {
       const cols = bish.map(b => ({ light: (row(b.i) + col(b.i)) % 2 === 0, w: pColor(b.p) }));
+      // Only same-coloured bishops make mate impossible. Opposite-coloured bishops
+      // (one each) can still mate with the defender's own bishop blocking a square, so
+      // that position is NOT dead - it is left to the fifty-move and repetition rules.
       if (cols[0].light === cols[1].light) return true;
-      if (cols[0].w !== cols[1].w) return true;
     }
   }
   return false;
@@ -3149,7 +3162,8 @@ function doBotMove() {
     move = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, depth, botPersonality);
   }
   if (!move) { botThinking = false; return; }
-  if (move.promo) move.promoPiece = PT.QUEEN;
+  // the search now sees all four promotion pieces; only default when it did not choose
+  if (move.promo && !move.promoPiece) move.promoPiece = PT.QUEEN;
   executeMove(move);
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
   if (premove) tryPremove();
@@ -5207,16 +5221,214 @@ window.__chessTest = function (caseId) {
       canvas.blur();
     },
     perft: function () {
-      let nodes = 0;
-      const walk = (b, colour, ep, cr, d) => {
-        if (d === 0) { nodes++; return; }
-        for (const m of getAllLegalMoves(b, colour, ep, cr)) {
-          const n = makeMove(b, m, { castlingRights: cr });
-          walk(n.board, 1 - colour, n.ep, n.castling, d - 1);
+      fresh();
+      // The standard perft positions. Node counts are published values, so any move-generation
+      // bug (castling, en passant, promotion, pins, checks) shows up as a mismatch.
+      const parseFen = fen => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
         }
+        return {
+          b: b,
+          turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK,
+          cr: { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 },
+          ep: (parts[3] && parts[3] !== '-') ? idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97) : null
+        };
       };
-      walk(initBoard(), 0, null, { K: true, Q: true, k: true, q: true }, 3);
-      add('perft(3) = 8902 (engine integrity)', nodes === 8902, nodes);
+      const count = (b, colour, ep, cr, d) => {
+        const moves = getAllLegalMoves(b, colour, ep, cr);
+        if (d === 1) return moves.length;
+        let n = 0;
+        for (const m of moves) {
+          const next = makeMove(b, m, { castlingRights: cr, epTarget: ep });
+          n += count(next.board, 1 - colour, next.ep, next.castling, d - 1);
+        }
+        return n;
+      };
+      const SUITE = [
+        ['startpos', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', [20, 400, 8902, 197281]],
+        ['kiwipete', 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', [48, 2039, 97862]],
+        ['position 3', '8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', [14, 191, 2812, 43238]],
+        ['position 4', 'r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1', [6, 264, 9467]],
+        ['position 5', 'rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8', [44, 1486, 62379]],
+        ['position 6', 'r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10', [46, 2079, 89890]]
+      ];
+      let bad = [], total = 0, ms = 0;
+      for (const entry of SUITE) {
+        const st = parseFen(entry[1]);
+        entry[2].forEach((want, i) => {
+          const t0 = performance.now();
+          const got = count(st.b, st.turn, st.ep, st.cr, i + 1);
+          ms += performance.now() - t0;
+          total += got;
+          if (got !== want) bad.push(entry[0] + ' d' + (i + 1) + ' got ' + got + ' want ' + want);
+        });
+      }
+      add('perft matches the published counts for all six standard positions', bad.length === 0, bad.length ? bad.join('; ') : total + ' nodes in ' + Math.round(ms) + 'ms');
+    },
+    promotion: function () {
+      fresh();
+      const setPos = (list, turn) => {
+        const b = new Array(64).fill(0);
+        for (const entry of list) b[sq(entry[0])] = entry[1];
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: null,
+          castlingRights: { K: false, Q: false, k: false, q: false },
+          moveHistory: [], lastMove: null, gameOver: false, result: '',
+          halfmoveClock: 0, positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; pendingPromo = null; hidePromoUI();
+        updateUI(); draw();
+      };
+      const overlay = () => document.getElementById('promoOverlay').classList.contains('show');
+      const pick = piece => document.querySelector('#promoOverlay .promo-btn[data-piece="' + piece + '"]').click();
+      botEnabled = false;
+
+      setPos([['b7', P(PT.PAWN, CL.WHITE)], ['e1', P(PT.KING, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE);
+      handleClick(sq('b7'));
+      add('a pawn on the seventh can be picked up', selectedSquare === sq('b7'), 'selected b7');
+      handleClick(sq('b8'));
+      add('reaching the eighth opens the picker instead of moving', !!pendingPromo && overlay(), 'picker open');
+      add('the pawn stays on the seventh until a piece is chosen', game.board[sq('b7')] === P(PT.PAWN, CL.WHITE), 'still a pawn');
+      pick(5);
+      add('underpromotion places the chosen piece', game.board[sq('b8')] === P(PT.KNIGHT, CL.WHITE), 'b8=' + game.board[sq('b8')]);
+      add('the picker closes after choosing', !overlay(), 'closed');
+      add('the move is recorded', collectPlies().length === 1, collectPlies().length + ' plies');
+
+      setPos([['b7', P(PT.PAWN, CL.WHITE)], ['e1', P(PT.KING, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE);
+      handleClick(sq('b7')); handleClick(sq('b8'));
+      document.getElementById('promoCancel').click();
+      add('cancelling leaves the pawn in place', game.board[sq('b7')] === P(PT.PAWN, CL.WHITE) && !pendingPromo && !overlay(), 'cancelled');
+
+      setPos([['b7', P(PT.PAWN, CL.WHITE)], ['a8', P(PT.ROOK, CL.BLACK)], ['e1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)]], CL.WHITE);
+      handleClick(sq('b7')); handleClick(sq('a8'));
+      add('a capture-promotion opens the picker too', !!pendingPromo, 'picker open');
+      pick(2);
+      add('capture-promotion takes and queens', game.board[sq('a8')] === P(PT.QUEEN, CL.WHITE), 'a8=' + game.board[sq('a8')]);
+
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1; botThinking = false;
+      setPos([['b2', P(PT.PAWN, CL.BLACK)], ['e8', P(PT.KING, CL.BLACK)], ['e1', P(PT.KING, CL.WHITE)]], CL.BLACK);
+      doBotMove();
+      add('the bot promotes its own pawn', pType(game.board[sq('b1')]) === PT.QUEEN && pColor(game.board[sq('b1')]) === CL.BLACK, 'b1=' + game.board[sq('b1')]);
+
+      fresh();
+      botEnabled = false;
+      setPos([['b7', P(PT.PAWN, CL.WHITE)], ['e1', P(PT.KING, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE);
+      handleClick(sq('b7')); handleClick(sq('b8')); pick(2);
+      add('a quiet queen promotion is accepted', game.board[sq('b8')] === P(PT.QUEEN, CL.WHITE), 'b8=' + game.board[sq('b8')]);
+      add('the promotion can be exported to PGN', /b8=Q/.test(buildPGN()), buildPGN().split('\n').pop().slice(0, 60));
+      fresh();
+    },
+    rules: function () {
+      fresh();
+      const parseFen = fen => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        return {
+          b: b,
+          turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK,
+          cr: { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 },
+          ep: (parts[3] && parts[3] !== '-') ? idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97) : null
+        };
+      };
+      const movesOf = fen => { const s = parseFen(fen); return { s: s, moves: getAllLegalMoves(s.b, s.turn, s.ep, s.cr) }; };
+      const tok = m => (m.castle === 'kingside' ? 'O-O' : m.castle === 'queenside' ? 'O-O-O' : String.fromCharCode(97 + col(m.from)) + (8 - row(m.from)) + String.fromCharCode(97 + col(m.to)) + (8 - row(m.to)));
+
+      // stalemate: black king boxed in, not in check
+      const stale = movesOf('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
+      add('stalemate is detected as no moves without check', stale.moves.length === 0 && !isInCheck(stale.s.b, stale.s.turn), stale.moves.length + ' moves');
+      // checkmate
+      const mate = movesOf('7k/6Q1/6K1/8/8/8/8/8 b - - 0 1');
+      add('checkmate is detected as no moves with check', mate.moves.length === 0 && isInCheck(mate.s.b, mate.s.turn), mate.moves.length + ' moves');
+
+      // all four promotion pieces are offered
+      const promo = movesOf('8/1P6/8/8/8/8/2k5/K7 w - - 0 1').moves.filter(m => m.promo);
+      const kinds = promo.map(m => m.promoPiece).sort().join(',');
+      add('a pawn on the seventh offers all four promotions', promo.length === 4 && kinds === '2,3,4,5', promo.length + ' promotions (' + kinds + ')');
+
+      // en passant is generated, and only when the square is live
+      const epOpen = movesOf('rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2').moves.filter(m => m.ep);
+      add('en passant is offered when the target is set', epOpen.length === 1, epOpen.length + ' en passant moves');
+      const epStale = movesOf('rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2').moves.filter(m => m.ep);
+      add('en passant is refused when no target is set', epStale.length === 0, epStale.length + ' en passant moves');
+
+      // castling out of, through and into check
+      const throughCheck = movesOf('4kr2/8/8/8/8/8/8/4K2R w K - 0 1').moves.filter(m => m.castle === 'kingside');
+      add('castling through an attacked square is illegal', throughCheck.length === 0, throughCheck.length + ' castles');
+      const outOfCheck = movesOf('4k3/8/8/8/8/8/4r3/4K2R w K - 0 1').moves.filter(m => m.castle === 'kingside');
+      add('castling out of check is illegal', outOfCheck.length === 0, outOfCheck.length + ' castles');
+      const clean = movesOf('4k3/8/8/8/8/8/8/4K2R w K - 0 1').moves.filter(m => m.castle === 'kingside');
+      add('castling is offered when it is legal', clean.length === 1, clean.length + ' castles');
+      const noRights = movesOf('4k3/8/8/8/8/8/8/4K2R w - - 0 1').moves.filter(m => m.castle);
+      add('castling needs the right to castle', noRights.length === 0, noRights.length + ' castles');
+
+      // castling rights are lost when the rook moves or is captured
+      const s1 = movesOf('4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1');
+      const rookMove = s1.moves.find(m => m.from === idx(7, 0) && m.to === idx(6, 0));
+      const afterRook = makeMove(s1.s.b, rookMove, { castlingRights: s1.s.cr });
+      add('moving the rook drops that castling right', afterRook.castling.Q === false && afterRook.castling.K === true, JSON.stringify(afterRook.castling));
+      const s2 = movesOf('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+      const capRook = s2.moves.find(m => m.to === idx(0, 7));
+      const afterCap = makeMove(s2.s.b, capRook, { castlingRights: s2.s.cr });
+      add('capturing a rook drops that castling right', afterCap.castling.k === false, JSON.stringify(afterCap.castling));
+
+      // en passant that would expose your own king is illegal
+      const epPin = movesOf('4r2k/8/8/3pP3/8/8/8/4K3 w - d6 0 2').moves.filter(m => m.ep);
+      add('an en passant capture that exposes the king is illegal', epPin.length === 0, epPin.length + ' e.p. moves');
+      const epFree = movesOf('7k/8/8/3pP3/8/8/8/4K3 w - d6 0 2').moves.filter(m => m.ep);
+      add('the same en passant is legal without the pin', epFree.length === 1, epFree.length + ' e.p. moves');
+      const epPush = movesOf('4r2k/8/8/3pP3/8/8/8/4K3 w - d6 0 2').moves.filter(m => m.from === idx(3, 4) && m.to === idx(2, 4));
+      add('the blocked pawn can still advance', epPush.length === 1, epPush.length + ' pushes');
+
+      // threefold repetition by actually playing it out
+      fresh();
+      botEnabled = false;
+      play(['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8']);
+      add('threefold repetition ends the game after the move that creates it', game.gameOver === true && /threefold/i.test(game.result), game.result || 'still playing');
+      fresh();
+      botEnabled = false;
+
+      // draw rules
+      add('king vs king is insufficient material', hasInsufficientMaterial(parseFen('8/8/4k3/8/8/3K4/8/8 w - - 0 1').b), 'K vs K');
+      add('king and bishop vs king is insufficient', hasInsufficientMaterial(parseFen('8/8/4k3/8/8/3K1B2/8/8 w - - 0 1').b), 'KB vs K');
+      add('king and knight vs king is insufficient', hasInsufficientMaterial(parseFen('8/8/4k3/8/8/3K1N2/8/8 w - - 0 1').b), 'KN vs K');
+      add('king and rook vs king is NOT insufficient', !hasInsufficientMaterial(parseFen('8/8/4k3/8/8/3K1R2/8/8 w - - 0 1').b), 'KR vs K');
+      add('same-coloured bishops are insufficient material', hasInsufficientMaterial(parseFen('5b2/8/4k3/8/8/3K4/8/2B5 w - - 0 1').b), 'KB vs KB same colour');
+      add('opposite-coloured bishops are NOT a dead draw', !hasInsufficientMaterial(parseFen('2b5/8/4k3/8/8/3K4/8/2B5 w - - 0 1').b), 'KB vs KB opposite colours');
+      add('two knights are not an automatic draw', !hasInsufficientMaterial(parseFen('8/8/4k3/8/8/3K1NN1/8/8 w - - 0 1').b), 'KNN vs K');
+      fresh();
+      game.halfmoveClock = 100;
+      add('the fifty-move counter is tracked', game.halfmoveClock >= 100, 'halfmove ' + game.halfmoveClock);
+      add('a position can be recorded for repetition', (function () {
+        const key = 'test-position';
+        game.positionCounts = {};
+        game.positionCounts[key] = 2;
+        game.positionCounts[key]++;
+        return game.positionCounts[key] >= 3;
+      })(), 'threefold reachable');
+      fresh();
     }
   };
   if (caseId && CASES[caseId]) CASES[caseId]();
