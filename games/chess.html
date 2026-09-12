@@ -541,6 +541,11 @@ body.cc-clocks .cc-clock{ display:block; }
 
 #sideCol{ display:flex; flex-direction:column; gap:12px; min-width:0; }
 .cc-card{ background:var(--cc-panel); border-radius:6px; overflow:hidden; }
+.ml-nav{ float:right; display:inline-flex; gap:4px; }
+.ml-nav button{ width:30px; height:24px; border-radius:7px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
+  color:var(--cc-text); font:700 .9rem/1 system-ui; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.ml-nav button:hover:not(:disabled){ background:rgba(255,255,255,.12); }
+.ml-nav button:disabled{ opacity:.35; cursor:default; }
 .cc-card-head{ background:var(--cc-head); color:var(--cc-muted); font-size:.68rem; font-weight:800;
   letter-spacing:.09em; text-transform:uppercase; padding:8px 12px; }
 
@@ -662,9 +667,13 @@ a.back:hover{ color:var(--cc-text)!important; }
 .cc-capimg{ width:16px; height:16px; vertical-align:-3px; margin-right:-4px; }
 .cc-capglyph{ font-size:.95rem; margin-right:-2px; }
 .cc-iconrow{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; width:100%; }
-@media (min-width:881px){ .cc-iconrow{ grid-template-columns:repeat(6, minmax(0,1fr)); } }
-.cc-iconrow .btn{ flex-direction:column; gap:2px; padding:8px 4px!important; font-size:.68rem; min-height:52px; }
-.cc-iconrow .btn .btn-label{ font-size:.6rem; }
+.cc-iconrow .btn{ flex-direction:row; gap:5px; padding:8px 6px!important; font-size:.68rem; min-height:46px; justify-content:center; }
+.cc-iconrow .btn .ic{ flex:0 0 auto; }
+.cc-iconrow .btn .btn-label{ font-size:.66rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:430px){
+  .cc-iconrow .btn .btn-label{ display:none; }
+  .cc-iconrow .btn .ic{ width:22px; height:22px; }
+}
 .set-group{ margin-top:12px; }
 .set-label{ font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
   color:var(--cc-muted); margin-bottom:6px; }
@@ -851,7 +860,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   </select>
     </div>
     <div class="cc-card">
-      <div class="cc-card-head">Moves</div>
+      <div class="cc-card-head">Moves<span class="ml-nav"><button id="mlPrev" title="Previous position" aria-label="Previous position">‹</button><button id="mlNext" title="Next position" aria-label="Next position">›</button></span></div>
       <div id="moveList"></div>
       <div id="score">White: <b id="scoreW">0</b> pts | Black: <b id="scoreB">0</b> pts</div>
       <div id="metaStats">⚔️ Record vs bot: <b id="metaW">0</b>W · <b id="metaL">0</b>L · <b id="metaD">0</b>D · 🔥 <b id="metaStreak">0</b> · Best: <b id="metaBest">0</b></div>
@@ -1525,6 +1534,8 @@ const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR 
 
 let puzzleIndex = -1;
 let puzzleMode = false;
+let puzzleTimer = null;
+function clearPuzzleTimer() { if (puzzleTimer) { clearTimeout(puzzleTimer); puzzleTimer = null; } }
 
 // ==================== TIPS ====================
 
@@ -3019,7 +3030,18 @@ function updateUI() {
     if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) { ml.scrollTop = ml.scrollHeight; } }
     else ml.scrollTop = ml.scrollHeight;
   }
+  syncMoveNav();
   updateSetupHint();
+}
+
+function syncMoveNav() {
+  const prev = document.getElementById('mlPrev'), next = document.getElementById('mlNext');
+  if (!prev || !next) return;
+  const hist = (liveGame || game).moveHistory || [];
+  const total = hist.length;
+  const cur = previewing() ? previewPlyIndex : total - 1;
+  prev.disabled = total === 0 || cur <= 0;
+  next.disabled = total === 0 || cur >= total - 1;
 }
 
 function showRandomTip() {
@@ -3053,6 +3075,16 @@ function endPreview() {
   updateUI();
   draw();
 }
+function stepPreview(delta) {
+  const hist = (liveGame || game).moveHistory;
+  if (!hist.length) return;
+  const cur = previewing() ? previewPlyIndex : hist.length - 1;
+  const next = cur + delta;
+  if (next >= hist.length - 1) { endPreview(); if (window.ChessMemes) {} return; }
+  if (next < 0) { previewChessPly(0); return; }
+  previewChessPly(next);
+}
+
 function previewChessPly(ply) {
   const live = liveGame || game;
   const hist = live.moveHistory;
@@ -3122,6 +3154,7 @@ function doBotMove() {
 // ==================== PUZZLE MODE ====================
 
 function loadPuzzle(index) {
+  clearPuzzleTimer();
   if (index >= PUZZLES.length) {
     document.getElementById('tip').textContent = '🎉 All puzzles completed!';
     puzzleMode = false; document.getElementById('puzzlePanel').classList.remove('show');
@@ -3229,7 +3262,8 @@ function checkPuzzleSolution(move) {
       document.getElementById('tip').textContent = '🔥 Puzzle rush: ' + RUSH.cur + ' in a row! Best: ' + RUSH.best;
       try { sfx('levelup'); } catch (e) {}
     }
-    setTimeout(() => loadPuzzle(puzzleIndex + 1), 1500);
+    clearPuzzleTimer();
+    puzzleTimer = setTimeout(() => { puzzleTimer = null; loadPuzzle(puzzleIndex + 1); }, 1500);
   } else {
     document.getElementById('tip').textContent = '❌ Not quite. Try again! Hint: ' + pz.hint;
     RUSH.cur = 0;
@@ -3258,6 +3292,8 @@ function resetGame() {
   if (clockEnabled) clockStart();
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
   premove = null;
+  clearPuzzleTimer();
+  redoStack = [];
   annotArrows = []; annotSquares = {}; annotDrag = null; annotLongPress = null;
   mlCache.n = -1;
   pendingPromo = null; hidePromoUI();
@@ -3288,8 +3324,16 @@ function undo() {
   comboCount = Math.max(0, comboCount - 1);
   if (clockEnabled) clockStart();
   if (window.ChessMemes) window.ChessMemes.fire('undo');
+  syncResultDialog();
   updateUI(); draw();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
+}
+
+function syncResultDialog() {
+  const m = document.getElementById('overModal');
+  if (!m) return;
+  if (game.gameOver) showGameOver();
+  else { m.classList.remove('show'); if (window.syncModalState) window.syncModalState(); }
 }
 
 function redo() {
@@ -3302,6 +3346,7 @@ function redo() {
   selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
   pendingPromo = null; hidePromoUI();
   if (clockEnabled && !game.gameOver) clockStart();
+  syncResultDialog();
   updateUI(); draw();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
 }
@@ -3890,6 +3935,12 @@ window.chessPGN = buildPGN;
   });
 })();
 
+(function wireMoveNav() {
+  const prev = document.getElementById('mlPrev'), next = document.getElementById('mlNext');
+  if (prev) prev.addEventListener('click', e => { e.stopPropagation(); stepPreview(-1); });
+  if (next) next.addEventListener('click', e => { e.stopPropagation(); stepPreview(1); });
+})();
+
 (function wireGameEndButtons() {
   const redoBtn = document.getElementById('btnRedo');
   if (redoBtn) redoBtn.addEventListener('click', () => { redoBtn.blur(); redo(); });
@@ -4143,6 +4194,14 @@ juiceSlider.addEventListener('input', () => {
     if (target.nodeType === 1) target.parentNode.replaceChild(svg, target);
     else btn.replaceChild(svg, target);
   }
+  // on narrow screens the visible label is hidden, so the button needs a name that
+  // screen readers can still announce
+  document.querySelectorAll('#controls .btn, #settingsPanel .btn').forEach(b => {
+    if (b.getAttribute('aria-label')) return;
+    const l = b.querySelector('.btn-label');
+    const text = l ? l.textContent.trim() : (b.textContent || '').trim();
+    if (text) b.setAttribute('aria-label', text);
+  });
   const PARTY = ICONS.btnMemes;
   const sweep = () => {
     const row = document.getElementById('controls');
@@ -4537,6 +4596,131 @@ window.__chessTest = function (caseId) {
       draw();
       add('a frame draws quickly', (performance.now() - t1) < 40, (performance.now() - t1).toFixed(1) + 'ms');
     },
+    keyboardfull: function () {
+      fresh();
+      botEnabled = false;
+      const send = key => canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
+      canvas.focus();
+      kbSquare = -1;
+      // white plays e4 by keyboard
+      send('ArrowUp'); send('ArrowUp');
+      send('Enter');
+      add('a piece is selected by keyboard', selectedSquare === sq('e2'), 'sel=' + nm(selectedSquare));
+      send('ArrowUp'); send('ArrowUp');
+      send('Enter');
+      add('the move is played by keyboard', game.board[sq('e4')] === P(PT.PAWN, 0), 'e4=' + game.board[sq('e4')]);
+      add('the turn passes to black', game.turn === CL.BLACK, 'turn=' + game.turn);
+      // black replies by keyboard
+      kbSquare = sq('e7');
+      send('Enter');
+      send('ArrowDown'); send('ArrowDown');
+      add('the cursor walks down the file for black', nm(kbSquare) === 'e5', nm(kbSquare));
+      send('Enter');
+      add('black replies by keyboard', game.board[sq('e5')] === P(PT.PAWN, 1), 'e5=' + game.board[sq('e5')]);
+      add('two plies are on the board', collectPlies().length === 2, collectPlies().length + ' plies');
+      // escape clears a selection, f flips
+      kbSquare = sq('g1'); send('Enter');
+      send('Escape');
+      add('escape clears the selection', selectedSquare === -1, 'cleared');
+      const wasFlip = flip;
+      send('f');
+      add('f flips the board', flip !== wasFlip, 'flipped=' + flip);
+      flip = wasFlip;
+      add('the board still draws after keyboard play', (function () { try { draw(); return true; } catch (e) { return false; } })(), 'ok');
+      fresh();
+    },
+    perframe: function () {
+      fresh();
+      play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6']);
+      // NOTE: under headless virtual time performance.now() can be frozen, which makes
+      // wall-clock assertions meaningless. Assert the work completes, and time it only
+      // when the clock actually moves.
+      const clockMoves = (function () { const a = performance.now(); for (let i = 0; i < 1000; i++) {} return performance.now() - a; })() > 0;
+      const tFrame = performance.now();
+      for (let i = 0; i < 200; i++) drawBoard();
+      const frameAvg = (performance.now() - tFrame) / 200;
+      const tUi = performance.now();
+      for (let i = 0; i < 500; i++) updateUI();
+      const uiAvg = (performance.now() - tUi) / 500;
+      const tGen = performance.now();
+      for (let i = 0; i < 50; i++) getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+      const genAvg = (performance.now() - tGen) / 50;
+      add('200 board frames complete', true, 'timing ' + (clockMoves ? frameAvg.toFixed(3) + 'ms/frame' : 'unavailable in virtual time'));
+      add('500 UI refreshes complete', true, 'timing ' + (clockMoves ? uiAvg.toFixed(3) + 'ms/refresh' : 'unavailable in virtual time'));
+      add('50 move generations complete', true, 'timing ' + (clockMoves ? genAvg.toFixed(3) + 'ms/gen' : 'unavailable in virtual time'));
+      add('per-frame work stays under 16ms when the clock runs', !clockMoves || frameAvg < 16, frameAvg.toFixed(3) + 'ms/frame');
+      add('move generation stays under 12ms', !clockMoves || genAvg < 12, genAvg.toFixed(3) + 'ms/gen');
+      fresh();
+    },
+    puzzles: function () {
+      fresh();
+      loadPuzzle(0);
+      const pz = PUZZLES[0];
+      add('a puzzle loads', puzzleMode === true && puzzleIndex === 0, 'index ' + puzzleIndex);
+      add('the puzzle sheet opens', document.getElementById('puzzlePanel').classList.contains('show'), 'open');
+      add('the bot is paused during a puzzle', botEnabled === false, 'bot off');
+      add('the sheet names the puzzle', /1\/\d+/.test(document.getElementById('puzzleDesc').textContent), document.getElementById('puzzleDesc').textContent.slice(0, 42));
+      add('the puzzle hint is shown', document.getElementById('tip').textContent.indexOf('💡') >= 0, document.getElementById('tip').textContent.slice(0, 40));
+      const toPlayed = m => (m.castle === 'kingside') ? 'O-O' : (m.castle === 'queenside') ? 'O-O-O'
+        : (String.fromCharCode(97 + col(m.from)) + (8 - row(m.from)) + String.fromCharCode(97 + col(m.to)) + (8 - row(m.to)));
+      const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+      add('the puzzle position has legal moves', legal.length > 0, legal.length + ' moves');
+      const correct = legal.find(m => puzzleAnswerMatches(toPlayed(m), pz.solution));
+      add('the stated solution is a legal move', !!correct, pz.solution);
+      const streak = RUSH.cur;
+      executeMove(correct);
+      checkPuzzleSolution(correct);
+      add('the solution is accepted', document.getElementById('tip').textContent.indexOf('Correct') >= 0, document.getElementById('tip').textContent.slice(0, 40));
+      add('a correct answer extends the streak', RUSH.cur === streak + 1, RUSH.cur + ' in a row');
+      clearPuzzleTimer();
+      // a wrong answer is rolled back
+      loadPuzzle(1);
+      const legal2 = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+      const wrong = legal2.find(m => !puzzleAnswerMatches(toPlayed(m), PUZZLES[1].solution)) || legal2[0];
+      executeMove(wrong);
+      checkPuzzleSolution(wrong);
+      add('a wrong answer is rejected', document.getElementById('tip').textContent.indexOf('Not quite') >= 0, document.getElementById('tip').textContent.slice(0, 40));
+      add('a wrong answer resets the streak', RUSH.cur === 0, 'streak 0');
+      // leaving the puzzle must not leave a timer behind
+      clearPuzzleTimer();
+      puzzleMode = false;
+      document.getElementById('puzzlePanel').classList.remove('show');
+      add('leaving a puzzle clears its timer', puzzleTimer === null, 'no timer');
+      fresh();
+      add('a normal game is restorable after puzzles', game.gameOver === false && collectPlies().length === 0, 'fresh game');
+    },
+    statemachine: function () {
+      fresh();
+      botEnabled = false;
+      play(['e2e4', 'e7e5', 'g1f3']);
+      add('three plies are recorded', collectPlies().length === 3, collectPlies().length + ' plies');
+      undo();
+      add('undo removes one ply', collectPlies().length === 2, collectPlies().length + ' plies');
+      add('undo fills the redo stack', redoStack.length === 1, redoStack.length + ' states');
+      redo();
+      add('redo restores the ply', collectPlies().length === 3, collectPlies().length + ' plies');
+      add('redo empties its stack', redoStack.length === 0, 'empty');
+      play(['b8c6']);
+      add('a new move clears the redo stack', redoStack.length === 0, 'cleared');
+      // undo across a resignation
+      document.getElementById('btnResign').click();
+      add('resigning ends the game', game.gameOver === true && /resign/i.test(game.result), game.result);
+      undo();
+      add('undo after a resignation reopens the game', game.gameOver === false && !/resign/i.test(game.result), 'game ' + (game.gameOver ? 'over' : 'live'));
+      add('the result dialog is closed by the undo', !document.getElementById('overModal').classList.contains('show'), 'closed');
+      redo();
+      add('redo restores the resignation', game.gameOver === true && /resign/i.test(game.result), game.result);
+      document.getElementById('btnOverClose').click();
+      // clock behaviour around undo
+      fresh();
+      clockEnabled = true; CLOCK_START = 180;
+      clockWhite = 100; clockBlack = 100; refreshClocks();
+      play(['e2e4']);
+      add('the clock does not refund on undo', (function () { undo(); return clockWhite <= 102; })(), 'white=' + clockWhite);
+      clockEnabled = false; clockStop(); CLOCK_START = 180;
+      document.body.classList.remove('cc-clocks');
+      fresh();
+    },
     premove: function () {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botThinking = false;
@@ -4672,6 +4856,11 @@ window.__chessTest = function (caseId) {
         return off && M.speechOn();
       })(), 'togglable');
       add('the voice test button is present', !!document.getElementById('memeSpeechTest'), 'Test');
+      const unnamed = Array.prototype.filter.call(document.querySelectorAll('#controls button, #settingsPanel button'), b => {
+        const name = (b.getAttribute('aria-label') || b.textContent || '').trim();
+        return !name;
+      });
+      add('every control has an accessible name', unnamed.length === 0, unnamed.length ? unnamed.map(b => b.id || b.className).join(', ') : 'all named');
       M.close();
     },
     resign: function () {
@@ -4736,6 +4925,19 @@ window.__chessTest = function (caseId) {
       add('ending the preview returns to live play', !previewing() && !game.gameOver, 'live');
       play(['b8c6']);
       add('play continues normally afterwards', collectPlies().length === 4, collectPlies().length + ' plies');
+      const prev = document.getElementById('mlPrev'), next = document.getElementById('mlNext');
+      add('the move list has previous and next controls', !!prev && !!next, 'present');
+      add('in the live position you can step back but not forward', next.disabled === true && prev.disabled === false, 'prev=' + prev.disabled + ' next=' + next.disabled);
+      prev.click();
+      add('previous steps back one position', previewing() && previewPlyIndex === 2, 'ply=' + previewPlyIndex);
+      add('next becomes available when not live', next.disabled === false, 'enabled');
+      prev.click();
+      add('previous keeps stepping back', previewPlyIndex === 1, 'ply=' + previewPlyIndex);
+      next.click();
+      add('next steps forward again', previewPlyIndex === 2, 'ply=' + previewPlyIndex);
+      next.click();
+      add('next from the last preview returns to live play', !previewing(), 'live');
+      endPreview();
     },
     moves: function () {
       fresh();
