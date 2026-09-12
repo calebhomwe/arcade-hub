@@ -1571,7 +1571,8 @@ const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR 
 let puzzleIndex = -1;
 let puzzleMode = false;
 let puzzleTimer = null;
-function clearPuzzleTimer() { if (puzzleTimer) { clearTimeout(puzzleTimer); puzzleTimer = null; } }
+function clearPuzzleTimer() { if (puzzleTimer) { clearTimeout(puzzleTimer); puzzleTimer = null; } if (puzzleRollbackTimer) { clearTimeout(puzzleRollbackTimer); puzzleRollbackTimer = null; } }
+let puzzleRollbackTimer = null;
 
 // ==================== TIPS ====================
 
@@ -3309,7 +3310,15 @@ function checkPuzzleSolution(move) {
   } else {
     document.getElementById('tip').textContent = '❌ Not quite. Try again! Hint: ' + pz.hint;
     RUSH.cur = 0;
-    setTimeout(() => { if (!game.gameOver) { game = game.moveHistory.pop(); updateUI(); draw(); } }, 600);
+    // roll the wrong move back, but only if the same game is still on the board: a reset
+    // inside this window used to leave game undefined and brick every later redraw
+    if (puzzleRollbackTimer) clearTimeout(puzzleRollbackTimer);
+    puzzleRollbackTimer = setTimeout(() => {
+      puzzleRollbackTimer = null;
+      if (!game || game.gameOver || !game.moveHistory.length) return;
+      game = game.moveHistory.pop();
+      updateUI(); draw();
+    }, 600);
   }
 }
 
@@ -3353,7 +3362,7 @@ function resetGame() {
 }
 
 function undo() {
-  if (game.moveHistory.length === 0) return;
+  if (!game || !game.moveHistory || game.moveHistory.length === 0) return;
   clearBotTimers();
   botThinking = false;
   closeReview();
@@ -4801,6 +4810,13 @@ window.__chessTest = function (caseId) {
       checkPuzzleSolution(wrong);
       add('a wrong answer is rejected', document.getElementById('tip').textContent.indexOf('Not quite') >= 0, document.getElementById('tip').textContent.slice(0, 40));
       add('a wrong answer resets the streak', RUSH.cur === 0, 'streak 0');
+      // the rollback is deferred; it used to run after a reset and leave game undefined
+      add('the wrong-answer rollback is tracked', puzzleRollbackTimer !== null, puzzleRollbackTimer ? 'tracked' : 'missing');
+      resetGame();
+      add('resetting cancels the pending rollback', puzzleRollbackTimer === null, puzzleRollbackTimer ? 'still armed' : 'cancelled');
+      puzzleMode = false;
+      document.getElementById('puzzlePanel').classList.remove('show');
+      loadPuzzle(0);
       // leaving the puzzle must not leave a timer behind
       clearPuzzleTimer();
       puzzleMode = false;
