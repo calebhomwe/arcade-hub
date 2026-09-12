@@ -1,0 +1,45 @@
+(function () {
+  function lum(r, g, b) {
+    const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  }
+  function sample(piece) {
+    const src = pieceSource(piece);
+    if (!src) return null;
+    const g = src.getContext('2d');
+    const d = g.getImageData(0, 0, src.width, src.height).data;
+    let n = 0, r = 0, gg = 0, b = 0, minL = 1, maxL = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 200) continue;
+      n++; r += d[i]; gg += d[i + 1]; b += d[i + 2];
+      const L = lum(d[i], d[i + 1], d[i + 2]);
+      if (L < minL) minL = L;
+      if (L > maxL) maxL = L;
+    }
+    if (!n) return null;
+    return { r: r / n, g: gg / n, b: b / n, lum: lum(r / n, gg / n, b / n), minL: minL, maxL: maxL, px: n };
+  }
+  function sqColour(dark) {
+    const el = document.createElement('canvas');
+    const cs = getComputedStyle(document.documentElement);
+    const hex = (dark ? cs.getPropertyValue('--dk') : cs.getPropertyValue('--lt')).trim();
+    if (!/^#/.test(hex)) return null;
+    const v = parseInt(hex.slice(1), 16);
+    return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+  }
+  function ratio(a, b) {
+    const L1 = Math.max(a, b), L2 = Math.min(a, b);
+    return (L1 + 0.05) / (L2 + 0.05);
+  }
+  const dk = sqColour(true), lt = sqColour(false);
+  const bk = sample(P(PT.KNIGHT, CL.BLACK)), wk = sample(P(PT.KNIGHT, CL.WHITE));
+  const out = {
+    darkSquare: dk, lightSquare: lt,
+    blackKnight: bk, whiteKnight: wk
+  };
+  if (dk && bk) out.blackOnDark = +ratio(bk.lum, lum(dk.r, dk.g, dk.b)).toFixed(2);
+  if (lt && bk) out.blackOnLight = +ratio(bk.lum, lum(lt.r, lt.g, lt.b)).toFixed(2);
+  if (dk && wk) out.whiteOnDark = +ratio(wk.lum, lum(dk.r, dk.g, dk.b)).toFixed(2);
+  if (lt && wk) out.whiteOnLight = +ratio(wk.lum, lum(lt.r, lt.g, lt.b)).toFixed(2);
+  return JSON.stringify(out);
+})()

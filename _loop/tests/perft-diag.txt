@@ -1,0 +1,54 @@
+(function () {
+  function parseFen(fen) {
+    const parts = fen.trim().split(/\s+/);
+    const rows = parts[0].split('/');
+    const b = new Array(64).fill(0);
+    for (let rr = 0; rr < 8; rr++) {
+      let c = 0;
+      for (const ch of rows[rr]) {
+        if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+        const lo = ch.toLowerCase();
+        const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+        b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+        c++;
+      }
+    }
+    const cr = { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 };
+    return { b: b, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK, cr: cr, ep: (parts[3] && parts[3] !== '-') ? idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97) : null };
+  }
+  // iterative DFS: no recursion at all, so a stack overflow can only come from the engine
+  function perft(b, turn, ep, cr, depth) {
+    let total = 0;
+    var stack = [{ b: b, turn: turn, ep: ep, cr: cr, d: depth }];
+    var guard = 0;
+    while (stack.length) {
+      if (++guard > 20000000) return 'GUARD';
+      var node = stack.pop();
+      var moves = getAllLegalMoves(node.b, node.turn, node.ep, node.cr);
+      if (node.d === 1) { total += moves.length; continue; }
+      for (var i = 0; i < moves.length; i++) {
+        var r = makeMove(node.b, moves[i], { castlingRights: node.cr, epTarget: node.ep });
+        stack.push({ b: r.board, turn: 1 - node.turn, ep: r.ep, cr: r.castling, d: node.d - 1 });
+      }
+    }
+    return total;
+  }
+  var out = [];
+  var start = parseFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  [1, 2, 3, 4].forEach(function (d) {
+    try {
+      var t0 = performance.now();
+      var n = perft(start.b, start.turn, start.ep, start.cr, d);
+      out.push('startpos d' + d + ' = ' + n + ' (' + Math.round(performance.now() - t0) + 'ms)');
+    } catch (e) { out.push('startpos d' + d + ' THREW ' + e.message); }
+  });
+  var kiw = parseFen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
+  [1, 2, 3].forEach(function (d) {
+    try {
+      var t0 = performance.now();
+      var n = perft(kiw.b, kiw.turn, kiw.ep, kiw.cr, d);
+      out.push('kiwipete d' + d + ' = ' + n + ' (' + Math.round(performance.now() - t0) + 'ms)');
+    } catch (e) { out.push('kiwipete d' + d + ' THREW ' + e.message); }
+  });
+  return out.join(' | ');
+})()

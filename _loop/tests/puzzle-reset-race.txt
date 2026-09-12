@@ -1,0 +1,23 @@
+(function () {
+  const out = [];
+  try {
+    window.showStartScreen && window.showStartScreen(false);
+    loadPuzzle(0);
+    const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+    const want = PUZZLES[0].solution;
+    const tok = m => (m.castle === 'kingside' ? 'O-O' : m.castle === 'queenside' ? 'O-O-O' : String.fromCharCode(97 + col(m.from)) + (8 - row(m.from)) + String.fromCharCode(97 + col(m.to)) + (8 - row(m.to)));
+    const wrong = legal.find(m => tok(m) !== want) || legal[0];
+    executeMove(wrong);
+    checkPuzzleSolution(wrong);
+    resetGame();                      // a new game starts inside the 600ms rollback window
+    out.push('after reset: game is ' + (game ? 'present' : 'MISSING'));
+    return new Promise(function (res) {
+      setTimeout(function () {
+        let redrawOk = true;
+        try { updateUI(); draw(); } catch (e) { redrawOk = false; out.push('redraw threw: ' + e.message); }
+        out.push('after the rollback window: game is ' + (game ? 'present' : 'MISSING') + ', redraw ok=' + redrawOk);
+        res(out.join(' | '));
+      }, 900);
+    });
+  } catch (e) { out.push('setup threw: ' + e.message); return out.join(' | '); }
+})()

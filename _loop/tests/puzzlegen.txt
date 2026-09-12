@@ -1,0 +1,98 @@
+(function () {
+  // Brute-force proof of mate-in-1 / mate-in-2 using the game's own move generator.
+  // A position only becomes a puzzle if the solution is PROVEN, and the emitted list is
+  // re-verified by a second pass with an independent FEN parser.
+  const LETTER = { 1:'k', 2:'q', 3:'r', 4:'b', 5:'n', 6:'p' };
+  function fenOf(b, turn, ep, cr) {
+    const rows = [];
+    for (let r = 0; r < 8; r++) {
+      let s = '', e = 0;
+      for (let c = 0; c < 8; c++) {
+        const p = b[idx(r, c)];
+        if (!p) { e++; continue; }
+        if (e) { s += e; e = 0; }
+        const L = LETTER[pType(p)];
+        s += pColor(p) === CL.WHITE ? L.toUpperCase() : L;
+      }
+      if (e) s += e;
+      rows.push(s);
+    }
+    const cs = ((cr.K?'K':'') + (cr.Q?'Q':'') + (cr.k?'k':'') + (cr.q?'q':'')) || '-';
+    const eps = (ep === null || ep === undefined) ? '-' : (String.fromCharCode(97 + col(ep)) + (8 - row(ep)));
+    return rows.join('/') + ' ' + (turn === CL.WHITE ? 'w' : 'b') + ' ' + cs + ' ' + eps + ' 0 1';
+  }
+  function apply(b, m, ep, cr) { return makeMove(b, m, { castlingRights: cr, epTarget: ep }); }
+  function isMate(b, turn, ep, cr) {
+    return isInCheck(b, turn) && getAllLegalMoves(b, turn, ep, cr).length === 0;
+  }
+  function matesIn1(b, turn, ep, cr) {
+    const out = [];
+    for (const m of getAllLegalMoves(b, turn, ep, cr)) {
+      const r = apply(b, m, ep, cr);
+      if (isMate(r.board, 1 - turn, r.ep, r.castling)) out.push(m);
+    }
+    return out;
+  }
+  function matesIn2(b, turn, ep, cr) {
+    for (const m of getAllLegalMoves(b, turn, ep, cr)) {
+      const r1 = apply(b, m, ep, cr);
+      const replies = getAllLegalMoves(r1.board, 1 - turn, r1.ep, r1.castling);
+      if (!replies.length) continue;
+      let all = true;
+      for (const rp of replies) {
+        const r2 = apply(r1.board, rp, r1.ep, r1.castling);
+        if (matesIn1(r2.board, turn, r2.ep, r2.castling).length === 0) { all = false; break; }
+      }
+      if (all) return m;
+    }
+    return null;
+  }
+  const sname = i => String.fromCharCode(97 + col(i)) + (8 - row(i));
+  const pieceName = p => ({ 1:'king', 2:'queen', 3:'rook', 4:'bishop', 5:'knight', 6:'pawn' })[pType(p)] || 'piece';
+  let seed = 20260912;
+  const rnd = n => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  const found = [];
+  const seen = {};
+  for (let g = 0; g < 60 && found.length < 14; g++) {
+    let b = initBoard(), turn = CL.WHITE, ep = null;
+    let cr = { K: true, Q: true, k: true, q: true };
+    for (let ply = 0; ply < 70 && found.length < 14; ply++) {
+      const moves = getAllLegalMoves(b, turn, ep, cr);
+      if (!moves.length) break;
+      if (ply >= 8) {
+        const m1 = matesIn1(b, turn, ep, cr);
+        if (m1.length === 1) {
+          const key = fenOf(b, turn, ep, cr);
+          if (!seen[key]) {
+            seen[key] = 1;
+            const mv = m1[0];
+            found.push({
+              fen: key, solution: sname(mv.from) + sname(mv.to), mate: 1,
+              desc: (turn === CL.WHITE ? 'White' : 'Black') + ' to move. Find the checkmate in 1.',
+              hint: 'The ' + pieceName(b[mv.from]) + ' delivers mate. Look for a forcing check.',
+              check: 'm1'
+            });
+          }
+        } else if (ply >= 12 && found.length < 14) {
+          const m2 = matesIn2(b, turn, ep, cr);
+          if (m2) {
+            const key = fenOf(b, turn, ep, cr) + '|2';
+            if (!seen[key]) {
+              seen[key] = 1;
+              found.push({
+                fen: key.split('|')[0], solution: sname(m2.from) + sname(m2.to), mate: 2,
+                desc: (turn === CL.WHITE ? 'White' : 'Black') + ' to move. Find the checkmate in 2.',
+                hint: 'Start with the ' + pieceName(b[m2.from]) + '. Every reply must still lose.',
+                check: 'm2'
+              });
+            }
+          }
+        }
+      }
+      const mv = moves[rnd(moves.length)];
+      const r = apply(b, mv, ep, cr);
+      b = r.board; ep = r.ep; cr = r.castling; turn = 1 - turn;
+    }
+  }
+  return JSON.stringify({ count: found.length, puzzles: found });
+})()

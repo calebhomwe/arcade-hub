@@ -1,0 +1,66 @@
+(function () {
+  function parseFen(fen) {
+    const parts = fen.trim().split(/\s+/);
+    const rows = parts[0].split('/');
+    const b = new Array(64).fill(0);
+    for (let rr = 0; rr < 8; rr++) {
+      let c = 0;
+      for (const ch of rows[rr]) {
+        if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+        const lo = ch.toLowerCase();
+        const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+        b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+        c++;
+      }
+    }
+    const cr = { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 };
+    const turn = parts[1] === 'w' ? CL.WHITE : CL.BLACK;
+    let ep = null;
+    if (parts[3] && parts[3] !== '-') ep = idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97);
+    return { b, turn, ep, cr };
+  }
+  function perft(b, turn, ep, cr, depth) {
+    const moves = getAllLegalMoves(b, turn, ep, cr);
+    if (depth === 1) return moves.length;
+    let n = 0;
+    for (const m of moves) {
+      const r = makeMove(b, m, { castlingRights: cr, epTarget: ep });
+      n += perft(r.board, 1 - turn, r.ep, r.castling, depth - 1);
+    }
+    return n;
+  }
+  function split(b, turn, ep, cr, depth) {
+    const out = [];
+    for (const m of getAllLegalMoves(b, turn, ep, cr)) {
+      const r = makeMove(b, m, { castlingRights: cr, epTarget: ep });
+      const tok = (m.castle === 'kingside' ? 'O-O' : m.castle === 'queenside' ? 'O-O-O'
+        : String.fromCharCode(97 + col(m.from)) + (8 - row(m.from)) + String.fromCharCode(97 + col(m.to)) + (8 - row(m.to)) + (m.promo ? 'p' : ''));
+      out.push(tok + ':' + perft(r.board, 1 - turn, r.ep, r.castling, depth - 1));
+    }
+    return out.join(' ');
+  }
+  var CASES = [
+    { name: 'startpos', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', want: { 1: 20, 2: 400, 3: 8902, 4: 197281 } },
+    { name: 'kiwipete', fen: 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1', want: { 1: 48, 2: 2039, 3: 97862 } },
+    { name: 'pos3', fen: '8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', want: { 1: 14, 2: 191, 3: 2812, 4: 43238 } },
+    { name: 'pos4', fen: 'r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1', want: { 1: 6, 2: 264, 3: 9467, 4: 422333 } },
+    { name: 'pos5', fen: 'rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8', want: { 1: 44, 2: 1486, 3: 62379 } },
+    { name: 'pos6', fen: 'r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10', want: { 1: 46, 2: 2079, 3: 89890 } }
+  ];
+  const results = [];
+  for (const cs of CASES) {
+    const st = parseFen(cs.fen);
+    for (const d of Object.keys(cs.want)) {
+      const depth = Number(d);
+      const t0 = performance.now();
+      const got = perft(st.b, st.turn, st.ep, st.cr, depth);
+      const ms = Math.round(performance.now() - t0);
+      const want = cs.want[d];
+      const rec = { pos: cs.name, depth: depth, got: got, want: want, ok: got === want, ms: ms };
+      if (!rec.ok && depth <= 3) rec.split = split(st.b, st.turn, st.ep, st.cr, depth);
+      results.push(rec);
+      if (!rec.ok) { /* keep going but skip deeper for this position */ break; }
+    }
+  }
+  return JSON.stringify({ pass: results.filter(r => r.ok).length, fail: results.filter(r => !r.ok).length, results: results });
+})()
