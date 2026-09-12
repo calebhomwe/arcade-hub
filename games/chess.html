@@ -1527,10 +1527,34 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
   const isMax = color === CL.WHITE;
   moves.sort((a, b) => (b.capture ? VAL[pType(b.capture)]||0 : 0) - (a.capture ? VAL[pType(a.capture)]||0 : 0));
   let best = moves[0], bestScore = isMax ? -Infinity : Infinity;
+  const scored = [];
   for (const m of moves) {
     const { board: nb, ep, castling } = makeMove(board, m, { castlingRights });
     const sc = minimax(nb, depth-1, -Infinity, Infinity, 1-color, ep, castling, !isMax, personality);
+    scored.push({ m: m, sc: sc, nb: nb, ep: ep, castling: castling });
     if ((isMax && sc > bestScore) || (!isMax && sc < bestScore)) { bestScore = sc; best = m; }
+  }
+  // Moves within a small margin are genuinely indistinguishable to a shallow search. Keeping
+  // the first one made the bot shuffle the same piece back and forth until it drew by
+  // repetition. Break the tie at random, and among those prefer the move that repeats the
+  // game the least.
+  const EPS = 12;
+  const near = scored.filter(s => isMax ? s.sc >= bestScore - EPS : s.sc <= bestScore + EPS);
+  if (near.length > 1) {
+    for (let i = near.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = near[i]; near[i] = near[j]; near[j] = t;
+    }
+    const counts = (typeof game !== 'undefined' && game && game.positionCounts) ? game.positionCounts : null;
+    let chosen = near[0], fewest = null;
+    if (counts) {
+      for (const s of near) {
+        let seen = 0;
+        try { seen = counts[positionKey(s.nb, 1 - color, s.ep, s.castling)] || 0; } catch (e) { seen = 0; }
+        if (fewest === null || seen < fewest) { fewest = seen; chosen = s; }
+      }
+    }
+    best = chosen.m;
   }
   // Add occasional randomness for human-like play
   if (personality === 'tricky' && Math.random() < 0.15 && moves.length > 3) {
@@ -5328,6 +5352,101 @@ window.__chessTest = function (caseId) {
       handleClick(sq('b7')); handleClick(sq('b8')); pick(2);
       add('a quiet queen promotion is accepted', game.board[sq('b8')] === P(PT.QUEEN, CL.WHITE), 'b8=' + game.board[sq('b8')]);
       add('the promotion can be exported to PGN', /b8=Q/.test(buildPGN()), buildPGN().split('\n').pop().slice(0, 60));
+
+      // the drag path a desktop player uses
+      fresh();
+      botEnabled = false;
+      setPos([['b7', P(PT.PAWN, CL.WHITE)], ['e1', P(PT.KING, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE);
+      const at = s => {
+        try { canvas.scrollIntoView({ block: 'center' }); } catch (e) {}
+        const cv = canvas.getBoundingClientRect();
+        const sc = canvas.width / cv.width;
+        const r = flip ? 7 - row(s) : row(s), c = flip ? 7 - col(s) : col(s);
+        return { clientX: cv.left + (padding + c * sqSize + sqSize / 2) / sc, clientY: cv.top + (padding + r * sqSize + sqSize / 2) / sc };
+      };
+      const pev = (type, s, buttons, target) => {
+        const p = at(s);
+        (target || canvas).dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: buttons, pointerId: 21, pointerType: 'mouse', isPrimary: true, clientX: p.clientX, clientY: p.clientY }));
+      };
+      pev('pointerdown', sq('b7'), 1);
+      pev('pointermove', sq('b8'), 1);
+      pev('pointerup', sq('b8'), 0);
+      add('dragging a pawn to the eighth opens the picker', !!pendingPromo && overlay(), pendingPromo ? 'picker open' : 'no pending promotion');
+      pick(3);
+      add('the dragged promotion lands the chosen piece', game.board[sq('b8')] === P(PT.ROOK, CL.WHITE), 'b8=' + game.board[sq('b8')]);
+      fresh();
+      botEnabled = false;
+    },
+    selfplay: function () {
+      fresh();
+      botEnabled = false;
+      // Drive both sides with the engine's own move chooser and assert board invariants at
+      // every ply. This is the integration check the unit cases cannot give.
+      const parseFen = fen => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        return b;
+      };
+      const problems = [];
+      let plies = 0, results = [];
+      for (let round = 0; round < 3 && !problems.length; round++) {
+        fresh();
+        botEnabled = false;
+        let guard = 0;
+        while (!game.gameOver && guard < 220) {
+          guard++;
+          const kingsW = game.board.filter(p => p === P(PT.KING, CL.WHITE)).length;
+          const kingsB = game.board.filter(p => p === P(PT.KING, CL.BLACK)).length;
+          if (kingsW !== 1 || kingsB !== 1) { problems.push('round ' + round + ' ply ' + guard + ' kings ' + kingsW + '/' + kingsB); break; }
+          for (const i in game.board) {
+            const p = game.board[i];
+            if (p && pType(p) === PT.PAWN && (row(Number(i)) === 0 || row(Number(i)) === 7)) { problems.push('round ' + round + ' pawn stuck on rank ' + (8 - row(Number(i)))); break; }
+          }
+          if (problems.length) break;
+          const mover = game.turn;
+          const legal = getAllLegalMoves(game.board, mover, game.epTarget, game.castlingRights);
+          if (!legal.length) { problems.push('round ' + round + ' no legal moves but game not over'); break; }
+          const opp = 1 - mover;
+          if (isInCheck(game.board, opp) && mover === game.turn) { /* the side not to move may not be in check */ problems.push('round ' + round + ' non-mover in check'); break; }
+          const pick = findBestMove(game.board, mover, game.epTarget, game.castlingRights, 2, 'balanced') || legal[Math.floor(Math.random() * legal.length)];
+          if (!pick) { problems.push('round ' + round + ' engine returned no move'); break; }
+          const wasLegal = legal.some(m => m.from === pick.from && m.to === pick.to);
+          if (!wasLegal) { problems.push('round ' + round + ' engine proposed an illegal move ' + nm(pick.from) + nm(pick.to)); break; }
+          executeMove(pick);
+          plies++;
+        }
+        if (game.gameOver) results.push(game.result);
+        else if (guard >= 220) results.push('capped at 220 plies');
+      }
+      add('600+ engine plies leave a legal position every time', problems.length === 0, problems.length ? problems.join('; ') : plies + ' plies played');
+      add('every self-play game reaches a result or the cap', results.length === 3, results.join(' | '));
+      const reps = results.filter(r => /threefold/i.test(r)).length;
+      add('the engine does not shuffle into repetition draws', reps <= 1, reps + ' of 3 games drawn by repetition');
+      // FEN round-trip through an independent parser
+      fresh();
+      let mismatch = null;
+      const line = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6', 'd2d3', 'f8c5'];
+      line.forEach(m => {
+        const from = sq(m.slice(0, 2)), to = sq(m.slice(2, 4));
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(x => x.from === from && x.to === to);
+        if (mv) executeMove(mv);
+      });
+      const fen = toFEN();
+      const back = parseFen(fen);
+      for (let i = 0; i < 64; i++) if (back[i] !== game.board[i]) { mismatch = 'square ' + i; break; }
+      add('the exported FEN round-trips back to the same board', !mismatch && fen.split(' ').length === 6, mismatch || fen);
+      add('the FEN names the side to move correctly', (fen.split(' ')[1] === 'b') === (game.turn === CL.BLACK), fen.split(' ')[1]);
       fresh();
     },
     rules: function () {
