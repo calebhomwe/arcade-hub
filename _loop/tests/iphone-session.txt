@@ -1,0 +1,67 @@
+(async function () {
+  const out = { steps: [], errors: [] };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const $ = id => document.getElementById(id);
+  function measure(label, el) {
+    if (!el) { out.steps.push(label + ': missing'); return null; }
+    const r = el.getBoundingClientRect();
+    out.steps.push(label + ': ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' @' + Math.round(r.top));
+    return r;
+  }
+  try {
+    out.viewport = window.innerWidth + 'x' + window.innerHeight + ' dpr ' + window.devicePixelRatio;
+    out.touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    out.safeArea = CSS.supports('padding-left', 'env(safe-area-inset-left)');
+    const start = $('startScreen');
+    out.startVisible = !!start && !start.classList.contains('hidden');
+    measure('play', $('ssPlay'));
+    const small = [];
+    document.querySelectorAll('button, select, input[type=checkbox]').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return;
+      if (r.height < 40) small.push((el.id || el.className || el.tagName) + ':' + Math.round(r.height));
+    });
+    out.tooSmall = small.slice(0, 8);
+    const play = $('ssPlay');
+    if (play) play.click();
+    await sleep(400);
+    out.startHidden = start.classList.contains('hidden');
+    const board = $('board');
+    measure('board', board);
+    out.boardPixels = board.width + 'x' + board.height;
+    const cv = board.getBoundingClientRect();
+    const at = sq => { const p = ChessMods.api.sqXY(sq); const k = board.width / Math.max(1, cv.width); return { x: cv.left + p.x / k, y: cv.top + p.y / k }; };
+    const tap = async sq => {
+      const q = at(sq);
+      const el = document.elementFromPoint(q.x, q.y) || board;
+      const o = { bubbles: true, cancelable: true, clientX: q.x, clientY: q.y, pointerId: 3, pointerType: 'touch', isPrimary: true, button: 0, buttons: 1 };
+      el.dispatchEvent(new PointerEvent('pointerdown', o));
+      el.dispatchEvent(new PointerEvent('pointerup', Object.assign({}, o, { buttons: 0 })));
+      await sleep(140);
+    };
+    ChessMods.api.setBot(true);
+    const before = ChessMods.api.board.slice();
+    await tap(52);
+    await tap(36);
+    const after = ChessMods.api.board;
+    out.touchMoveWorked = before[52] !== 0 && after[52] === 0 && after[36] !== 0;
+    await sleep(1200);
+    out.plies = document.querySelectorAll('#moveList [data-ply]').length;
+    const resign = $('btnResign');
+    if (resign) { resign.click(); await sleep(250); }
+    out.resultShown = !!($('overModal') && $('overModal').classList.contains('show'));
+    out.resultText = $('overTitle') ? $('overTitle').textContent : null;
+    out.pgnLen = window.chessPGN ? window.chessPGN().length : 0;
+    out.fen = window.chessFEN ? window.chessFEN() : null;
+    if ($('btnOverClose')) $('btnOverClose').click();
+    await sleep(150);
+    const settings = $('btnSettings');
+    if (settings) { settings.click(); await sleep(250); }
+    out.settingsOpen = !!($('settingsPanel') && $('settingsPanel').classList.contains('show'));
+    measure('settings panel', $('settingsPanel'));
+    if ($('btnSettingsClose')) $('btnSettingsClose').click();
+    out.docScrollW = document.documentElement.scrollWidth;
+    out.overflow = document.documentElement.scrollWidth > window.innerWidth + 1;
+  } catch (e) { out.errors.push(String(e && e.message || e)); }
+  return JSON.stringify(out);
+})()
