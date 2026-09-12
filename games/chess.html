@@ -1491,10 +1491,20 @@ function evaluate(board, personality) {
 }
 
 function minimax(board, depth, alpha, beta, color, epTarget, castlingRights, isMax, personality) {
-  if (depth === 0) return evaluate(board, personality);
+  if (depth === 0) {
+    // A mate delivered on the last ply must score as mate, not as material, or the search
+    // cannot see mate in one at a shallow depth nor mate in two at depth three. Only the
+    // king being in check can make a position mate, so the expensive move generation is
+    // paid for only on those leaves.
+    if (isInCheck(board, color)) {
+      const reply = getAllLegalMoves(board, color, epTarget, castlingRights);
+      if (reply.length === 0) return isMax ? -99999 + (3 - depth) * 100 : 99999 - (3 - depth) * 100;
+    }
+    return evaluate(board, personality);
+  }
   const moves = getAllLegalMoves(board, color, epTarget, castlingRights);
   if (moves.length === 0) {
-    if (isInCheck(board, color)) return isMax ? -99999 + (3-depth)*100 : 99999 - (3-depth)*100;
+    if (isInCheck(board, color)) return isMax ? -99999 + (3 - depth) * 100 : 99999 - (3 - depth) * 100;
     return 0;
   }
   moves.sort((a, b) => (b.capture ? VAL[pType(b.capture)]||0 : 0) - (a.capture ? VAL[pType(a.capture)]||0 : 0));
@@ -5517,6 +5527,76 @@ window.__chessTest = function (caseId) {
         if (got !== entry[3]) bad++;
       }
       add('deep perft matches (position 3 depth 5, Kiwipete depth 4)', bad === 0, lines.join(' | '));
+    },
+    matefind: function () {
+      fresh();
+      const setPos = (fen, turn) => {
+        const parts = fen.trim().split(/\s+/);
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+            const lo = ch.toLowerCase();
+            const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: null,
+          castlingRights: { K: false, Q: false, k: false, q: false },
+          moveHistory: [], lastMove: null, gameOver: false, result: '',
+          halfmoveClock: 0, positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; hintArrow = null; pendingPromo = null; hidePromoUI();
+        updateUI(); draw();
+      };
+      // back-rank mate in one for White
+      setPos('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', CL.WHITE);
+      showHint();
+      add('the hint finds a mate in one', !!hintArrow && hintArrow.from === sq('a1') && hintArrow.to === sq('a8'),
+        hintArrow ? nm(hintArrow.from) + nm(hintArrow.to) : 'no hint');
+      // the bot plays it
+      botEnabled = true; botColor = CL.WHITE; botDifficulty = 1; botThinking = false;
+      setPos('6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', CL.WHITE);
+      doBotMove();
+      add('the bot takes a mate in one', game.gameOver === true && /checkmate/i.test(game.result), game.result);
+      // a mate in two needs a deeper search
+      botEnabled = false;
+      // a position with a brute-force-proven forced mate in two
+      setPos('1nbQ2nr/rk1p1p2/pp2pB2/4N3/2PP2Pp/P1P4P/6K1/1R4NR w - - 0 1', CL.WHITE);
+      const best3 = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 3, 'balanced');
+      const matesIn2 = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).filter(mv => {
+        const r1 = makeMove(game.board, mv, { castlingRights: game.castlingRights, epTarget: game.epTarget });
+        const replies = getAllLegalMoves(r1.board, 1 - game.turn, r1.ep, r1.castling);
+        if (!replies.length) return false;
+        return replies.every(rp => {
+          const r2 = makeMove(r1.board, rp, { castlingRights: r1.castling, epTarget: r1.ep });
+          return getAllLegalMoves(r2.board, game.turn, r2.ep, r2.castling).some(x => {
+            const r3 = makeMove(r2.board, x, { castlingRights: r2.castling, epTarget: r2.ep });
+            return isInCheck(r3.board, 1 - game.turn) && getAllLegalMoves(r3.board, 1 - game.turn, r3.ep, r3.castling).length === 0;
+          });
+        });
+      });
+      const found = best3 && matesIn2.some(mv => mv.from === best3.from && mv.to === best3.to);
+      add('a depth-3 search finds the forced mate in two', matesIn2.length > 0 && found,
+        matesIn2.length ? (found ? nm(best3.from) + nm(best3.to) + ' is a mating move' : 'played ' + nm(best3.from) + nm(best3.to) + ' instead of ' + matesIn2.map(m => nm(m.from) + nm(m.to)).join('/')) : 'no mate in 2 found by brute force');
+      // the engine never proposes an illegal move
+      let illegal = null;
+      fresh();
+      botEnabled = false;
+      for (let i = 0; i < 40 && !illegal; i++) {
+        const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+        if (!legal.length) break;
+        const pick = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 2, 'balanced');
+        if (!pick || !legal.some(mv => mv.from === pick.from && mv.to === pick.to)) { illegal = nm(pick ? pick.from : -1) + nm(pick ? pick.to : -1); break; }
+        executeMove(pick);
+      }
+      add('the engine never proposes an illegal move', !illegal, illegal ? 'illegal ' + illegal : '40 plies clean');
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
     hardening: function () {
       fresh();
