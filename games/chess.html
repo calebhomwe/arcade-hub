@@ -1959,6 +1959,7 @@ let flip = (function () { try { return localStorage.getItem('chessFlip') === '1'
 let pieceStyle = (function () { try { return localStorage.getItem('chessPieces') === 'classic' ? 'classic' : '3d'; } catch (e) { return '3d'; } })();
 let showCoords = (function () { try { return localStorage.getItem('chessCoords') !== '0'; } catch (e) { return true; } })();
 let coachTips = (function () { try { return localStorage.getItem('chessTips') === '1'; } catch (e) { return false; } })();
+window.chessCoachOn = coachTips;
 function setPieceStyle(style) {
   pieceStyle = style === 'classic' ? 'classic' : '3d';
   try { localStorage.setItem('chessPieces', pieceStyle); } catch (e) {}
@@ -1972,6 +1973,8 @@ function setCoords(on) {
 }
 function setCoachTips(on) {
   coachTips = !!on;
+  window.chessCoachOn = coachTips;
+  try { window.dispatchEvent(new CustomEvent('chessCoachChanged', { detail: coachTips })); } catch (e) {}
   try { localStorage.setItem('chessTips', coachTips ? '1' : '0'); } catch (e) {}
   if (!coachTips) { const el = document.getElementById('tip'); if (el) el.textContent = ''; }
 }
@@ -4652,6 +4655,84 @@ window.__chessTest = function (caseId) {
       add('move generation stays under 12ms', !clockMoves || genAvg < 12, genAvg.toFixed(3) + 'ms/gen');
       fresh();
     },
+    puzzlefacts: function () {
+      fresh();
+      // Independent proof of the shipped puzzle set. Every stated solution has to be legal,
+      // and any puzzle that claims a mate has to actually be a forced mate.
+      const apply = (b, m, ep, cr) => makeMove(b, m, { castlingRights: cr, epTarget: ep });
+      const sname = i => String.fromCharCode(97 + col(i)) + (8 - row(i));
+      const parseFen = fen => {
+        const parts = fen.split(' ');
+        const rows = parts[0].split('/');
+        const b = new Array(64).fill(0);
+        for (let rr = 0; rr < 8; rr++) {
+          let c = 0;
+          for (const ch of rows[rr]) {
+            if (/[1-8]/.test(ch)) { c += Number(ch); continue; }
+            const lower = ch.toLowerCase();
+            const t = lower === 'k' ? PT.KING : lower === 'q' ? PT.QUEEN : lower === 'r' ? PT.ROOK : lower === 'b' ? PT.BISHOP : lower === 'n' ? PT.KNIGHT : PT.PAWN;
+            b[idx(rr, c)] = P(t, ch === lower ? CL.BLACK : CL.WHITE);
+            c++;
+          }
+        }
+        const cr = { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 };
+        const turn = parts[1] === 'w' ? CL.WHITE : CL.BLACK;
+        let ep = null;
+        if (parts[3] && parts[3] !== '-') ep = idx(8 - Number(parts[3][1]), parts[3].charCodeAt(0) - 97);
+        return { b, turn, cr, ep };
+      };
+      const token = m => (m.castle === 'kingside') ? 'O-O' : (m.castle === 'queenside') ? 'O-O-O' : sname(m.from) + sname(m.to);
+      const matesNow = (b, turn, ep, cr) => getAllLegalMoves(b, turn, ep, cr).filter(m => {
+        const r2 = apply(b, m, ep, cr);
+        return isInCheck(r2.board, 1 - turn) && getAllLegalMoves(r2.board, 1 - turn, r2.ep, r2.castling).length === 0;
+      });
+      const forcedMate2 = (b, turn, ep, cr) => getAllLegalMoves(b, turn, ep, cr).filter(m => {
+        const r1 = apply(b, m, ep, cr);
+        const replies = getAllLegalMoves(r1.board, 1 - turn, r1.ep, r1.castling);
+        if (!replies.length) return false;
+        return replies.every(rp => {
+          const r2 = apply(r1.board, rp, r1.ep, r1.castling);
+          return matesNow(r2.board, turn, r2.ep, r2.castling).length > 0;
+        });
+      });
+      const illegal = [], notMate = [], mateOk = [], tacticFail = [];
+      let mateClaims = 0, tacticClaims = 0;
+      PUZZLES.forEach((pz, i) => {
+        const st = parseFen(pz.fen);
+        const legal = getAllLegalMoves(st.b, st.turn, st.ep, st.cr);
+        const want = String(pz.solution).toLowerCase();
+        const sol = legal.find(m => token(m).toLowerCase() === want || (sname(m.from) + sname(m.to)).toLowerCase() === want);
+        if (!sol) { illegal.push('#' + (i + 1) + ' ' + pz.solution); return; }
+        const mate1 = matesNow(st.b, st.turn, st.ep, st.cr).map(token);
+        const m2 = forcedMate2(st.b, st.turn, st.ep, st.cr).map(token);
+        const d = (pz.desc || '').toLowerCase();
+        const claimsMate = /\bmate\b|checkmate|smothered|battery|ladder|back-rank/.test(d);
+        const in1 = /in 1|in one/.test(d);
+        if (in1) {
+          mateClaims++;
+          if (mate1.indexOf(token(sol)) >= 0) mateOk.push('#' + (i + 1)); else notMate.push('#' + (i + 1) + ' claims mate in 1 but ' + pz.solution + ' is not mate');
+        } else if (claimsMate) {
+          mateClaims++;
+          if (mate1.indexOf(token(sol)) >= 0 || m2.indexOf(token(sol)) >= 0) mateOk.push('#' + (i + 1));
+          else notMate.push('#' + (i + 1) + ' mentions mate but ' + pz.solution + ' forces none');
+        } else {
+          tacticClaims++;
+          const after = apply(st.b, sol, st.ep, st.cr);
+          const gain = st.b[sol.to] && (VAL[pType(st.b[sol.to])] || 0) >= 3;
+          const givesCheck = isInCheck(after.board, 1 - st.turn);
+          const threatens = getAllLegalMoves(after.board, st.turn, after.ep, after.castling)
+            .some(m => after.board[m.to] && (VAL[pType(after.board[m.to])] || 0) >= 3);
+          const winsMaterial = gain || threatens;
+          if (!winsMaterial && !givesCheck && !/castle|opening|endgame|pawn|popular|center|develop|response|best move|technique|protect/i.test(d)) {
+            tacticFail.push('#' + (i + 1) + ' ' + pz.solution + ' neither wins material nor checks');
+          }
+        }
+      });
+      add('every stated puzzle solution is legal', illegal.length === 0, illegal.length ? illegal.join(', ') : PUZZLES.length + ' legal');
+      add('every puzzle that claims mate forces it', notMate.length === 0, notMate.length ? notMate.join('; ') : mateClaims + ' mate puzzles verified');
+      add('every tactic puzzle is a capture or a check', tacticFail.length === 0, tacticFail.length ? tacticFail.join('; ') : tacticClaims + ' tactic puzzles verified');
+      add('no puzzle is unsolvable in the game', illegal.length === 0 && notMate.length === 0, (PUZZLES.length - illegal.length - notMate.length) + '/' + PUZZLES.length + ' clean');
+    },
     puzzles: function () {
       fresh();
       loadPuzzle(0);
@@ -4861,6 +4942,12 @@ window.__chessTest = function (caseId) {
         return !name;
       });
       add('every control has an accessible name', unnamed.length === 0, unnamed.length ? unnamed.map(b => b.id || b.className).join(', ') : 'all named');
+      add('the coach is silent by default', window.chessCoachOn === false, 'coach ' + (window.chessCoachOn ? 'on' : 'off'));
+      setCoachTips(true);
+      add('the coach follows the coaching setting', window.chessCoachOn === true, 'coach on');
+      setCoachTips(false);
+      add('turning coaching off silences the coach again', window.chessCoachOn === false, 'coach off');
+      add('no arcade speech bubble is on the board', !document.querySelector('.cmc-bub'), 'clean board');
       M.close();
     },
     resign: function () {

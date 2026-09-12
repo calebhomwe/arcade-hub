@@ -4,59 +4,80 @@
   const api = ChessMods.api;
   const wrap = document.getElementById('gameWrap');
   if (!wrap) return;
+
+  // The coach is opt-in: it only speaks when the player turns on "Coaching tips" in
+  // Settings. Language stays informative first, with a light touch - no arcade noise.
   const LINES = {
-    bigCap: ['SHEEESH! 🥶', 'That piece had a family!', 'Disrespectful. I love it.', 'Caught in 4K 📸', 'The board is a buffet today.'],
-    check: ['OHHH CHECK!', 'The king feels unsafe!', 'Red alert! 🚨', 'Somebody protect the king!'],
-    promo: ['A NEW QUEEN RISES', 'Pawn glow-up! ✨', 'From intern to CEO.', 'Promotion accepted!'],
-    castle: ['Textbook! 📚', 'King goes to bed early.', 'Safe and sound.', 'Fortress mode: ON.'],
-    blunder: ['Uhh... you sure about that?', 'Coach is sweating 😅', 'Bold strategy. Very bold.', 'That piece just volunteered...', 'I saw nothing. (I saw everything.)'],
-    win: ["THAT'S HOW IT'S DONE!", 'Certificate incoming 🎓', 'Coach takes full credit.', 'Framed. On the wall. Now.']
+    bigCap: ['Big capture: that is real material off the board.', 'Traded up. Keep the initiative.', 'Material swings your way.'],
+    check: ['Check - the king has to answer.', 'Check. Look for the follow-up.', 'That check forces a reply.'],
+    promo: ['Promotion. A pawn just became a queen.', 'Queened. Now convert it.'],
+    castle: ['Castled - the king is safe and the rook is active.', 'King tucked away. Good timing.'],
+    blunder: ['Careful - that piece can be taken.', 'That loses material. Check the defenders first.', 'Hanging piece. Take it back if you can.'],
+    win: ['That is the game - well played.', 'Mate. Clean finish.', 'Result. Take the win.'],
+    draw: ['Drawn. Nothing left to convert.']
   };
+
   const st = document.createElement('style');
-  st.textContent = '.cmc-bub{position:absolute;top:6px;right:6px;z-index:50;max-width:75%;background:rgba(10,10,30,.92);border:2px solid #a78bfa;border-radius:14px 14px 4px 14px;padding:6px 10px;font:700 11px system-ui;color:#e5e7eb;pointer-events:none;display:flex;gap:6px;align-items:center;animation:cmcIn 2.5s ease forwards;box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 12px rgba(167,139,250,.35);}@keyframes cmcIn{0%{transform:translateX(20px) scale(.8);opacity:0}8%{transform:none;opacity:1}80%{opacity:1}100%{opacity:0}}';
+  st.textContent = '.cmc-note{position:absolute;top:10px;left:10px;right:10px;z-index:50;pointer-events:none;' +
+    'background:rgba(24,23,21,.95);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:7px 10px;' +
+    'font:600 12px/1.35 system-ui;color:#e9e7e2;box-shadow:0 6px 18px rgba(0,0,0,.45);' +
+    'animation:cmcFade .22s ease-out;transition:opacity .3s ease}' +
+    '@keyframes cmcFade{from{opacity:0}to{opacity:1}}';
   document.head.appendChild(st);
-  let bub = null;
-  let lastAt = 0;
+
+  let note = null, hideTimer = null, lastAt = 0;
+
   function say(text) {
     const now = Date.now();
-    if (now - lastAt < 3000) return;
+    if (now - lastAt < 2600) return;
     lastAt = now;
-    if (bub) bub.remove();
-    bub = document.createElement('div');
-    bub.className = 'cmc-bub';
-    bub.innerHTML = '<span>🧑‍🏫</span><span></span>';
-    bub.children[1].textContent = text;
-    bub.addEventListener('animationend', () => { bub.remove(); bub = null; });
-    wrap.appendChild(bub);
+    if (!note) {
+      note = document.createElement('div');
+      note.className = 'cmc-note';
+      wrap.appendChild(note);
+    }
+    note.textContent = text;
+    note.style.opacity = '1';
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { if (note) note.style.opacity = '0'; }, 2400);
   }
+
+  function stop() {
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = null;
+    if (note) { note.remove(); note = null; }
+  }
+
+  const enabled = function () {
+    if (window.chessCoachOn === false || window.chessCoachOn === undefined) return false;
+    return api.juice !== 0;
+  };
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  function isBlunderish(m) {
+
+  function isHanging(m) {
     try {
       const b = api.board;
       const piece = b[m.to];
       if (!piece || (VAL[pType(piece)] || 0) < 3) return false;
       const enemy = 1 - m.mover;
-      const att = getAllLegalMoves(b, enemy, null, { K: false, Q: false, k: false, q: false });
-      let attacked = false, defended = false;
-      for (const mv of att) if (mv.to === m.to) { attacked = true; break; }
-      if (!attacked) return false;
+      const att = getAllLegalMoves(b, enemy, api.epTarget || null, api.castlingRights || { K: false, Q: false, k: false, q: false });
+      if (!att.some(mv => mv.to === m.to)) return false;
       const own = getAllLegalMoves(b, m.mover, null, { K: false, Q: false, k: false, q: false });
-      for (const mv of own) if (mv.to === m.to && mv.from !== m.to) { defended = true; break; }
-      return !defended;
+      return !own.some(mv => mv.to === m.to && mv.from !== m.to);
     } catch (e) { return false; }
   }
+
   ChessMods.on('move', function (m) {
     try {
-      if (api.juice === 0) return;
+      if (!enabled()) return;
       if (m.mate || (m.win && !m.mate)) { say(pick(LINES.win)); return; }
       if (m.captured && (VAL[pType(m.captured)] || 0) >= 5) { say(pick(LINES.bigCap)); return; }
       if (m.promo) { say(pick(LINES.promo)); return; }
       if (m.check) { say(pick(LINES.check)); return; }
       if (m.castle) { say(pick(LINES.castle)); return; }
-      if (isBlunderish(m)) say(pick(LINES.blunder));
+      if (isHanging(m)) say(pick(LINES.blunder));
     } catch (e) { console.warn('[chess-coach]', e); }
   });
-  ChessMods.on('reset', function () {
-    try { if (bub) { bub.remove(); bub = null; } } catch (e) {}
-  });
+  ChessMods.on('reset', stop);
+  window.addEventListener('chessCoachChanged', function (e) { if (!e.detail) stop(); });
 })();
