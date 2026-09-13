@@ -43,7 +43,10 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 ## D. Accessibility
 - [x] D1. aria-live move/check/mate announcements + labelled board grid.
 - [x] D2. Help overlay with shortcuts; focus never escapes dialogs; 40px+ targets.
-- [ ] D3. Colour-blind board variant (contrast measured).
+- [x] D3. Colour-blind board variant: a blue/near-white pair with its own derived highlight colours,
+      persisted in Settings. Measured in-page WCAG ratios: classic squares 2.88:1 -> high-contrast
+      4.76:1 (bar 4.5), light pieces on the dark square 5.24:1, dark pieces on the light square 9.66:1,
+      dark square blue-dominant so it survives deuteranopia and protanopia. Screenshot read back.
 
 ## E. Mobile / installability
 - [x] E1. PWA: webmanifest + service worker + offline CDP proof.
@@ -60,11 +63,14 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
       line is exceeded, and _loop/research/chess-perf-budget.md records how to reproduce it. Measured:
       easy 0.87ms, medium 9.2ms, hard 94ms, endgame 2.6ms, frame 0.17ms, review 4.4ms/ply, 1.22MB over
       49 requests, DCL 366ms - all within budget. No phone hardware and no memory ceiling: unverified.
-- [~] G2. 120-ply stress. Harness shipped (_loop/tests/cdp-stress.js) and it found one real defect:
-      timers, listeners and heap are clean (listeners 100 -> 100, pending timers bounded, heap shrinks),
-      but ~50-65 DOM nodes per completed game survive a reset. Pinpointed to the memes panel rows
-      (#memeList .meme-rows grows 36 -> 101 while every other container is constant). FIX PENDING: the
-      accumulation comes from a render path in chess-memes.js that needs to be understood first.
+- [x] G2. 120-ply stress: no unbounded timers/listeners/DOM growth. The harness found the one real
+      leak - 60 confetti divs surviving every finished game, because they were removed only by the
+      animation finish event, which never fires for a cancelled animation. Fixed with a marker class,
+      a per-particle backstop timeout, a sweep before each celebration and particles included in the
+      reset cleanup. Node count after each reset: 849/909/969/994 -> flat 849/849/849/849, final count
+      back at the 789 baseline. Listeners and timers were already clean and the heap shrinks.
+      (The earlier pinpoint at the memes panel was an artifact of my own walker: repeated class-only
+      paths collided. A collision-free histogram of the tree named the 60 bare divs instead.)
 - [x] G3. Chaos fuzz: random input, zero uncaught errors.
 
 ## H. Hygiene
