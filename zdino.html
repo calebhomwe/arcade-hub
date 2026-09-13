@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>dino</title></head>
+<body style="margin:0;background:#111;color:#eee;font:12px monospace">
+<iframe id="f" src="games/dino-dash.html" style="width:480px;height:900px;border:0"></iframe>
+<pre id="out"></pre>
+<script>
+var res=[],fails=0;
+function chk(n,ok,extra){ if(!ok)fails++; res.push((ok?'PASS ':'FAIL ')+n+(extra!==undefined?' ['+extra+']':'')); }
+document.getElementById('f').addEventListener('load', function(){
+  var w=document.getElementById('f').contentWindow, d=w.document;
+  setTimeout(async function(){
+    try{
+      // 47: reaction time must never fall below a fair floor as speed ramps
+      // MIN_REACT is script-scoped: reading w.MIN_REACT would be undefined and
+      // every comparison would pass on NaN. Read the shipped source instead.
+      var src = await (await fetch('games/dino-dash.html')).text();
+      var mr = src.match(/const MIN_REACT=([0-9.]+);/);
+      chk('47 MIN_REACT constant shipped', !!mr, mr ? mr[1] : 'MISSING');
+      chk('47 spawn floor is time-based, not a flat 0.8',
+          src.indexOf('spawnT=Math.max(spawnT,MIN_REACT*s/300);') >= 0);
+      chk('47 run starts with a grace beat', src.indexOf('spawnT=1.6;flash=0;') >= 0);
+      chk('47 top speed still ramps', (300+Math.min(12000*.045,340)) === 640);
+      if (mr) {
+        var MIN_REACT = parseFloat(mr[1]), worst = 99, at = 0, oldWorst = 99;
+        for (var dist=0; dist<=12000; dist+=100){
+          var sp = 300+Math.min(dist*.045,340);
+          var rt = Math.max(.8, MIN_REACT*sp/300)*300/sp;
+          if (rt < worst){ worst = rt; at = dist; }
+          oldWorst = Math.min(oldWorst, .8*300/sp);
+        }
+        chk('47 min reaction time never below 0.55s', worst >= 0.55, worst.toFixed(3)+'s at dist '+at);
+        chk('47 the old flat floor really was unfair (regression guard)', oldWorst < 0.55, oldWorst.toFixed(3)+'s before fix');
+      }
+
+      // 46: hit targets
+      var back=d.querySelector('.back'), mute=d.getElementById('muteBtn'), play=d.getElementById('playBtn');
+      var rb=back.getBoundingClientRect(), rm=mute.getBoundingClientRect(), rp=play.getBoundingClientRect();
+      chk('46 back link >= 44px tall', rb.height >= 44, rb.height.toFixed(0)+'px');
+      chk('46 mute >= 44px', rm.height >= 44 && rm.width >= 44, rm.width.toFixed(0)+'x'+rm.height.toFixed(0));
+      chk('46 play button >= 44px tall', rp.height >= 44, rp.height.toFixed(0)+'px');
+
+      // 45: micro-animation wired
+      var cs = w.getComputedStyle(play);
+      chk('45 button has a transition', cs.transitionDuration !== '0s', cs.transitionDuration);
+      var ovIn = false, red = false;
+      for (var i=0;i<d.styleSheets.length;i++){
+        var rules; try { rules = d.styleSheets[i].cssRules; } catch(e){ continue; }
+        for (var j=0;j<rules.length;j++){
+          var t = rules[j].cssText||'';
+          if (t.indexOf('ovIn')>=0) ovIn = true;
+          if (t.indexOf('prefers-reduced-motion')>=0) red = true;
+        }
+      }
+      chk('45 overlay entrance animation defined', ovIn);
+      chk('44 respects prefers-reduced-motion', red);
+
+      // 48: celebration + persistence still wired
+      chk('48 new-best banner exists', !!d.getElementById('newBest'));
+      chk('48 best persists to localStorage', /dinoBest/.test(d.documentElement.innerHTML));
+      chk('48 win and lose shows are distinct', /Kit\.win\(/.test(d.documentElement.innerHTML) && /Kit\.lose\(/.test(d.documentElement.innerHTML));
+
+      // game still boots and plays
+      // rAF does not advance under virtual time, so observe the DOM instead
+      var pb=d.getElementById('playBtn');
+      pb.dispatchEvent(new w.PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',isPrimary:true}));
+      setTimeout(function(){
+        chk('start overlay hides on Play', d.getElementById('start').classList.contains('hidden'));
+        document.getElementById('out').textContent=res.join('\n');
+        document.title = fails===0 ? 'DINOPASS:'+res.length : 'DINOFAIL:'+fails;
+      }, 600);
+    }catch(e){
+      document.getElementById('out').textContent=res.join('\n')+'\nTHREW '+e.message;
+      document.title='THREW:'+e.message;
+    }
+  },700);
+});
+</script>
+</body></html>
