@@ -689,6 +689,9 @@ a.back:hover{ color:var(--cc-text)!important; }
   background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:9px 10px; min-height:44px; }
 .set-check input{ width:18px; height:18px; accent-color:var(--accent); }
 .set-facts{ margin-top:8px; font-size:.7rem; color:var(--cc-muted); text-align:center; }
+.help-row{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:.78rem; color:var(--cc-text); border-bottom:1px solid rgba(255,255,255,.06); }
+.help-row b{ color:var(--cc-muted); font-weight:700; }
+#helpKeys .help-row b{ font:700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .rv-import{ margin:6px 0 10px; }
 .rv-import summary{ cursor:pointer; font-size:.74rem; font-weight:700; color:var(--cc-muted); min-height:32px; display:flex; align-items:center; }
 .rv-import summary:hover{ color:var(--cc-text); }
@@ -914,6 +917,16 @@ a.back:hover{ color:var(--cc-text)!important; }
 
 <div id="puzzlePanel" role="dialog" aria-modal="true" aria-label="Puzzle mode"><h3>🧩 Puzzle Mode</h3><p id="puzzleDesc"></p><button class="btn" id="btnPuzzleHint" title="Show a hint for this puzzle">💡 Show Hint</button><button class="btn" id="btnPuzzleSkip" title="Skip to the next puzzle">⏭ Skip</button><button class="btn" id="btnPuzzleExit" title="Exit puzzle mode">🚪 Exit</button></div>
 
+<div id="helpPanel" role="dialog" aria-modal="true" aria-label="Controls and shortcuts">
+  <button class="btn panel-exit-btn" id="btnHelpClose" title="Close help">🚪 Close</button>
+  <h3>❓ Controls</h3>
+  <div class="help-row"><span>Play a move</span><b>tap or drag a piece</b></div>
+  <div class="help-row"><span>Draw an arrow</span><b>right-drag (long-press on touch)</b></div>
+  <div class="help-row"><span>Mark a square</span><b>right-click a square</b></div>
+  <div class="help-row"><span>Clear the marks</span><b>click the board</b></div>
+  <div id="helpKeys"></div>
+</div>
+
 <div id="reviewPanel" role="dialog" aria-modal="true" aria-label="Game review">
   <button class="btn panel-exit-btn" id="btnReviewClose" title="Exit review">🚪 Exit</button>
   <h3>📊 Game Review</h3>
@@ -963,7 +976,8 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div id="gameOptionsHost"></div>
     <div class="set-row"><button class="btn" id="btnMute" title="Sound on — tap to mute"><span id="muteIcon">🔊</span><span class="btn-label">Sound</span></button>
     <button class="btn" id="btnMotion" title="Full effects — tap to reduce motion" aria-pressed="false"><span>🎞️</span><span class="btn-label">Motion</span></button></div>
-    <div class="set-row"><button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
+    <div class="set-row"><button class="btn" id="btnHelp" title="Controls and keyboard shortcuts"><span>⌨️</span><span class="btn-label">Controls</span></button>
+    <button class="btn" id="btnMemes" title="Choose which memes play during the game" aria-haspopup="dialog"><span>😂</span><span class="btn-label">Memes</span></button>
     <button class="btn" id="btnLearn" title="Open the Chess Academy"><span>🧠</span><span class="btn-label">Learn</span></button></div>
     <div class="set-row"><button class="btn" id="btnCopyFen" title="Copy the current position as FEN">📋<span class="btn-label">Copy FEN</span></button>
     <button class="btn" id="btnCopyPgn" title="Copy the moves so far as PGN">📋<span class="btn-label">Copy PGN</span></button></div>
@@ -4143,6 +4157,37 @@ function importPgnText(text) {
   return res;
 }
 
+// ==================== HELP / CONTROLS ====================
+// One table drives both the keys and the help panel, so the documentation cannot drift.
+const SHORTCUTS = [
+  { keys: ['\u2190', '\u2191', '\u2193', '\u2192'], label: 'Move the cursor', test: 'arrows' },
+  { keys: ['Enter', 'Space'], label: 'Pick up or drop a piece', test: 'enter' },
+  { keys: ['Esc'], label: 'Cancel the selection', test: 'escape' },
+  { keys: ['U'], label: 'Undo the last move', test: 'u' },
+  { keys: ['R'], label: 'Redo the move you undid', test: 'r' },
+  { keys: ['H'], label: 'Show a hint', test: 'h' },
+  { keys: ['F'], label: 'Flip the board', test: 'f' },
+  { keys: ['B'], label: 'Toggle the evaluation bar', test: 'b' },
+  { keys: ['?'], label: 'Open this help', test: 'help' }
+];
+function renderHelpKeys() {
+  const host = document.getElementById('helpKeys');
+  if (!host) return;
+  host.innerHTML = SHORTCUTS.map(s =>
+    '<div class="help-row"><span>' + s.label + '</span><b>' + s.keys.join(' / ') + '</b></div>').join('');
+}
+function toggleHelp(force) {
+  const panel = document.getElementById('helpPanel');
+  if (!panel) return false;
+  const on = force === undefined ? !panel.classList.contains('show') : !!force;
+  renderHelpKeys();
+  panel.classList.toggle('show', on);
+  if (window.syncModalState) window.syncModalState();
+  return on;
+}
+window.toggleHelp = toggleHelp;
+window.chessShortcuts = SHORTCUTS;
+
 // ==================== SOUND CHECK ====================
 // Machine tests can prove a cue decodes and is levelled; only a person can say whether it sounds
 // right. This plays the whole bank in order with each cue named on screen.
@@ -4304,7 +4349,7 @@ function runReview() {
   reviewTimer = setTimeout(step, 8);
 }
 
-const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'promoOverlay', 'memePanel', 'overModal', 'settingsPanel'];
+const MODAL_IDS = ['reviewPanel', 'statsPanel', 'learnPanel', 'promoOverlay', 'memePanel', 'overModal', 'settingsPanel', 'helpPanel'];
 const SHEET_IDS = ['puzzlePanel'];
 let lastFocused = null;
 
@@ -4513,9 +4558,15 @@ canvas.addEventListener('click', e => {
   handleClick(getSquareFromEvent(e));
 });
 
+
 canvas.addEventListener('keydown', e => {
+  const k0 = e.key;
+  if (k0 === '?') { toggleHelp(); e.preventDefault(); return; }
+  if (k0 === 'b' || k0 === 'B') { setEvalBar(!showEvalBar); e.preventDefault(); return; }
   if (game.gameOver || pendingPromo || botThinking) return;
-  if (kbSquare < 0) { kbSquare = game.turn === CL.WHITE ? 60 : 4; draw(); e.preventDefault(); return; }
+  // place the cursor without swallowing the key: returning here meant the very first f/u/r/h
+  // press only initialised the cursor and did nothing
+  if (kbSquare < 0) kbSquare = game.turn === CL.WHITE ? 60 : 4;
   const k = e.key;
   const step = (dr, dc) => {
     const r = Math.min(7, Math.max(0, row(kbSquare) + dr));
@@ -4530,6 +4581,9 @@ canvas.addEventListener('keydown', e => {
   else if (k === 'Escape') { selectedSquare = -1; legalMoves = []; castleSelect = false; draw(); }
   else if (k === 'f' || k === 'F') { flip = !flip; draw(); }
   else if (k === 'Enter' || k === ' ') { handleClick(kbSquare); }
+  else if (k === 'u' || k === 'U') { undo(); }
+  else if (k === 'r' || k === 'R') { redo(); }
+  else if (k === 'h' || k === 'H') { showHint(); }
   else return;
   e.preventDefault();
 });
@@ -4782,6 +4836,10 @@ window.chessPGN = buildPGN;
   const btn = document.getElementById('btnSettings');
   const panel = document.getElementById('settingsPanel');
   if (!btn || !panel) return;
+  const helpBtn = document.getElementById('btnHelp');
+  if (helpBtn) helpBtn.addEventListener('click', function () { toggleHelp(true); });
+  const helpClose = document.getElementById('btnHelpClose');
+  if (helpClose) helpClose.addEventListener('click', function () { toggleHelp(false); });
   const soundCheckBtn = document.getElementById('btnSoundCheck');
   if (soundCheckBtn) soundCheckBtn.addEventListener('click', function () { startSoundCheck(); });
   const evalToggle = document.getElementById('setEval');
@@ -4843,7 +4901,13 @@ document.getElementById('btnStatsReset').addEventListener('click', () => {
   saveStats();
   toggleStatsPanel(true);
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('learnPanel').classList.remove('show'); const sp = document.getElementById('statsPanel'); if (sp) sp.classList.remove('show'); } });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  document.getElementById('learnPanel').classList.remove('show');
+  const sp = document.getElementById('statsPanel'); if (sp) sp.classList.remove('show');
+  const hp = document.getElementById('helpPanel');
+  if (hp && hp.classList.contains('show')) { hp.classList.remove('show'); if (window.syncModalState) window.syncModalState(); }
+});
 
 function applyTheme(name) {
   theme = name;
@@ -5432,8 +5496,8 @@ window.__chessTest = function (caseId) {
       const send = key => canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
       canvas.focus();
       kbSquare = -1;
-      // white plays e4 by keyboard
-      send('ArrowUp'); send('ArrowUp');
+      // the cursor starts on e1 and the first arrow press moves it (it used to only reveal it)
+      send('ArrowUp');
       send('Enter');
       add('a piece is selected by keyboard', selectedSquare === sq('e2'), 'sel=' + nm(selectedSquare));
       send('ArrowUp'); send('ArrowUp');
@@ -6030,10 +6094,10 @@ window.__chessTest = function (caseId) {
       add('canvas takes keyboard focus', document.activeElement === canvas, document.activeElement ? document.activeElement.id : 'none');
       const send = key => canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
       kbSquare = -1;
+      // the cursor is placed on e1 and the very first arrow press moves it, rather than only
+      // revealing it and swallowing the key
       send('ArrowUp');
-      add('first arrow sets the cursor on e1', nm(kbSquare) === 'e1', nm(kbSquare));
-      send('ArrowUp');
-      add('arrow key steps the cursor to e2', nm(kbSquare) === 'e2', nm(kbSquare));
+      add('the first arrow moves the cursor to e2', nm(kbSquare) === 'e2', nm(kbSquare));
       send('Enter');
       add('Enter selects the piece under the cursor', selectedSquare === sq('e2'), 'sel=' + nm(selectedSquare) + ' legal=' + legalMoves.map(m => nm(m.to)).join(','));
       send('ArrowUp'); send('ArrowUp');
@@ -6433,6 +6497,64 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    help: function () {
+      fresh();
+      botEnabled = false;
+      const panel = document.getElementById('helpPanel');
+      const btn = document.getElementById('btnHelp');
+      add('the controls button exists', !!btn, btn ? 'present' : 'missing');
+
+      // the help must document as many keys as the game actually handles
+      const SH = window.chessShortcuts || [];
+      add('the game publishes its shortcut table', SH.length >= 8, SH.length + ' shortcuts');
+      toggleHelp(true);
+      add('help opens', panel.classList.contains('show'), 'open');
+      const rows = panel.querySelectorAll('#helpKeys .help-row');
+      add('every shortcut is listed', rows.length === SH.length, rows.length + ' rows for ' + SH.length + ' shortcuts');
+      add('each row names its keys', Array.prototype.every.call(rows, r => /\S/.test(r.querySelector('b').textContent)), 'keys shown');
+      toggleHelp(false);
+      add('help closes', !panel.classList.contains('show'), 'closed');
+      add('escape closes help', (function () { toggleHelp(true); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return !panel.classList.contains('show'); })(), 'closed by Escape');
+
+      // every documented key must actually do its documented thing
+      const send = key => canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
+      send('?');
+      add('? opens help from the board', panel.classList.contains('show'), 'open');
+      send('?');
+      add('? closes it again', !panel.classList.contains('show'), 'closed');
+
+      const flipBefore = flip;
+      send('f');
+      add('f flips the board', flip !== flipBefore, 'flipped=' + flip);
+      flip = flipBefore;
+      const evalBefore = showEvalBar;
+      send('b');
+      add('b toggles the evaluation bar', showEvalBar !== evalBefore, 'eval bar=' + showEvalBar);
+      setEvalBar(evalBefore);
+
+      canvas.focus();
+      kbSquare = -1;
+      send('ArrowUp');
+      const kbBefore = kbSquare;
+      send('ArrowRight');
+      add('arrows move the keyboard cursor', kbSquare !== kbBefore, 'cursor ' + kbBefore + ' -> ' + kbSquare);
+      send('Enter');
+      add('enter picks a piece up', selectedSquare >= 0, 'selected ' + selectedSquare);
+      send('Escape');
+      add('escape clears the selection', selectedSquare === -1, 'cleared');
+
+      play(['e2e4', 'e7e5']);
+      const plies = collectPlies().length;
+      send('u');
+      add('u undoes', collectPlies().length === plies - 1, collectPlies().length + ' plies');
+      send('r');
+      add('r redoes', collectPlies().length === plies, collectPlies().length + ' plies');
+      send('h');
+      add('h shows a hint', !!hintArrow, hintArrow ? 'arrow set' : 'no arrow');
+
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
