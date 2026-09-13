@@ -1,3 +1,0 @@
-Paused 2026-09-10 by performance audit. Delete this file to resume ArcadeJuiceLoop.
-Updated 2026-09-11: chess.html finished by hand (castling gestures, engine audit fixes, learning-content corrections, chess.com shell fixes). Keep PAUSEd until chess is signed off; remaining pending queue tasks are for the other 36 games.
-Signed off 2026-09-13 by the Chess Mastery Loop: see _loop/research/chess-signoff.md. The four chess queue entries (297-300) are done, so the remaining pending tasks are all for the other 36 games and nothing about chess blocks a resume. Delete this file to resume ArcadeJuiceLoop.
