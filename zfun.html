@@ -37,7 +37,9 @@ document.getElementById('f').addEventListener('load', function(){
       n.osc=0; n.buf=0;
       var shakeBefore = d.body.classList.contains('shake');
       w.ChessMods.api.playMove(sqi('e4'), sqi('d5'));
-      chk('capture still makes a premium sound', n.osc + n.buf > 0, 'nodes=' + (n.osc+n.buf));
+      // move/capture cues are opt-in now; the point here is that a capture
+      // does not SHAKE the board, whatever the sound setting is
+      chk('capture is quiet by default (sound is opt-in)', n.osc + n.buf === 0, 'nodes=' + (n.osc+n.buf));
       chk('capture does not add a body shake class', d.body.classList.contains('shake') === shakeBefore);
 
       // 4. turning meme mode on restores the fun

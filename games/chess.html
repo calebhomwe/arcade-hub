@@ -1018,8 +1018,10 @@ body.cb-board {
     <div class="set-label">Board</div>
     <div class="set-row"><label class="set-check"><input type="checkbox" id="setCoords" checked> Coordinates</label>
     <label class="set-check"><input type="checkbox" id="setTips"> Coaching tips</label></div>
-    <div class="set-row"><label class="set-check"><input type="checkbox" id="setEval"> Evaluation bar</label>
-    <label class="set-check"><input type="checkbox" id="setCbBoard"> High-contrast board</label></div>
+    <div class="set-row"><label class="set-check"><input type="checkbox" id="setAutoQueen"> Auto-queen promotions</label>
+    <label class="set-check"><input type="checkbox" id="setEval"> Evaluation bar</label>
+    </div>
+    <div class="set-row"><label class="set-check"><input type="checkbox" id="setCbBoard"> High-contrast board</label></div>
     <div class="set-row">
       <select class="sel" id="setPieces" title="Piece style">
         <option value="3d">Piece style: 3D</option>
@@ -1037,6 +1039,7 @@ body.cb-board {
       </div>
       <span id="sfxVolVal" class="sfx-vol-val">85%</span>
     </div>
+    <div class="set-row"><label class="set-check"><input type="checkbox" id="setMoveSfx"> Sound on every move</label></div>
     <div class="sfx-set-wrap">
       <button class="btn" id="btnSoundCheck" title="Play every cue in order so you can hear them">▶ Sound check</button>
       <label for="sfxSetSel" class="sfx-set-label">Chess sounds</label>
@@ -1261,7 +1264,7 @@ function _pan(delay, pan) {
   } catch (e) { return function (n) { return n; }; }
 }
 function sfxMove() {
-  if (muted) return;
+  if (muted || !moveSfx) return;
   if (bankPlay('move')) return;
   var opponent = (typeof game !== 'undefined' && typeof botEnabled !== 'undefined' && botEnabled && game.turn === botColor);
   var base = opponent ? 880 * _jitter(0.05) : 1240 * _jitter(0.04);
@@ -1271,7 +1274,7 @@ function sfxMove() {
   try { tone(base * 0.19 * _jitter(0.02), 0.05, 'sine', 0.10 * _vel(), { delay: 0.004, attack: 0.002, glideTo: base * 0.12 }); } catch (e) {}
 }
 function sfxCapture() {
-  if (muted) return;
+  if (muted || !moveSfx) return;
   if (bankPlay('capture')) return;
   var heavy = false;
   try {
@@ -1292,7 +1295,7 @@ function sfxCapture() {
   }
 }
 function sfxCastle() {
-  if (muted) return;
+  if (muted || !moveSfx) return;
   if (bankPlay('castle')) return;
   var v = _vel();
   _woodThock(1180 * _jitter(0.03), 400, 0.045, 0.30 * v, 0);
@@ -1340,7 +1343,7 @@ function sfxGameStart() {
 }
 
 function sfxSelect() {
-  if (muted) return;
+  if (muted || !moveSfx) return;
   try {
     noise(0.002, 0.07, 'highpass', 6500, 6500);
   } catch (e) {}
@@ -2470,6 +2473,23 @@ function wireStartLook() {
 }
 window.chessStartPreview = { render: renderStartPreview, sync: syncStartLook };
 
+// Per-move sound is opt-in. Every move making a noise is the single most
+// intrusive default in the game, so the routine cues (move, capture, castle,
+// piece pickup) stay silent until asked for. Meaningful one-off events -
+// check, promotion, checkmate, game start/end, hint, illegal - are unaffected.
+let moveSfx = (function () { try { return localStorage.getItem('chessMoveSfx') === '1'; } catch (e) { return false; } })();
+function setMoveSfx(on) {
+  moveSfx = !!on;
+  try { localStorage.setItem('chessMoveSfx', moveSfx ? '1' : '0'); } catch (e) {}
+  if (typeof refreshSettingsFacts === 'function') { try { refreshSettingsFacts(); } catch (e) {} }
+}
+// Auto-queen: skip the promotion dialog and take a queen, the way most
+// chess apps let you.
+let autoQueen = (function () { try { return localStorage.getItem('chessAutoQueen') === '1'; } catch (e) { return false; } })();
+function setAutoQueen(on) {
+  autoQueen = !!on;
+  try { localStorage.setItem('chessAutoQueen', autoQueen ? '1' : '0'); } catch (e) {}
+}
 function setCoords(on) {
   showCoords = !!on;
   try { localStorage.setItem('chessCoords', showCoords ? '1' : '0'); } catch (e) {}
@@ -3478,7 +3498,7 @@ function handleClick(sq) {
   if (selectedSquare >= 0) {
     const move = legalMoves.find(m => m.to === sq) || castlingRookDrag(legalMoves.find(m => m.castle));
     if (move) {
-      if (move.promo) { pendingPromo = move; showPromoUI(); return; }
+      if (move.promo) { if (autoQueen) { move.promoPiece = PT.QUEEN; } else { pendingPromo = move; showPromoUI(); return; } }
       executeMove(move);
       selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
       if (puzzleMode) checkPuzzleSolution(move);
@@ -4746,7 +4766,7 @@ function endDrag(e) {
         : ((sq === rookSq && press === from) ? (dragLegal.find(m => m.castle) || null)
           : ((sq === press && tapMove) ? tapMove : null))));
   if (direct) {
-    if (direct.promo) { pendingPromo = direct; showPromoUI(); return; }
+    if (direct.promo) { if (autoQueen) { direct.promoPiece = PT.QUEEN; } else { pendingPromo = direct; showPromoUI(); return; } }
     executeMove(direct);
     selectedSquare = -1; legalMoves = []; castleSelect = false; hintArrow = null;
     lastPress = -1; lastReleaseTs = Date.now();
@@ -5118,6 +5138,10 @@ window.chessPGN = buildPGN;
   if (cbToggle) { cbToggle.checked = cbBoard; cbToggle.addEventListener('change', function () { setCbBoard(this.checked); }); }
   const evalToggle = document.getElementById('setEval');
   if (evalToggle) { evalToggle.checked = showEvalBar; evalToggle.addEventListener('change', function () { setEvalBar(this.checked); }); }
+  const moveSfxToggle = document.getElementById('setMoveSfx');
+  if (moveSfxToggle) { moveSfxToggle.checked = moveSfx; moveSfxToggle.addEventListener('change', function () { setMoveSfx(this.checked); if (this.checked) sfxMove(); }); }
+  const aq = document.getElementById('setAutoQueen');
+  if (aq) { aq.checked = autoQueen; aq.addEventListener('change', function () { setAutoQueen(this.checked); }); }
   const coords = document.getElementById('setCoords');
   if (coords) { coords.checked = showCoords; coords.addEventListener('change', function () { setCoords(this.checked); }); }
   const tips = document.getElementById('setTips');
@@ -6026,6 +6050,34 @@ window.__chessTest = function (caseId) {
       flip = flipBefore; persistFlip();
       window.refreshSettingsFacts();
       add('settings show the current setup', (document.getElementById('setFacts').textContent || '').length > 8, document.getElementById('setFacts').textContent);
+      const msBefore = moveSfx;
+      setMoveSfx(false);
+      add('move sound is off by default', moveSfx === false && (function () { try { return localStorage.getItem('chessMoveSfx') === '0'; } catch (e) { return false; } })(), 'quiet');
+      setMoveSfx(true);
+      add('move sound can be switched on and sticks', moveSfx === true && (function () { try { return localStorage.getItem('chessMoveSfx') === '1'; } catch (e) { return false; } })(), 'on');
+      setMoveSfx(msBefore);
+      add('the settings panel exposes both new switches', !!document.getElementById('setMoveSfx') && !!document.getElementById('setAutoQueen'), 'present');
+      const aqBefore = autoQueen;
+      // executeMove() defaults a promotion to a queen on its own, so driving
+      // this through play() would pass whatever autoQueen said. The dialog
+      // lives on the click path, so click the move out for real.
+      const promoSetup = ['e2e4', 'd7d5', 'e4d5', 'c7c6', 'd5c6', 'g8f6', 'c6b7', 'f6g8'];
+      setAutoQueen(true);
+      fresh(); botEnabled = false;
+      play(promoSetup);
+      handleClick(sq('b7')); handleClick(sq('a8'));
+      add('auto-queen promotes straight to a queen, no dialog',
+        pType(game.board[sq('a8')]) === PT.QUEEN && !document.getElementById('promoOverlay').classList.contains('show'),
+        'a8=' + pType(game.board[sq('a8')]) + ' dialog=' + document.getElementById('promoOverlay').classList.contains('show'));
+      setAutoQueen(false);
+      fresh(); botEnabled = false;
+      play(promoSetup);
+      handleClick(sq('b7')); handleClick(sq('a8'));
+      add('with auto-queen off you still get the promotion choice',
+        document.getElementById('promoOverlay').classList.contains('show'), 'dialog shown');
+      cancelPromo();
+      setAutoQueen(aqBefore);
+      fresh();
       add('drawing still works with each piece style', (function () { try { setPieceStyle('classic'); draw(); setPieceStyle('3d'); draw(); return true; } catch (e) { return false; } })(), 'both render');
     },
     annotate: function () {
@@ -6362,13 +6414,21 @@ window.__chessTest = function (caseId) {
       } catch (e) { spyOk = false; }
       const cues = [['sfxMove', 'move'], ['sfxCapture', 'capture'], ['sfxCheck', 'check'], ['sfxPromote', 'promote'], ['sfxCheckmate', 'mate'], ['sfxCastle', 'castle'], ['sfxGameStart', 'start'], ['sfxWin', 'win'], ['sfxDraw', 'draw'], ['sfxHint', 'hint'], ['sfxCombo', 'combo'], ['sfxSelect', 'select'], ['sfxIllegal', 'illegal']];
       const empty = [];
+      // the routine move cues are opt-in now, so turn them on for the sweep
+      const prevMoveSfx = moveSfx;
+      moveSfx = true;
       for (const [fn, name] of cues) {
         audioLog = [];
         try { window[fn](); } catch (e) {}
         if (audioLog.length === 0) empty.push(name);
       }
+      moveSfx = prevMoveSfx;
       add('the audio graph spy is armed', spyOk, spyOk ? 'AudioContext patched' : 'AudioContext unavailable');
       add('every cue builds audio nodes, not just avoids throwing', spyOk && empty.length === 0, empty.length ? 'silent cues: ' + empty.join(',') : '13/13 cues produced nodes');
+      const routine = ['sfxMove', 'sfxCapture', 'sfxCastle', 'sfxSelect'];
+      const loud = [];
+      for (const fn of routine) { audioLog = []; try { window[fn](); } catch (e) {} if (audioLog.length) loud.push(fn); }
+      add('routine move cues are silent unless asked for', loud.length === 0, loud.length ? 'noisy: ' + loud.join(',') : 'move/capture/castle/select quiet by default');
     },
     keyboard: function () {
       setupFen('7k/8/8/8/8/8/4P3/4K3 w - - 0 1');
