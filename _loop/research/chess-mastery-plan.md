@@ -55,8 +55,16 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [x] F3. Quiet-default audit (no bubble/meme/shake without opt-in).
 
 ## G. Performance & robustness
-- [ ] G1. Budget recorded and enforced (frame, bot move, review, load bytes).
-- [ ] G2. 120-ply stress: no unbounded timers/listeners/DOM growth.
+- [x] G1. Budget recorded and enforced: PERF_BUDGET lives in chess.html (8 lines with the measured
+      value and headroom beside each), _loop/tests/cdp-perf.js measures them over CDP and fails when a
+      line is exceeded, and _loop/research/chess-perf-budget.md records how to reproduce it. Measured:
+      easy 0.87ms, medium 9.2ms, hard 94ms, endgame 2.6ms, frame 0.17ms, review 4.4ms/ply, 1.22MB over
+      49 requests, DCL 366ms - all within budget. No phone hardware and no memory ceiling: unverified.
+- [~] G2. 120-ply stress. Harness shipped (_loop/tests/cdp-stress.js) and it found one real defect:
+      timers, listeners and heap are clean (listeners 100 -> 100, pending timers bounded, heap shrinks),
+      but ~50-65 DOM nodes per completed game survive a reset. Pinpointed to the memes panel rows
+      (#memeList .meme-rows grows 36 -> 101 while every other container is constant). FIX PENDING: the
+      accumulation comes from a render path in chess-memes.js that needs to be understood first.
 - [x] G3. Chaos fuzz: random input, zero uncaught errors.
 
 ## H. Hygiene
