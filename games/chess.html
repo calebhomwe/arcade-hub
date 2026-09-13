@@ -107,6 +107,8 @@ body.modal-open #ccApp { filter: saturate(0.85) brightness(0.45); transition: fi
 .juice-wrap input[type=range] { -webkit-appearance: none; width: 60px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #4ade80, #facc15, #f472b6, #ef4444); outline: none; }
 .juice-wrap input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); cursor: pointer; box-shadow: 0 0 10px rgba(167,139,250,0.5); }
 
+#puzzleKind { font-size:.72rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--cc-muted); margin:2px 0 8px; }
+#puzzleKind[hidden] { display:none; }
 #puzzlePanel { display: none; margin-top: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); text-align: center; max-width: 480px; width: 100%; max-height: 60vh; overflow-y: auto; }
 #puzzlePanel.show { display: block; }
 #puzzlePanel h3 { font-size: 0.8rem; color: #facc15; margin-bottom: 4px; }
@@ -916,7 +918,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   </div>
 </div>
 
-<div id="puzzlePanel" role="dialog" aria-modal="true" aria-label="Puzzle mode"><h3>🧩 Puzzle Mode</h3><p id="puzzleDesc"></p><button class="btn" id="btnPuzzleHint" title="Show a hint for this puzzle">💡 Show Hint</button><button class="btn" id="btnPuzzleSkip" title="Skip to the next puzzle">⏭ Skip</button><button class="btn" id="btnPuzzleExit" title="Exit puzzle mode">🚪 Exit</button></div>
+<div id="puzzlePanel" role="dialog" aria-modal="true" aria-label="Puzzle mode"><h3>🧩 Puzzle Mode</h3><p id="puzzleDesc"></p><div id="puzzleKind"></div><button class="btn" id="btnPuzzleHint" title="Show a hint for this puzzle">💡 Show Hint</button><button class="btn" id="btnPuzzleSkip" title="Skip to the next puzzle">⏭ Skip</button><button class="btn" id="btnPuzzleExit" title="Exit puzzle mode">🚪 Exit</button></div>
 
 <div id="helpPanel" role="dialog" aria-modal="true" aria-label="Controls and shortcuts">
   <button class="btn panel-exit-btn" id="btnHelpClose" title="Close help">🚪 Close</button>
@@ -1868,7 +1870,7 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
 
 // ==================== PUZZLES ====================
 
-const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is loose and undefended - ...d5 both defends it and hits the c4 bishop.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1","desc":"Find the checkmate in 1.","hint":"The black king is trapped behind its own pawns.","solution":"a1a8"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
+const PUZZLES = [{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1","desc":"White to move. Find the checkmate in 1.","hint":"Look at the f7 square.","solution":"h5f7"},{"fen":"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best move?","hint":"Develop a knight to attack the center.","solution":"g1f3"},{"fen":"r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Win material.","hint":"The knight on e4 is loose and undefended - ...d5 both defends it and hits the c4 bishop.","solution":"d7d5"},{"fen":"6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1","desc":"White to move. King and pawn endgame.","hint":"Get your king in front of the pawn.","solution":"g1f1"},{"fen":"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Capture the center.","hint":"Take the pawn — it is free.","solution":"e4d5"},{"fen":"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1","desc":"White to move. Develop with tempo.","hint":"Attack the knight while developing.","solution":"f1b5"},{"fen":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","desc":"Opening. What is the most popular first move?","hint":"Control the center with a pawn.","solution":"e2e4"},{"fen":"r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1","desc":"White to move. Castle and protect the king.","hint":"The king is safest in the corner.","solution":"O-O"},{"fen":"6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1","desc":"Find the checkmate in 1.","hint":"The black king is trapped behind its own pawns.","solution":"a1a8"},{"fen":"rnbqkbnr/ppp2ppp/8/3pp3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1","desc":"White to move. Best response to d5?","hint":"Capture the pawn or push past it.","solution":"e4d5"},{"fen":"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 1","desc":"Black to move. Castle to safety.","hint":"Protect your king.","solution":"O-O"},{"fen":"6kr/5ppp/3Q4/2B5/8/8/8/4K3 w - - 0 1","solution":"d6f8","type":"mate1","desc":"Queen and bishop battery: are you in the mood to mate?","hint":"The bishop already guards a launch pad."},{"fen":"6rk/6pp/3B3N/8/8/8/8/4K3 w - - 0 1","solution":"h6f7","type":"mate1","desc":"Smothered mate: the knight lands where the king cannot follow.","hint":"Every flight square belongs to the king’s own army."},{"fen":"4k3/4r3/8/8/8/Q7/8/R3K3 w - - 0 1","solution":"a3e7","type":"pin","desc":"The rook is pinned dead: exploit it now.","hint":"A queen takes a piece the king cannot recapture."},{"fen":"7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1","solution":"g2g8","type":"mate1","desc":"The knight guards the landing square: queen delivers mate.","hint":"Step right up to the castle gate."},{"fen":"r5kr/5ppp/8/8/8/8/8/R5K1 w - - 0 1","solution":"a1a8","type":"mate1","desc":"Back-rank mate: the rook smashes in, the king is locked in.","hint":"The corner piece blocks the only escape."},{"fen":"1k1q4/8/8/N7/8/8/8/4K3 w - - 0 1","solution":"a5c6","type":"fork","desc":"Knight fork: one little hop, two big victims.","hint":"Find the square your knight hits both royals from."},{"fen":"7k/8/5NQ1/8/8/8/8/6K1 w - - 0 1","solution":"g6g8","type":"mate1","desc":"The knight covers the escape: queen delivers mate at the gate.","hint":"Your queen can step right beside the king with protection."},{"fen":"6k1/R7/1R6/8/8/8/8/K7 w - - 0 1","solution":"b6b8","type":"mate1","desc":"Two-rook ladder mate: sandwich the king between ranks.","hint":"One rook owns rank 7 — land the partner on rank 8."},{"fen":"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1","solution":"e5d6","type":"endgame","desc":"En passant surprise: catch the pawn that thought it dodged.","hint":"The d5 pawn JUST stepped two squares — strike it sideways."},{"fen":"8/1P6/8/8/8/8/2k5/K7 w - - 0 1","solution":"b7b8","type":"promotion","desc":"Race home: pawn crowns.","hint":"One square from glory — but pick the right direction."},{"fen":"2r3k1/5ppp/2N5/8/8/8/8/4K3 w - - 0 1","solution":"c6e7","type":"fork","desc":"Knight leaps with check AND taps the rook.","hint":"Find the square that touches both the king and the rook."}];
 
 let puzzleIndex = -1;
 let puzzleMode = false;
@@ -3775,6 +3777,14 @@ function loadPuzzle(index) {
   const pz = PUZZLES[index];
   document.getElementById('puzzlePanel').classList.add('show');
   document.getElementById('puzzleDesc').textContent = pz.desc + ' (' + (index+1) + '/' + PUZZLES.length + ')';
+  // tell the player what kind of puzzle this is: the data always knew, nothing showed it
+  const kindEl = document.getElementById('puzzleKind');
+  if (kindEl) {
+    const KIND = { mate1: 'Mate in 1', fork: 'Fork', pin: 'Pin', endgame: 'Endgame technique', promotion: 'Promotion' };
+    const label = pz.type ? (KIND[pz.type] || String(pz.type)) : '';
+    kindEl.textContent = label;
+    kindEl.hidden = !label;
+  }
   document.getElementById('tip').textContent = '💡 ' + pz.hint;
   // Parse FEN and set up board
   const parts = pz.fen.split(' ');
@@ -6577,6 +6587,105 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    puzzlescreen: function () {
+      fresh();
+      botEnabled = false;
+      // A puzzle is only worth shipping if the position is legal, the stated solution is really
+      // the best move, there is a tactic to find (not a filler position where everything is equal),
+      // and the description does not promise something the position cannot deliver.
+      // the same token the player's move is turned into before it is compared with a solution
+      const keyOf = m => (m.castle === 'kingside') ? 'O-O' : (m.castle === 'queenside') ? 'O-O-O'
+        : (String.fromCharCode(97 + col(m.from)) + (8 - row(m.from)) + String.fromCharCode(97 + col(m.to)) + (8 - row(m.to)));
+      const screen = pz => {
+        const issues = [];
+        let st = null;
+        try { st = stateFromFen(pz.fen); } catch (e) { st = null; }
+        if (!st) { issues.push('fen does not parse'); return issues; }
+        const v = validateFenPosition(pz.fen);
+        if (!v || v.ok !== true) issues.push('illegal position' + (v && v.error ? ': ' + v.error : ''));
+        const legal = getAllLegalMoves(st.board, st.turn, st.epTarget, st.castlingRights);
+        if (!legal.length) { issues.push('no legal moves'); return issues; }
+        if (legal.length < 2) issues.push('only one legal move, so there is nothing to solve');
+        // reviewScoreAfter is already from the mover's point of view, so a better move always
+        // scores higher whatever colour is to move (flipping it for Black grades the position twice)
+        // match the way the game itself accepts an answer, so a castling solution written as
+        // O-O is understood instead of being read as an illegal coordinate move
+        const sol = legal.find(m => puzzleAnswerMatches(keyOf(m), pz.solution));
+        if (!sol) { issues.push('solution ' + pz.solution + ' is not legal here'); return issues; }
+        if (sol.castle) { /* castling answers are written O-O and matched through puzzleAnswerMatches */ }
+        const isMax = st.turn === CL.WHITE;
+        const scored = legal.map(m => ({ m: m, key: keyOf(m), sc: reviewScoreAfter(st.board, st.turn, st.epTarget, st.castlingRights, m) }));
+        scored.sort((a, b) => b.sc - a.sc);
+        const best = scored[0];
+        const mine = scored.find(s => s.key === keyOf(sol));
+        const gapToBest = Math.max(0, best.sc - mine.sc);
+        const desc = pz.desc || '';
+        // the data declares its own intent in its type field; fall back to the prose when it does not
+        const kind = pz.type ? String(pz.type) : '';
+        const tactical = !!kind ? (kind === 'mate1' || kind === 'fork' || kind === 'pin')
+          : /mate|win |fork|pin|skewer|trap|tactic|loose|hanging|exploit|capture/i.test(desc);
+        const wantedMate = kind === 'mate1' || /\bmate\b|checkmate|mate in/i.test(desc);   // word boundary: "material" is not a mate
+        const wantedMaterial = /win material|win the|capture|loose|hanging|exploit|pinned/i.test(desc);
+        // does the solution actually mate?
+        const n = makeMove(st.board, sol, { castlingRights: st.castlingRights, epTarget: st.epTarget });
+        const replies = getAllLegalMoves(n.board, 1 - st.turn, n.ep, n.castling);
+        const mates = replies.length === 0 && isInCheck(n.board, 1 - st.turn);
+        const rank = scored.findIndex(s => s.key === keyOf(sol)) + 1;
+        // A technique or opening-principles puzzle only has to be a genuinely good move: several
+        // moves really are fine there, and a two-ply grader cannot tell them apart in the opening.
+        const tolerance = tactical ? 30 : 150;
+        const withinBand = gapToBest <= tolerance || (!tactical && rank <= 3);
+        // A tactic may also be judged by whether it achieves what the description promises, because
+        // in an already-winning position several moves win and a quieter one can score higher.
+        const gainsMaterial = wantedMaterial && st.board[sol.to] !== 0 && mine.sc >= 200;
+        const deliversPromisedMate = wantedMate && mates;
+        if (!withinBand && !gainsMaterial && !deliversPromisedMate) {
+          issues.push('solution is ' + Math.round(gapToBest) + 'cp worse than ' + best.key + ' (' + Math.round(mine.sc) + ' vs ' + Math.round(best.sc)
+            + ', rank ' + rank + '/' + scored.length + ') and does not deliver what the description promises');
+        }
+        if (wantedMate && !mates) issues.push('says mate but ' + pz.solution + ' does not mate');
+        if (!wantedMate && mates) issues.push('the solution mates but the description does not say so');
+        return issues;
+      };
+      const report = [];
+      let screened = 0;
+      for (let i = 0; i < PUZZLES.length; i++) {
+        const issues = screen(PUZZLES[i]);
+        screened++;
+        if (issues.length) report.push('#' + i + ' (' + PUZZLES[i].solution + ') "' + String(PUZZLES[i].desc).slice(0, 46) + '": ' + issues.join('; '));
+      }
+      // prove the screen is not vacuous: feed it puzzles that are wrong in each specific way
+      const bad = [
+        { why: 'illegal solution', pz: { fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1', desc: 'White to move. Find the checkmate in 1.', hint: 'x', solution: 'a1a8', type: 'mate1' }, expect: /not legal/ },
+        { why: 'blunder solution', pz: { fen: '7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1', desc: 'Find the checkmate in 1.', hint: 'x', solution: 'g1h1', type: 'mate1' }, expect: /worse than|does not deliver|does not mate/ },
+        { why: 'mate claimed but not mate', pz: { fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1', desc: 'White to move. Find the checkmate in 1.', hint: 'x', solution: 'O-O', type: 'mate1' }, expect: /does not mate/ },
+        { why: 'illegal position', pz: { fen: '8/8/8/8/8/8/8/8 w - - 0 1', desc: 'White to move. Best move?', hint: 'x', solution: 'a1a2' }, expect: /illegal position|no legal moves/ },
+        { why: 'mate with a description that hides it', pz: { fen: '7k/8/5N2/8/8/8/6Q1/6K1 w - - 0 1', desc: 'Quiet move please.', hint: 'x', solution: 'g2g8' }, expect: /does not say so/ }
+      ];
+      const missed = [];
+      for (const b of bad) {
+        const got = screen(b.pz);
+        if (!got.length || !b.expect.test(got.join(' '))) missed.push(b.why + ' -> ' + (got.join('; ') || 'NOT CAUGHT'));
+      }
+      add('the screen catches each kind of broken puzzle', missed.length === 0, missed.join(' | ') || bad.length + ' bad puzzles all caught');
+
+      add('the whole puzzle bank was screened', screened === PUZZLES.length && screened >= 6, screened + ' puzzles');
+      add('every puzzle is legal, solvable and has a real tactic', report.length === 0, report.join(' | ') || 'no issues');
+      add('every puzzle has a hint and a description', PUZZLES.every(p => p.desc && p.hint), PUZZLES.filter(p => !p.desc || !p.hint).length + ' incomplete');
+      add('every declared type is one the UI can label', PUZZLES.every(p => !p.type || ['mate1', 'fork', 'pin', 'endgame', 'promotion'].indexOf(p.type) >= 0),
+        PUZZLES.filter(p => p.type && ['mate1', 'fork', 'pin', 'endgame', 'promotion'].indexOf(p.type) < 0).map(p => p.type).join(',') || 'all known');
+      add('descriptions do not promise a mate that is not there',
+        PUZZLES.every(p => !/mate in 1/i.test(p.desc || '') || (function () {
+          const st = stateFromFen(p.fen); if (!st) return false;
+          const legal = getAllLegalMoves(st.board, st.turn, st.epTarget, st.castlingRights);
+          const sol = legal.find(m => sqName(m.from) + sqName(m.to) === p.solution);
+          if (!sol) return false;
+          const n = makeMove(st.board, sol, { castlingRights: st.castlingRights, epTarget: st.epTarget });
+          return getAllLegalMoves(n.board, 1 - st.turn, n.ep, n.castling).length === 0 && isInCheck(n.board, 1 - st.turn);
+        })()), 'checked');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
