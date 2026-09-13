@@ -14,7 +14,12 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - Read-only subagents for audits; one writer (me) for the game.
 
 ## A. Bot quality
-- [ ] A2b. KR vs K mating technique (drives to the edge but does not mate inside 80 plies).
+- [x] A2b. KR vs K mating technique: SOLVED. The evaluation now rewards shrinking the bare king's box
+      (its legal-move count), the search goes one ply deeper only in a bare-king rook ending (depth 5
+      cost 99ms in a queen ending against 20ms for the rook, and the queen mates at depth 4), and the
+      endgame tie-break no longer shuffles near-equal moves. Rook mates in 19 plies, deterministically
+      (was: no mate inside 80); queen 11 plies; king and pawn promotes and mates in 61. Budget gained a
+      rook-ending line at 37ms against a limit of 80.
 - [x] A1. Opening book (prefix table per difficulty, legal-filtered, bot colour only).
 - [x] A2. Endgame conversion term (KQ/KR/K+P vs K; mate within 60 plies at depth 2).
 - [x] A3 Level separation measured. Easy was uniform-random (6431cp average loss, worst blunder 100459):
@@ -53,7 +58,9 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [x] E2. Landscape phone layout verified (844x390, 932x430).
 
 ## F. Feel, audio, content
-- [ ] F1. Start-screen theme/piece preview.
+- [x] F1. Start-screen theme/piece preview: a Board section with theme and piece selectors and a live
+      4x2 preview of the real squares and sprites, wired to the same setters as the in-game Settings and
+      kept in sync both ways. Screenshot read back; suite startpreview 13/13.
 - [x] F2. Settings sound-check button that plays every cue in order.
 - [x] F3. Quiet-default audit (no bubble/meme/shake without opt-in).
 
@@ -76,4 +83,7 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 ## H. Hygiene
 - [x] H1. Remove root z*.html debug scratch once unreferenced.
 - [x] H2. Archive dead legacy mods; keep the not-loaded assertion.
-- [ ] H3. Sign-off note so the hub's 240 paused queue tasks can resume.
+- [x] H3. Sign-off note written to _loop/research/chess-signoff.md: what shipped, the receipts, and
+      everything NOT verified with reasons. The four chess queue entries (297-300) are all done, so the
+      remaining 240 tasks are for the other 36 games; _loop/PAUSE carries the sign-off note and deleting
+      it is the resume action, left to whoever owns that loop.
