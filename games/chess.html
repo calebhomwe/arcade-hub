@@ -771,6 +771,18 @@ a.back:hover{ color:var(--cc-text)!important; }
   #tip{ display:none; }
   :root{ --cc-boardmax:min(100%, calc(100dvh - 84px), 460px); }
 }
+
+/* High-contrast board for colour-blind players, last in the sheet so it wins over the theme
+   classes above (equal specificity, so source order decides). The classic cream/wood pair differs
+   mostly in luminance and its hues sit on the red-green axis; this pair adds a strong blue split
+   that survives deuteranopia and protanopia and roughly doubles the measured square contrast. */
+body.cb-board {
+  --lt:#f2f4f7; --dk:#3f6ea8;
+  --ltSel:#ffe066; --dkSel:#d9a300;
+  --ltLast:#cfe3ff; --dkLast:#22405f;
+  --ltChk:#ff5252; --dkChk:#b71c1c;
+  --ltHint:#ffc46b; --dkHint:#c47a00;
+}
 </style>
 </head>
 <body>
@@ -990,7 +1002,8 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div class="set-label">Board</div>
     <div class="set-row"><label class="set-check"><input type="checkbox" id="setCoords" checked> Coordinates</label>
     <label class="set-check"><input type="checkbox" id="setTips"> Coaching tips</label></div>
-    <div class="set-row"><label class="set-check"><input type="checkbox" id="setEval"> Evaluation bar</label></div>
+    <div class="set-row"><label class="set-check"><input type="checkbox" id="setEval"> Evaluation bar</label>
+    <label class="set-check"><input type="checkbox" id="setCbBoard"> High-contrast board</label></div>
     <div class="set-row">
       <select class="sel" id="setPieces" title="Piece style">
         <option value="3d">Piece style: 3D</option>
@@ -2323,6 +2336,20 @@ function setCoords(on) {
   try { localStorage.setItem('chessCoords', showCoords ? '1' : '0'); } catch (e) {}
   draw();
 }
+// colour-blind friendly board: a strong blue/near-white pair instead of cream/wood
+let cbBoard = (function () { try { return localStorage.getItem('chessCbBoard') === '1'; } catch (e) { return false; } })();
+function setCbBoard(on) {
+  cbBoard = !!on;
+  try { localStorage.setItem('chessCbBoard', cbBoard ? '1' : '0'); } catch (e) {}
+  document.body.classList.toggle('cb-board', cbBoard);
+  const box = document.getElementById('setCbBoard');
+  if (box) box.checked = cbBoard;
+  refreshCssCache();
+  pieceSpriteCache = {};
+  draw();
+}
+window.chessCbBoard = { on: () => cbBoard, set: setCbBoard };
+
 let showEvalBar = (function () { try { return localStorage.getItem('chessEvalBar') === '1'; } catch (e) { return false; } })();
 function setEvalBar(on) {
   showEvalBar = !!on;
@@ -4946,6 +4973,8 @@ window.chessPGN = buildPGN;
   if (helpClose) helpClose.addEventListener('click', function () { toggleHelp(false); });
   const soundCheckBtn = document.getElementById('btnSoundCheck');
   if (soundCheckBtn) soundCheckBtn.addEventListener('click', function () { startSoundCheck(); });
+  const cbToggle = document.getElementById('setCbBoard');
+  if (cbToggle) { cbToggle.checked = cbBoard; cbToggle.addEventListener('change', function () { setCbBoard(this.checked); }); }
   const evalToggle = document.getElementById('setEval');
   if (evalToggle) { evalToggle.checked = showEvalBar; evalToggle.addEventListener('change', function () { setEvalBar(this.checked); }); }
   const coords = document.getElementById('setCoords');
@@ -5025,6 +5054,7 @@ function applyTheme(name) {
   draw();
 }
 document.getElementById('themeSel').addEventListener('change', function() { applyTheme(this.value); });
+setCbBoard(cbBoard);   // restore the board palette before the first paint
 (function initTheme(){
   const sel = document.getElementById('themeSel');
   if (sel) sel.value = theme;
@@ -6738,6 +6768,65 @@ window.__chessTest = function (caseId) {
         })()), 'checked');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    contrast: function () {
+      fresh();
+      const lum = hex => {
+        const m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
+        if (!m) return null;
+        const n = parseInt(m[1], 16);
+        const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+      };
+      const ratio = (a, b) => {
+        const la = lum(a), lb = lum(b);
+        if (la === null || lb === null) return 0;
+        const hi = Math.max(la, lb), lo = Math.min(la, lb);
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      const read = () => { refreshCssCache(); return { lt: getCssVar('lt'), dk: getCssVar('dk'), w: getCssVar('wPiece'), b: getCssVar('bPiece') }; };
+
+      setCbBoard(false);
+      const classic = read();
+      const classicRatio = ratio(classic.lt, classic.dk);
+      setCbBoard(true);
+      const cb = read();
+      const cbRatio = ratio(cb.lt, cb.dk);
+
+      add('both palettes resolve to real colours', lum(classic.lt) !== null && lum(cb.lt) !== null && lum(cb.dk) !== null,
+        'classic ' + classic.lt + '/' + classic.dk + ', contrast ' + cb.lt + '/' + cb.dk);
+      add('the high-contrast pair separates the squares more than the classic one', cbRatio > classicRatio + 1,
+        classicRatio.toFixed(2) + ':1 -> ' + cbRatio.toFixed(2) + ':1');
+      add('the pair clears the 4.5:1 bar for adjacent colour areas', cbRatio >= 4.5, cbRatio.toFixed(2) + ':1');
+      add('light pieces stay visible on the dark square', ratio(cb.w, cb.dk) >= 3, ratio(cb.w, cb.dk).toFixed(2) + ':1');
+      add('dark pieces stay visible on the light square', ratio(cb.b, cb.lt) >= 3, ratio(cb.b, cb.lt).toFixed(2) + ':1');
+      add('the palette is blue versus near-white, not red versus green', (function () {
+        const parts = /^#?([0-9a-fA-F]{6})$/.exec(cb.dk);
+        if (!parts) return false;
+        const n = parseInt(parts[1], 16);
+        const r = (n >> 16) & 255, g = (n >> 8) & 255, bb = n & 255;
+        return bb > r + 40 && bb > g + 20;   // blue-dominant: safe under deuteranopia and protanopia
+      })(), cb.dk);
+      add('every derived highlight colour is defined in the new palette',
+        ['ltSel', 'dkSel', 'ltLast', 'dkLast', 'ltChk', 'dkChk', 'ltHint', 'dkHint'].every(k => lum(getCssVar(k)) !== null),
+        'highlights set');
+      add('the choice is persisted', (function () { try { return localStorage.getItem('chessCbBoard') === '1'; } catch (e) { return false; } })(), 'stored');
+      add('turning it off restores the classic palette', (function () {
+        setCbBoard(false);
+        const back = read();
+        return ratio(back.lt, back.dk) === classicRatio && back.lt === classic.lt;
+      })(), 'restored');
+      add('the settings toggle reflects the state', (function () {
+        const box = document.getElementById('setCbBoard');
+        setCbBoard(true);
+        const on = box && box.checked === true && document.body.classList.contains('cb-board');
+        setCbBoard(false);
+        return on && box.checked === false && !document.body.classList.contains('cb-board');
+      })(), 'toggle wired');
+      fresh();
     },
     celebrate: function () {
       fresh();
