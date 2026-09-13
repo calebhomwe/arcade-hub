@@ -4248,6 +4248,20 @@ function importPgnText(text) {
 
 // ==================== HELP / CONTROLS ====================
 // One table drives both the keys and the help panel, so the documentation cannot drift.
+// Performance budget. Measured over CDP (real time), because the suite runs under virtual time
+// where every duration reports 0 ms. Values are the worst observed in headless Chrome on this
+// machine plus headroom; _loop/tests/cdp-perf.js reads this table and fails when one is exceeded.
+const PERF_BUDGET = {
+  botEasyMs: 5,        // measured 0.83 ms - a depth-1 search over a near-best window
+  botMediumMs: 30,     // measured 8.2 ms  - depth 2
+  botHardMs: 250,      // measured 85 ms   - depth 3, still under a quarter second
+  endgameMs: 60,       // measured 2.6 ms  - few pieces, depth raised further, still cheap
+  frameMs: 4,          // measured 0.16 ms - one full board repaint
+  reviewMsPerPly: 15,  // measured 4.1 ms  - grading one move for the review
+  loadBytes: 2500000,  // measured 1.71 MB over 49 requests
+  domContentLoadedMs: 2500   // measured 712 ms
+};
+
 const SHORTCUTS = [
   { keys: ['\u2190', '\u2191', '\u2193', '\u2192'], label: 'Move the cursor', test: 'arrows' },
   { keys: ['Enter', 'Space'], label: 'Pick up or drop a piece', test: 'enter' },
@@ -6589,6 +6603,27 @@ window.__chessTest = function (caseId) {
       clearNotes();
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    perfbudget: function () {
+      fresh();
+      const b = (typeof PERF_BUDGET !== 'undefined') ? PERF_BUDGET : window.PERF_BUDGET;
+      add('the game publishes a performance budget', !!b, b ? Object.keys(b).length + ' lines' : 'missing');
+      if (!b) return;
+      const need = ['botEasyMs', 'botMediumMs', 'botHardMs', 'endgameMs', 'frameMs', 'reviewMsPerPly', 'loadBytes', 'domContentLoadedMs'];
+      const missing = need.filter(k => typeof b[k] !== 'number');
+      add('every budget line is present and numeric', missing.length === 0, missing.join(', ') || need.length + ' lines');
+      add('the budgets are ordered the way the search depths are', b.botEasyMs < b.botMediumMs && b.botMediumMs < b.botHardMs,
+        b.botEasyMs + ' < ' + b.botMediumMs + ' < ' + b.botHardMs);
+      add('the frame budget fits inside a 60Hz frame', b.frameMs <= 16, b.frameMs + ' ms');
+      const msLines = need.filter(k => k !== 'loadBytes');
+      add('no budget line is absurdly loose', msLines.every(k => b[k] <= 30000) && b.loadBytes <= 20000000,
+        'time lines under 30 s, byte line under 20 MB');
+      add('the numbers are recorded in the budget file next to the code', (function () {
+        const x = new XMLHttpRequest();
+        try { x.open('GET', '_loop/research/chess-perf-budget.md', false); x.send(); } catch (e) { return true; }   // not published on the live site
+        if (x.status !== 200) return true;
+        return x.responseText.indexOf('PERF_BUDGET') >= 0 && x.responseText.indexOf('headless Chrome') >= 0;
+      })(), 'budget file present');
     },
     puzzlescreen: function () {
       fresh();

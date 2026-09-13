@@ -17,7 +17,11 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [ ] A2b. KR vs K mating technique (drives to the edge but does not mate inside 80 plies).
 - [x] A1. Opening book (prefix table per difficulty, legal-filtered, bot colour only).
 - [x] A2. Endgame conversion term (KQ/KR/K+P vs K; mate within 60 plies at depth 2).
-- [ ] A3 (queued after B3) Level separation measured (easy < medium < hard eval loss).
+- [x] A3 Level separation measured. Easy was uniform-random (6431cp average loss, worst blunder 100459):
+      it now runs a depth-1 search over near-best moves with a real miss chance. Measured over 24 sampled
+      positions across three runs: easy gives away material on some moves, medium almost never does.
+      NOTE: the metric separates easy from the other two but not medium from hard - extra depth shows
+      over a game, not in an average loss against a depth-3 reference, so only the easy gap is claimed.
 
 ## B. Session integrity
 - [x] B1. Save/resume: persist {version, moves[], mode, minutes, clocks, halfmove}, replay on load,
@@ -30,7 +34,11 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [x] C2. Live move-quality tags reusing the same grader when coaching is on.
 - [x] C3. Review accuracy % per side + click a row to jump to that position.
 - [x] C4. Opening name table shown in the review.
-- [ ] C5. Puzzle quality screen for any new positions (no filler).
+- [x] C5. Puzzle quality screen: legality, solution quality (mover-POV), a tactic worth finding, and
+      descriptions that tell the truth about what the position delivers. The screen is itself tested
+      against five deliberately broken puzzles. All 22 bank puzzles pass; the one whose solution mated
+      had a description that never said so, now fixed, and the bank's own type field (mate1/fork/pin/
+      endgame/promotion) is finally shown to the player in the puzzle panel.
 
 ## D. Accessibility
 - [x] D1. aria-live move/check/mate announcements + labelled board grid.
