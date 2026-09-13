@@ -1,0 +1,62 @@
+(async function () {
+  const errs = [];
+  window.__fuzzErrs = errs;
+  window.addEventListener('error', e => errs.push('error: ' + (e.message || 'unknown')));
+  window.addEventListener('unhandledrejection', e => errs.push('rejection: ' + String(e.reason && e.reason.message || e.reason)));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+  const KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' ', 'Escape', 'f', 'F', 'u', 'r', 'h', 'b', '?', 'Tab', 'a', '1', 'z'];
+  const IDS = ['btnHint', 'btnTeach', 'btnFlip', 'btnUndo', 'btnRedo', 'btnClock', 'btnPuzzle', 'btnReview', 'btnStats', 'btnSettings', 'btnDraw', 'btnResign', 'btnMemes', 'btnHelp', 'btnSoundCheck', 'btnPuzzleSkip', 'btnPuzzleHint', 'btnPuzzleExit', 'btnReviewClose', 'btnHelpClose', 'btnSettingsClose', 'btnOverClose', 'btnRematch', 'btnPgnImport', 'btnPgnClear', 'btnFenLoad', 'btnFenCopy', 'btnNewGame', 'btnMenu'];
+  const canvas = document.getElementById('board');
+  const cv = () => canvas.getBoundingClientRect();
+  const point = () => { const r = cv(); return { x: r.left + Math.random() * r.width, y: r.top + Math.random() * r.height }; };
+  const pev = (el, type, p, extra) => {
+    try {
+      el.dispatchEvent(new PointerEvent(type, Object.assign({ bubbles: true, cancelable: true, clientX: p.x, clientY: p.y, pointerId: 1 + rnd(5), pointerType: Math.random() < 0.4 ? 'touch' : 'mouse', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1 }, extra || {})));
+    } catch (e) { errs.push('dispatch ' + type + ': ' + e.message); }
+  };
+  const start = window.showStartScreen ? (window.showStartScreen(false), true) : false;
+  let actions = 0;
+  for (let i = 0; i < 1500; i++) {
+    actions++;
+    const roll = rnd(100);
+    try {
+      if (roll < 34) {
+        const p = point();
+        pev(canvas, 'pointerdown', p, { button: roll < 8 ? 2 : 0 });
+        pev(canvas, 'pointermove', point(), { button: roll < 8 ? 2 : 0 });
+        pev(canvas, 'pointerup', point(), { button: roll < 8 ? 2 : 0 });
+      } else if (roll < 50) {
+        const key = pick(KEYS);
+        canvas.focus();
+        canvas.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true, cancelable: true }));
+        if (key.length === 1 && Math.random() < 0.3) canvas.dispatchEvent(new KeyboardEvent('keyup', { key: key, bubbles: true }));
+      } else if (roll < 74) {
+        const el = document.getElementById(pick(IDS));
+        if (el) el.click();
+      } else if (roll < 84) {
+        document.querySelectorAll('select').forEach(s => { if (rnd(4) === 0) { s.selectedIndex = rnd(s.options.length || 1); s.dispatchEvent(new Event('change', { bubbles: true })); } });
+      } else if (roll < 92) {
+        document.querySelectorAll('input[type=checkbox]').forEach(c => { if (rnd(6) === 0) { c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); } });
+      } else if (roll < 97) {
+        const ml = document.querySelectorAll('#moveList [data-ply]');
+        if (ml.length) ml[rnd(ml.length)].click();
+      } else if (roll < 99) {
+        document.querySelectorAll('#reviewList .reviewRow, .promo-btn, .meme-sound, [data-trap]').forEach(el => { if (rnd(10) === 0) el.click(); });
+      } else {
+        // feed the parsers junk, then ask them to load it
+        const junk = ['', 'x', '1. e4', '8/8/8/8/8/8/8/8 w - - 0 1', 'not a fen at all', '[White "A"]', '9999.', '}{()[]', 'O-O-O', 'e2e4 e7e5'];
+        const box = document.getElementById(rnd(2) ? 'pgnInput' : 'fenInput');
+        if (box) { box.value = pick(junk); }
+        const btn = document.getElementById(rnd(2) ? 'btnPgnImport' : 'btnFenLoad');
+        if (btn) btn.click();
+      }
+    } catch (e) { errs.push('action ' + i + ': ' + e.message); }
+    if (i % 20 === 0) await sleep(8);
+  }
+  // the game must still be alive and responsive afterwards
+  let rulesOk = 'n/a';
+  try { const r = window.__chessTest('rules'); rulesOk = r.pass + '/' + r.fail; } catch (e) { rulesOk = 'threw: ' + e.message; }
+  return JSON.stringify({ actions: actions, errors: errs.length, first: errs.slice(0, 5), rulesAfterFuzz: rulesOk, boardAlive: !!document.getElementById('board') });
+})()

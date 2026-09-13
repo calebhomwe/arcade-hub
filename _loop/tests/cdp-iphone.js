@@ -36,7 +36,7 @@ function getJSON(url) { return new Promise((res, rej) => { http.get(url, r => { 
       await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
       await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
       await new Promise(r => setTimeout(r, 4000));
-      const expr = fs.readFileSync(path.join(__dirname, 'iphone-session.txt'), 'utf8');
+      const expr = fs.readFileSync(path.join(__dirname, process.argv[6] || 'iphone-session.txt'), 'utf8');
       const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true, userGesture: true });
       if (r.exceptionDetails) console.log('EVAL_EXCEPTION ' + r.exceptionDetails.text + ' ' + ((r.exceptionDetails.exception || {}).description || ''));
       else {
