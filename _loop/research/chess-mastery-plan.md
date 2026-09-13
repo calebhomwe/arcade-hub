@@ -14,18 +14,19 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - Read-only subagents for audits; one writer (me) for the game.
 
 ## A. Bot quality
-- [ ] A1. Opening book (prefix table per difficulty, legal-filtered, bot colour only).
-- [ ] A2. Endgame conversion term (KQ/KR/K+P vs K; mate within 60 plies at depth 2).
-- [ ] A3. Level separation measured (easy < medium < hard eval loss).
+- [ ] A2b. KR vs K mating technique (drives to the edge but does not mate inside 80 plies).
+- [x] A1. Opening book (prefix table per difficulty, legal-filtered, bot colour only).
+- [x] A2. Endgame conversion term (KQ/KR/K+P vs K; mate within 60 plies at depth 2).
+- [ ] A3 (queued after B3) Level separation measured (easy < medium < hard eval loss).
 
 ## B. Session integrity
 - [x] B1. Save/resume: persist {version, moves[], mode, minutes, clocks, halfmove}, replay on load,
       wire the inert Resume button, clear on game end; real Page.reload proof.
 - [x] B2. PGN import (paste box, header + SAN/coordinate parse, replay, then review).
-- [ ] B3. FEN load (validate, set position, clear error for garbage).
+- [x] B3. FEN load (validate, set position, clear error for garbage).
 
 ## C. Analysis parity
-- [ ] C1. Eval bar (clamped, driven by the deterministic grader, optional during play).
+- [x] C1. Eval bar (clamped, driven by the deterministic grader, optional during play).
 - [ ] C2. Live move-quality tags reusing the same grader when coaching is on.
 - [ ] C3. Review accuracy % per side + click a row to jump to that position.
 - [ ] C4. Opening name table shown in the review.
