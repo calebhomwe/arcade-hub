@@ -692,6 +692,7 @@ a.back:hover{ color:var(--cc-text)!important; }
 .help-row{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:.78rem; color:var(--cc-text); border-bottom:1px solid rgba(255,255,255,.06); }
 .help-row b{ color:var(--cc-muted); font-weight:700; }
 #helpKeys .help-row b{ font:700 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+.rv-opening{ font-size:.76rem; font-weight:700; color:var(--cc-muted); margin:2px 0 6px; }
 .rv-import{ margin:6px 0 10px; }
 .rv-import summary{ cursor:pointer; font-size:.74rem; font-weight:700; color:var(--cc-muted); min-height:32px; display:flex; align-items:center; }
 .rv-import summary:hover{ color:var(--cc-text); }
@@ -949,6 +950,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   </details>
   <div id="reviewResult">🔍 Analyzing…</div>
   <div id="reviewScore"></div>
+  <div id="reviewOpening" class="rv-opening"></div>
   <div id="reviewList"></div>
 </div>
 
@@ -1732,6 +1734,77 @@ function pickWeakerMove(board, color, epTarget, castlingRights, depth, windowCp,
   const near = scored.filter(s => isMax ? s.sc >= top - windowCp : s.sc <= top + windowCp).slice(0, choices);
   return near[Math.floor(Math.random() * near.length)].m;
 }
+
+// Names for the lines the book already knows, keyed by the same move prefixes so the two can
+// never disagree. Matched by the longest prefix of what was actually played.
+const OPENING_NAMES = {
+  'e2e4': "King's Pawn",
+  'd2d4': "Queen's Pawn",
+  'g1f3': 'R\u00E9ti Opening',
+  'c2c4': 'English Opening',
+  'e2e4 e7e5': 'Open Game',
+  'e2e4 c7c5': 'Sicilian Defence',
+  'e2e4 e7e6': 'French Defence',
+  'e2e4 c7c6': 'Caro-Kann Defence',
+  'd2d4 d7d5': "Queen's Gambit",
+  'd2d4 g8f6': 'Indian Defence',
+  'g1f3 g8f6': 'R\u00E9ti Opening',
+  'g1f3 d7d5': 'R\u00E9ti Opening',
+  'c2c4 e7e5': 'English, Reversed Sicilian',
+  'c2c4 g8f6': 'English, Anglo-Indian',
+  'c2c4 c7c5': 'English, Symmetrical',
+  'e2e4 e7e5 g1f3': "King's Knight Opening",
+  'e2e4 e7e5 g1f3 b8c6': 'Open Game, main line',
+  'e2e4 e7e5 g1f3 b8c6 f1b5': 'Ruy L\u00F3pez',
+  'e2e4 e7e5 g1f3 b8c6 f1c4': 'Italian Game',
+  'e2e4 e7e5 g1f3 b8c6 d2d4': 'Scotch Game',
+  'e2e4 e7e5 g1f3 g8f6': 'Petrov Defence',
+  'e2e4 c7c5 g1f3': 'Sicilian, Open',
+  'e2e4 c7c5 g1f3 d7d6': 'Sicilian, Najdorf',
+  'e2e4 c7c5 g1f3 b8c6': 'Sicilian, Old Sicilian',
+  'd2d4 d7d5 c2c4': "Queen's Gambit",
+  'd2d4 d7d5 c2c4 e7e6': "Queen's Gambit Declined",
+  'd2d4 d7d5 c2c4 c7c6': 'Slav Defence',
+  'd2d4 g8f6 c2c4': 'Indian Defence',
+  'd2d4 g8f6 g1f3': 'Indian Defence',
+  'g1f3 g8f6 d2d4': 'R\u00E9ti Opening',
+  'g1f3 d7d5 d2d4': 'R\u00E9ti Opening',
+  'e2e4 e7e5 g1f3 b8c6 f1b5 a7a6': 'Ruy L\u00F3pez, Morphy Defence',
+  'e2e4 e7e5 g1f3 b8c6 f1b5 g8f6': 'Ruy L\u00F3pez, Berlin Defence',
+  'e2e4 e7e5 g1f3 b8c6 f1c4 f8c5': 'Italian, Giuoco Piano',
+  'e2e4 e7e5 g1f3 b8c6 f1c4 g8f6': 'Italian, Two Knights',
+  'd2d4 d7d5 c2c4 e7e6 b1c3': "Queen's Gambit Declined, main line",
+  'd2d4 d7d5 c2c4 c7c6 g1f3': 'Slav, main line',
+  'd2d4 g8f6 c2c4 e7e6': 'Indian, Nimzo-bound',
+  'd2d4 g8f6 c2c4 g7g6': "King's Indian Defence"
+};
+
+function openingNameFor(tokens) {
+  if (!tokens || !tokens.length) return '';
+  for (let n = Math.min(tokens.length, 12); n >= 1; n--) {
+    const hit = OPENING_NAMES[tokens.slice(0, n).join(' ')];
+    if (hit) return hit;
+  }
+  return '';
+}
+
+function openingTokensFromGame() {
+  // moveHistory holds the position before each move; each entry's lastMove is what was played
+  const out = [];
+  for (let k = 1; k < game.moveHistory.length; k++) {
+    const lm = game.moveHistory[k].lastMove;
+    if (lm) out.push(sqName(lm.from) + sqName(lm.to));
+  }
+  if (game.lastMove && game.moveHistory.length) {
+    const last = game.moveHistory[game.moveHistory.length - 1].lastMove;
+    const tail = sqName(game.lastMove.from) + sqName(game.lastMove.to);
+    if (!last || (last.from !== game.lastMove.from || last.to !== game.lastMove.to)) out.push(tail);
+  }
+  return out;
+}
+
+function currentOpeningName() { return openingNameFor(openingTokensFromGame()); }
+window.chessOpeningName = currentOpeningName;
 
 function countPieces(board) {
   let n = 0;
@@ -4037,6 +4110,12 @@ function finishReview(entries) {
   const ev = evaluate(game.board, 'balanced');
   const side = ev > 0 ? 'White' : ev < 0 ? 'Black' : 'Balanced';
   const acc = reviewAccuracy(entries);
+  const opEl = document.getElementById('reviewOpening');
+  if (opEl) {
+    const op = currentOpeningName();
+    opEl.textContent = op ? '\uD83D\uDCD6 ' + op : '';
+    opEl.style.display = op ? '' : 'none';
+  }
   document.getElementById('reviewScore').textContent =
     `📈 ${side} ${(Math.abs(ev) / 100).toFixed(1)} — ⚪ ${acc.white}% accuracy ⚫ ${acc.black}% — ⭐${counts.best} ✓${counts.good} ?!${counts.inacc} ??${counts.mistake} 🔥${counts.blunder}`;
 }
@@ -4708,8 +4787,9 @@ function buildPGN() {
     '[Black "' + oppName + '"]',
     '[Result "' + res + '"]',
     '[TimeControl "' + (clockEnabled ? CLOCK_START + '+2' : '-') + '"]',
+    (currentOpeningName() ? '[Opening "' + currentOpeningName() + '"]' : null),
     '[Termination "' + (game.result || 'unfinished') + '"]'
-  ].join('\n');
+  ].filter(Boolean).join('\n');   // an empty entry would put a blank line inside the tag section, which ends it
   const plies = collectPlies();
   let moves = '';
   for (let i = 0; i < plies.length; i += 2) {
@@ -6497,6 +6577,58 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    opening: function () {
+      fresh();
+      botEnabled = false;
+      // the name table must not claim lines the book does not play
+      const bookKeys = Object.keys(OPENING_BOOK);
+      const orphans = Object.keys(OPENING_NAMES).filter(k => bookKeys.indexOf(k) < 0);
+      add('every named opening is a line the book actually plays', orphans.length === 0, orphans.join(', ') || 'no orphans');
+      add('the common openings are named', Object.keys(OPENING_NAMES).length >= 25, Object.keys(OPENING_NAMES).length + ' lines named');
+
+      add('nothing is claimed before a move is played', currentOpeningName() === '', JSON.stringify(currentOpeningName()));
+      play(['e2e4']);
+      add('1.e4 is named', /King/.test(currentOpeningName()), currentOpeningName());
+      play(['e7e5', 'g1f3', 'b8c6', 'f1b5']);
+      add('the Ruy Lopez is named after five plies', /Ruy/.test(currentOpeningName()), currentOpeningName());
+
+      // an opening the book does not know must not be given a name
+      fresh(); botEnabled = false;
+      play(['a2a3', 'a7a6', 'b2b3']);
+      add('an unknown line is left unnamed', currentOpeningName() === '', JSON.stringify(currentOpeningName()) || 'empty');
+
+      // a known line reaches the review and the PGN
+      fresh(); botEnabled = false;
+      play(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6']);
+      const name = currentOpeningName();
+      add('a known line is recognised', /Ruy/.test(name), name);
+      const pgn = buildPGN();
+      add('the PGN carries the opening', pgn.indexOf('[Opening "' + name + '"]') >= 0, name);
+      add('the tag section has no blank line in it', (function () {
+        const head = pgn.split('\n\n')[0];
+        return head.split('\n').every(l => /^\[[A-Za-z]+ "/.test(l));
+      })(), 'all tags well formed');
+      add('the PGN still round trips', (function () {
+        const before = collectPlies().length;
+        importPgnText(pgn);
+        return collectPlies().length === before;
+      })(), 're-imported ' + collectPlies().length + ' plies');
+
+      // the review shows it, and hides the row when there is nothing to say
+      const entries = buildReviewEntries();
+      entries.forEach(e => analyzeReviewEntry(e));
+      finishReview(entries);
+      const opEl = document.getElementById('reviewOpening');
+      add('the review names the opening', /Ruy/.test(opEl.textContent) && opEl.style.display !== 'none', opEl.textContent);
+      fresh(); botEnabled = false;
+      play(['a2a3', 'a7a6']);
+      const e2 = buildReviewEntries();
+      e2.forEach(e => analyzeReviewEntry(e));
+      finishReview(e2);
+      add('the review hides an unnamed opening', opEl.style.display === 'none' && opEl.textContent === '', 'hidden');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
