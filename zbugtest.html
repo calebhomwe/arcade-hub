@@ -56,8 +56,9 @@ document.getElementById('f').addEventListener('load', function(){
       w.ChessMods.api.playMove(11, 27); // d7d5
       w.ChessMods.api.playMove(36, 27); // exd5
       w.updateUI();
-      chk('captured shown by player', (d.getElementById('capBot').textContent || '').length > 0,
-          JSON.stringify(d.getElementById('capBot').textContent));
+      // captured pieces render as <img> piece art, so textContent is empty
+      chk('captured shown by player', (d.getElementById('capBot').innerHTML || '').length > 0,
+          JSON.stringify((d.getElementById('capBot').innerHTML||'').slice(0,40)));
       chk('advantage badge', (d.getElementById('advBot').textContent || '').indexOf('+') === 0,
           d.getElementById('advBot').textContent);
 
@@ -88,8 +89,9 @@ document.getElementById('f').addEventListener('load', function(){
       d.getElementById('btnFlip').click();
       d.getElementById('btnFlip').click();
       d.getElementById('btnReset').click();
-      chk('reset clears move list', d.getElementById('moveList').textContent.trim() === '',
-          JSON.stringify(d.getElementById('moveList').textContent.slice(0,30)));
+      // the move list shows an empty-state line after reset, so assert on rows
+      chk('reset clears move list', d.querySelectorAll('#moveList .ml-row').length === 0,
+          d.querySelectorAll('#moveList .ml-row').length + ' rows');
 
       // --- traps still legal after the reskin
       var traps = w.__trapCheck();

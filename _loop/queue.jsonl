@@ -297,4 +297,4 @@
 {"id": 297, "game": "chess.html", "pass": 1, "theme": "chess: harness run (ztest_harness.html) + console audit, fix findings", "status": "done"}
 {"id":298,"game":"chess.html","pass":2,"theme":"chess: verify all 10 mods respect juice slider and gamesMuted","status":"done"}
 {"id":299,"game":"chess.html","pass":3,"theme":"chess: perf pass â€” overlay caps, rAF cost, sprite cache","status":"done"}
-{"id":300,"game":"chess.html","pass":4,"theme":"chess: content pass â€” more taunts/titles/funny subtitles","status":"pending"}
+{"id": 300, "game": "chess.html", "pass": 4, "theme": "chess: content pass â€” more taunts/titles/funny subtitles", "status": "done"}
