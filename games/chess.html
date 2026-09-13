@@ -747,6 +747,22 @@ a.back:hover{ color:var(--cc-text)!important; }
   @media (min-width:881px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 200px), 720px); } }
   @media (max-height:600px) and (min-width:700px){ :root{ --cc-boardmax:min(100%, calc(100dvh - 120px), 460px); } }
 }
+/* Landscape phones: a 390px-tall screen spent 120px on chrome, leaving a 270px board. Trim the
+   rows that only restate what the player card already says so the board gets the space. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #ccApp{ padding-top:4px!important; padding-bottom:4px!important; }
+  #setupHint{ display:none; }
+  #tip{ font-size:.68rem; margin-top:2px; }
+  .cc-player{ padding:3px 2px; }
+  #gameWrap{ margin-top:2px!important; }
+  .cc-iconrow .btn{ padding:7px 4px!important; gap:4px; }
+  .cc-iconrow .btn .btn-label{ font-size:.62rem; }
+  :root{ --cc-boardmax:min(100%, calc(100dvh - 92px), 460px); }
+}
+@media (orientation: landscape) and (max-height: 400px) {
+  #tip{ display:none; }
+  :root{ --cc-boardmax:min(100%, calc(100dvh - 84px), 460px); }
+}
 </style>
 </head>
 <body>
