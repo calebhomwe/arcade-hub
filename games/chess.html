@@ -5671,6 +5671,66 @@ window.__chessTest = function (caseId) {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
+    coach: function () {
+      fresh();
+      botEnabled = false;
+      const CR0 = { K: false, Q: false, k: false, q: false };
+      const setPos = (list, turn) => {
+        const b = new Array(64).fill(0);
+        for (const e of list) b[sq(e[0])] = e[1];
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: null, castlingRights: CR0, moveHistory: [], lastMove: null,
+          gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; updateUI(); draw();
+      };
+      const clearNotes = () => document.querySelectorAll('.cmc-note').forEach(n => n.remove());
+      const noteText = () => { const n = document.querySelector('.cmc-note'); return n ? n.textContent : ''; };
+      const playTo = (from, to) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(m => m.from === sq(from) && m.to === sq(to));
+        if (mv) executeMove(mv);
+        return !!mv;
+      };
+      const hangingBoard = [['g1', P(PT.KING, CL.WHITE)], ['c2', P(PT.KNIGHT, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)], ['e5', P(PT.PAWN, CL.BLACK)]];
+
+      // coaching off by default: no note at all
+      setCoachTips(false);
+      clearNotes();
+      setPos(hangingBoard, CL.WHITE);
+      playTo('c2', 'd4');
+      add('no coach note appears while coaching is off', !document.querySelector('.cmc-note'), noteText().slice(0, 40) || 'silent');
+
+      // coaching on: a knight placed where a pawn can take it, undefended
+      setCoachTips(true);
+      clearNotes();
+      setPos(hangingBoard, CL.WHITE);
+      playTo('c2', 'd4');
+      const warned = /careful|taken|hanging|defenders|loses material/i.test(noteText());
+      add('the coach notices a hanging piece', !!document.querySelector('.cmc-note'), noteText().slice(0, 60) || 'no note');
+      add('the warning is about losing material', warned || !document.querySelector('.cmc-note'), noteText().slice(0, 60) || 'no note');
+
+      // a quiet developing move should not be flagged as hanging
+      clearNotes();
+      setPos(hangingBoard, CL.WHITE);
+      playTo('c2', 'b4');
+      const quiet = noteText();
+      add('a safe move is not called hanging', !/careful|taken|hanging/i.test(quiet), quiet.slice(0, 60) || 'silent');
+
+      // the coach must never throw on an exotic position (en passant target set)
+      let threw = null;
+      try {
+        setCoachTips(true);
+        clearNotes();
+        game = Object.assign({}, game, { board: (function () { const b = new Array(64).fill(0); b[sq('e1')] = P(PT.KING, CL.WHITE); b[sq('e8')] = P(PT.KING, CL.BLACK); b[sq('e5')] = P(PT.PAWN, CL.WHITE); b[sq('d5')] = P(PT.PAWN, CL.BLACK); return b; })(), turn: CL.WHITE, epTarget: sq('d6'), moveHistory: [], gameOver: false, result: '' });
+        updateUI(); draw();
+        playTo('e5', 'd6');
+      } catch (e) { threw = e.message; }
+      add('the coach survives an en passant capture', !threw, threw || 'no throw');
+      setCoachTips(false);
+      clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
     review: function () {
       fresh();
       botEnabled = false;
