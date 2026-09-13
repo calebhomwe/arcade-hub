@@ -689,6 +689,11 @@ a.back:hover{ color:var(--cc-text)!important; }
 .rv-import{ margin:6px 0 10px; }
 .rv-import summary{ cursor:pointer; font-size:.74rem; font-weight:700; color:var(--cc-muted); min-height:32px; display:flex; align-items:center; }
 .rv-import summary:hover{ color:var(--cc-text); }
+#evalBar{ position:relative; height:10px; margin:6px 0 2px; border-radius:5px; overflow:hidden;
+  background:#3a3733; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+#evalBar[hidden]{ display:none; }
+#evalFill{ position:absolute; left:0; top:0; bottom:0; width:50%; background:#e9e7e2; transition:width .18s ease; }
+#evalTick{ position:absolute; left:50%; top:-1px; bottom:-1px; width:1px; background:rgba(255,255,255,.45); }
 #pgnInput{ width:100%; margin-top:6px; box-sizing:border-box; resize:vertical; min-height:64px;
   background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:9px;
   color:var(--cc-text); font:600 .74rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; padding:8px 10px; }
@@ -788,6 +793,7 @@ a.back:hover{ color:var(--cc-text)!important; }
   </div>
 <div id="gameWrap">
   <canvas id="board" tabindex="0" role="application" aria-label="Chess board. Use arrow keys to move the cursor, Enter or Space to select a piece and complete a move."></canvas>
+  <div id="evalBar" hidden aria-hidden="true"><div id="evalFill"></div><i id="evalTick"></i></div>
   <div id="promoOverlay" role="dialog" aria-modal="true" aria-label="Choose a promotion piece">
     <div id="promoCard">
       <span>Promote pawn to:</span>
@@ -944,6 +950,7 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div class="set-label">Board</div>
     <div class="set-row"><label class="set-check"><input type="checkbox" id="setCoords" checked> Coordinates</label>
     <label class="set-check"><input type="checkbox" id="setTips"> Coaching tips</label></div>
+    <div class="set-row"><label class="set-check"><input type="checkbox" id="setEval"> Evaluation bar</label></div>
     <div class="set-row">
       <select class="sel" id="setPieces" title="Piece style">
         <option value="3d">Piece style: 3D</option>
@@ -2175,6 +2182,33 @@ function setCoords(on) {
   try { localStorage.setItem('chessCoords', showCoords ? '1' : '0'); } catch (e) {}
   draw();
 }
+let showEvalBar = (function () { try { return localStorage.getItem('chessEvalBar') === '1'; } catch (e) { return false; } })();
+function setEvalBar(on) {
+  showEvalBar = !!on;
+  try { localStorage.setItem('chessEvalBar', showEvalBar ? '1' : '0'); } catch (e) {}
+  const cb = document.getElementById('setEval');
+  if (cb) cb.checked = showEvalBar;
+  renderEvalBar();
+}
+function evalBarPercent() {
+  // 50% is dead level; the bar saturates at ten pawns either way
+  let v = 0;
+  try { v = evaluate(game.board, 'balanced') / 100; } catch (e) { v = 0; }
+  const clamped = Math.max(-10, Math.min(10, v));
+  return 50 + (clamped / 10) * 50;
+}
+function renderEvalBar() {
+  const bar = document.getElementById('evalBar'), fill = document.getElementById('evalFill');
+  if (!bar || !fill) return;
+  if (!showEvalBar) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const pct = evalBarPercent();
+  fill.style.width = pct.toFixed(1) + '%';
+  fill.style.background = pct >= 50 ? '#e9e7e2' : '#3a3733';
+}
+window.setEvalBar = setEvalBar;
+window.chessEvalBarPercent = evalBarPercent;
+
 function setCoachTips(on) {
   coachTips = !!on;
   window.chessCoachOn = coachTips;
@@ -3419,6 +3453,7 @@ function updateUI() {
   }
   syncMoveNav();
   updateSetupHint();
+  renderEvalBar();
 }
 
 function syncMoveNav() {
@@ -4576,6 +4611,8 @@ window.chessPGN = buildPGN;
   const btn = document.getElementById('btnSettings');
   const panel = document.getElementById('settingsPanel');
   if (!btn || !panel) return;
+  const evalToggle = document.getElementById('setEval');
+  if (evalToggle) { evalToggle.checked = showEvalBar; evalToggle.addEventListener('change', function () { setEvalBar(this.checked); }); }
   const coords = document.getElementById('setCoords');
   if (coords) { coords.checked = showCoords; coords.addEventListener('change', function () { setCoords(this.checked); }); }
   const tips = document.getElementById('setTips');
@@ -6218,6 +6255,43 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    evalbar: function () {
+      fresh();
+      botEnabled = false;
+      const fill = () => parseFloat(document.getElementById('evalFill').style.width);
+      setEvalBar(false);
+      add('the bar is hidden until it is asked for', document.getElementById('evalBar').hidden === true, 'hidden');
+      setEvalBar(true);
+      add('the bar appears when enabled', document.getElementById('evalBar').hidden === false, 'visible');
+      add('the setting persists', (function () { try { return localStorage.getItem('chessEvalBar') === '1'; } catch (e) { return false; } })(), 'stored');
+
+      const pctFor = fen => { loadFenPosition(fen); renderEvalBar(); return fill(); };
+      const level = pctFor('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+      add('a level position sits at the middle', Math.abs(level - 50) <= 2, level.toFixed(1) + '%');
+      const winning = pctFor('4k3/8/8/8/8/8/8/3QK3 w - - 0 1');
+      add('a queen up fills the bar', winning >= 95, winning.toFixed(1) + '%');
+      const losing = pctFor('4k3/8/8/8/8/8/8/3qK3 w - - 0 1');
+      add('a queen down empties it', losing <= 5, losing.toFixed(1) + '%');
+      const small = pctFor('4k3/8/8/8/8/8/4P3/4K3 w - - 0 1');
+      add('a one-pawn edge is a small lean, not a full bar', small > 50 && small < 65, small.toFixed(1) + '%');
+
+      // it follows the game: black takes the queen and the bar swings back to level
+      loadFenPosition('4k3/4Q3/8/8/8/8/8/4K3 b - - 0 1');
+      renderEvalBar();
+      const before = fill();
+      const cap = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(m => m.from === sq('e8') && m.to === sq('e7'));
+      if (cap) executeMove(cap);
+      renderEvalBar();
+      const after = fill();
+      add('the bar follows the game', before >= 95 && after <= 60 && after < before,
+        before.toFixed(1) + '% -> ' + after.toFixed(1) + '% | capture ' + (cap ? sqName(cap.from) + sqName(cap.to) : 'not found')
+        + ' | turn ' + game.turn + ' | board ' + toFEN().split(' ')[0]);
+
+      setEvalBar(false);
+      add('turning it off hides it again', document.getElementById('evalBar').hidden === true, 'hidden');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
