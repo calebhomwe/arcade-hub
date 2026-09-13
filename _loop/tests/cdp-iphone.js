@@ -6,6 +6,8 @@ function getJSON(url) { return new Promise((res, rej) => { http.get(url, r => { 
 (async () => {
   const url = process.argv[2] || 'http://127.0.0.1:8137/games/chess.html';
   const shot = process.argv[3] || 'iphone.png';
+  const vw = Number(process.argv[4]) || 393;
+  const vh = Number(process.argv[5]) || 852;
   const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
   const port = 9600 + Math.floor(Math.random() * 300);
   const profile = path.join(process.env.TEMP, 'dsh-iphone-' + port);
@@ -30,7 +32,7 @@ function getJSON(url) { return new Promise((res, rej) => { http.get(url, r => { 
     try {
       await send('Runtime.enable'); await send('Page.enable');
       // iPhone 15 Pro class viewport, touch, DPR 3
-      await send('Emulation.setDeviceMetricsOverride', { width: 393, height: 852, deviceScaleFactor: 3, mobile: true });
+      await send('Emulation.setDeviceMetricsOverride', { width: vw, height: vh, deviceScaleFactor: 3, mobile: true });
       await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
       await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
       await new Promise(r => setTimeout(r, 4000));

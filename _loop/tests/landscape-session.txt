@@ -1,0 +1,28 @@
+(async function () {
+  const out = { steps: [], errors: [] };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  try {
+    out.viewport = window.innerWidth + 'x' + window.innerHeight;
+    out.landscape = window.innerWidth > window.innerHeight;
+    const board = document.getElementById('board');
+    const br = board.getBoundingClientRect();
+    out.board = Math.round(br.width) + 'x' + Math.round(br.height) + ' at y=' + Math.round(br.top);
+    out.boardPixels = board.width + 'x' + board.height;
+    const side = document.getElementById('sideCol');
+    if (side) { const sr = side.getBoundingClientRect(); out.sideAt = Math.round(sr.left) + ',' + Math.round(sr.top) + ' ' + Math.round(sr.width) + 'x' + Math.round(sr.height); }
+    out.docScrollW = document.documentElement.scrollWidth;
+    out.docScrollH = document.documentElement.scrollHeight;
+    out.overflowX = document.documentElement.scrollWidth > window.innerWidth + 1;
+    const small = [];
+    document.querySelectorAll('button, select, input[type=checkbox]').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return;
+      if (el.closest('#controls, #settingsPanel, #startScreen') && r.height < 40) small.push((el.id || el.className) + ':' + Math.round(r.height));
+    });
+    out.tooSmall = small.slice(0, 6);
+    // the board must not be pushed off screen and the controls must be reachable
+    out.boardVisible = br.top >= -2 && br.left >= -2;
+    out.movesBelowFold = (function () { const ml = document.getElementById('moveList'); return ml ? ml.getBoundingClientRect().top > window.innerHeight : null; })();
+  } catch (e) { out.errors.push(String(e && e.message || e)); }
+  return JSON.stringify(out);
+})()

@@ -27,8 +27,8 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 
 ## C. Analysis parity
 - [x] C1. Eval bar (clamped, driven by the deterministic grader, optional during play).
-- [ ] C2. Live move-quality tags reusing the same grader when coaching is on.
-- [ ] C3. Review accuracy % per side + click a row to jump to that position.
+- [x] C2. Live move-quality tags reusing the same grader when coaching is on.
+- [x] C3. Review accuracy % per side + click a row to jump to that position.
 - [ ] C4. Opening name table shown in the review.
 - [ ] C5. Puzzle quality screen for any new positions (no filler).
 
@@ -39,7 +39,7 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 
 ## E. Mobile / installability
 - [ ] E1. PWA: webmanifest + service worker + offline CDP proof.
-- [ ] E2. Landscape phone layout verified (844x390, 932x430).
+- [x] E2. Landscape phone layout verified (844x390, 932x430).
 
 ## F. Feel, audio, content
 - [ ] F1. Start-screen theme/piece preview.
