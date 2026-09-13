@@ -50,7 +50,7 @@ const STRESS = `(async function () {
     peakTimers = Math.max(peakTimers, s.pendingTimers);
     if (i % 20 === 0) await new Promise(r => setTimeout(r, 8));
   }
-  await new Promise(r => setTimeout(r, 800));
+  await new Promise(r => setTimeout(r, 4200));   // long enough for every celebration backstop to fire
   const after = snap();
   // the move list is expected to grow with the plies; a reset must hand the nodes back
   const nodesWithGame = document.querySelectorAll('*').length;

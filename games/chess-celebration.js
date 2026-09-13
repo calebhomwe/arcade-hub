@@ -9,9 +9,21 @@
   const st = document.createElement('style');
   st.textContent = '.cmv-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:45;background:rgba(10,10,25,.92);border:2px solid #facc15;border-radius:16px;padding:14px 22px;text-align:center;pointer-events:none;box-shadow:0 0 40px rgba(250,204,21,.4);animation:cmvCard 2.5s cubic-bezier(.2,1.6,.4,1) forwards;}@keyframes cmvCard{0%{transform:translate(-50%,-50%) scale(0);opacity:0}12%{transform:translate(-50%,-50%) scale(1.1);opacity:1}18%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(.95)}}.cmv-title{font:900 22px system-ui;color:#facc15;letter-spacing:.04em;text-shadow:0 0 14px rgba(250,204,21,.8);}.cmv-sub{font:600 11px system-ui;color:#94a3b8;margin-top:4px;}.cmv-banner{position:absolute;left:50%;top:12%;transform:translateX(-50%);z-index:44;background:rgba(60,60,70,.85);border-radius:99px;padding:4px 14px;font:700 12px system-ui;color:#cbd5e1;pointer-events:none;animation:cmvCard 2s ease forwards;}';
   document.head.appendChild(st);
+  // Particles are removed when their animation finishes, but that event never fires if the
+  // animation is cancelled (a new game, a hidden tab, a throttled headless run), which left 60
+  // divs behind per finished game. A marker class, a hard timeout per particle and a sweep at the
+  // start of each celebration make the node count bounded no matter what the animation does.
+  function sweep(sel) {
+    try { wrap.querySelectorAll(sel).forEach(el => el.remove()); } catch (e) {}
+  }
+  function expire(el, ms) {
+    try { setTimeout(() => { try { el.remove(); } catch (e) {} }, ms); } catch (e) {}
+  }
   function confetti() {
+    sweep('.cmv-particle');
     for (let i = 0; i < 60; i++) {
       const d = document.createElement('div');
+      d.className = 'cmv-particle';
       d.style.position = 'absolute';
       d.style.left = (Math.random() * 100) + '%';
       d.style.top = '-12px';
@@ -26,6 +38,7 @@
         { transform: 'translateY(' + (wrap.clientHeight + 30) + 'px) rotate(' + (Math.random() * 720 - 360) + 'deg)', opacity: 0.9 }
       ], { duration: 1200 + Math.random() * 1200, delay: Math.random() * 500, easing: 'cubic-bezier(.3,.4,.6,1)', fill: 'forwards' });
       a.onfinish = () => d.remove();
+      expire(d, 3200);
       wrap.appendChild(d);
     }
   }
@@ -56,6 +69,7 @@
         card.innerHTML = '<div class="cmv-title">🏆 ' + (m.mate ? 'CHECKMATE!' : 'VICTORY!') + '</div><div class="cmv-sub">' + SUBS[Math.floor(Math.random() * SUBS.length)] + '</div>';
         wrap.appendChild(card);
         card.addEventListener('animationend', () => card.remove());
+        expire(card, 3600);
         fanfare();
       } else if (m.draw) {
         const b = document.createElement('div');
@@ -63,12 +77,15 @@
         b.textContent = '🤝 DRAW';
         wrap.appendChild(b);
         b.addEventListener('animationend', () => b.remove());
+        expire(b, 3000);
       }
     } catch (e) { console.warn('[chess-celebration]', e); }
   });
   ChessMods.on('reset', function () {
     try {
-      const olds = wrap.querySelectorAll('.cmv-card,.cmv-banner');
+      // the particles belong to the finished game too: without them here they kept falling over
+      // the fresh board for a few seconds after a new game started
+      const olds = wrap.querySelectorAll('.cmv-card,.cmv-banner,.cmv-particle');
       for (let i = 0; i < olds.length; i++) olds[i].remove();
     } catch (e) { console.warn('[chess-celebration]', e); }
   });
