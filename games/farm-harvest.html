@@ -133,6 +133,7 @@
   </div>
 </div>
 
+<script src="kit/juicekit.js"></script>
 <script>
 
 (function(){
@@ -164,6 +165,19 @@
     };
   }
   var state = defaultState();
+  // The hub (and the kit) own 'gamesMuted'. This game used to keep a private
+  // flag, so muting here left the kit noisy and muting elsewhere did not carry
+  // in. Adopt the shared key on boot and mirror every change back to it.
+  function readHubMute(){ try { return localStorage.getItem('gamesMuted') === '1'; } catch(e){ return false; } }
+  function writeHubMute(v){ try { localStorage.setItem('gamesMuted', v ? '1' : '0'); } catch(e){} }
+  function setMuted(v){
+    state.muted = !!v;
+    writeHubMute(state.muted);
+    // juicekit bridges the hub key off a GLOBAL `muted`; this game keeps it in
+    // state, so without mirroring it the kit's own muteBtn listener writes the
+    // stale value straight back over ours.
+    try { window.muted = state.muted; } catch(e){}
+  }
   var plotRefs = [], wasReady = [], cropBtnRefs = [];
   var shopRefs = null, dispCoins = 0, pendingToast = null;
   var lastCps = "", lastBest = "", lastMute = null, lastSeeds = -1;
@@ -379,8 +393,16 @@
       sfx("harvest");
       if(plotRefs[i]){
         var c0 = plotCenter(i);
+        try { if(window.Kit) Kit.hit(c0.x, c0.y, Math.round(val)); } catch(e){}
         floatText(c0.x, c0.y - 10, "+" + fmt(val) + " 🪙");
-        if(comboN >= 3){ sfx("levelup"); floatText(c0.x, c0.y - 36, "COMBO x" + comboN + "!"); }
+        if(comboN >= 3){
+          sfx("levelup");
+          // audio layering: the combo rings a bright fifth over the harvest
+          // blip, and a low body thump lands under a big-value pull
+          beep(880 + Math.min(comboN, 8) * 55, 0.09, "triangle", 0.05, 0, 0.02);
+          if(val >= 40) beep(120, 0.14, "sine", 0.05, -30, 0);
+          floatText(c0.x, c0.y - 36, "COMBO x" + comboN + "!");
+        }
         burst(c0.x, c0.y, ["✨","🪙",CROPS[id].emoji], 7, 34, true);
         if(Math.random() < 0.08){
           state.seeds[id] = (state.seeds[id] || 0) + 1;
@@ -433,6 +455,9 @@
     sfx("buy");
     if(shopRefs) flash(shopRefs.plot.btn);
     toast("Plot unlocked! " + state.unlocked + "/" + PLOT_MAX);
+    if(state.unlocked >= PLOT_MAX){
+      try { if(window.Kit) Kit.win("FARM COMPLETE!", "Every plot unlocked - " + fmt(state.earned) + " earned"); } catch(e){}
+    }
     render();
   }
   function buySprinkler(){
@@ -802,6 +827,9 @@
         if(s && typeof s === "object") mergeSave(s);
       }
     }catch(e){ state = defaultState(); }
+    // the hub-wide key wins over anything the old private flag saved
+    state.muted = readHubMute();
+    try { window.muted = state.muted; } catch(e){}
     var away = applyOffline();
     if(away && (away.gain >= 1 || away.grown > 0)){
       pendingToast = "While away (" + fmtTime(away.secs) + "): +" + fmt(away.gain) + " 🪙" +
@@ -829,13 +857,17 @@
     $("menuScreen").classList.remove("hidden"); sfx("click");
   });
   $("toggleMuteBtn").addEventListener("click", function(){
-    state.muted = !state.muted;
+    setMuted(!state.muted);
     $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
     save(); render();
   });
   $("muteBtn").addEventListener("click", function(){
-    state.muted = !state.muted; save(); render();
+    setMuted(!state.muted); save(); render();
   });
+  document.addEventListener("pointerdown", function(e){
+    var b = e.target && e.target.closest ? e.target.closest("button") : null;
+    if(b) { try { if(window.Kit) Kit.click(); } catch(err){} }
+  }, true);
   $("resetBtn").addEventListener("click", function(){
     if(confirm("Reset your farm and lose all progress?")){
       state = defaultState();
