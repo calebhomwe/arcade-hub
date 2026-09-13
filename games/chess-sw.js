@@ -1,7 +1,7 @@
 // Chess service worker: the game must open and be playable with no network.
 // Network-first for the page itself so an edit is never masked by the cache (which also keeps the
 // local test suite honest); cache-first for the static assets, which never change under their name.
-const CACHE = 'chess-v1';
+const CACHE = 'chess-v2';
 const CORE = [
   './chess.html',
   './chess.webmanifest',
@@ -51,18 +51,24 @@ self.addEventListener('fetch', event => {
     })());
     return;
   }
+  // Stale-while-revalidate: serve the cached copy immediately (that is what makes offline work)
+  // but refresh it in the background, so a deployed change reaches an installed client on its
+  // next load instead of being pinned forever by a cache-first rule.
   event.respondWith((async () => {
-    const hit = await caches.match(req, { ignoreSearch: true });
-    if (hit) return hit;
-    try {
-      const fresh = await fetch(req);
-      if (fresh && fresh.ok && fresh.type === 'basic') {
-        const cache = await caches.open(CACHE);
-        cache.put(req, fresh.clone());
-      }
+    const cache = await caches.open(CACHE);
+    // one cache entry per file, not per query string, or every cache-busted request would
+    // create a new entry and the original would stay stale forever
+    const key = new URL(req.url);
+    key.search = '';
+    const cacheKey = key.toString();
+    const hit = await cache.match(cacheKey);
+    // revalidate with the server rather than letting the browser's own HTTP cache answer
+    const network = fetch(req, { cache: 'no-cache' }).then(fresh => {
+      if (fresh && fresh.ok && fresh.type === 'basic') cache.put(cacheKey, fresh.clone());
       return fresh;
-    } catch (e) {
-      return Response.error();
-    }
+    }).catch(() => null);
+    if (hit) { event.waitUntil(network); return hit; }
+    const fresh = await network;
+    return fresh || Response.error();
   })());
 });

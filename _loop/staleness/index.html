@@ -1,0 +1,1 @@
+<!doctype html><meta charset=utf-8><title>swr probe</title><body><button id=b>load</button><pre id=out></pre><script>navigator.serviceWorker.register("sw.js");document.getElementById("b").onclick=async function(){const r=await fetch("stub.js?x="+Math.random());document.getElementById("out").textContent=await r.text();};</script>
