@@ -1488,6 +1488,38 @@ const PST = {
   [PT.KING]:   [-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-20,-30,-30,-40,-40,-30,-30,-20,-10,-20,-20,-20,-20,-20,-20,-10, 20, 20, 0, 0, 0, 0, 20, 20, 20, 30,10, 0, 0,10, 30, 20],
 };
 
+// Conversion knowledge for decided endgames: drive the losing king to the edge and bring your
+// own king up. Without it a shallow search shuffles in a won position instead of mating.
+function endgameTerm(board) {
+  let material = [0, 0], pieces = 0, kings = [-1, -1];
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (!p) continue;
+    pieces++;
+    material[pColor(p)] += VAL[pType(p)] || 0;
+    if (pType(p) === PT.KING) kings[pColor(p)] = i;
+  }
+  if (pieces > 8) return 0;
+  const diff = material[CL.WHITE] - material[CL.BLACK];
+  if (diff === 0) return 0;
+  const strong = diff > 0 ? CL.WHITE : CL.BLACK, weak = 1 - strong;
+  const sk = kings[strong], wk = kings[weak];
+  if (sk < 0 || wk < 0) return 0;
+  const edge = sq => { const r = row(sq), c = col(sq); return Math.min(r, 7 - r, c, 7 - c); };
+  const near = (a, b) => Math.max(Math.abs(row(a) - row(b)), Math.abs(col(a) - col(b)));
+  let bonus = (3 - Math.min(3, edge(wk))) * 30 + (7 - Math.min(7, near(sk, wk))) * 20;
+  // pawn endings: push the pawn, keep the king ahead of it
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (!p || pType(p) !== PT.PAWN || pColor(p) !== strong) continue;
+    const advance = strong === CL.WHITE ? (6 - row(i)) : (row(i) - 1);
+    bonus += Math.max(0, advance) * 6;
+    const inFront = strong === CL.WHITE ? (row(sk) < row(i)) : (row(sk) > row(i));
+    if (inFront && Math.abs(col(sk) - col(i)) <= 1) bonus += 8;
+  }
+  return strong === CL.WHITE ? bonus : -bonus;
+}
+
 function evaluate(board, personality) {
   let score = 0;
   for (let i = 0; i < 64; i++) {
@@ -1507,7 +1539,7 @@ function evaluate(board, personality) {
     }
     score += color === CL.WHITE ? (val + pos) : -(val + pos);
   }
-  return score;
+  return score + endgameTerm(board);
 }
 
 function minimax(board, depth, alpha, beta, color, epTarget, castlingRights, isMax, personality) {
@@ -1623,7 +1655,18 @@ function bookReply() {
   return legal.find(m => m.from === from && m.to === to) || null;
 }
 
+function countPieces(board) {
+  let n = 0;
+  for (let i = 0; i < 64; i++) if (board[i]) n++;
+  return n;
+}
+
 function findBestMove(board, color, epTarget, castlingRights, depth, personality) {
+  // Endgames are cheap to search (few pieces, few moves), so spend more depth there: this is
+  // what turns the conversion term into actual mating play instead of endless shuffling.
+  const pieces = countPieces(board);
+  if (pieces <= 6) depth = Math.max(depth, 4);
+  else if (pieces <= 10) depth = Math.max(depth, 3);
   const moves = getAllLegalMoves(board, color, epTarget, castlingRights);
   if (moves.length === 0) return null;
   const isMax = color === CL.WHITE;
@@ -6097,6 +6140,67 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    endgameplay: function () {
+      fresh();
+      botEnabled = false;
+      const setFen = fen => {
+        const st = stateFromFen(fen);
+        game = Object.assign({}, game, {
+          board: st.board, turn: st.turn, epTarget: st.epTarget, castlingRights: st.castlingRights,
+          moveHistory: [], lastMove: null, gameOver: false, result: '', halfmoveClock: 0,
+          positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; updateUI(); draw();
+      };
+      const mirror = b => {
+        const m = new Array(64).fill(0);
+        for (let i = 0; i < 64; i++) { const p = b[i]; if (p) m[63 - i] = P(pType(p), pColor(p) === CL.WHITE ? CL.BLACK : CL.WHITE); }
+        return m;
+      };
+      const boards = ['7k/8/8/8/8/8/8/K5Q1 w - - 0 1', '7k/8/8/8/8/8/8/K5R1 w - - 0 1',
+                      '7k/8/8/8/8/8/4P3/4K3 w - - 0 1', '6k1/6pp/8/8/8/8/6PP/6K1 w - - 0 1'];
+      let asym = null;
+      for (const fen of boards) {
+        const b = stateFromFen(fen).board;
+        if (evaluate(b, 'balanced') + evaluate(mirror(b), 'balanced') !== 0) { asym = fen; break; }
+      }
+      add('the conversion term keeps the evaluation symmetric', !asym, asym || boards.length + ' endgames mirror to zero');
+      add('a dead-equal endgame gets no conversion bonus', endgameTerm(stateFromFen('7k/8/8/8/8/8/8/6K1 w - - 0 1').board) === 0, 'K vs K');
+      add('a winning endgame does get a bonus', endgameTerm(stateFromFen('7k/8/8/8/8/8/8/K5Q1 w - - 0 1').board) > 0, 'KQ vs K > 0');
+
+      const edgeOf = s => Math.min(row(s), 7 - row(s), col(s), 7 - col(s));
+      const drive = (fen, maxPlies, strong) => {
+        setFen(fen);
+        let plies = 0, minWeakEdge = 3, pawnFrom = -1, pawnTo = -1, promoted = false;
+        const wasReplaying = replaying;
+        replaying = true;
+        while (plies < maxPlies && !game.gameOver) {
+          const weak = 1 - strong;
+          const wks = game.board.findIndex(p => p === P(PT.KING, weak));
+          if (wks >= 0) minWeakEdge = Math.min(minWeakEdge, edgeOf(wks));
+          const own = game.board.filter(p => p && pColor(p) === strong);
+          const pawn = own.find(p => pType(p) === PT.PAWN);
+          if (pawn) { if (pawnFrom < 0) pawnFrom = row(game.board.indexOf(pawn)); pawnTo = row(game.board.indexOf(pawn)); }
+          const mv = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 2, 'balanced');
+          if (!mv) break;
+          executeMove(mv);
+          if (game.board[sq('b8')] || game.board[sq('c8')] || game.board[sq('d8')] || game.board[sq('e8')]) promoted = true;
+          plies++;
+        }
+        replaying = wasReplaying;
+        return { plies: plies, over: game.gameOver, result: game.result, minWeakEdge: minWeakEdge, pawnFrom: pawnFrom, pawnTo: pawnTo, promoted: promoted };
+      };
+      const q = drive('7k/8/8/8/8/8/8/K5Q1 w - - 0 1', 80, CL.WHITE);
+      add('king and queen mate a bare king', q.over && /checkmate/i.test(q.result), q.plies + ' plies: ' + q.result);
+      const rk = drive('7k/8/8/8/8/8/8/K5R1 w - - 0 1', 80, CL.WHITE);
+      add('king and rook drive the bare king to the edge', rk.minWeakEdge === 0, 'closest edge distance reached ' + rk.minWeakEdge + ' over ' + rk.plies + ' plies; ' + rk.result);
+      add('the rook is never thrown away', !/insufficient/i.test(rk.result), rk.result || 'still winning');
+      const kp = drive('7k/8/8/8/8/8/4P3/4K3 w - - 0 1', 90, CL.WHITE);
+      add('the pawn ending makes progress', (kp.pawnTo >= 0 && kp.pawnTo < kp.pawnFrom) || kp.promoted,
+        'pawn row ' + kp.pawnFrom + ' -> ' + kp.pawnTo + (kp.promoted ? ' (promoted)' : '') + ' in ' + kp.plies + ' plies; ' + kp.result);
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
