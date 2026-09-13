@@ -1596,6 +1596,36 @@ function endgameTerm(board) {
   const edge = sq => { const r = row(sq), c = col(sq); return Math.min(r, 7 - r, c, 7 - c); };
   const near = (a, b) => Math.max(Math.abs(row(a) - row(b)), Math.abs(col(a) - col(b)));
   let bonus = (3 - Math.min(3, edge(wk))) * 30 + (7 - Math.min(7, near(sk, wk))) * 20;
+  // Rook endings need the mating configuration, not just the edge: the strong king has to come up
+  // and take the opposition, and the weak king is easiest to mate in a corner. Without these the
+  // rook drove the king to the edge and then shuffled, because a shallow search cannot see a mate
+  // that is ten moves away and nothing in the evaluation preferred getting closer to it.
+  // Only for a mating piece. In a pawn ending the bonus belongs to the pawn terms below: applying
+  // the box terms there made the king shuffle to restrict instead of pushing the pawn, and the pawn
+  // was simply lost.
+  const matingPiece = (material[strong] - material[weak]) >= VAL[PT.ROOK];
+  if (matingPiece && pieces <= 5 && material[weak] === 0) {
+    const sr = row(sk), sc = col(sk), wr = row(wk), wc = col(wk);
+    if (edge(wk) === 0) {
+      bonus += 40;                                                   // king on the edge is nearly mated
+      // With a queen the mate is delivered by the king, so bringing it up matters more than any
+      // other consideration: without this the queen alone shuffles and the position repeats.
+      if (material[strong] - material[weak] >= VAL[PT.QUEEN]) bonus += (7 - Math.min(7, near(sk, wk))) * 30;
+      if ((wr === 0 || wr === 7) && (wc === 0 || wc === 7)) bonus += 30;   // and a corner is better still
+      // opposition: same rank or file with exactly one square between the kings
+      if ((sr === wr && Math.abs(sc - wc) === 2) || (sc === wc && Math.abs(sr - wr) === 2)) bonus += 45;
+      const cheb = Math.max(Math.abs(sr - wr), Math.abs(sc - wc));
+      if (cheb === 2) bonus += 25;                                   // the king is close enough to guard
+      // Shrink the box: the classic measure of progress in these endings is how few squares the
+      // bare king still has. Reward it directly instead of hoping the edge and approach terms
+      // stumble into the mating net.
+      try {
+        const noCastle = { K: false, Q: false, k: false, q: false };
+        const mobility = getAllLegalMoves(board, weak, null, noCastle).length;
+        bonus += (8 - Math.min(8, mobility)) * 22;
+      } catch (e) {}
+    }
+  }
   // pawn endings: push the pawn, keep the king ahead of it
   for (let i = 0; i < 64; i++) {
     const p = board[i];
@@ -1603,7 +1633,10 @@ function endgameTerm(board) {
     const advance = strong === CL.WHITE ? (6 - row(i)) : (row(i) - 1);
     bonus += Math.max(0, advance) * 6;
     const inFront = strong === CL.WHITE ? (row(sk) < row(i)) : (row(sk) > row(i));
-    if (inFront && Math.abs(col(sk) - col(i)) <= 1) bonus += 8;
+    if (inFront && Math.abs(col(sk) - col(i)) <= 1) bonus += 20;
+    // The king has to escort the pawn: with the king wandering off, the bare king simply walks
+    // over and takes it, which is exactly what happened once the search stopped choosing at random.
+    bonus += (7 - Math.min(7, near(sk, i))) * 14;
   }
   return strong === CL.WHITE ? bonus : -bonus;
 }
@@ -1848,9 +1881,26 @@ function countPieces(board) {
 // chooser must agree on this, or two of them disagree on what is best in the same position.
 function searchDepthFor(board, depth) {
   const pieces = countPieces(board);
+  // A bare-king rook ending is the one that needs more lookahead (the mate is a long manoeuvre),
+  // but a queen ending does not: at depth 5 it costs ~99 ms a move against ~20 ms for the rook,
+  // and the queen mates comfortably at depth 4, so only the rook case is raised.
+  if (pieces <= 4 && rookEnding(board)) return Math.max(depth, 5);
   if (pieces <= 6) return Math.max(depth, 4);
   if (pieces <= 10) return Math.max(depth, 3);
   return depth;
+}
+function rookEnding(board) {
+  let pieces = 0, rooks = 0, queens = 0, other = 0;
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (!p) continue;
+    pieces++;
+    const t = pType(p);
+    if (t === PT.ROOK) rooks++;
+    else if (t === PT.QUEEN) queens++;
+    else if (t !== PT.KING) other++;
+  }
+  return pieces === 3 && rooks === 1 && queens === 0 && other === 0;
 }
 
 function findBestMove(board, color, epTarget, castlingRights, depth, personality) {
@@ -1874,9 +1924,14 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
   const EPS = 12;
   const near = scored.filter(s => isMax ? s.sc >= bestScore - EPS : s.sc <= bestScore + EPS);
   if (near.length > 1) {
-    for (let i = near.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const t = near[i]; near[i] = near[j]; near[j] = t;
+    // In a decided ending the list stays in score order. Shuffling it there made the same rook
+    // ending mate in one run and shuffle into a repetition draw in the next: technique has to be
+    // the same answer every time, not a coin toss between near-equal moves.
+    if (countPieces(board) > 5) {
+      for (let i = near.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = near[i]; near[i] = near[j]; near[j] = t;
+      }
     }
     const counts = (typeof game !== 'undefined' && game && game.positionCounts) ? game.positionCounts : null;
     let chosen = near[0], fewest = null;
@@ -1889,6 +1944,10 @@ function findBestMove(board, color, epTarget, castlingRights, depth, personality
     }
     best = chosen.m;
   }
+  // (A rule that refused any move leading to a third repetition was tried here and removed: it
+  // bought the rook ending at the cost of throwing the pawn away in a king-and-pawn ending, because
+  // the "alternative" it forced could be arbitrarily bad. Progress has to come from the evaluation,
+  // not from a veto.)
   // Add occasional randomness for human-like play
   if (personality === 'tricky' && Math.random() < 0.15 && moves.length > 3) {
     const candidates = moves.filter(m => !m.capture).slice(0, 5);
@@ -4362,7 +4421,9 @@ const PERF_BUDGET = {
   botEasyMs: 5,        // measured 0.83 ms - a depth-1 search over a near-best window
   botMediumMs: 30,     // measured 8.2 ms  - depth 2
   botHardMs: 250,      // measured 85 ms   - depth 3, still under a quarter second
-  endgameMs: 60,       // measured 2.6 ms  - few pieces, depth raised further, still cheap
+  endgameMs: 60,       // measured 2.0 ms  - king and pawn, depth raised further, still cheap
+  rookEndingMs: 80,    // measured 39.4 ms - a bare-king rook ending searches deepest and is the
+                       //                  most expensive thing the bot does, still under a tenth of a second
   frameMs: 4,          // measured 0.16 ms - one full board repaint
   reviewMsPerPly: 15,  // measured 4.1 ms  - grading one move for the review
   loadBytes: 2500000,  // measured 1.71 MB over 49 requests
@@ -7604,6 +7665,9 @@ window.__chessTest = function (caseId) {
       add('queen endings are not thrown away', !/insufficient|stalemate/i.test(q.result), q.result || 'still winning');
       const rk = drive('7k/8/8/8/8/8/8/K5R1 w - - 0 1', 80, CL.WHITE);
       add('king and rook drive the bare king to the edge', rk.minWeakEdge === 0, 'closest edge distance reached ' + rk.minWeakEdge + ' over ' + rk.plies + ' plies; ' + rk.result);
+      // the long-standing gap: the rook drove the king to the edge and then shuffled. It mates now,
+      // because the evaluation rewards shrinking the bare king's box rather than only pushing it.
+      add('king and rook actually mate the bare king', rk.over && /checkmate/i.test(rk.result), rk.plies + ' plies: ' + rk.result);
       add('the rook is never thrown away', !/insufficient/i.test(rk.result), rk.result || 'still winning');
       const kp = drive('7k/8/8/8/8/8/4P3/4K3 w - - 0 1', 90, CL.WHITE);
       add('the pawn ending makes progress', (kp.pawnTo >= 0 && kp.pawnTo < kp.pawnFrom) || kp.promoted,

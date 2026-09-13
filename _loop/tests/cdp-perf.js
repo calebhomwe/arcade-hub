@@ -15,6 +15,8 @@ const MEASURE = `(function () {
   out.bot.push(time('medium (depth 2)', () => findBestMove(mid.board, mid.turn, mid.ep, mid.cr, 2, 'balanced'), 12));
   out.bot.push(time('hard (depth 3)', () => findBestMove(mid.board, mid.turn, mid.ep, mid.cr, 3, 'balanced'), 6));
   out.bot.push(time('endgame (few pieces, depth raised)', () => findBestMove(end.board, end.turn, end.epTarget, end.castlingRights, 3, 'balanced'), 6));
+  const rk = stateFromFen('7k/8/8/8/8/8/8/K5R1 w - - 0 1');
+  out.bot.push(time('bare-king rook ending (deepest search)', () => findBestMove(rk.board, rk.turn, rk.epTarget, rk.castlingRights, 3, 'balanced'), 6));
   out.frame = time('draw()', () => draw(), 60).ms;
   out.review = (function () {
     resetGame(); if (window.showStartScreen) window.showStartScreen(false);
@@ -70,6 +72,7 @@ const MEASURE = `(function () {
           checks.push(['medium bot move', v.bot[1].ms, b.botMediumMs]);
           checks.push(['hard bot move', v.bot[2].ms, b.botHardMs]);
           checks.push(['endgame move', v.bot[3].ms, b.endgameMs]);
+          checks.push(['rook ending move', v.bot[4].ms, b.rookEndingMs]);
           checks.push(['frame repaint', v.frame, b.frameMs]);
           checks.push(['review per ply', v.review.ms / Math.max(1, v.review.plies), b.reviewMsPerPly]);
           checks.push(['load bytes', v.bytes, b.loadBytes]);
