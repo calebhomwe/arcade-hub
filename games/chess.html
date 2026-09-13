@@ -6580,6 +6580,43 @@ window.__chessTest = function (caseId) {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
+    quiet: function () {
+      fresh();
+      botEnabled = false;
+      // defaults: the arcade layer is opt-in, so a fresh board must be plain
+      const memesBox = document.querySelector('input[id*=meme], input[id*=Meme]');
+      add('memes are off by default', !memesBox || memesBox.checked === false, memesBox ? 'unchecked' : 'not offered here');
+      add('coaching is off by default', document.getElementById('setTips').checked === false, 'off');
+      add('the evaluation bar is off by default', document.getElementById('evalBar').hidden === true, 'hidden');
+      add('no meme panel is open', document.querySelectorAll('#memePanel.show').length === 0, 'closed');
+      add('nothing is written into the tip or trap caption', document.getElementById('tip').textContent === '' && document.getElementById('trapCaption').textContent === '', 'empty');
+      add('the page carries no audio elements of its own', document.querySelectorAll('audio').length === 0, 'none');
+
+      // playing a move with the opt-ins off must not add any content
+      play(['e2e4', 'e7e5']);
+      add('a move adds no meme or coaching text', document.getElementById('tip').textContent === '' && document.getElementById('trapCaption').textContent === '',
+        document.getElementById('tip').textContent.slice(0, 30) || 'quiet');
+      add('the meme panel stays shut through a move', document.querySelectorAll('#memePanel.show').length === 0, 'closed');
+
+      // muting is honoured at the source, not just in the UI
+      const b = window.SfxBank;
+      if (b) {
+        const was = (function () { try { return localStorage.getItem('gamesMuted'); } catch (e) { return null; } })();
+        try { localStorage.setItem('gamesMuted', '1'); } catch (e) {}
+        const mutedResult = b.play('move');
+        try { if (was === null) localStorage.removeItem('gamesMuted'); else localStorage.setItem('gamesMuted', was); } catch (e) {}
+        add('a muted game refuses to play a cue', mutedResult === false, 'muted -> ' + mutedResult);
+        add('the mute gate is read from storage, not from a variable', (function () {
+          let ok = false;
+          try { localStorage.setItem('gamesMuted', '1'); ok = b.play('move') === false; localStorage.removeItem('gamesMuted'); } catch (e) {}
+          return ok;
+        })(), 'storage honoured');
+      }
+      // the positive direction (a cue really plays, and every cue is decoded before it is needed)
+      // is asserted by the bank case, which owns the sound set and its warm-up
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
     opening: function () {
       fresh();
       botEnabled = false;

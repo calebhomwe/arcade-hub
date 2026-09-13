@@ -1,0 +1,18 @@
+(function () {
+  const out = {
+    storedPrefs: Object.keys(localStorage).sort(),
+    memesChecked: (function () { const c = document.querySelector('input[id*=meme], input[id*=Meme]'); return c ? c.checked : null; })(),
+    tipsChecked: (function () { const c = document.getElementById('setTips'); return c ? c.checked : null; })(),
+    coordsChecked: (function () { const c = document.getElementById('setCoords'); return c ? c.checked : null; })(),
+    evalHidden: (function () { const e = document.getElementById('evalBar'); return e ? e.hidden : null; })(),
+    memePanelOpen: document.querySelectorAll('#memePanel.show').length,
+    memePanelExists: !!document.getElementById('memePanel'),
+    teachActive: (function () { const b = document.getElementById('btnTeach'); return b ? b.classList.contains('active') : null; })(),
+    tip: (document.getElementById('tip') || {}).textContent || '',
+    trapCaption: (document.getElementById('trapCaption') || {}).textContent || '',
+    audioElements: document.querySelectorAll('audio').length,
+    startScreenVisible: (function () { const s = document.getElementById('startScreen'); return s ? getComputedStyle(s).display !== 'none' : null; })(),
+    moveList: (document.getElementById('moveList') || {}).textContent || ''
+  };
+  return JSON.stringify(out);
+})()

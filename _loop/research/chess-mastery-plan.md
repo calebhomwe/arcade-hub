@@ -29,29 +29,29 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [x] C1. Eval bar (clamped, driven by the deterministic grader, optional during play).
 - [x] C2. Live move-quality tags reusing the same grader when coaching is on.
 - [x] C3. Review accuracy % per side + click a row to jump to that position.
-- [ ] C4. Opening name table shown in the review.
+- [x] C4. Opening name table shown in the review.
 - [ ] C5. Puzzle quality screen for any new positions (no filler).
 
 ## D. Accessibility
 - [x] D1. aria-live move/check/mate announcements + labelled board grid.
-- [ ] D2. Help overlay with shortcuts; focus never escapes dialogs; 40px+ targets.
+- [x] D2. Help overlay with shortcuts; focus never escapes dialogs; 40px+ targets.
 - [ ] D3. Colour-blind board variant (contrast measured).
 
 ## E. Mobile / installability
-- [ ] E1. PWA: webmanifest + service worker + offline CDP proof.
+- [x] E1. PWA: webmanifest + service worker + offline CDP proof.
 - [x] E2. Landscape phone layout verified (844x390, 932x430).
 
 ## F. Feel, audio, content
 - [ ] F1. Start-screen theme/piece preview.
-- [ ] F2. Settings sound-check button that plays every cue in order.
-- [ ] F3. Quiet-default audit (no bubble/meme/shake without opt-in).
+- [x] F2. Settings sound-check button that plays every cue in order.
+- [x] F3. Quiet-default audit (no bubble/meme/shake without opt-in).
 
 ## G. Performance & robustness
 - [ ] G1. Budget recorded and enforced (frame, bot move, review, load bytes).
 - [ ] G2. 120-ply stress: no unbounded timers/listeners/DOM growth.
-- [ ] G3. Chaos fuzz: random input, zero uncaught errors.
+- [x] G3. Chaos fuzz: random input, zero uncaught errors.
 
 ## H. Hygiene
-- [ ] H1. Remove root z*.html debug scratch once unreferenced.
-- [ ] H2. Archive dead legacy mods; keep the not-loaded assertion.
+- [x] H1. Remove root z*.html debug scratch once unreferenced.
+- [x] H2. Archive dead legacy mods; keep the not-loaded assertion.
 - [ ] H3. Sign-off note so the hub's 240 paused queue tasks can resume.
