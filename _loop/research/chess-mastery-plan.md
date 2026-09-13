@@ -33,7 +33,7 @@ State: this file (checkboxes) and chess-loop-ledger.md (append-only evidence).
 - [ ] C5. Puzzle quality screen for any new positions (no filler).
 
 ## D. Accessibility
-- [ ] D1. aria-live move/check/mate announcements + labelled board grid.
+- [x] D1. aria-live move/check/mate announcements + labelled board grid.
 - [ ] D2. Help overlay with shortcuts; focus never escapes dialogs; 40px+ targets.
 - [ ] D3. Colour-blind board variant (contrast measured).
 
