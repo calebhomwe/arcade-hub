@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>funmode</title></head>
+<body style="margin:0;background:#111;color:#eee;font:12px monospace">
+<iframe id="f" src="games/chess.html" style="width:1100px;height:900px;border:0"></iframe>
+<pre id="out"></pre>
+<script>
+var res=[],fails=0;
+function chk(n,ok,extra){ if(!ok)fails++; res.push((ok?'PASS ':'FAIL ')+n+(extra!==undefined?' ['+extra+']':'')); }
+function sqi(t){ return (8 - parseInt(t[1],10)) * 8 + (t.charCodeAt(0) - 97); }
+document.getElementById('f').addEventListener('load', function(){
+  var w=document.getElementById('f').contentWindow, d=w.document;
+  setTimeout(function(){
+    try{
+      // 1. memes must be OFF in a normal game
+      chk('memes are opt-in (off by default)',
+          !!w.ChessMemes && w.ChessMemes.isOn && w.ChessMemes.isOn() === false,
+          w.ChessMemes ? String(w.ChessMemes.isOn && w.ChessMemes.isOn()) : 'no module');
+
+      // 2. a capture in regular mode must not kick the screen, but must still
+      //    make a premium move sound
+      var AC = w.AudioContext || w.webkitAudioContext;
+      var n = {osc:0, buf:0};
+      var oO = AC.prototype.createOscillator, oB = AC.prototype.createBufferSource;
+      AC.prototype.createOscillator = function(){ n.osc++; return oO.apply(this, arguments); };
+      AC.prototype.createBufferSource = function(){ n.buf++; return oB.apply(this, arguments); };
+
+      var motion = w.__chessTest('motion');
+      var lines = (motion && motion.results) ? motion.results : motion;
+      var txt = JSON.stringify(lines);
+      chk('motion suite reports regular mode keeps the board still',
+          txt.indexOf('regular mode keeps the board still') >= 0 && txt.indexOf('"ok":false') < 0,
+          txt.slice(0,200));
+
+      // 3. real capture through the engine: sound yes, shake no
+      w.resetGame(); w.ChessMods.api.setBot(false);
+      ['e2e4','d7d5'].forEach(function(t){ w.ChessMods.api.playMove(sqi(t.slice(0,2)), sqi(t.slice(2,4))); });
+      n.osc=0; n.buf=0;
+      var shakeBefore = d.body.classList.contains('shake');
+      w.ChessMods.api.playMove(sqi('e4'), sqi('d5'));
+      chk('capture still makes a premium sound', n.osc + n.buf > 0, 'nodes=' + (n.osc+n.buf));
+      chk('capture does not add a body shake class', d.body.classList.contains('shake') === shakeBefore);
+
+      // 4. turning meme mode on restores the fun
+      chk('ChessMemes exposes isOn()', typeof w.ChessMemes.isOn === 'function');
+
+      // 5. Meme mode must still be reachable: open the picker, tick master
+      w.ChessMemes.open();
+      var master = d.getElementById('memeMaster');
+      chk('meme panel offers a master switch', !!master, master ? 'found' : 'missing');
+      if (master) {
+        chk('master switch starts unchecked', master.checked === false, String(master.checked));
+        master.checked = true;
+        master.dispatchEvent(new w.Event('change', {bubbles:true}));
+        chk('ticking master turns Meme mode on', w.ChessMemes.isOn() === true, String(w.ChessMemes.isOn()));
+        master.checked = false;
+        master.dispatchEvent(new w.Event('change', {bubbles:true}));
+        chk('unticking master turns it back off', w.ChessMemes.isOn() === false, String(w.ChessMemes.isOn()));
+      }
+      w.ChessMemes.close();
+
+      document.getElementById('out').textContent=res.join('\n');
+      document.title = fails===0 ? 'FUNPASS:'+res.length : 'FUNFAIL:'+fails;
+    }catch(e){
+      document.getElementById('out').textContent=res.join('\n')+'\nTHREW '+e.message+'\n'+e.stack;
+      document.title='THREW:'+e.message;
+    }
+  },1200);
+});
+</script>
+</body></html>

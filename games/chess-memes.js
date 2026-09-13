@@ -12,7 +12,10 @@
   var KEY_SPEECH = 'cmm-speech';
   var RATES = { rare: 2600, normal: 900, chaos: 250 };
   var RATE_MS = 900;
-  var state = { on: true, packs: {}, sounds: {}, caps: {}, vol: 0.9, catalog: null, captions: {}, last: 0, speech: true };
+  // Memes are opt-in. This initialiser used to say on:true while load() read the
+  // stored value defaulting to false, so whether memes fired in a normal game
+  // came down to load order.
+  var state = { on: false, packs: {}, sounds: {}, caps: {}, vol: 0.9, catalog: null, captions: {}, last: 0, speech: true };
   var buffers = {};
   var element = null;
   var audioCtx = null;
@@ -223,6 +226,7 @@
       if (fired || reaction) dispatch();
       return fired;
     },
+    isOn: function () { return !!state.on; },
     open: function () { render(true); },
     close: function () { hide(); },
     toggle: function () { var p = ensure(); if (!p) return; var open = p.classList.contains('show'); if (open) hide(); else render(true); },
