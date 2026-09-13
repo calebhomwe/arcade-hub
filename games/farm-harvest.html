@@ -18,7 +18,20 @@
     overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
   }
   #app{max-width:620px; margin:0 auto; padding:8px 10px 90px; min-height:100%;}
-  a.hub{display:inline-block; color:var(--dim); text-decoration:none; font-size:14px; margin:2px 0 6px;}
+  a.hub{display:inline-flex; align-items:center; min-height:44px; padding:0 10px; margin:2px 0 2px -10px;
+  border-radius:10px; color:var(--dim); text-decoration:none; font-size:14px;}
+.hub:hover{color:var(--txt); background:rgba(255,255,255,.07);}
+.btn:focus-visible,.iconBtn:focus-visible,.crop:focus-visible,.buyBtn:focus-visible,.hub:focus-visible{
+  outline:3px solid #facc15; outline-offset:3px;}
+.btn:active,.iconBtn:active,.crop:active,.buyBtn:active{transform:scale(.95);}
+.btn,.iconBtn,.crop,.buyBtn{transition:transform .1s ease, filter .12s ease, background .12s ease;}
+.btn:hover,.buyBtn:hover{filter:brightness(1.07);}
+@keyframes denyShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.denyShake{animation:denyShake .22s ease-out;}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s !important; animation-iteration-count:1 !important;}
+  .btn,.iconBtn,.crop,.buyBtn{transition:none;}
+}
   .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.18);
     border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
   #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
@@ -170,6 +183,7 @@
   // in. Adopt the shared key on boot and mirror every change back to it.
   function readHubMute(){ try { return localStorage.getItem('gamesMuted') === '1'; } catch(e){ return false; } }
   function writeHubMute(v){ try { localStorage.setItem('gamesMuted', v ? '1' : '0'); } catch(e){} }
+  var bestCelebrated = false, bestSeen = 0;
   function setMuted(v){
     state.muted = !!v;
     writeHubMute(state.muted);
@@ -361,7 +375,25 @@
 
   function plant(i){
     var id = state.selected, c = CROPS[id];
-    if(state.coins < c.cost){ sfx("deny"); return; }
+    if(state.coins < c.cost){
+      sfx("deny");
+      // visible refusal: a sound alone is nothing on a muted phone
+      if(plotRefs[i]){
+        var cd = plotCenter(i);
+        floatText(cd.x, cd.y - 10, "Need " + fmt(c.cost) + " \ud83e\udd99");
+        var rootEl = plotRefs[i].root;
+        rootEl.classList.remove("denyShake"); void rootEl.offsetWidth; rootEl.classList.add("denyShake");
+      }
+      var cheapest = null;
+      for(var k=0;k<CROP_IDS.length;k++){
+        var cid = CROP_IDS[k];
+        if(state.coins >= CROPS[cid].cost && (!cheapest || CROPS[cid].cost > CROPS[cheapest].cost)) cheapest = cid;
+      }
+      toast(cheapest
+        ? (CROPS[id].name + " costs " + fmt(c.cost) + " \u2014 you can afford " + CROPS[cheapest].emoji + " " + CROPS[cheapest].name)
+        : ("Harvest a ready plot first \u2014 " + CROPS[id].name + " costs " + fmt(c.cost)));
+      return;
+    }
     state.coins -= c.cost;
     var p = state.plots[i];
     p.crop = id; p.progress = 0; p.waterUntil = 0;
@@ -685,6 +717,11 @@
     if(lastCps !== cs){ lastCps = cs; cpsEl.textContent = cs; }
     var bs = fmt(state.earned);
     if(lastBest !== bs){ lastBest = bs; bestEl.textContent = bs; startBestEl.textContent = bs; }
+    if(!bestCelebrated && bs > 0 && state.earned >= bs && state.earned > bestSeen){
+      bestCelebrated = true;
+      try { if(window.Kit) Kit.text(window.innerWidth/2, 120, "NEW BEST!", "#facc15", 26); } catch(e){}
+    }
+    bestSeen = Math.max(bestSeen, state.earned);
     var seedTotal = 0;
     for(var si=0; si<CROP_IDS.length; si++) seedTotal += (state.seeds[CROP_IDS[si]] || 0);
     if(lastSeeds !== seedTotal){ lastSeeds = seedTotal; $("seeds").textContent = seedTotal; }

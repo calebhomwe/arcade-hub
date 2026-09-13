@@ -43,6 +43,25 @@ document.getElementById('f').addEventListener('load', function(){
       chk('51 combo layers a bright fifth', src.indexOf('beep(880 + Math.min(comboN, 8) * 55') >= 0);
       chk('51 big pulls get a low body thump', src.indexOf('beep(120, 0.14, "sine"') >= 0);
 
+      // pass 4/5/6: polish, press feedback, hit targets, reduced motion
+      chk('52 focus-visible rings defined', src.indexOf('.hub:focus-visible') >= 0);
+      chk('53 press-scale on controls', src.indexOf('.btn:active,.iconBtn:active,.crop:active,.buyBtn:active') >= 0);
+      chk('53 respects prefers-reduced-motion', src.indexOf('prefers-reduced-motion') >= 0);
+      var hub = d.querySelector('.hub');
+      chk('54 Hub link >= 44px tall', hub.getBoundingClientRect().height >= 44,
+          hub.getBoundingClientRect().height.toFixed(0) + 'px');
+      var ib = d.getElementById('muteBtn').getBoundingClientRect();
+      chk('54 icon buttons >= 44px', ib.width >= 44 && ib.height >= 44, ib.width.toFixed(0)+'x'+ib.height.toFixed(0));
+
+      // pass 6/7: refusing a plant must be VISIBLE, not just audible
+      chk('54 unaffordable plant shakes the plot', src.indexOf('denyShake') >= 0);
+      chk('55 unaffordable plant names the cost', src.indexOf('"Need " + fmt(c.cost)') >= 0);
+      chk('55 suggests a crop you can actually afford', src.indexOf('you can afford') >= 0);
+
+      // pass 8
+      chk('56 new-best flourish wired', src.indexOf('"NEW BEST!"') >= 0);
+      chk('56 best earned persists and renders', !!d.getElementById('startBest'));
+
       // still renders
       chk('game renders plots', d.querySelectorAll('#plotGrid *').length > 0,
           d.querySelectorAll('#plotGrid *').length + ' nodes');
