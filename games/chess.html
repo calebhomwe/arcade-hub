@@ -991,6 +991,7 @@ a.back:hover{ color:var(--cc-text)!important; }
       <span id="sfxVolVal" class="sfx-vol-val">85%</span>
     </div>
     <div class="sfx-set-wrap">
+      <button class="btn" id="btnSoundCheck" title="Play every cue in order so you can hear them">▶ Sound check</button>
       <label for="sfxSetSel" class="sfx-set-label">Chess sounds</label>
       <select class="sel" id="sfxSetSel" title="Chess sound set">
         <option value="natural">Natural</option>
@@ -3821,6 +3822,7 @@ function resetGame(opts) {
   if (trapCap) trapCap.textContent = '';
   const srClear = document.getElementById('srLive');
   if (srClear) srClear.textContent = '';   // a new game must not inherit the last announcement
+  stopSoundCheck();
   game = {
     board: initBoard(), turn: CL.WHITE, epTarget: null, resignedBy: null,
     castlingRights: { K: true, Q: true, k: true, q: true },
@@ -4140,6 +4142,46 @@ function importPgnText(text) {
   updateUI(); draw();
   return res;
 }
+
+// ==================== SOUND CHECK ====================
+// Machine tests can prove a cue decodes and is levelled; only a person can say whether it sounds
+// right. This plays the whole bank in order with each cue named on screen.
+let soundCheckTimer = null, soundCheckIndex = 0;
+function soundCheckList() {
+  const bank = window.SfxBank;
+  const cat = bank && bank.catalog ? bank.catalog() : null;
+  if (!cat || !Array.isArray(cat.sounds)) return [];
+  return cat.sounds.filter(s => s && s.id).map(s => ({ id: s.id, label: s.label || s.id }));
+}
+function stopSoundCheck() {
+  if (soundCheckTimer) { clearTimeout(soundCheckTimer); soundCheckTimer = null; }
+  soundCheckIndex = 0;
+  const btn = document.getElementById('btnSoundCheck');
+  if (btn) btn.textContent = '\u25B6 Sound check';
+}
+function startSoundCheck() {
+  if (soundCheckTimer) { stopSoundCheck(); flashTip('Sound check stopped'); return false; }
+  const list = soundCheckList();
+  if (!list.length) { flashTip('The sound bank is still loading — try again in a moment'); return false; }
+  const bank = window.SfxBank;
+  const btn = document.getElementById('btnSoundCheck');
+  if (btn) btn.textContent = '\u25A0 Stop';
+  soundCheckIndex = 0;
+  const step = () => {
+    if (soundCheckIndex >= list.length) {
+      stopSoundCheck();
+      flashTip('\uD83D\uDD0A That was all ' + list.length + ' cues in the ' + (bank.set ? bank.set() : 'current') + ' set');
+      return;
+    }
+    const item = list[soundCheckIndex++];
+    try { bank.play(item.id); } catch (e) {}
+    flashTip('\uD83D\uDD0A ' + soundCheckIndex + '/' + list.length + ' — ' + item.label);
+    soundCheckTimer = setTimeout(step, 900);
+  };
+  step();
+  return true;
+}
+window.chessSoundCheck = { list: soundCheckList, start: startSoundCheck, stop: stopSoundCheck, running: () => !!soundCheckTimer };
 
 // ==================== SCREEN READER ANNOUNCEMENTS ====================
 // The status line says whose turn it is; this says what just happened, in the same words a
@@ -4740,6 +4782,8 @@ window.chessPGN = buildPGN;
   const btn = document.getElementById('btnSettings');
   const panel = document.getElementById('settingsPanel');
   if (!btn || !panel) return;
+  const soundCheckBtn = document.getElementById('btnSoundCheck');
+  if (soundCheckBtn) soundCheckBtn.addEventListener('click', function () { startSoundCheck(); });
   const evalToggle = document.getElementById('setEval');
   if (evalToggle) { evalToggle.checked = showEvalBar; evalToggle.addEventListener('change', function () { setEvalBar(this.checked); }); }
   const coords = document.getElementById('setCoords');
@@ -6391,6 +6435,46 @@ window.__chessTest = function (caseId) {
       clearNotes();
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    soundcheck: function () {
+      fresh();
+      const btn = document.getElementById('btnSoundCheck');
+      add('the settings panel offers a sound check', !!btn, btn ? 'present' : 'missing');
+      const list = window.chessSoundCheck.list();
+      add('it enumerates every cue in the loaded bank', list.length >= 10, list.length + ' cues');
+      add('every cue has a name', list.every(x => x.id && x.label), list.slice(0, 3).map(x => x.label).join(', ') + ' …');
+      add('the ids match the sound bank playable set', (function () {
+        const bank = window.SfxBank;
+        const cat = bank && bank.catalog ? bank.catalog() : null;
+        if (!cat) return false;
+        return list.length === cat.sounds.length && list.every((x, i) => x.id === cat.sounds[i].id);
+      })(), 'catalog order matches');
+
+      // starting plays the first cue immediately and names it
+      const started = window.chessSoundCheck.start();
+      add('starting the check plays and names the first cue', started === true && window.chessSoundCheck.running() === true,
+        document.getElementById('tip').textContent.slice(0, 46));
+      add('the button becomes a stop control', btn.textContent.indexOf('Stop') >= 0, btn.textContent.trim());
+      add('clicking again stops it', (function () { window.chessSoundCheck.start(); return window.chessSoundCheck.running() === false; })(), 'stopped');
+      add('the button goes back to its start label', btn.textContent.indexOf('Sound check') >= 0, btn.textContent.trim());
+
+      add('a new game stops any running check', (function () {
+        window.chessSoundCheck.start();
+        const wasRunning = window.chessSoundCheck.running();
+        resetGame();
+        return wasRunning && window.chessSoundCheck.running() === false;
+      })(), 'stopped by reset');
+
+      // a missing bank must degrade, not throw
+      const realBank = window.SfxBank;
+      let threw = null, degraded = null;
+      try {
+        window.SfxBank = { play: function () {}, set: function () { return 'none'; } };   // no catalog()
+        degraded = window.chessSoundCheck.list().length === 0 && window.chessSoundCheck.start() === false;
+      } catch (e) { threw = e.message; }
+      window.SfxBank = realBank;
+      add('a missing catalog degrades instead of throwing', !threw && degraded === true, threw || 'handled');
+      fresh();
     },
     pwa: function () {
       fresh();
