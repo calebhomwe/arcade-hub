@@ -693,6 +693,10 @@ a.back:hover{ color:var(--cc-text)!important; }
   background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:9px;
   color:var(--cc-text); font:600 .74rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; padding:8px 10px; }
 #pgnInput:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.rv-fen-label{ display:block; margin:8px 0 2px; font-size:.7rem; font-weight:700; color:var(--cc-muted); }
+#fenInput{ width:100%; box-sizing:border-box; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+  border-radius:9px; color:var(--cc-text); font:600 .7rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; padding:8px 10px; }
+#fenInput:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .rv-import-row{ display:flex; gap:8px; margin-top:6px; }
 .rv-import-row .btn{ flex:1; justify-content:center; min-height:40px; }
 .rv-status{ margin-top:6px; font-size:.72rem; color:var(--cc-muted); min-height:1em; }
@@ -892,6 +896,13 @@ a.back:hover{ color:var(--cc-text)!important; }
     <div class="rv-import-row">
       <button class="btn" id="btnPgnImport" title="Load the pasted game for analysis">Import</button>
       <button class="btn" id="btnPgnClear" title="Clear the box">Clear</button>
+    </div>
+    <label class="rv-fen-label" for="fenInput">Position (FEN)</label>
+    <input id="fenInput" type="text" spellcheck="false" aria-label="A FEN position to load"
+      placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+    <div class="rv-import-row">
+      <button class="btn" id="btnFenLoad" title="Set the board to this position">Load position</button>
+      <button class="btn" id="btnFenCopy" title="Put the current position in the box">Copy current</button>
     </div>
     <div id="pgnStatus" class="rv-status" role="status" aria-live="polite"></div>
   </details>
@@ -2238,7 +2249,13 @@ function stateFromFen(fen) {
     if (file < 0 || file > 7 || !(rank >= 1 && rank <= 8)) return null;
     ep = idx(8 - rank, file);
   }
-  return { board: board, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK, epTarget: ep, castlingRights: cr };
+  const half = Number(parts[4]);
+  const full = Number(parts[5]);
+  return {
+    board: board, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK, epTarget: ep, castlingRights: cr,
+    halfmove: (Number.isFinite(half) && half >= 0) ? Math.floor(half) : 0,
+    fullmove: (Number.isFinite(full) && full >= 1) ? Math.floor(full) : 1
+  };
 }
 
 function clearGameSnapshot() {
@@ -2293,6 +2310,8 @@ function restoreSavedGame() {
         game.epTarget = base.epTarget;
         game.castlingRights = base.castlingRights;
         game.positionCounts = {};
+        game.halfmoveClock = base.halfmove || 0;
+        game.fullmoveBase = base.fullmove || 1;
         recordPosition(game);
       }
     }
@@ -3973,6 +3992,65 @@ function importPgnText(text) {
   return res;
 }
 
+// ==================== FEN LOAD ====================
+// Loading a position is how you study one, so it validates what it can before touching the
+// board: one king each, no pawn on a back rank, and the side that is not to move must not
+// already be in check (otherwise the position could never have arisen).
+function validateFenPosition(fen) {
+  const st = stateFromFen(fen);
+  if (!st) return { ok: false, error: 'That does not look like a FEN (needs 8 ranks and 4 fields).' };
+  let wk = 0, bk = 0;
+  for (let i = 0; i < 64; i++) {
+    const p = st.board[i];
+    if (!p) continue;
+    if (pType(p) === PT.KING) { if (pColor(p) === CL.WHITE) wk++; else bk++; }
+    if (pType(p) === PT.PAWN && (row(i) === 0 || row(i) === 7)) return { ok: false, error: 'A pawn cannot stand on the first or eighth rank.' };
+  }
+  if (wk !== 1 || bk !== 1) return { ok: false, error: 'A position needs exactly one king each (found ' + wk + ' white, ' + bk + ' black).' };
+  if (isInCheck(st.board, 1 - st.turn)) return { ok: false, error: 'The side not to move is already in check.' };
+  return { ok: true, state: st };
+}
+
+function loadFenPosition(fen) {
+  const check = validateFenPosition(fen);
+  if (!check.ok) return check;
+  const st = check.state;
+  clearGameSnapshot();
+  botEnabled = false; clearBotTimers(); botThinking = false;
+  cancelPreview();
+  game = Object.assign({}, game, {
+    board: st.board, turn: st.turn, epTarget: st.epTarget, castlingRights: st.castlingRights,
+    moveHistory: [], lastMove: null, gameOver: false, result: '',
+    halfmoveClock: st.halfmove || 0, fullmoveBase: st.fullmove || 1,
+    positionCounts: {}, resignedBy: null,
+    capturedByWhite: [], capturedByBlack: []
+  });
+  recordPosition(game);
+  selectedSquare = -1; legalMoves = []; hintArrow = null; pendingPromo = null; hidePromoUI();
+  closeReview();
+  updateUI(); draw();
+  return { ok: true };
+}
+
+(function wireFenLoad() {
+  const box = document.getElementById('fenInput');
+  const load = document.getElementById('btnFenLoad');
+  const copy = document.getElementById('btnFenCopy');
+  const status = document.getElementById('pgnStatus');
+  if (!box || !load) return;
+  const say = t => { if (status) status.textContent = t; };
+  const refresh = () => { try { box.value = toFEN(); } catch (e) {} };
+  refresh();
+  load.addEventListener('click', () => {
+    const r = loadFenPosition(box.value);
+    if (!r.ok) { say('⚠️ ' + r.error); return; }
+    say('✅ Position loaded. The bot is paused and the move list was cleared.');
+    refresh();
+  });
+  if (copy) copy.addEventListener('click', () => { refresh(); say('📋 Current position copied into the box.'); });
+  window.chessRefreshFenBox = refresh;
+})();
+
 (function wirePgnImport() {
   const btn = document.getElementById('btnPgnImport');
   const box = document.getElementById('pgnInput');
@@ -4343,7 +4421,7 @@ function toFEN() {
   const ep = (game.epTarget === null || game.epTarget === undefined)
     ? '-' : (String.fromCharCode(97 + col(game.epTarget)) + (8 - row(game.epTarget)));
   const half = game.halfmoveClock || 0;
-  const full = Math.floor(collectPlies().length / 2) + 1;
+  const full = Math.floor(collectPlies().length / 2) + (game.fullmoveBase || 1);
   return rows.join('/') + ' ' + (game.turn === CL.WHITE ? 'w' : 'b') + ' ' + castling + ' ' + ep + ' ' + half + ' ' + full;
 }
 
@@ -6140,6 +6218,56 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    fenload: function () {
+      fresh();
+      botEnabled = false;
+      window.chessRefreshFenBox && window.chessRefreshFenBox();
+      add('the box pre-fills with the current position', document.getElementById('fenInput').value === toFEN(), document.getElementById('fenInput').value.slice(0, 40));
+
+      // a position with castling rights and an en passant target survives the round trip
+      const rich = '4k3/8/8/3pP3/8/8/8/4K2R b K d6 0 1';
+      const rl = loadFenPosition(rich);
+      add('a FEN with castling rights and en passant loads', rl.ok === true, rl.error || 'loaded');
+      add('the loaded side to move is respected', game.turn === CL.BLACK, 'turn ' + game.turn);
+      add('castling rights are taken from the FEN', game.castlingRights.K === true && game.castlingRights.Q === false && game.castlingRights.k === false, JSON.stringify(game.castlingRights));
+      add('the en passant target is taken from the FEN', game.epTarget === sq('d6'), String(game.epTarget));
+      add('loading clears the move list', collectPlies().length === 0, collectPlies().length + ' plies');
+      add('loading pauses the bot', botEnabled === false, 'bot off');
+      add('copying puts the current position back in the box', (function () { document.getElementById('btnFenCopy').click(); return document.getElementById('fenInput').value.indexOf('4k3') === 0; })(), document.getElementById('fenInput').value.slice(0, 30));
+
+      // every refusal path must leave the board exactly as it was
+      const before = toFEN();
+      const bad = [
+        ['garbage', 'this is not a fen'],
+        ['no kings', '8/8/8/8/8/8/8/8 w - - 0 1'],
+        ['two white kings', '4k3/8/8/8/8/8/8/3KK3 w - - 0 1'],
+        ['a pawn on the back rank', '4k3/8/8/8/8/8/8/P3K3 w - - 0 1'],
+        ['the side not to move in check', 'k7/8/8/8/8/8/8/R3K3 w - - 0 1'],
+        ['a nonsense en passant square', '4k3/8/8/8/8/8/8/4K3 w - z9 0 1'],
+        ['not enough fields', '4k3/8/8/8/8/8/8/4K3 w']
+      ];
+      let threw = null, leaked = null, accepted = [];
+      for (const [label, fen] of bad) {
+        let res = null;
+        try { res = loadFenPosition(fen); } catch (e) { threw = label + ': ' + e.message; break; }
+        if (res.ok) { accepted.push(label); continue; }
+        if (toFEN() !== before) { leaked = label; break; }
+      }
+      add('invalid FENs are refused, not loaded', accepted.length === 0 && !threw, threw || (accepted.length ? 'accepted: ' + accepted.join(', ') : bad.length + ' invalid positions refused'));
+      add('a refused FEN leaves the board untouched', !leaked, leaked ? leaked + ' changed the board' : 'unchanged');
+      add('a refusal explains why', (function () { const r = loadFenPosition('8/8/8/8/8/8/8/8 w - - 0 1'); return typeof r.error === 'string' && r.error.length > 10; })(), 'has a message');
+
+      // a legal position survives its own FEN
+      fresh(); botEnabled = false;
+      play(['e2e4', 'e7e5', 'g1f3', 'b8c6']);
+      const fen = toFEN();
+      const r2 = loadFenPosition(fen);
+      add('a position round-trips through its own FEN', r2.ok && toFEN() === fen, toFEN());
+      add('the loaded position keeps the side to move', game.turn === CL.WHITE, 'turn ' + game.turn);
+
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
