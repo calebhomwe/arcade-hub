@@ -541,6 +541,7 @@ body.cc-clocks .cc-clock{ display:block; }
 
 #sideCol{ display:flex; flex-direction:column; gap:12px; min-width:0; }
 .cc-card{ background:var(--cc-panel); border-radius:6px; overflow:hidden; }
+.ml-tag{ margin-left:4px; font-size:.7em; opacity:.85; }
 .ml-nav{ display:inline-flex; gap:6px; }
 .ml-nav button{ width:44px; height:44px; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
   color:var(--cc-text); font:700 1.15rem/1 system-ui; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
@@ -2327,6 +2328,7 @@ function saveGameSnapshot() {
         const raw = (i + 1 < game.moveHistory.length) ? game.moveHistory[i + 1].lastMove : game.lastMove;
         return raw && raw.from !== undefined ? savedMoveShape(raw) : null;
       }).filter(Boolean),
+      tags: game.tags || {},
       baseFen: (function () {
         const first = game.moveHistory[0];
         return first ? fenFromState(first.board, first.turn, first.epTarget, first.castlingRights) : null;
@@ -2392,6 +2394,7 @@ function restoreSavedGame() {
   }
   replaying = false;
   refreshClocks();
+  if (snap.tags && typeof snap.tags === 'object') game.tags = snap.tags;
   const ok = game.moveHistory.length > 0 && !game.gameOver;
   if (!ok) clearGameSnapshot();
   return ok;
@@ -3340,6 +3343,20 @@ function executeMove(move) {
   } else if (move.castle) { if (!replaying) { sfxCastle(); if (juiceLevel > 30) triggerShake(0.5); } }
 
   if (replaying) { updateUI(); return; }
+  if (coachTips && !puzzleMode) {
+    // grade the move we just played with the same deterministic grader the review uses,
+    // so the move list can mark it straight away
+    try {
+      const snap = game.moveHistory[game.moveHistory.length - 1];
+      if (snap) {
+        if (!game.tags) game.tags = {};
+        const entry = { snap: snap, move: move, turn: snap.turn };
+        analyzeReviewEntry(entry);
+        game.tags[game.moveHistory.length - 1] = entry.cls;
+        mlCache.n = -1;
+      }
+    } catch (e) {}
+  }
   try {
     const beforeSnap = game.moveHistory[game.moveHistory.length - 1];
     const san = beforeSnap ? moveToSAN(beforeSnap, move, game) : (sqName(move.from) + sqName(move.to));
@@ -3468,9 +3485,12 @@ function updateUI() {
       const wPly = i, bPly = i + 1;
       const wPre = previewPlyIndex === wPly ? ' ml-pre' : '';
       const bPre = (plies[i + 1] && previewPlyIndex === bPly) ? ' ml-pre' : '';
-      const btn = (san, cur, pre, ply, has) => has
-        ? '<span class="ml-mv' + cur + pre + '" role="button" tabindex="0" data-ply="' + ply + '" title="Show the position after ' + san + '">' + san + '</span>'
-        : '<span class="ml-mv' + cur + '"></span>';
+      const btn = (san, cur, pre, ply, has) => {
+        if (!has) return '<span class="ml-mv' + cur + '"></span>';
+        const cls = coachTips && game.tags ? game.tags[ply] : null;
+        const mark = cls && REVIEW_TAGS[cls] ? '<span class="ml-tag" title="' + REVIEW_TAGS[cls][1] + '">' + REVIEW_TAGS[cls][0] + '</span>' : '';
+        return '<span class="ml-mv' + cur + pre + '" role="button" tabindex="0" data-ply="' + ply + '" title="Show the position after ' + san + '">' + san + mark + '</span>';
+      };
       rows += '<div class="ml-row"><span class="ml-no">' + (i / 2 + 1) + '.</span>'
             + btn(wSan, wCur, wPre, wPly, true)
             + btn(bSan, bCur, bPre, bPly, !!plies[i + 1])
@@ -6303,6 +6323,63 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    livetags: function () {
+      fresh();
+      botEnabled = false;
+      const CR0 = { K: false, Q: false, k: false, q: false };
+      const setPos = (list, turn) => {
+        const b = new Array(64).fill(0);
+        for (const e of list) b[sq(e[0])] = e[1];
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: null, castlingRights: CR0, moveHistory: [], lastMove: null,
+          gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}, tags: {}
+        });
+        selectedSquare = -1; legalMoves = []; mlCache.n = -1; updateUI(); draw();
+      };
+      const playOne = (from, to) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(m => m.from === sq(from) && m.to === sq(to));
+        if (mv) executeMove(mv);
+        return !!mv;
+      };
+      const tagCount = () => game.tags ? Object.keys(game.tags).length : 0;
+
+      setCoachTips(false);
+      play(['e2e4', 'e7e5']);
+      add('no marks are stored while coaching is off', tagCount() === 0, tagCount() + ' marks');
+      add('no glyphs are drawn while coaching is off', document.querySelectorAll('#moveList .ml-tag').length === 0, 'clean list');
+
+      setCoachTips(true);
+      play(['g1f3']);
+      const cls = game.tags ? game.tags[2] : null;
+      add('a played move is graded as it happens', !!cls && !!REVIEW_TAGS[cls], 'ply 2 = ' + cls);
+      add('the move list shows the mark', document.querySelectorAll('#moveList .ml-tag').length >= 1, document.querySelectorAll('#moveList .ml-tag').length + ' glyphs');
+
+      // known answers, through the same grader the review uses
+      const hanging = [['a1', P(PT.KING, CL.WHITE)], ['h1', P(PT.KING, CL.BLACK)], ['d4', P(PT.QUEEN, CL.WHITE)], ['d8', P(PT.ROOK, CL.BLACK)]];
+      setPos(hanging, CL.WHITE);
+      playOne('d4', 'd8');
+      add('taking a free rook is marked best', game.tags[0] === 'best', String(game.tags[0]));
+      setPos(hanging, CL.WHITE);
+      playOne('d4', 'h4');
+      add('missing a free rook is marked a blunder', game.tags[0] === 'blunder', String(game.tags[0]));
+
+      // reconstructing a game must not grade it
+      game.tags = {};
+      importPgnText('1. d4 d5 2. c4');
+      add('importing a game does not grade the imported moves', tagCount() === 0, tagCount() + ' marks');
+
+      // marks survive a save and a restore
+      fresh(); botEnabled = false; setCoachTips(true);
+      play(['e2e4', 'e7e5', 'g1f3', 'b8c6']);
+      const before = JSON.stringify(game.tags || {});
+      saveGameSnapshot();
+      restoreSavedGame();
+      add('marks survive a save and restore', JSON.stringify(game.tags || {}) === before && before !== '{}', before);
+
+      setCoachTips(false);
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
