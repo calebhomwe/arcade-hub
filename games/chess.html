@@ -2044,6 +2044,150 @@ let redoStack = [];
 let premove = null;
 let premoveDelay = 140;
 let premoveTimer = null;
+
+// ==================== SAVED GAME (reload-proof resume) ====================
+const SAVE_KEY = 'chessSavedGame';
+const SAVE_VERSION = 1;
+let replaying = false;
+
+function savedMoveShape(move) {
+  return { from: move.from, to: move.to, castle: move.castle || null, ep: !!move.ep, promo: !!move.promo, promoPiece: move.promoPiece || 0 };
+}
+
+// FEN for an arbitrary position, and the reverse. The saved game stores its base position so
+// a game that did not start from the standard array (imported or hand-set) still restores.
+function fenFromState(board, turn, epTarget, castlingRights) {
+  const letter = { 1: 'k', 2: 'q', 3: 'r', 4: 'b', 5: 'n', 6: 'p' };
+  const rows = [];
+  for (let r = 0; r < 8; r++) {
+    let s = '', empty = 0;
+    for (let c = 0; c < 8; c++) {
+      const p = board[idx(r, c)];
+      if (!p) { empty++; continue; }
+      if (empty) { s += empty; empty = 0; }
+      const L = letter[pType(p)] || '?';
+      s += pColor(p) === CL.WHITE ? L.toUpperCase() : L;
+    }
+    if (empty) s += empty;
+    rows.push(s);
+  }
+  const cr = castlingRights || {};
+  const cs = ((cr.K ? 'K' : '') + (cr.Q ? 'Q' : '') + (cr.k ? 'k' : '') + (cr.q ? 'q' : '')) || '-';
+  const ep = (epTarget === null || epTarget === undefined) ? '-' : (String.fromCharCode(97 + col(epTarget)) + (8 - row(epTarget)));
+  return rows.join('/') + ' ' + (turn === CL.WHITE ? 'w' : 'b') + ' ' + cs + ' ' + ep + ' 0 1';
+}
+
+function stateFromFen(fen) {
+  if (typeof fen !== 'string') return null;
+  const parts = fen.trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const rows = parts[0].split('/');
+  if (rows.length !== 8) return null;
+  const board = new Array(64).fill(0);
+  for (let r = 0; r < 8; r++) {
+    let c = 0;
+    for (const ch of rows[r]) {
+      if (ch >= '1' && ch <= '8') { c += Number(ch); continue; }
+      const lo = ch.toLowerCase();
+      const t = lo === 'k' ? PT.KING : lo === 'q' ? PT.QUEEN : lo === 'r' ? PT.ROOK : lo === 'b' ? PT.BISHOP : lo === 'n' ? PT.KNIGHT : lo === 'p' ? PT.PAWN : 0;
+      if (!t || c > 7) return null;
+      board[idx(r, c)] = P(t, ch === lo ? CL.BLACK : CL.WHITE);
+      c++;
+    }
+    if (c !== 8) return null;
+  }
+  const cr = { K: parts[2].indexOf('K') >= 0, Q: parts[2].indexOf('Q') >= 0, k: parts[2].indexOf('k') >= 0, q: parts[2].indexOf('q') >= 0 };
+  let ep = null;
+  if (parts[3] && parts[3] !== '-') {
+    const file = parts[3].charCodeAt(0) - 97, rank = Number(parts[3][1]);
+    if (file < 0 || file > 7 || !(rank >= 1 && rank <= 8)) return null;
+    ep = idx(8 - rank, file);
+  }
+  return { board: board, turn: parts[1] === 'w' ? CL.WHITE : CL.BLACK, epTarget: ep, castlingRights: cr };
+}
+
+function clearGameSnapshot() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+}
+
+function saveGameSnapshot() {
+  if (replaying || puzzleMode || !game || game.gameOver || game.moveHistory.length === 0) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v: SAVE_VERSION,
+      moves: game.moveHistory.map((snap, i) => {
+        const raw = (i + 1 < game.moveHistory.length) ? game.moveHistory[i + 1].lastMove : game.lastMove;
+        return raw && raw.from !== undefined ? savedMoveShape(raw) : null;
+      }).filter(Boolean),
+      baseFen: (function () {
+        const first = game.moveHistory[0];
+        return first ? fenFromState(first.board, first.turn, first.epTarget, first.castlingRights) : null;
+      })(),
+      clockEnabled: !!clockEnabled,
+      clockWhite: clockWhite,
+      clockBlack: clockBlack,
+      minutes: CLOCK_START / 60
+    }));
+  } catch (e) {}
+}
+
+function loadGameSnapshot() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { return null; }
+  if (!raw || raw.v !== SAVE_VERSION || !Array.isArray(raw.moves) || !raw.moves.length) return null;
+  for (const m of raw.moves) {
+    if (!m || typeof m.from !== 'number' || typeof m.to !== 'number') return null;
+    if (m.from < 0 || m.from > 63 || m.to < 0 || m.to > 63 || m.from === m.to) return null;
+  }
+  return raw;
+}
+
+// Rebuild an interrupted game by replaying its move list through the real move path with
+// every side effect (sound, particles, stats, memes, save, bot) suppressed.
+function restoreSavedGame() {
+  const snap = loadGameSnapshot();
+  if (!snap) return false;
+  replaying = true;
+  try {
+    resetGame({ keepSave: true });
+    if (snap.baseFen) {
+      const base = stateFromFen(snap.baseFen);
+      if (base) {
+        game.board = base.board;
+        game.turn = base.turn;
+        game.epTarget = base.epTarget;
+        game.castlingRights = base.castlingRights;
+        game.positionCounts = {};
+        recordPosition(game);
+      }
+    }
+    if (snap.clockEnabled) { clockEnabled = true; CLOCK_START = Math.max(60, Math.round((snap.minutes || 3) * 60)); }
+    for (const raw of snap.moves) {
+      if (game.gameOver) break;
+      const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+      const mv = legal.find(m => m.from === raw.from && m.to === raw.to && (raw.promo ? !!m.promo : true));
+      if (!mv) break;
+      if (raw.castle) mv.castle = raw.castle;
+      if (raw.ep) mv.ep = true;
+      if (raw.promo && raw.promoPiece) mv.promoPiece = raw.promoPiece;
+      executeMove(mv);
+    }
+    if (typeof snap.clockWhite === 'number') clockWhite = snap.clockWhite;
+    if (typeof snap.clockBlack === 'number') clockBlack = snap.clockBlack;
+  } catch (e) {
+    replaying = false;
+    clearGameSnapshot();
+    resetGame();
+    return false;
+  }
+  replaying = false;
+  refreshClocks();
+  const ok = game.moveHistory.length > 0 && !game.gameOver;
+  if (!ok) clearGameSnapshot();
+  return ok;
+}
+
+window.chessSaveShape = function () { return loadGameSnapshot(); };
 function clearPremoveTimer() { if (premoveTimer) { clearTimeout(premoveTimer); premoveTimer = null; } }
 function clearPremove() { if (!premove) return; premove = null; draw(); }
 function tryPremove() {
@@ -2883,7 +3027,7 @@ function executeMove(move) {
   if (move.capture) capturedPiece = move.capture;
   else if (move.ep) capturedPiece = move.capture;
 
-  if (move.capture || move.ep) {
+  if (!replaying && (move.capture || move.ep)) {
     comboCount++;
     triggerShake(Math.min(2.5, 0.8 + comboCount * 0.3));
     sfxCapture();
@@ -2897,15 +3041,15 @@ function executeMove(move) {
     if (capVal >= 5) spawnTextPop(x, y - sqSize*0.3, 'BANG!', '#facc15', sqSize*0.35);
     else if (comboCount >= 3) spawnTextPop(x, y - sqSize*0.3, `${comboCount}x COMBO!`, '#f472b6', sqSize*0.25);
     triggerFlash(move.to);
-  } else { comboCount = 0; sfxMove(); }
+  } else if (!replaying) { comboCount = 0; sfxMove(); }
 
-  if (juiceLevel > 10 && !move.capture && !move.ep) {
+  if (!replaying && juiceLevel > 10 && !move.capture && !move.ep) {
     const x = padding + (flip?7-toC:toC) * sqSize + sqSize/2, y = padding + (flip?7-toR:toR) * sqSize + sqSize/2;
     spawnParticles(x, y, 5, game.turn === CL.WHITE ? '#fff' : '#1a1a2e');
     if (juiceLevel > 50) { spawnParticles(x, y, 4, '#facc15'); spawnParticles(x, y, 3, '#a78bfa'); }
   }
 
-  if (move.promo && juiceLevel > 10) {
+  if (!replaying && move.promo && juiceLevel > 10) {
     sfxPromote();
     const px = padding + (flip?7-toC:toC) * sqSize + sqSize/2, py = padding + (flip?7-toR:toR) * sqSize + sqSize/2;
     spawnParticles(px, py, 25, '#facc15'); spawnParticles(px, py, 15, '#f472b6');
@@ -2915,7 +3059,7 @@ function executeMove(move) {
 
   const animPiece = game.board[move.from];
   const animCaptured = move.ep ? game.board[idx(row(move.from), col(move.to))] : game.board[move.to];
-  startMoveAnim(animPiece, move.from, move.to, animCaptured, move.ep ? idx(row(move.from), col(move.to)) : move.to);
+  if (!replaying) startMoveAnim(animPiece, move.from, move.to, animCaptured, move.ep ? idx(row(move.from), col(move.to)) : move.to);
   const { board: nb, ep, castling, captured } = makeMove(game.board, move, game);
   game.moveHistory.push({
     board: game.board, turn: game.turn, epTarget: game.epTarget,
@@ -2927,7 +3071,9 @@ function executeMove(move) {
     positionCounts: {...(game.positionCounts || {})},
   });
   game.board = nb; game.epTarget = ep; game.castlingRights = castling;
-  game.lastMove = { from: move.from, to: move.to };
+  // keep the full move, not just the squares: the review and the saved-game replay both
+  // need castling / en passant / promotion, and a from-to pair silently loses them
+  game.lastMove = { from: move.from, to: move.to, castle: move.castle || null, ep: !!move.ep, promo: !!move.promo, promoPiece: move.promoPiece || 0 };
   if (captured) {
     if (game.turn === CL.WHITE) game.capturedByWhite.push(captured);
     else game.capturedByBlack.push(captured);
@@ -2935,19 +3081,19 @@ function executeMove(move) {
   game.halfmoveClock = (captured || pType(game.board[move.to]) === PT.PAWN) ? 0 : (game.halfmoveClock || 0) + 1;
   const mover = game.turn;
   game.turn = 1 - game.turn;
-  if (clockEnabled && !puzzleMode) {
+  if (clockEnabled && !puzzleMode && !replaying) {
     if (mover === CL.WHITE) clockWhite = Math.min(CLOCK_START, clockWhite + CLOCK_INC);
     else clockBlack = Math.min(CLOCK_START, clockBlack + CLOCK_INC);
     refreshClocks();
   }
   if (move.castle) castleUsedThisGame = true;
 
-  if (isInCheck(game.board, game.turn) && !game.gameOver) {
+  if (!replaying && isInCheck(game.board, game.turn) && !game.gameOver) {
     sfxCheck();
     checkGlowUntil = performance.now() + 900;
     if (!animFrame) animFrame = requestAnimationFrame(animLoop);
   }
-  if (isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
+  if (!replaying && isInCheck(game.board, game.turn) && !game.gameOver && juiceLevel > 10) {
     const kingSq = game.board.findIndex(p => p === P(PT.KING, game.turn));
     if (kingSq >= 0) {
       const kr = flip ? 7 - row(kingSq) : row(kingSq), kc = flip ? 7 - col(kingSq) : col(kingSq);
@@ -2962,7 +3108,7 @@ function executeMove(move) {
       game.result = `${game.turn === CL.WHITE ? 'Black' : 'White'} wins by checkmate!`;
       if (castleUsedThisGame && (game.turn === botColor || !botEnabled)) ACH_FLAGS.castleWin = true;
       if (game.turn === botColor || !botEnabled) sfxWin(); else sfxCheckmate();
-      if (juiceLevel > 0) {
+      if (!replaying && juiceLevel > 0) {
         triggerShake(3); bodyShake();
         const kingSq = game.board.findIndex(p => p === P(PT.KING, game.turn));
         if (kingSq >= 0) {
@@ -2974,15 +3120,16 @@ function executeMove(move) {
     } else { game.result = 'Stalemate — draw!'; sfxDraw(); }
   } else if (hasInsufficientMaterial(game.board)) {
     game.gameOver = true;
-    game.result = 'Draw — insufficient material!'; sfxDraw();
+    game.result = 'Draw — insufficient material!'; if (!replaying) sfxDraw();
   } else if ((game.halfmoveClock || 0) >= 100) {
     game.gameOver = true;
-    game.result = 'Draw — fifty-move rule!'; sfxDraw();
+    game.result = 'Draw — fifty-move rule!'; if (!replaying) sfxDraw();
   } else if (recordPosition(game) >= 3) {
     game.gameOver = true;
-    game.result = 'Draw — threefold repetition!'; sfxDraw();
-  } else if (move.castle) { sfxCastle(); if (juiceLevel > 30) triggerShake(0.5); }
+    game.result = 'Draw — threefold repetition!'; if (!replaying) sfxDraw();
+  } else if (move.castle) { if (!replaying) { sfxCastle(); if (juiceLevel > 30) triggerShake(0.5); } }
 
+  if (replaying) { updateUI(); return; }
   ChessMods.emit('move', {
     from: move.from, to: move.to,
     captured: capturedPiece, castle: !!move.castle, promo: !!move.promo,
@@ -2996,6 +3143,7 @@ function executeMove(move) {
   if (game.gameOver) { trackMatchEnd(); trackStatsEnd(game.result); unlockBadges(); setTimeout(showGameOver, 900); }
   memeEvent(move, capturedPiece);
   updateUI();
+  if (game.gameOver) clearGameSnapshot(); else saveGameSnapshot();
   if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
   showRandomTip();
 }
@@ -3375,8 +3523,12 @@ function checkPuzzleSolution(move) {
 
 // ==================== RESET / UNDO ====================
 
-function resetGame() {
-  try { sfxGameStart(); } catch (e) {}
+function resetGame(opts) {
+  const keepSave = !!(opts && opts.keepSave);
+  if (!keepSave) clearGameSnapshot();
+  if (!replaying) { try { sfxGameStart(); } catch (e) {} }
+  comboCount = 0;
+  castleUsedThisGame = false;
   clearBotTimers();
   botThinking = false;
   closeReview();
@@ -4419,6 +4571,7 @@ juiceSlider.addEventListener('input', () => {
     } else {
       screen.classList.add('hidden');
       if (clockEnabled && !game.gameOver) clockStart();
+      if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
     }
     if (typeof window.syncModalState === 'function') window.syncModalState();
   };
@@ -5731,6 +5884,93 @@ window.__chessTest = function (caseId) {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
+    saveresume: function () {
+      fresh();
+      botEnabled = false;
+      const CR0 = { K: false, Q: false, k: false, q: false };
+      const setPos = (list, turn, ep, cr) => {
+        const b = new Array(64).fill(0);
+        for (const e of list) b[sq(e[0])] = e[1];
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: ep === undefined ? null : ep, castlingRights: cr || CR0,
+          moveHistory: [], lastMove: null, gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}
+        });
+        selectedSquare = -1; legalMoves = []; updateUI(); draw();
+      };
+      const playFrom = (from, to, extra) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(m => m.from === sq(from) && m.to === sq(to));
+        if (!mv) return false;
+        if (extra && extra.promoPiece) mv.promoPiece = extra.promoPiece;
+        executeMove(mv);
+        return true;
+      };
+      const wipe = () => { game = Object.assign({}, game, { board: initBoard(), turn: CL.WHITE, epTarget: null, castlingRights: { K: true, Q: true, k: true, q: true }, moveHistory: [], lastMove: null, gameOver: false, result: '' }); };
+
+      // 1. a plain game round-trips
+      fresh(); botEnabled = false;
+      playFrom('e2', 'e4'); playFrom('e7', 'e5'); playFrom('g1', 'f3'); playFrom('b8', 'c6');
+      const fen = toFEN(), plies = collectPlies().length, board = game.board.slice();
+      const snap = loadGameSnapshot();
+      add('a game in progress is written to storage', !!snap && snap.moves.length === 4, snap ? snap.moves.length + ' moves stored' : 'nothing stored');
+      wipe();
+      add('the live game can be wiped for the test', collectPlies().length === 0, 'wiped');
+      const ok = restoreSavedGame();
+      add('the saved game comes back', ok === true && collectPlies().length === plies, ok + ', ' + collectPlies().length + ' plies');
+      add('the restored position is identical', toFEN() === fen && game.board.every((v, i) => v === board[i]), toFEN());
+      add('the restored game is not marked over', game.gameOver === false, 'in progress');
+
+      // 2. castling, en passant and underpromotion survive the round trip
+      fresh(); botEnabled = false;
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h1', P(PT.ROOK, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE, null, { K: true, Q: false, k: false, q: false });
+      playFrom('e1', 'g1');
+      add('the castling move itself was played', game.board[sq('g1')] === P(PT.KING, CL.WHITE) && !!game.lastMove && game.lastMove.castle === 'kingside',
+        'king on g1=' + (game.board[sq('g1')] === P(PT.KING, CL.WHITE)) + ' lastMove=' + JSON.stringify(game.lastMove) + ' over=' + game.gameOver + ' replaying=' + replaying + ' hist=' + game.moveHistory.length + ' snap=' + (!!loadGameSnapshot()));
+      const castleFen = toFEN();
+      wipe(); restoreSavedGame();
+      add('castling survives a save and restore', toFEN() === castleFen && game.board[sq('g1')] === P(PT.KING, CL.WHITE) && game.board[sq('f1')] === P(PT.ROOK, CL.WHITE), toFEN());
+
+      fresh();
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['e5', P(PT.PAWN, CL.WHITE)], ['d5', P(PT.PAWN, CL.BLACK)]], CL.WHITE, sq('d6'));
+      playFrom('e5', 'd6');
+      const epFen = toFEN();
+      wipe(); restoreSavedGame();
+      add('en passant survives a save and restore', toFEN() === epFen && game.board[sq('d5')] === 0, toFEN());
+
+      fresh();
+      // a black pawn keeps the position from being an instant insufficient-material draw,
+      // so the game really continues and the snapshot is meant to survive
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['b7', P(PT.PAWN, CL.WHITE)], ['a7', P(PT.PAWN, CL.BLACK)]], CL.WHITE, null);
+      playFrom('b7', 'b8', { promoPiece: PT.KNIGHT });
+      const promoFen = toFEN();
+      wipe(); restoreSavedGame();
+      add('an underpromotion survives a save and restore', toFEN() === promoFen && game.board[sq('b8')] === P(PT.KNIGHT, CL.WHITE), toFEN());
+
+      // 3. a finished game is not resumable, and a new game clears the save
+      fresh();
+      setPos([['a1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['a7', P(PT.ROOK, CL.WHITE)], ['g7', P(PT.PAWN, CL.BLACK)], ['h7', P(PT.PAWN, CL.BLACK)]], CL.WHITE, null);
+      playFrom('a7', 'a8');
+      add('the game ended for the test', game.gameOver === true, game.result);
+      add('a finished game is not saved', loadGameSnapshot() === null, 'no snapshot');
+      add('a finished game cannot be resumed', restoreSavedGame() === false, 'refused');
+
+      fresh(); botEnabled = false;
+      playFrom('e2', 'e4'); playFrom('e7', 'e5');
+      add('a live game is saved again', !!loadGameSnapshot(), 'saved');
+      resetGame();
+      add('starting a new game clears the save', loadGameSnapshot() === null, 'cleared');
+
+      // 4. corrupt data must degrade, never throw
+      let threw = null;
+      try { localStorage.setItem('chessSavedGame', '{not json'); } catch (e) {}
+      add('a corrupt snapshot is ignored', loadGameSnapshot() === null, 'ignored');
+      try { localStorage.setItem('chessSavedGame', JSON.stringify({ v: 1, moves: [{ from: 0, to: 0 }] })); } catch (e) {}
+      add('a nonsense move list is rejected', loadGameSnapshot() === null, 'rejected');
+      try { restoreSavedGame(); } catch (e) { threw = e.message; }
+      add('restoring corrupt data does not throw', !threw, threw || 'clean');
+      clearGameSnapshot();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
     review: function () {
       fresh();
       botEnabled = false;
@@ -6281,8 +6521,13 @@ window.chessGame = function () {
 
 refreshCssCache();
 loadMeta(); refreshMeta();
+// rebuild an interrupted game before the first paint so the start screen can offer Resume
+restoreSavedGame();
 updateUI(); draw();
-if (botEnabled && !game.gameOver && game.turn === botColor) scheduleBotMove();
+if (clockEnabled && !game.gameOver) clockStop();
+if (!/[?&]nomenu\b/.test(location.search) && typeof window.showStartScreen === 'function') window.showStartScreen(true);
+const bootScreen = document.getElementById('startScreen');
+if (botEnabled && !game.gameOver && game.turn === botColor && bootScreen && bootScreen.classList.contains('hidden')) scheduleBotMove();
 </script>
 </body>
 </html>
