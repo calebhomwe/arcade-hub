@@ -1551,6 +1551,78 @@ function minimax(board, depth, alpha, beta, color, epTarget, castlingRights, isM
   }
 }
 
+// ==================== OPENING BOOK ====================
+// Keys are the moves played so far in coordinate form; values are sound replies for the side to
+// move. Every entry is checked for legality at lookup time, so a wrong table cannot produce an
+// illegal move - the book is a preference, never an authority.
+const OPENING_BOOK = {
+  '': ['e2e4', 'd2d4', 'g1f3', 'c2c4'],
+  'e2e4': ['e7e5', 'c7c5', 'e7e6', 'c7c6'],
+  'd2d4': ['g8f6', 'd7d5'],
+  'g1f3': ['g8f6', 'd7d5'],
+  'c2c4': ['e7e5', 'g8f6', 'c7c5'],
+  'e2e4 e7e5': ['g1f3'],
+  'e2e4 c7c5': ['g1f3', 'b1c3'],
+  'e2e4 e7e6': ['d2d4'],
+  'e2e4 c7c6': ['d2d4'],
+  'd2d4 d7d5': ['c2c4', 'g1f3'],
+  'd2d4 g8f6': ['c2c4', 'g1f3'],
+  'g1f3 g8f6': ['d2d4', 'c2c4'],
+  'g1f3 d7d5': ['d2d4', 'c2c4'],
+  'c2c4 e7e5': ['b1c3'],
+  'c2c4 g8f6': ['b1c3'],
+  'c2c4 c7c5': ['b1c3'],
+  'e2e4 e7e5 g1f3': ['b8c6', 'g8f6'],
+  'e2e4 e7e5 g1f3 b8c6': ['f1b5', 'f1c4', 'd2d4'],
+  'e2e4 e7e5 g1f3 b8c6 f1b5': ['a7a6', 'g8f6'],
+  'e2e4 e7e5 g1f3 b8c6 f1c4': ['f8c5', 'g8f6'],
+  'e2e4 e7e5 g1f3 b8c6 d2d4': ['e5d4'],
+  'e2e4 e7e5 g1f3 g8f6': ['f3e5', 'b1c3'],
+  'e2e4 c7c5 g1f3': ['d7d6', 'b8c6', 'e7e6'],
+  'e2e4 c7c5 g1f3 d7d6': ['d2d4'],
+  'e2e4 c7c5 g1f3 b8c6': ['d2d4', 'f1b5'],
+  'd2d4 d7d5 c2c4': ['e7e6', 'c7c6'],
+  'd2d4 d7d5 c2c4 e7e6': ['b1c3', 'g1f3'],
+  'd2d4 d7d5 c2c4 c7c6': ['g1f3', 'b1c3'],
+  'd2d4 g8f6 c2c4': ['e7e6', 'g7g6'],
+  'd2d4 g8f6 g1f3': ['e7e6', 'g7g6', 'd7d5'],
+  'g1f3 g8f6 d2d4': ['e7e6', 'g7g6'],
+  'g1f3 d7d5 d2d4': ['g8f6', 'e7e6'],
+  'e2e4 e7e5 g1f3 b8c6 f1b5 a7a6': ['b5a4', 'b5c6'],
+  'e2e4 e7e5 g1f3 b8c6 f1b5 g8f6': ['e1g1', 'd2d3'],
+  'e2e4 e7e5 g1f3 b8c6 f1c4 f8c5': ['c2c3', 'd2d3', 'e1g1'],
+  'e2e4 e7e5 g1f3 b8c6 f1c4 g8f6': ['e1g1', 'd2d3'],
+  'd2d4 d7d5 c2c4 e7e6 b1c3': ['g8f6'],
+  'd2d4 d7d5 c2c4 c7c6 g1f3': ['g8f6'],
+  'd2d4 g8f6 c2c4 e7e6': ['b1c3', 'g1f3'],
+  'd2d4 g8f6 c2c4 g7g6': ['b1c3'],
+};
+
+function bookMoveTokens() {
+  const hist = game.moveHistory, moves = [];
+  for (let i = 0; i < hist.length; i++) {
+    const raw = (i + 1 < hist.length) ? hist[i + 1].lastMove : game.lastMove;
+    if (raw && raw.from !== undefined) moves.push(sqName(raw.from) + sqName(raw.to));
+  }
+  return moves;
+}
+
+function bookReply() {
+  if (puzzleMode || !game || game.gameOver) return null;
+  const entry = OPENING_BOOK[bookMoveTokens().join(' ')];
+  if (!entry || !entry.length) return null;
+  const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+  const pool = botDifficulty === 0 ? entry.slice(0, 2) : entry;
+  const options = pool.filter(tok => {
+    const from = idxFromName(tok.slice(0, 2)), to = idxFromName(tok.slice(2, 4));
+    return legal.some(m => m.from === from && m.to === to);
+  });
+  if (!options.length) return null;
+  const picked = options[Math.floor(Math.random() * options.length)];
+  const from = idxFromName(picked.slice(0, 2)), to = idxFromName(picked.slice(2, 4));
+  return legal.find(m => m.from === from && m.to === to) || null;
+}
+
 function findBestMove(board, color, epTarget, castlingRights, depth, personality) {
   const moves = getAllLegalMoves(board, color, epTarget, castlingRights);
   if (moves.length === 0) return null;
@@ -3397,11 +3469,13 @@ function doBotMove() {
   if (botDifficulty === 2) depth = 3;
   else if (botDifficulty === 1) depth = 2;
 
-  let move;
-  if (botDifficulty === 0) {
+  // The opening book comes first so the bot stops playing arbitrary junk in the first moves;
+  // it is legality-filtered, so a book miss simply falls through to the search.
+  let move = bookReply();
+  if (!move && botDifficulty === 0) {
     const moves = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
     move = moves[Math.floor(Math.random() * moves.length)];
-  } else {
+  } else if (!move) {
     move = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, depth, botPersonality);
   }
   if (!move) { botThinking = false; return; }
@@ -6023,6 +6097,97 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    openingbook: function () {
+      fresh();
+      botEnabled = false;
+      const startState = () => ({ board: initBoard(), turn: CL.WHITE, epTarget: null, castlingRights: { K: true, Q: true, k: true, q: true } });
+      const applyToken = (state, tok) => {
+        const from = idxFromName(tok.slice(0, 2)), to = idxFromName(tok.slice(2, 4));
+        const legal = getAllLegalMoves(state.board, state.turn, state.epTarget, state.castlingRights);
+        const mv = legal.find(m => m.from === from && m.to === to);
+        if (!mv) return null;
+        const n = makeMove(state.board, mv, { castlingRights: state.castlingRights, epTarget: state.epTarget });
+        return { board: n.board, turn: 1 - state.turn, epTarget: n.ep, castlingRights: n.castling };
+      };
+
+      // 1. every key in the table must be reachable and every reply legal from it
+      const badKeys = [], badReplies = [];
+      let entries = 0, replies = 0;
+      Object.keys(OPENING_BOOK).forEach(key => {
+        entries++;
+        let state = startState();
+        const tokens = key === '' ? [] : key.split(' ');
+        for (const tok of tokens) {
+          state = applyToken(state, tok);
+          if (!state) { badKeys.push(key + ' (cannot play ' + tok + ')'); return; }
+        }
+        const legal = getAllLegalMoves(state.board, state.turn, state.epTarget, state.castlingRights);
+        for (const rep of OPENING_BOOK[key]) {
+          replies++;
+          const from = idxFromName(rep.slice(0, 2)), to = idxFromName(rep.slice(2, 4));
+          if (!legal.some(m => m.from === from && m.to === to)) badReplies.push(key + ' -> ' + rep);
+        }
+      });
+      add('every book line can actually be played', badKeys.length === 0, badKeys.length ? badKeys.join('; ') : entries + ' keys verified');
+      add('every book reply is a legal move in its position', badReplies.length === 0, badReplies.length ? badReplies.join('; ') : replies + ' replies verified');
+      add('the book is substantial enough to matter', entries >= 25 && replies >= 40, entries + ' positions, ' + replies + ' replies');
+
+      // 2. the bot opens from the book
+      fresh();
+      botEnabled = true; botColor = CL.WHITE; botDifficulty = 1; botThinking = false;
+      const opening = bookReply();
+      const legal0 = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+      add('the bot has a book move on move one', !!opening && legal0.some(m => m.from === opening.from && m.to === opening.to),
+        opening ? sqName(opening.from) + sqName(opening.to) : 'no book move');
+      add('the opening move comes from the start table',
+        !!opening && OPENING_BOOK[''].some(t => t === sqName(opening.from) + sqName(opening.to)), 'from the book list');
+      doBotMove();
+      add('the bot actually plays the book move', collectPlies().length === 1 && OPENING_BOOK[''].some(t => t === sqName(game.lastMove.from) + sqName(game.lastMove.to)),
+        sqName(game.lastMove.from) + sqName(game.lastMove.to));
+
+      // 3. black answers from the book after 1.e4
+      fresh();
+      botEnabled = false;
+      play(['e2e4']);
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 2; botThinking = false;
+      const reply = bookReply();
+      add('black replies from the book after 1.e4', !!reply && OPENING_BOOK['e2e4'].some(t => t === sqName(reply.from) + sqName(reply.to)),
+        reply ? sqName(reply.from) + sqName(reply.to) : 'no book move');
+
+      // 4. legality over random play: a book move is never illegal, whatever the position
+      fresh();
+      botEnabled = false;
+      let illegal = null, bookHits = 0;
+      for (let i = 0; i < 200 && !illegal; i++) {
+        const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+        if (!legal.length) { fresh(); botEnabled = false; continue; }
+        const probe = bookReply();
+        if (probe) {
+          bookHits++;
+          if (!legal.some(m => m.from === probe.from && m.to === probe.to)) { illegal = sqName(probe.from) + sqName(probe.to) + ' at ply ' + i; break; }
+        }
+        executeMove(probe || legal[Math.floor(Math.random() * legal.length)]);
+      }
+      add('a book move is never illegal in any position', !illegal, illegal || bookHits + ' book moves played across 200 plies');
+
+      // 5. out of book it falls through to the search
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1; botThinking = false;
+      const deep = ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5', 'a7a6', 'b5a4', 'g8f6', 'e1g1', 'f8e7', 'f1e1', 'b7b5', 'a4b3', 'd7d6', 'c2c3', 'e8g8'];
+      play(deep);
+      add('the game left the book', bookReply() === null, 'no book entry beyond the table');
+      const before = collectPlies().length;
+      doBotMove();
+      add('out of book the search still plays a legal move', collectPlies().length === before + 1, collectPlies().length + ' plies');
+
+      // 6. the book stays out of puzzle mode
+      fresh();
+      puzzleMode = true;
+      add('the book is silent in puzzle mode', bookReply() === null, 'no book move');
+      puzzleMode = false;
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
