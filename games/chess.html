@@ -3951,8 +3951,31 @@ function appendReviewRow(entry) {
     hintArrow = { from: entry.move.from, to: entry.move.to };
     draw();
     document.getElementById('status').textContent = 'Reviewing move #' + entry.num;
+    // the panel covers the board, so an arrow alone would be invisible: show the position
+    if (typeof entry.ply === 'number') {
+      closeReview();
+      previewChessPly(entry.ply);
+      flashTip('\uD83D\uDD0D Showing move ' + entry.num + ' \u2014 tap the board to return to the game');
+    }
   });
   list.appendChild(rEl);
+}
+
+// Average centipawn loss folded into a percentage: no loss is 100%, and the curve is
+// exponential so a single blunder hurts less than a habit of small mistakes.
+function accuracyFromLosses(losses) {
+  if (!losses || !losses.length) return 100;
+  const avg = losses.reduce((a, b) => a + b, 0) / losses.length;
+  return Math.max(0, Math.min(100, Math.round(100 * Math.exp(-avg / 200))));
+}
+
+function reviewAccuracy(entries) {
+  const bySide = { 0: [], 1: [] };
+  for (const e of entries) {
+    if (!e || typeof e.delta !== 'number') continue;
+    bySide[e.turn === CL.WHITE ? 0 : 1].push(Math.max(0, -e.delta));
+  }
+  return { white: accuracyFromLosses(bySide[0]), black: accuracyFromLosses(bySide[1]), n: { white: bySide[0].length, black: bySide[1].length } };
 }
 
 function finishReview(entries) {
@@ -3961,7 +3984,9 @@ function finishReview(entries) {
   document.getElementById('reviewResult').textContent = game.gameOver ? game.result : 'Game in progress';
   const ev = evaluate(game.board, 'balanced');
   const side = ev > 0 ? 'White' : ev < 0 ? 'Black' : 'Balanced';
-  document.getElementById('reviewScore').textContent = `📈 ${side} ${(Math.abs(ev) / 100).toFixed(1)} — ⭐${counts.best} ✓${counts.good} ?!${counts.inacc} ??${counts.mistake} 🔥${counts.blunder}`;
+  const acc = reviewAccuracy(entries);
+  document.getElementById('reviewScore').textContent =
+    `📈 ${side} ${(Math.abs(ev) / 100).toFixed(1)} — ⚪ ${acc.white}% accuracy ⚫ ${acc.black}% — ⭐${counts.best} ✓${counts.good} ?!${counts.inacc} ??${counts.mistake} 🔥${counts.blunder}`;
 }
 
 function buildReviewEntries() {
@@ -3974,7 +3999,7 @@ function buildReviewEntries() {
     const afterBoard = (k + 1 < snaps.length) ? snaps[k + 1].board : game.board;
     entries.push({
       snap: snaps[k], move: reconstructReviewMove(snaps[k], raw, afterBoard),
-      turn: snaps[k].turn, num: Math.floor(k / 2) + 1, cls: 'best', raw: raw, after: afterBoard
+      turn: snaps[k].turn, num: Math.floor(k / 2) + 1, cls: 'best', raw: raw, after: afterBoard, ply: k
     });
   }
   return entries;
@@ -6323,6 +6348,60 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    reviewfx: function () {
+      fresh();
+      botEnabled = false;
+      // the accuracy curve is a pure function, so it can be checked directly
+      add('a flawless game is 100% accurate', accuracyFromLosses([]) === 100 && accuracyFromLosses([0, 0, 0]) === 100, '100');
+      const a50 = accuracyFromLosses([50]), a100 = accuracyFromLosses([100]), a300 = accuracyFromLosses([300]);
+      add('accuracy falls as loss grows', a50 > a100 && a100 > a300 && a300 >= 0, a50 + ' > ' + a100 + ' > ' + a300);
+      add('accuracy stays inside 0-100', accuracyFromLosses([5000]) >= 0 && accuracyFromLosses([-100]) === 100, 'clamped');
+      add('a big blunder is punished harder than small slips', accuracyFromLosses([0, 0, 300]) < accuracyFromLosses([40, 40, 40]), 'one blunder vs three slips');
+
+      // a real game: white misses a free rook, black then plays well
+      const CR0 = { K: false, Q: false, k: false, q: false };
+      const setPos = list => {
+        const b = new Array(64).fill(0);
+        for (const e of list) b[sq(e[0])] = e[1];
+        game = Object.assign({}, game, {
+          board: b, turn: CL.WHITE, epTarget: null, castlingRights: CR0, moveHistory: [], lastMove: null,
+          gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}, tags: {}
+        });
+        selectedSquare = -1; legalMoves = []; mlCache.n = -1; updateUI(); draw();
+      };
+      const playOne = (from, to) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights).find(m => m.from === sq(from) && m.to === sq(to));
+        if (mv) executeMove(mv);
+        return !!mv;
+      };
+      const hanging = [['a1', P(PT.KING, CL.WHITE)], ['h1', P(PT.KING, CL.BLACK)], ['d4', P(PT.QUEEN, CL.WHITE)], ['d8', P(PT.ROOK, CL.BLACK)]];
+      setPos(hanging);
+      playOne('d4', 'c4');            // white declines the free rook (and gives no check)
+      const reply = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 1, 'balanced');
+      if (reply) executeMove(reply);  // black plays a near-best reply
+      const entries = buildReviewEntries();
+      entries.forEach(e => analyzeReviewEntry(e));
+      const acc = reviewAccuracy(entries);
+      add('the review reports accuracy for both sides', typeof acc.white === 'number' && typeof acc.black === 'number' && acc.n.white >= 1 && acc.n.black >= 1,
+        'white ' + acc.white + '% (' + acc.n.white + ' moves), black ' + acc.black + '% (' + acc.n.black + ')');
+      add('the side that blundered has the lower accuracy', acc.white < acc.black, 'white ' + acc.white + '% vs black ' + acc.black + '%');
+
+      // clicking a review row shows that position instead of an arrow hidden behind the panel
+      const list = document.getElementById('reviewList');
+      list.innerHTML = '';
+      document.getElementById('reviewPanel').classList.add('show');
+      const e0 = entries[0];
+      appendReviewRow(e0);
+      const row = list.querySelector('.reviewRow');
+      add('a review row is clickable', !!row, row ? 'row present' : 'missing');
+      row.click();
+      add('clicking a row shows that position', previewing() && previewPlyIndex === e0.ply, previewing() ? 'ply ' + previewPlyIndex : 'not previewing');
+      add('clicking a row closes the panel so the board is visible', !document.getElementById('reviewPanel').classList.contains('show'), 'panel closed');
+      endPreview();
+      document.getElementById('reviewPanel').classList.remove('show');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
