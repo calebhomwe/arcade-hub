@@ -1676,6 +1676,25 @@ function bookReply() {
   return legal.find(m => m.from === from && m.to === to) || null;
 }
 
+// A deliberately weaker chooser: score every move, then pick at random among the ones
+// within a window of the best. Uniform-random play (the old "easy") lost an average of 64
+// pawns per move and got mated in a handful of moves, which is not an easy opponent - it is
+// a broken one.
+function pickWeakerMove(board, color, epTarget, castlingRights, depth, windowCp, choices) {
+  const legal = getAllLegalMoves(board, color, epTarget, castlingRights);
+  if (!legal.length) return null;
+  const isMax = color === CL.WHITE;
+  const scored = [];
+  for (const m of legal) {
+    const n = makeMove(board, m, { castlingRights: castlingRights, epTarget: epTarget });
+    scored.push({ m: m, sc: minimax(n.board, depth - 1, -Infinity, Infinity, 1 - color, n.ep, n.castling, !isMax, 'balanced') });
+  }
+  scored.sort((a, b) => isMax ? b.sc - a.sc : a.sc - b.sc);
+  const top = scored[0].sc;
+  const near = scored.filter(s => isMax ? s.sc >= top - windowCp : s.sc <= top + windowCp).slice(0, choices);
+  return near[Math.floor(Math.random() * near.length)].m;
+}
+
 function countPieces(board) {
   let n = 0;
   for (let i = 0; i < 64; i++) if (board[i]) n++;
@@ -3582,8 +3601,8 @@ function doBotMove() {
   // it is legality-filtered, so a book miss simply falls through to the search.
   let move = bookReply();
   if (!move && botDifficulty === 0) {
-    const moves = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
-    move = moves[Math.floor(Math.random() * moves.length)];
+    // easy: a real search, but a wide choice among near-best moves - weak, not self-destructive
+    move = pickWeakerMove(game.board, game.turn, game.epTarget, game.castlingRights, 1, 150, 4);
   } else if (!move) {
     move = findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, depth, botPersonality);
   }
@@ -6284,6 +6303,57 @@ window.__chessTest = function (caseId) {
       add('the coach survives an en passant capture', !threw, threw || 'no throw');
       setCoachTips(false);
       clearNotes();
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    levels: function () {
+      fresh();
+      botEnabled = false;
+      // Sample real middle-game positions by self-play, then measure what each level chooses
+      // against a fixed depth-3 reference with a fixed two-ply yardstick.
+      const positions = [];
+      let g = { board: initBoard(), turn: CL.WHITE, epTarget: null, castlingRights: { K: true, Q: true, k: true, q: true } };
+      for (let ply = 0; ply < 34 && positions.length < 10; ply++) {
+        const legal = getAllLegalMoves(g.board, g.turn, g.epTarget, g.castlingRights);
+        if (!legal.length) break;
+        if (ply >= 8 && ply % 3 === 0) positions.push({ board: g.board.slice(), turn: g.turn, epTarget: g.epTarget, castlingRights: g.castlingRights });
+        const mv = findBestMove(g.board, g.turn, g.epTarget, g.castlingRights, 1, 'balanced') || legal[0];
+        const n = makeMove(g.board, mv, { castlingRights: g.castlingRights, epTarget: g.epTarget });
+        g = { board: n.board, turn: 1 - g.turn, epTarget: n.ep, castlingRights: n.castling };
+      }
+      add('the probe found middle-game positions', positions.length >= 8, positions.length + ' positions');
+      const measure = pick => {
+        let total = 0, n = 0, worst = 0, illegal = 0;
+        for (const p of positions) {
+          const legal = getAllLegalMoves(p.board, p.turn, p.epTarget, p.castlingRights);
+          const ref = findBestMove(p.board, p.turn, p.epTarget, p.castlingRights, 3, 'balanced');
+          if (!ref) continue;
+          const refScore = reviewScoreAfter(p.board, p.turn, p.epTarget, p.castlingRights, ref);
+          const mv = pick(p);
+          if (!mv) continue;
+          if (!legal.some(x => x.from === mv.from && x.to === mv.to)) { illegal++; continue; }
+          const loss = Math.max(0, refScore - reviewScoreAfter(p.board, p.turn, p.epTarget, p.castlingRights, mv));
+          total += loss; n++; worst = Math.max(worst, loss);
+        }
+        return { acpl: Math.round(total / Math.max(1, n)), worst: Math.round(worst), n: n, illegal: illegal };
+      };
+      const easy = measure(p => pickWeakerMove(p.board, p.turn, p.epTarget, p.castlingRights, 1, 150, 4));
+      const medium = measure(p => findBestMove(p.board, p.turn, p.epTarget, p.castlingRights, 2, 'balanced'));
+      const hard = measure(p => findBestMove(p.board, p.turn, p.epTarget, p.castlingRights, 3, 'balanced'));
+      const show = l => l.acpl + 'cp avg, worst ' + l.worst + ' over ' + l.n;
+      add('easy is weaker than medium', easy.acpl > medium.acpl + 30, 'easy ' + show(easy) + ' / medium ' + show(medium));
+      add('easy is weak rather than self-destructive', easy.acpl < 400, show(easy));
+      add('medium plays near the reference', medium.acpl < 80, show(medium));
+      add('hard plays near the reference', hard.acpl < 80, show(hard));
+      add('no level ever proposes an illegal move', easy.illegal + medium.illegal + hard.illegal === 0,
+        easy.illegal + medium.illegal + hard.illegal + ' illegal');
+      // the window behaves: a zero window with one choice must pick a best-scoring move
+      const p0 = positions[0];
+      const ref0 = findBestMove(p0.board, p0.turn, p0.epTarget, p0.castlingRights, 1, 'balanced');
+      const narrow = pickWeakerMove(p0.board, p0.turn, p0.epTarget, p0.castlingRights, 1, 0, 1);
+      add('a zero window always returns a best move',
+        reviewScoreAfter(p0.board, p0.turn, p0.epTarget, p0.castlingRights, narrow) === reviewScoreAfter(p0.board, p0.turn, p0.epTarget, p0.castlingRights, ref0),
+        'same score as the search');
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
