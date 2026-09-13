@@ -1,0 +1,10 @@
+(async function () {
+  if (!('serviceWorker' in navigator)) return JSON.stringify({ error: 'no service worker support' });
+  const reg = await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise(r => setTimeout(() => r(null), 8000))
+  ]);
+  if (!reg) return JSON.stringify({ error: 'registration timed out' });
+  if (!navigator.serviceWorker.controller) await new Promise(r => setTimeout(r, 1500));
+  return JSON.stringify({ scope: reg.scope, active: !!reg.active, controlled: !!navigator.serviceWorker.controller });
+})()

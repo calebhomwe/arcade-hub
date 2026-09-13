@@ -1,0 +1,24 @@
+(function () {
+  const out = {};
+  out.online = navigator.onLine;
+  out.controller = !!navigator.serviceWorker.controller;
+  out.testFn = typeof window.__chessTest === 'function';
+  const board = document.getElementById('board');
+  out.board = !!board;
+  out.canvasPixels = board ? board.width : 0;
+  out.modsLoaded = !!(window.ChessMods && window.ChessMods.api);
+  if (out.testFn) {
+    try { const r = window.__chessTest('rules'); out.rules = r.pass + '/' + r.fail; } catch (e) { out.rules = 'threw: ' + e.message; }
+    try { const r2 = window.__chessTest('moves'); out.moves = r2.pass + '/' + r2.fail; } catch (e) { out.moves = 'threw: ' + e.message; }
+  }
+  // can a move still be played with no network?
+  try {
+    if (window.ChessMods && window.ChessMods.api) {
+      window.showStartScreen && window.showStartScreen(false);
+      window.ChessMods.api.setBot(false);
+      out.played = window.ChessMods.api.playMove(52, 36);
+      out.fen = window.chessFEN ? window.chessFEN().split(' ')[0] : null;
+    }
+  } catch (e) { out.playError = e.message; }
+  return JSON.stringify(out);
+})()

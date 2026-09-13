@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Chess">
+<link rel="manifest" href="chess.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/chess-192.png">
 <title>Chess</title>
 <style>
 :root {
@@ -6390,6 +6392,33 @@ window.__chessTest = function (caseId) {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
+    pwa: function () {
+      fresh();
+      const link = document.querySelector('link[rel="manifest"]');
+      add('the page advertises a web manifest', !!link && /chess\.webmanifest$/.test(link.getAttribute('href')), link ? link.getAttribute('href') : 'missing');
+      add('an apple touch icon is declared', !!document.querySelector('link[rel="apple-touch-icon"]'), 'icon');
+      add('a theme colour is declared', !!document.querySelector('meta[name="theme-color"]'), 'theme');
+      add('service workers are available here', 'serviceWorker' in navigator, 'supported');
+      const get = url => { const x = new XMLHttpRequest(); x.open('GET', url, false); x.send(); return x; };
+      let manifest = null;
+      try { manifest = JSON.parse(get('chess.webmanifest').responseText); } catch (e) {}
+      add('the manifest is valid and standalone', !!manifest && !!manifest.name && manifest.display === 'standalone' && Array.isArray(manifest.icons) && manifest.icons.length >= 2,
+        manifest ? manifest.name + ' / ' + manifest.display + ' / ' + manifest.icons.length + ' icons' : 'unreadable');
+      let missing = [];
+      if (manifest && manifest.icons) {
+        for (const ic of manifest.icons) {
+          const h = new XMLHttpRequest(); h.open('HEAD', ic.src, false);
+          try { h.send(); } catch (e) {}
+          if (!(h.status === 200 || h.status === 0)) missing.push(ic.src);
+        }
+      }
+      add('every icon the manifest names exists', missing.length === 0, missing.join(', ') || 'all present');
+      let swBody = '';
+      try { swBody = get('chess-sw.js').responseText; } catch (e) {}
+      add('the service worker intercepts fetches and caches', /addEventListener\('fetch'/.test(swBody) && /caches\.open/.test(swBody), 'chess-sw.js');
+      add('the page is saved for offline use', /'\/chess\.html'|'\.\/chess\.html'/.test(swBody) || /chess\.html/.test(swBody), 'precaches the page');
+      add('the page itself is never served stale', /req\.mode === 'navigate'/.test(swBody), 'network-first for the document');
+    },
     reviewfx: function () {
       fresh();
       botEnabled = false;
@@ -7572,6 +7601,12 @@ window.chessGame = function () {
 
 refreshCssCache();
 loadMeta(); refreshMeta();
+// installable and playable offline; skipped on file:// where service workers cannot run
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('chess-sw.js').catch(() => {});
+  });
+}
 // rebuild an interrupted game before the first paint so the start screen can offer Resume
 restoreSavedGame();
 updateUI(); draw();

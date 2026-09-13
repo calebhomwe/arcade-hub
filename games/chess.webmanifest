@@ -1,0 +1,25 @@
+{
+ "name": "Chess",
+ "short_name": "Chess",
+ "description": "Play chess against a bot or a friend, with puzzles, review and coaching.",
+ "start_url": "./chess.html",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#302E2B",
+ "theme_color": "#302E2B",
+ "icons": [
+  {
+   "src": "assets/icons/chess-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/chess-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}
