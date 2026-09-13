@@ -2689,7 +2689,14 @@ function bodyShake() {
 }
 
 function castleMoveFor(from, to) {
-  return legalMoves.find(m => m.from === from && m.to === to && m.castle) || null;
+  // Must generate from the board. Reading the global `legalMoves` here meant
+  // this only ever found a castle when the king was already the selected
+  // piece - so pressing the rook first (kingCastleFrom) always returned -1
+  // and rook-first castling could never engage.
+  if (from < 0 || to < 0) return null;
+  if (game.board[from] !== P(PT.KING, game.turn)) return null;
+  return getLegalMoves(game.board, from, game.epTarget, game.castlingRights)
+    .find(m => m.from === from && m.to === to && m.castle) || null;
 }
 function rookCastleFrom(kingSq) {
   const r = row(kingSq);
@@ -2714,6 +2721,11 @@ function castleByRookTap(kingSq, sq) {
   const target = col(sq) === 7 ? idx(row(kingSq), 6) : col(sq) === 0 ? idx(row(kingSq), 2) : -1;
   if (target < 0) return null;
   return getLegalMoves(game.board, kingSq, game.epTarget, game.castlingRights).find(m => m.castle && m.from === kingSq && m.to === target) || null;
+}
+function castleBySelectedKingTap(sq) {
+  if (!castleSelect || sq < 0 || sq !== selectedSquare) return null;
+  if (game.board[sq] !== P(PT.KING, game.turn)) return null;
+  return legalMoves.find(m => m.castle) || null;
 }
 function castlingRookDrag(move) {
   if (!dragState || !move || !move.castle) return null;
@@ -3465,7 +3477,7 @@ let reviewTimer = null;
 function clearReviewTimer() { if (reviewTimer) { clearTimeout(reviewTimer); reviewTimer = null; } }
 
 // Snapshots store lastMove as {from,to} only — re-derive castle/ep/promo flags for makeMove.
-function reconstructReviewMove(snap, raw) {
+function reconstructReviewMove(snap, raw, afterBoard) {
   const m = { from: raw.from, to: raw.to };
   const piece = snap.board ? snap.board[raw.from] : 0;
   if (!piece) return m;
@@ -3475,48 +3487,55 @@ function reconstructReviewMove(snap, raw) {
     if (dc === 2) m.castle = 'kingside';
     else if (dc === -2) m.castle = 'queenside';
   } else if (t === PT.PAWN) {
-    if (row(raw.to) === 0 || row(raw.to) === 7) { m.promo = true; m.promoPiece = PT.QUEEN; }
-    else if (Math.abs(col(raw.to) - col(raw.from)) === 1 && !snap.board[raw.to]) m.ep = true;
+    if (row(raw.to) === 0 || row(raw.to) === 7) {
+      m.promo = true;
+      // take the promotion piece from the board AFTER the move, so underpromotions
+      // replay as what was actually played instead of always becoming a queen
+      const landed = afterBoard ? afterBoard[raw.to] : 0;
+      m.promoPiece = (landed && pColor(landed) === pColor(piece) && pType(landed) !== PT.PAWN) ? pType(landed) : PT.QUEEN;
+    } else if (Math.abs(col(raw.to) - col(raw.from)) === 1 && !snap.board[raw.to]) m.ep = true;
   }
   return m;
 }
 
+// Score for the side to move after playing one move and letting the opponent answer with
+// their best reply. Deterministic: the grader must not inherit the engine's random tie-break.
+function reviewScoreAfter(board, turn, epTarget, castlingRights, move) {
+  const n = makeMove(board, move, { castlingRights: castlingRights, epTarget: epTarget });
+  const replies = getAllLegalMoves(n.board, 1 - turn, n.ep, n.castling);
+  const moverPOV = v => turn === CL.WHITE ? v : -v;
+  // Everything below is from the MOVER's point of view: the mover maximises, the opponent
+  // minimises. Applying the colour test on top of that double-flips and grades Black wrongly.
+  if (replies.length === 0) {
+    return isInCheck(n.board, 1 - turn) ? 99999 : 0;   // mate delivered, or stalemate
+  }
+  let worst = null;
+  for (const r of replies) {
+    const n2 = makeMove(n.board, r, { castlingRights: n.castling, epTarget: n.ep });
+    const weHaveNoMove = isInCheck(n2.board, turn) && getAllLegalMoves(n2.board, turn, n2.ep, n2.castling).length === 0;
+    const v = weHaveNoMove ? -99999 : moverPOV(evaluate(n2.board, 'balanced'));
+    if (worst === null || v < worst) worst = v;
+  }
+  return worst;
+}
+
 function analyzeReviewEntry(entry) {
   const snap = entry.snap, move = entry.move, turn = entry.turn;
-  const moverPOV = v => turn === CL.WHITE ? v : -v;
-  const beforeEval = moverPOV(evaluate(snap.board, 'balanced'));
-  const ctx = { castlingRights: snap.castlingRights };
-
-  // Best move: played move's swing after opponent's best reply, vs best move's swing
-  const best = findBestMove(snap.board, turn, snap.epTarget, snap.castlingRights, 1, 'balanced');
-  let bestSwing = 0;
-  if (best) {
-    const bn = makeMove(snap.board, best, ctx);
-    const bestReply = findBestMove(bn.board, 1 - turn, bn.ep, bn.castling, 1, 'balanced');
-    const afterBest = bestReply ? makeMove(bn.board, bestReply, { castlingRights: bn.castling }).board : bn.board;
-    bestSwing = moverPOV(evaluate(afterBest, 'balanced')) - beforeEval;
+  let bestScore = null;
+  for (const m of getAllLegalMoves(snap.board, turn, snap.epTarget, snap.castlingRights)) {
+    const sc = reviewScoreAfter(snap.board, turn, snap.epTarget, snap.castlingRights, m);
+    if (bestScore === null || sc > bestScore) bestScore = sc;   // mover POV: best is always the max
   }
-
-  const pn = makeMove(snap.board, move, ctx);
-  const afterMoves = getAllLegalMoves(pn.board, 1 - turn, pn.ep, pn.castling);
-  let playedSwing;
-  if (afterMoves.length > 0) {
-    const reply = findBestMove(pn.board, 1 - turn, pn.ep, pn.castling, 1, 'balanced');
-    const afterPlayed = reply ? makeMove(pn.board, reply, { castlingRights: pn.castling }).board : pn.board;
-    playedSwing = moverPOV(evaluate(afterPlayed, 'balanced')) - beforeEval;
-  } else {
-    playedSwing = moverPOV(evaluate(pn.board, 'balanced')) - beforeEval;
-  }
-
-  const delta = playedSwing - bestSwing;
+  const playedScore = reviewScoreAfter(snap.board, turn, snap.epTarget, snap.castlingRights, move);
+  if (bestScore === null) bestScore = playedScore;
+  const delta = playedScore - bestScore;
   let cls;
-  if (afterMoves.length === 0 && isInCheck(pn.board, 1 - turn)) cls = 'best'; // delivered checkmate
-  else if (delta > -35) cls = 'best';
+  if (delta > -35) cls = 'best';
   else if (delta > -80) cls = 'good';
   else if (delta > -160) cls = 'inacc';
   else if (delta > -280) cls = 'mistake';
   else cls = 'blunder';
-  entry.cls = cls; entry.delta = delta;
+  entry.cls = cls; entry.delta = delta; entry.best = bestScore; entry.played = playedScore;
 }
 
 function appendReviewRow(entry) {
@@ -3549,6 +3568,22 @@ function finishReview(entries) {
   document.getElementById('reviewScore').textContent = `📈 ${side} ${(Math.abs(ev) / 100).toFixed(1)} — ⭐${counts.best} ✓${counts.good} ?!${counts.inacc} ??${counts.mistake} 🔥${counts.blunder}`;
 }
 
+function buildReviewEntries() {
+  // moveHistory holds the position BEFORE each move, so the position after move k is the
+  // board of snapshot k+1 (or the live board for the last move)
+  const snaps = game.moveHistory, entries = [];
+  for (let k = 0; k < snaps.length; k++) {
+    const raw = (k + 1 < snaps.length) ? snaps[k + 1].lastMove : game.lastMove;
+    if (!raw || raw.from === undefined) continue;
+    const afterBoard = (k + 1 < snaps.length) ? snaps[k + 1].board : game.board;
+    entries.push({
+      snap: snaps[k], move: reconstructReviewMove(snaps[k], raw, afterBoard),
+      turn: snaps[k].turn, num: Math.floor(k / 2) + 1, cls: 'best', raw: raw, after: afterBoard
+    });
+  }
+  return entries;
+}
+
 function runReview() {
   const panel = document.getElementById('reviewPanel');
   if (game.moveHistory.length < 2) {
@@ -3561,13 +3596,7 @@ function runReview() {
   list.innerHTML = '';
   document.getElementById('reviewResult').textContent = '🔍 Analyzing…';
   document.getElementById('reviewScore').textContent = '';
-  const snaps = game.moveHistory;
-  const entries = [];
-  for (let k = 0; k < snaps.length; k++) {
-    const raw = (k + 1 < snaps.length) ? snaps[k + 1].lastMove : game.lastMove;
-    if (!raw || raw.from === undefined) continue;
-    entries.push({ snap: snaps[k], move: reconstructReviewMove(snaps[k], raw), turn: snaps[k].turn, num: Math.floor(k / 2) + 1, cls: 'best' });
-  }
+  const entries = buildReviewEntries();
   const keep = entries.slice(-60); // analyze only the last 60 half-moves
   let pos = 0;
   const CHUNK = 8; // moves computed per chained tick — keeps UI responsive
@@ -3667,7 +3696,7 @@ function startDrag(e) {
   if (botEnabled && game.turn === botColor) return;
   const sq = getSquareFromEvent(e);
   if (sq < 0 || !game.board[sq] || pColor(game.board[sq]) !== game.turn) return;
-  const tapCastle = castleByRookTap(selectedSquare, sq);
+  const tapCastle = castleByRookTap(selectedSquare, sq) || castleBySelectedKingTap(sq);
   const tapMove = tapCastle || (selectedSquare >= 0 ? legalMoves.find(m => m.to === sq) || null : null);
   const tapPromo = !!(tapMove && tapMove.promo);
   const prevPress = lastPress;
@@ -3702,10 +3731,12 @@ function endDrag(e) {
   dragState = null;
   if (sq < 0) { selectedSquare = -1; legalMoves = []; castleSelect = false; draw(); return; }
   const dragMove = (sq !== press) ? (dragLegal.find(m => m.to === sq) || castlingRookDrag(dragLegal.find(m => m.castle)) || null) : null;
+  const castleIntent = (castleSelect && sq === from) ? (dragLegal.find(m => m.castle) || null) : null;
   const direct = (sq === prevPress && tapMove) ? tapMove
     : (dragMove ? dragMove
-      : ((sq === rookSq && press === from) ? (dragLegal.find(m => m.castle) || null)
-        : ((sq === press && tapMove) ? tapMove : null)));
+      : (castleIntent ? castleIntent
+        : ((sq === rookSq && press === from) ? (dragLegal.find(m => m.castle) || null)
+          : ((sq === press && tapMove) ? tapMove : null))));
   if (direct) {
     if (direct.promo) { pendingPromo = direct; showPromoUI(); return; }
     executeMove(direct);
@@ -5637,6 +5668,116 @@ window.__chessTest = function (caseId) {
         executeMove(pick);
       }
       add('the engine never proposes an illegal move', !illegal, illegal ? 'illegal ' + illegal : '40 plies clean');
+      fresh();
+      botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
+    },
+    review: function () {
+      fresh();
+      botEnabled = false;
+      const CR0 = { K: false, Q: false, k: false, q: false };
+      const setPos = (list, turn, ep, cr) => {
+        const b = new Array(64).fill(0);
+        for (const e of list) b[sq(e[0])] = e[1];
+        game = Object.assign({}, game, {
+          board: b, turn: turn, epTarget: ep === undefined ? null : ep,
+          castlingRights: cr || CR0, moveHistory: [], lastMove: null,
+          gameOver: false, result: '', halfmoveClock: 0, positionCounts: {}, resignedBy: undefined
+        });
+        selectedSquare = -1; legalMoves = []; pendingPromo = null; hidePromoUI();
+        updateUI(); draw();
+      };
+      const doPlay = (from, to, extra) => {
+        const mv = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights)
+          .find(m => m.from === sq(from) && m.to === sq(to));
+        if (!mv) return null;
+        if (extra && extra.promoPiece) mv.promoPiece = extra.promoPiece;
+        executeMove(mv);
+        return mv;
+      };
+      const replayCheck = label => {
+        const entries = buildReviewEntries();
+        for (const e of entries) {
+          const n = makeMove(e.snap.board, e.move, { castlingRights: e.snap.castlingRights, epTarget: e.snap.epTarget });
+          for (let i = 0; i < 64; i++) if (n.board[i] !== e.after[i]) return { bad: label + ' mismatch at square ' + i, entries: entries };
+        }
+        return { bad: null, entries: entries };
+      };
+
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h1', P(PT.ROOK, CL.WHITE)], ['e8', P(PT.KING, CL.BLACK)]], CL.WHITE, null, { K: true, Q: false, k: false, q: false });
+      doPlay('e1', 'g1');
+      let rc = replayCheck('castling');
+      add('a castling game replays faithfully through the review', !rc.bad, rc.bad || rc.entries.length + ' plies');
+      add('the review sees the castling flag', rc.entries.length === 1 && rc.entries[0].move.castle === 'kingside', rc.entries[0] ? JSON.stringify(rc.entries[0].move) : 'none');
+
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['e5', P(PT.PAWN, CL.WHITE)], ['d5', P(PT.PAWN, CL.BLACK)]], CL.WHITE, sq('d6'));
+      doPlay('e5', 'd6');
+      rc = replayCheck('en passant');
+      add('an en passant game replays faithfully through the review', !rc.bad, rc.bad || rc.entries.length + ' plies');
+      add('the review sees the en passant flag', rc.entries.length === 1 && rc.entries[0].move.ep === true, rc.entries[0] ? JSON.stringify(rc.entries[0].move) : 'none');
+
+      setPos([['e1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['b7', P(PT.PAWN, CL.WHITE)]], CL.WHITE, null);
+      doPlay('b7', 'b8', { promoPiece: PT.KNIGHT });
+      rc = replayCheck('underpromotion');
+      add('an underpromotion game replays faithfully through the review', !rc.bad, rc.bad || rc.entries.length + ' plies');
+      add('the review replays the piece that was actually chosen', rc.entries.length === 1 && rc.entries[0].move.promoPiece === PT.KNIGHT,
+        rc.entries[0] ? 'promoPiece=' + rc.entries[0].move.promoPiece + ' (5 is a knight)' : 'none');
+
+      setPos([['a1', P(PT.KING, CL.WHITE)], ['h1', P(PT.KING, CL.BLACK)], ['d4', P(PT.QUEEN, CL.WHITE)], ['d8', P(PT.ROOK, CL.BLACK)]], CL.WHITE, null);
+      doPlay('d4', 'd8');
+      const beforeBoard = game.board.slice(), beforeHist = game.moveHistory.length, beforeResult = game.result;
+      const allEntries = buildReviewEntries();
+      allEntries.forEach(e => analyzeReviewEntry(e));
+      add('analysing does not mutate the live game', game.board.every((v, i) => v === beforeBoard[i]) && game.moveHistory.length === beforeHist && game.result === beforeResult, 'unchanged');
+      add('every analysed ply carries a documented tag', allEntries.every(e => !!REVIEW_TAGS[e.cls]), allEntries.map(e => e.cls).join(','));
+
+      const grade = (list, turn, from, to) => {
+        setPos(list, turn, null);
+        const entry = { snap: { board: game.board.slice(), turn: turn, epTarget: null, castlingRights: CR0 }, move: null, turn: turn };
+        const mv = getAllLegalMoves(game.board, turn, null, CR0).find(m => m.from === sq(from) && m.to === sq(to));
+        if (!mv) return { cls: 'illegal' };
+        entry.move = mv;
+        analyzeReviewEntry(entry);
+        return entry;
+      };
+      const hanging = [['a1', P(PT.KING, CL.WHITE)], ['h1', P(PT.KING, CL.BLACK)], ['d4', P(PT.QUEEN, CL.WHITE)], ['d8', P(PT.ROOK, CL.BLACK)]];
+      const show = g => g.cls + ' (played ' + g.played + ' vs best ' + g.best + ', delta ' + g.delta + ')';
+      const bestG = grade(hanging, CL.WHITE, 'd4', 'd8');
+      add('taking a free rook grades best', bestG.cls === 'best', show(bestG));
+      const missedG = grade(hanging, CL.WHITE, 'd4', 'h4');
+      add('missing a free rook grades a blunder', missedG.cls === 'blunder', show(missedG));
+      const mateBoard = [['a1', P(PT.KING, CL.WHITE)], ['h8', P(PT.KING, CL.BLACK)], ['a7', P(PT.ROOK, CL.WHITE)], ['g7', P(PT.PAWN, CL.BLACK)], ['h7', P(PT.PAWN, CL.BLACK)]];
+      const mateG = grade(mateBoard, CL.WHITE, 'a7', 'a8');
+      add('delivering mate grades best', mateG.cls === 'best', show(mateG));
+      const mirrorName = name => { const i = sq(name); return String.fromCharCode(97 + (7 - col(i))) + (row(i) + 1); };
+      const mb = hanging.map(e => [mirrorName(e[0]), e[1] ? P(pType(e[1]), pColor(e[1]) === CL.WHITE ? CL.BLACK : CL.WHITE) : 0]);
+      const blackBest = grade(mb, CL.BLACK, mirrorName('d4'), mirrorName('d8'));
+      const blackMiss = grade(mb, CL.BLACK, mirrorName('d4'), mirrorName('h4'));
+      add('grading does not depend on the player colour', blackMiss.cls === missedG.cls && blackBest.cls === 'best',
+        'white misses ' + missedG.cls + ' / black misses ' + blackMiss.cls + ' :: white ' + show(missedG) + ' || black ' + show(blackMiss));
+
+      fresh();
+      botEnabled = false;
+      let plies = 0, guard = 0;
+      while (!game.gameOver && guard < 60) {
+        guard++;
+        const legal = getAllLegalMoves(game.board, game.turn, game.epTarget, game.castlingRights);
+        if (!legal.length) break;
+        executeMove(findBestMove(game.board, game.turn, game.epTarget, game.castlingRights, 2, 'balanced') || legal[0]);
+        plies++;
+      }
+      const clockMoves = (function () { const a = performance.now(); for (let i = 0; i < 1000; i++) {} return performance.now() - a; })() > 0;
+      const t0 = performance.now();
+      const longEntries = buildReviewEntries();
+      longEntries.forEach(e => analyzeReviewEntry(e));
+      const ms = performance.now() - t0;
+      add('a full game can be analysed in one pass', longEntries.length > 10 && (!clockMoves || ms < 8000),
+        longEntries.length + ' plies' + (clockMoves ? ' in ' + Math.round(ms) + 'ms' : ' (timing unavailable in virtual time)'));
+      add('every ply of a real game gets a tag', longEntries.every(e => !!REVIEW_TAGS[e.cls]), longEntries.map(e => e.cls).join(','));
+
+      fresh();
+      runReview();
+      add('the review refuses a game with no moves', !document.getElementById('reviewPanel').classList.contains('show'), document.getElementById('tip').textContent.slice(0, 30));
+      closeReview();
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
