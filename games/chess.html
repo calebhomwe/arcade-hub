@@ -651,6 +651,13 @@ a.back:hover{ color:var(--cc-text)!important; }
   box-shadow:0 6px 0 #5d8a34; }
 .ss-play:hover{ filter:brightness(1.05); }
 .ss-play:active{ transform:translateY(2px); box-shadow:0 3px 0 #5d8a34; }
+.ss-look{ display:flex; gap:8px; }
+.ss-look .sel{ flex:1; min-width:0; }
+.ss-preview{ display:grid; grid-template-columns:repeat(4,1fr); width:100%; max-width:220px; margin:2px auto 12px;
+  border-radius:8px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+.ss-preview i{ display:block; aspect-ratio:1/1; position:relative; }
+.ss-preview img, .ss-preview b{ position:absolute; inset:6%; width:88%; height:88%; object-fit:contain; }
+.ss-preview b{ display:flex; align-items:center; justify-content:center; font-size:min(5vw,26px); line-height:1; }
 .ss-links{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px; }
 .ss-link{ min-height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
   color:#cbd5e1; font:700 .7rem/1.1 system-ui; cursor:pointer; }
@@ -805,6 +812,15 @@ body.cb-board {
       <button class="ss-time" data-min="5">5 min</button>
       <button class="ss-time" data-min="10">10 min</button>
     </div>
+    <div class="ss-label">Board</div>
+    <div class="ss-row ss-look">
+      <select class="sel" id="ssTheme" title="Board theme"></select>
+      <select class="sel" id="ssPieces" title="Piece style">
+        <option value="3d">3D pieces</option>
+        <option value="classic">Classic pieces</option>
+      </select>
+    </div>
+    <div id="ssPreview" class="ss-preview" aria-label="Preview of the board and pieces you will play with"></div>
     <button class="ss-play" id="ssPlay">▶ Play</button>
     <div class="ss-links">
       <button class="ss-link" id="ssPuzzles">🧩 Puzzles</button>
@@ -2330,7 +2346,71 @@ function setPieceStyle(style) {
   try { localStorage.setItem('chessPieces', pieceStyle); } catch (e) {}
   pieceSpriteCache = {};
   draw();
+  if (window.chessStartPreview) window.chessStartPreview.render();
 }
+// ==================== START SCREEN: BOARD LOOK ====================
+// The board and piece style used to be changeable only after the game had started, with no way to
+// see what you were choosing. The start screen now offers both with a live preview of the squares
+// and a piece of each colour.
+const PREVIEW_PIECES = [
+  { file: 'w_king', glyph: '\u2654', light: false },
+  { file: 'b_queen', glyph: '\u265B', light: true },
+  { file: 'w_knight', glyph: '\u2658', light: false },
+  { file: 'b_pawn', glyph: '\u265F', light: true },
+  { file: 'w_rook', glyph: '\u2656', light: true },
+  { file: 'b_bishop', glyph: '\u265D', light: false },
+  { file: 'w_pawn', glyph: '\u2659', light: false },
+  { file: 'b_king', glyph: '\u265A', light: true }
+];
+function renderStartPreview() {
+  const host = document.getElementById('ssPreview');
+  if (!host) return;
+  try { refreshCssCache(); } catch (e) {}
+  const lt = getCssVar('lt') || '#f0d9b5';
+  const dk = getCssVar('dk') || '#b58863';
+  let html = '';
+  for (let i = 0; i < 8; i++) {
+    const light = (Math.floor(i / 4) + i) % 2 === 0;
+    const p = PREVIEW_PIECES[i];
+    const piece = pieceStyle === 'classic'
+      ? '<b style="color:' + (p.light ? '#f8f8f8' : '#1a1a2e') + ';text-shadow:0 1px 2px rgba(0,0,0,.5)">' + p.glyph + '</b>'
+      : '<img src="assets/pieces/' + p.file + '.png" alt="">';
+    html += '<i style="background:' + (light ? lt : dk) + '">' + piece + '</i>';
+  }
+  host.innerHTML = html;
+}
+function syncStartLook() {
+  const t = document.getElementById('ssTheme'), pc = document.getElementById('ssPieces');
+  if (t && !t.options.length) {
+    const src = document.getElementById('themeSel');
+    if (src) for (const o of Array.from(src.options)) {
+      const opt = document.createElement('option');
+      opt.value = o.value; opt.textContent = o.textContent;
+      t.appendChild(opt);
+    }
+  }
+  if (t) t.value = theme;
+  if (pc) pc.value = pieceStyle;
+}
+function wireStartLook() {
+  const t = document.getElementById('ssTheme'), pc = document.getElementById('ssPieces');
+  if (t) t.addEventListener('change', function () {
+    applyTheme(this.value);
+    const inner = document.getElementById('themeSel');
+    if (inner) inner.value = this.value;      // the in-game selector must agree with this one
+    syncStartLook(); renderStartPreview();
+  });
+  if (pc) pc.addEventListener('change', function () {
+    setPieceStyle(this.value);
+    const inner = document.getElementById('pieceSel');
+    if (inner) inner.value = this.value;
+    syncStartLook(); renderStartPreview();
+  });
+  syncStartLook();
+  renderStartPreview();
+}
+window.chessStartPreview = { render: renderStartPreview, sync: syncStartLook };
+
 function setCoords(on) {
   showCoords = !!on;
   try { localStorage.setItem('chessCoords', showCoords ? '1' : '0'); } catch (e) {}
@@ -5052,9 +5132,11 @@ function applyTheme(name) {
   refreshCssCache();
   pieceSpriteCache = {};
   draw();
+  if (window.chessStartPreview) { window.chessStartPreview.sync(); window.chessStartPreview.render(); }
 }
 document.getElementById('themeSel').addEventListener('change', function() { applyTheme(this.value); });
 setCbBoard(cbBoard);   // restore the board palette before the first paint
+wireStartLook();       // board and piece choice on the start screen, with its preview
 (function initTheme(){
   const sel = document.getElementById('themeSel');
   if (sel) sel.value = theme;
@@ -6769,6 +6851,71 @@ window.__chessTest = function (caseId) {
       fresh();
       botEnabled = true; botColor = CL.BLACK; botDifficulty = 1;
     },
+    startpreview: function () {
+      fresh();
+      const host = document.getElementById('ssPreview');
+      add('the start screen offers a board preview', !!host, host ? 'present' : 'missing');
+      if (!host) return;
+      const squares = () => Array.from(host.querySelectorAll('i'));
+      const images = () => host.querySelectorAll('img').length;
+      const glyphs = () => host.querySelectorAll('b').length;
+      add('the preview draws a strip of squares', squares().length === 8, squares().length + ' squares');
+      add('the preview shows both piece colours', (function () {
+        const files = Array.from(host.querySelectorAll('img')).map(i => i.getAttribute('src')).join(',');
+        const text = host.textContent || '';
+        return pieceStyle === 'classic' ? (glyphs() === 8) : (images() === 8 && /w_/.test(files) && /b_/.test(files));
+      })(), pieceStyle + ': ' + images() + ' images / ' + glyphs() + ' glyphs');
+
+      // the squares must use the live palette, not a hard-coded one
+      // reading back a style property yields rgb(...), so compare like with like
+      const rgbOf = hex => {
+        const n = parseInt(String(hex).replace('#', ''), 16);
+        if (isNaN(n)) return String(hex);
+        return 'rgb(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ')';
+      };
+      const colours = () => squares().map(i => String(getComputedStyle(i).backgroundColor).replace(/\s+/g, '')).join('|');
+      setCbBoard(false);
+      refreshCssCache();
+      renderStartPreview();
+      const classic = { lt: getCssVar('lt'), dk: getCssVar('dk'), col: colours() };
+      add('the squares use the current palette', classic.col.indexOf(rgbOf(classic.lt)) >= 0 && classic.col.indexOf(rgbOf(classic.dk)) >= 0,
+        classic.lt + ' / ' + classic.dk);
+      setCbBoard(true);
+      renderStartPreview();
+      const cb = colours();
+      add('the preview follows a palette change', cb !== classic.col && cb.indexOf(rgbOf(getCssVar('dk'))) >= 0, 'preview repainted');
+      setCbBoard(false);
+      renderStartPreview();
+
+      // the start-screen selectors drive the real settings and stay in sync
+      const t = document.getElementById('ssTheme'), pc = document.getElementById('ssPieces');
+      add('the theme selector is offered on the start screen', !!t && t.options.length >= 5, t ? t.options.length + ' themes' : 'missing');
+      add('the piece selector is offered on the start screen', !!pc && pc.options.length === 2, pc ? pc.options.length + ' styles' : 'missing');
+      const before = theme;
+      const other = Array.from(t.options).map(o => o.value).find(v => v !== before) || before;
+      t.value = other;
+      t.dispatchEvent(new Event('change', { bubbles: true }));
+      add('choosing a theme on the start screen applies it', theme === other && document.getElementById('themeSel').value === other, before + ' -> ' + theme);
+      add('and it survives a reload', (function () { try { return localStorage.getItem('cjs-theme') === other; } catch (e) { return false; } })(), 'stored');
+      t.value = before;
+      t.dispatchEvent(new Event('change', { bubbles: true }));
+
+      pc.value = 'classic';
+      pc.dispatchEvent(new Event('change', { bubbles: true }));
+      add('choosing a piece style on the start screen applies it', pieceStyle === 'classic' && glyphs() === 8, 'classic pieces, ' + glyphs() + ' glyphs');
+      pc.value = '3d';
+      pc.dispatchEvent(new Event('change', { bubbles: true }));
+      add('and switching back restores the sprites', pieceStyle === '3d' && images() === 8, '3d pieces, ' + images() + ' images');
+
+      // changing it from inside the game keeps the start screen honest
+      applyTheme('neon');
+      add('a theme change inside the game repaints the start preview', t.value === 'neon', 'start select shows ' + t.value);
+      applyTheme(before);
+      add('the preview survives having no preview host', (function () {
+        try { host.id = 'ssPreviewHidden'; renderStartPreview(); host.id = 'ssPreview'; renderStartPreview(); return true; } catch (e) { return false; }
+      })(), 'no throw without the host');
+      fresh();
+    },
     contrast: function () {
       fresh();
       const lum = hex => {
@@ -6830,6 +6977,12 @@ window.__chessTest = function (caseId) {
     },
     celebrate: function () {
       fresh();
+      // arrange the precondition instead of inheriting one: another case can leave the juice
+      // slider at zero, which is a legitimate setting but means nothing celebrates
+      const juiceWas = typeof juiceLevel !== 'undefined' ? juiceLevel : 15;
+      const juiceSlider = document.getElementById('juiceSlider');
+      if (juiceSlider) juiceSlider.value = '15';
+      juiceLevel = 15;
       const wrap = document.getElementById('gameWrap');
       const particles = () => wrap.querySelectorAll('.cmv-particle').length;
       add('no confetti before anything happens', particles() === 0, particles() + ' particles');
@@ -6847,6 +7000,9 @@ window.__chessTest = function (caseId) {
       })(), 'no unmarked particles');
       try { window.ChessMods.emit('move', { draw: true }); } catch (e) {}
       add('a draw shows its own banner', wrap.querySelectorAll('.cmv-banner').length <= 1, wrap.querySelectorAll('.cmv-banner').length + ' banners');
+      // put the setting back the way it was found
+      juiceLevel = juiceWas;
+      if (juiceSlider) juiceSlider.value = String(juiceWas);
       fresh();
     },
     quiet: function () {
