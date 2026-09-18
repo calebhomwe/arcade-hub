@@ -408,16 +408,6 @@ function tintPart(key,color){
     hero_scout2:'assets/survivor/hero_scout2.png',
     hero_medic:'assets/survivor/hero_medic.png',
     hero_engi:'assets/survivor/hero_engi.png',
-    zombie:'assets/survivor/zombie.png',
-    zombie2:'assets/survivor/zombie2.png',
-    fast:'assets/survivor/fast.png',
-    fast2:'assets/survivor/fast2.png',
-    tank:'assets/survivor/tank.png',
-    tank2:'assets/survivor/tank2.png',
-    spitter:'assets/survivor/spitter.png',
-    spitter2:'assets/survivor/spitter2.png',
-    elite:'assets/survivor/elite.png',
-    elite2:'assets/survivor/elite2.png',
     grass:'assets/survivor/grass.png',
   };
   for(const k in defs){
@@ -501,15 +491,6 @@ function colorA(hex,a){
   const n=parseInt(hex.slice(1),16);
   return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;
 }
-function sprFor(e){
-  if(e.isBoss)return e.kind==='devourer'?'tank':'zombie';
-  if(e.isElite)return 'elite';
-  if(e.type==='fast')return 'fast';
-  if(e.type==='tank')return 'tank';
-  if(e.type==='spitter')return 'spitter';
-  return 'zombie';
-}
-
 /* ============================== META / HEROES ============================== */
 const HEROES={
   survivor:{name:'Survivor',img:'hero',weapon:'kunai',desc:'Balanced gunslinger.<br>Starts: Kunai',ult:{name:'BARRAGE',icon:'💫'}},
@@ -4891,7 +4872,7 @@ function renderHUD(){
   ctx.fillStyle='#93c5fd';
   if(typeof dailyActive!=='undefined'&&dailyActive&&typeof dailyMod!=='undefined'&&dailyMod)ctx.fillText('☀ '+dailyMod.n,W-16,68);
   else ctx.fillText('POPS '+pops,W-16,68);
-  ctx.textAlign='left';
+  ctx.textAlign='center';
   /* turret selection + mortar pills */
   const td2=TURRETS[selTurret];
   /* UI-PATCH-RB */
