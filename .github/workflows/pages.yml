@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    # Runs on the repository's default branch whatever it is called, so this
+    # keeps working if the branch is ever renamed.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.ref_name == github.event.repository.default_branch
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Stage publishable files
+        run: |
+          mkdir -p _site
+          # The hub page and the 38 games it links. Deliberately an allowlist:
+          # a Pages URL is public even when the repo is not, and this repo also
+          # carries _loop/ -- 21MB of the agent loop's own machinery (CONTRACT.md,
+          # budget.json, ledger.jsonl, blender build logs, research scratch) that
+          # has nothing to do with the arcade and should not be on the open web.
+          cp index.html _site/
+          cp -r games _site/
+          # z*.html are scratch landing experiments, not the shipped entry point.
+          echo "--- staged for publication ---"
+          du -sh _site
+          ls -la _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
