@@ -209,6 +209,7 @@ let clearAnim = 0;
 let particles = [];
 let shakeAmount = 0;
 let animFrame = null;
+let _animLastT = null, _fxLastT = null;
 let blastCharge = 0, bombsPlaced = 0;
 const BLAST_MAX = 5, BOMB_COLOR = '#f43f5e';
 let clearStreak = 0;
@@ -607,6 +608,10 @@ function blockTile(color, s, blockSize) {
 }
 
 function drawGrid() {
+  const _fxNow = performance.now();
+  const _fxDt = _fxLastT === null ? (1 / 60) : Math.min(0.05, (_fxNow - _fxLastT) / 1000);
+  _fxLastT = _fxNow;
+  const fxS = _fxDt * 60;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Screen shake
@@ -614,7 +619,7 @@ function drawGrid() {
   if (shakeAmount > 0.01) {
     sx = (Math.random() - 0.5) * shakeAmount * cellSize * 0.3;
     sy = (Math.random() - 0.5) * shakeAmount * cellSize * 0.3;
-    shakeAmount *= 0.82;
+    shakeAmount *= Math.pow(0.82, fxS);
   }
   ctx.save();
   ctx.translate(sx, sy);
@@ -722,7 +727,7 @@ function drawGrid() {
   let pw = 0;
   for (let i = 0; i < particles.length; i++) {
     const pt = particles[i];
-    pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.2; pt.life -= 0.02;
+    pt.x += pt.vx * fxS; pt.y += pt.vy * fxS; pt.vy += 0.2 * fxS; pt.life -= 0.02 * fxS;
     if (pt.life <= 0) continue;
     particles[pw++] = pt;
     ctx.globalAlpha = pt.life;
@@ -918,8 +923,11 @@ document.getElementById('btnReset').addEventListener('click', () => { Kit.click(
 // ==================== ANIMATION LOOP ====================
 
 function animLoop() {
+  const _now = performance.now();
+  const _dt = _animLastT === null ? (1 / 60) : Math.min(0.05, (_now - _animLastT) / 1000);
+  _animLastT = _now;
   if (clearAnim > 0) {
-    clearAnim -= 0.06;
+    clearAnim -= 0.06 * (_dt * 60);
     if (clearAnim <= 0) { clearingCells = []; clearingColors = {}; clearAnim = 0; }
   }
   drawGrid();
@@ -927,6 +935,7 @@ function animLoop() {
     animFrame = requestAnimationFrame(animLoop);
   } else {
     animFrame = null;
+    _animLastT = null;
   }
 }
 

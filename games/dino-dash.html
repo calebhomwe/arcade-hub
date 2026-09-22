@@ -84,7 +84,24 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=260,GY=212;
 const DPR=Math.min(window.devicePixelRatio||1,2);
-cv.width=W*DPR;cv.height=H*DPR;ctx.scale(DPR,DPR);
+function fitCanvas(){
+ const wrap=cv.parentElement;
+ const topPad=parseFloat(getComputedStyle(wrap).marginTop)||0;
+ const vh=(window.visualViewport?window.visualViewport.height:window.innerHeight);
+ const vw=(window.visualViewport?window.visualViewport.width:window.innerWidth);
+ const availW=Math.max(240,vw-20);
+ const availH=Math.max(160,vh-topPad-20);
+ const scale=Math.min(availW/W,availH/H);
+ cv.style.width=Math.round(W*scale)+'px';
+ cv.style.height=Math.round(H*scale)+'px';
+ cv.width=Math.round(W*DPR*scale);
+ cv.height=Math.round(H*DPR*scale);
+ ctx.setTransform(DPR*scale,0,0,DPR*scale,0,0);
+}
+fitCanvas();
+window.addEventListener('resize',fitCanvas);
+window.addEventListener('orientationchange',fitCanvas);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',fitCanvas);
 const dayG=ctx.createLinearGradient(0,0,0,H);dayG.addColorStop(0,'#38bdf8');dayG.addColorStop(1,'#d6f3ff');
 const nightG=ctx.createLinearGradient(0,0,0,H);nightG.addColorStop(0,'#0b1226');nightG.addColorStop(1,'#24304f');
 function rd(k){const v=+localStorage.getItem(k);return Number.isFinite(v)&&v>0?v:0;}

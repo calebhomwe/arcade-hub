@@ -164,7 +164,7 @@ function startGame(){
 initAudio();
 bumpDays();
 paused=false;document.getElementById('pauseOv').classList.add('hidden');document.getElementById('pauseBtn').textContent='⏸';
-state='play';score=0;acc=0;headPop=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;
+state='play';score=0;acc=-1000;headPop=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;
 document.querySelector('#over h1').textContent='Game Over';
 snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
 dir={x:1,y:0};queue=[];pending=null;
