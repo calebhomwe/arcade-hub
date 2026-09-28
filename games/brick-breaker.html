@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Brick Breaker</title>
 <style>
@@ -41,7 +42,22 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 .ov:not(.hidden){animation:ovIn .38s cubic-bezier(.2,1.5,.4,1)}
 @keyframes btnPulse{0%,100%{box-shadow:0 8px 24px rgba(56,189,248,.35)}50%{box-shadow:0 10px 30px rgba(74,222,128,.6)}}
 .btn{animation:btnPulse 1.8s ease-in-out infinite}
-@media(prefers-reduced-motion:reduce){.btn{animation:none}.ov:not(.hidden){animation:none}#hScore.pop,#hLv.pop,#hLives.pop{animation:none}}
+@media(prefers-reduced-motion:reduce){.btn{animation:none}.ov:not(.hidden){animation:none}#hScore.pop,#hLv.pop,#hLives.pop{animation:none}body.kit-shake{animation:none!important}#tut .tap{animation:none}}
+.diff{display:flex;gap:6px}
+.dbtn{border:none;cursor:pointer;min-height:44px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.1);color:#cbd5e1;font-size:14px;font-weight:900}
+.dbtn.on{background:linear-gradient(90deg,#4ade80,#38bdf8);color:#0f0f23}
+.dbtn:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.pups{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;color:#cbd5e1;font-size:13px;font-weight:700;padding:0 18px}
+.pups i{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#fff;font-size:12px;font-weight:900;margin-right:4px;vertical-align:middle}
+.top{color:#cbd5e1;font-size:13px;font-weight:700;min-width:210px}
+.top b{color:#facc15}
+.top ol{margin:4px 0 0;padding-left:22px;text-align:left}
+.codes{position:absolute;top:40px;left:14px;z-index:7;background:rgba(7,7,15,.74);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:transparent;backdrop-filter:none;pointer-events:none;justify-content:flex-start;padding-top:120px;cursor:default}
+#tut .card{background:rgba(7,7,15,.84);border-radius:16px;padding:12px 18px;max-width:340px}
+#tut .tap{font-size:34px;display:inline-block;animation:slideHint 1.4s ease-in-out infinite}
+#tut b{color:#4ade80}
+@keyframes slideHint{0%,100%{transform:translateX(-22px)}50%{transform:translateX(22px)}}
 </style>
 </head>
 <body>
@@ -55,15 +71,24 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="sub">Drag anywhere (or ← → keys) to move the paddle. Break every brick!</div>
     <div class="stat">Best: <b class="best" id="startBest">0</b></div>
     <div class="stat" id="startStats">Games 0</div>
+    <div class="diff" role="group" aria-label="Difficulty"><button class="dbtn" data-d="easy">Easy</button><button class="dbtn" data-d="normal">Normal</button><button class="dbtn" data-d="hard">Hard</button></div>
     <button class="btn" id="playBtn">▶ Play</button>
+    <div class="pups" aria-label="Power-ups"><span><i style="background:#22d3ee">3×</i>Multi-ball</span><span><i style="background:#f97316">W</i>Wide paddle</span><span><i style="background:#3b82f6">S</i>Slow ball</span><span><i style="background:#f472b6">★</i>Shield</span></div>
   </div>
   <div class="ov hidden" id="over">
     <h1>Game Over</h1>
     <div class="stat">Score: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat" id="finStats">LV 1</div>
+    <div class="top" id="topList"></div>
     <button class="btn" id="againBtn">Play Again</button>
     <div class="retry" id="retryHint">tap anywhere to retry</div>
+  </div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
+  <div class="ov hidden" id="tut">
+    <div class="card"><span class="tap" aria-hidden="true">👆</span>
+    <div class="stat">Drag anywhere (or ← →) to <b>move the paddle</b></div>
+    <div class="sub" id="tutMore">Tap or press Space to launch the ball. Bounce it into the bricks; hit it with the paddle's edge to angle it. Catch the power-ups that fall.</div></div>
   </div>
 </div>
 <script src="kit/juicekit.js"></script>
@@ -71,10 +96,22 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=640,PY=580,COLS=7;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SDK=window.ArcadeSDK||null;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let floorShield=false,bigPaddle=false,multiServe=false;
+const DIFF={easy:{sp:.85,pw:110,lives:5},normal:{sp:1,pw:90,lives:3},hard:{sp:1.15,pw:74,lives:3}};
+let diff='normal';try{diff=localStorage.getItem('brickDiff')||'normal';}catch(e){}if(!DIFF[diff])diff='normal';
+function PW(){return bigPaddle?140:DIFF[diff].pw;}
+const DPR=Math.min(window.devicePixelRatio||1,2);
+// Crisp on every screen: the backing store follows the CSS size times the pixel ratio.
+function fitCanvas(){const s=Math.min(1,innerWidth/W,innerHeight/H);cv.style.width=Math.round(W*s)+'px';cv.style.height=Math.round(H*s)+'px';cv.width=Math.round(W*s*DPR);cv.height=Math.round(H*s*DPR);ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);dirty=true;try{cvRect=cv.getBoundingClientRect();}catch(e){}}
 const rowColors=['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#a78bfa','#f472b6','#38bdf8'];
 const bgG=ctx.createLinearGradient(0,0,0,H);bgG.addColorStop(0,'#0c1a33');bgG.addColorStop(1,'#0a0a18');
 function rd(k){const v=+localStorage.getItem(k);return Number.isFinite(v)&&v>0?v:0;}
 let state='ready',score=0,best=rd('brickBest'),lives=3,level=1,shake=0,flash=0,t=0,combo=0,dirty=true;
+fitCanvas();addEventListener('resize',fitCanvas);
 let runs=rd('brickRuns'),bestLv=rd('brickBestLv'),bricksTot=rd('brickBricks');
 let runBricks=0,runMaxCombo=0,runPowers=0;
 let shield=0;
@@ -140,21 +177,28 @@ for(const br of bricks){br.hp=br.r===0?(level>=6?3:2):br.r===1&&level>=4?2:1;br.
 }
 function newBall(x,y){const tr=[];for(let i=0;i<9;i++)tr.push({x:x,y:y});return{x:x,y:y,r:7,vx:0,vy:0,trail:tr,ti:0,tn:0,dead:false};}
 function resetBall(){serving=true;combo=0;balls=[newBall(paddle.x+paddle.w/2,PY-8)];}
-function ballSpeed(){return (330+24*Math.sqrt(Math.max(0,level-1)))*(paddle.slow>0?.62:1);}
+function ballSpeed(){return (330+24*Math.sqrt(Math.max(0,level-1)))*(paddle.slow>0?.62:1)*DIFF[diff].sp;}
 function launch(){
 if(!serving)return;serving=false;
 const b=balls[0],sp=ballSpeed();
 b.vx=(Math.random()<.5?-1:1)*sp*(.18+Math.random()*.22);b.vy=-Math.sqrt(sp*sp-b.vx*b.vx);
+if(multiServe){for(const k of[-1,1]){const nb=newBall(b.x,b.y);const an=k*.45;nb.vx=Math.sin(an)*sp;nb.vy=-Math.cos(an)*sp;balls.push(nb);}}
+if(tutOn())hideTut();
 snd('launch');
 }
-function startGame(){state='play';score=0;lives=3;level=1;shield=0;shownScore=-1;shownLv=-1;shownLives=-1;flash=0;runBricks=0;runMaxCombo=0;runPowers=0;runs++;localStorage.setItem('brickRuns',runs);paddle={x:W/2-45,y:PY,w:90,h:14,wide:0,slow:0,pop:0};powerups=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnBricks();resetBall();hud();}
-function saveBest(){if(score>best){best=score;localStorage.setItem('brickBest',best);}}
+function startGame(){state='play';score=0;lives=DIFF[diff].lives;level=1;shield=0;shownScore=-1;shownLv=-1;shownLives=-1;flash=0;runBricks=0;runMaxCombo=0;runPowers=0;runs++;if(!cheated())localStorage.setItem('brickRuns',runs);paddle={x:W/2-PW()/2,y:PY,w:PW(),h:14,wide:0,slow:0,pop:0};powerups=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnBricks();resetBall();hud();scene('play');}
+function saveBest(){if(score>best&&!cheated()){best=score;localStorage.setItem('brickBest',best);}}
+// High-score table: the five best clean runs, with level and difficulty.
+function topScores(){try{const t=JSON.parse(localStorage.getItem('brickTop')||'[]');return Array.isArray(t)?t:[];}catch(e){return [];}}
+function addTop(){const t=topScores();if(cheated()||score<=0)return {t,at:-1};const e={s:score,lv:level,d:diff[0].toUpperCase()};t.push(e);t.sort((a,b)=>b.s-a.s);const k=t.slice(0,5);try{localStorage.setItem('brickTop',JSON.stringify(k));}catch(x){}return {t:k,at:k.indexOf(e)};}
+function showTop(r){const el=document.getElementById('topList');const t=r?r.t:topScores();el.innerHTML=t.length?'Top scores<ol>'+t.map((e,i)=>'<li>'+(i===(r?r.at:-1)?'<b>':'')+e.s+' · LV '+e.lv+' · '+({E:'Easy',N:'Normal',H:'Hard'}[e.d]||e.d)+(i===(r?r.at:-1)?'</b>':'')+'</li>').join('')+'</ol>':'';}
 function loseBall(){
 if(state!=='play')return;
 if(shield>0){shield--;snd('power');floater(paddle.x+paddle.w/2,PY-30,'🛡 SAVED','#f472b6');shake=8;flash=.6;resetBall();return;}
+if(floorShield){floater(paddle.x+paddle.w/2,PY-30,'FLOOR SHIELD','#facc15');resetBall();return;}
 snd('life');lives--;combo=0;hud();shake=10;flash=1;
 floater(paddle.x+paddle.w/2,PY-30,'BALL LOST','#f87171');
-if(lives<=0){state='over';snd('over');const pb=best;const pl=bestLv;saveBest();bricksTot+=runBricks;localStorage.setItem('brickBricks',bricksTot);
+if(lives<=0){state='over';snd('over');const pb=best;const pl=bestLv;saveBest();bricksTot+=runBricks;if(!cheated())localStorage.setItem('brickBricks',bricksTot);showTop(addTop());scene('over',{score:score,level:level});
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
 document.getElementById('finStats').textContent='LV '+level+' · Bricks '+runBricks+' this run · max ×'+Math.max(1,runMaxCombo)+' combo · '+runPowers+' power-ups · Games '+runs;
 setTimeout(()=>{document.getElementById('over').classList.remove('hidden');
@@ -173,13 +217,14 @@ function applyPower(tp){
  floater(paddle.x+paddle.w/2,PY-24,tp==='multi'?'MULTI':tp==='wide'?'WIDE':'SLOW',tp==='multi'?'#22d3ee':tp==='wide'?'#f97316':'#3b82f6');
 }
 function update(dt){
+ if(RM){shake=0;flash=0;}
  t+=dt;if(shake>0)shake-=dt*30;if(flash>0)flash-=dt*2.4;if(paddle.pop>0)paddle.pop-=dt*6;
 for(let i=0;i<parts.length;i++){const p=parts[i];if(p.life<=0)continue;p.life-=dt*1.6;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=420*dt;}
 for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;x.life-=dt*1.1;}
 if(state!=='play')return;
 if(paddle.wide>0)paddle.wide-=dt;
 if(paddle.slow>0)paddle.slow-=dt;
-paddle.w=paddle.wide>0?140:90;
+paddle.w=paddle.wide>0||bigPaddle?140:DIFF[diff].pw;
 const kd=keys.r-keys.l;
 if(kd)paddle.x+=kd*540*dt;
 paddle.x=Math.max(0,Math.min(W-paddle.w,paddle.x));
@@ -196,6 +241,7 @@ b.x+=b.vx*h;b.y+=b.vy*h;
 if(b.x<b.r){b.x=b.r;b.vx*=-1;snd('wall');}
 if(b.x>W-b.r){b.x=W-b.r;b.vx*=-1;snd('wall');}
 if(b.y<b.r){b.y=b.r;b.vy*=-1;snd('wall');}
+if(floorShield&&b.vy>0&&b.y>H-b.r){b.y=H-b.r;b.vy=-Math.abs(b.vy);snd('wall');}
 if(b.y>H+30){b.dead=true;burst(b.x,H-14,14,'#f87171');break;}
 if(b.vy>0&&b.y+b.r>=PY-2&&b.y-b.r<=PY+paddle.h&&b.x>=paddle.x-b.r&&b.x<=paddle.x+paddle.w+b.r){
 const rel=(b.x-(paddle.x+paddle.w/2))/(paddle.w/2);
@@ -239,7 +285,7 @@ b.vx=Math.sign(b.vx||1)*Math.sqrt(Math.max(0,s*s-b.vy*b.vy));
 }
 }
 let bw=0;for(let i=0;i<balls.length;i++){if(!balls[i].dead)balls[bw++]=balls[i];}balls.length=bw;
-if(cleared){level++;snd('level');saveBest();if(level>bestLv){bestLv=level;localStorage.setItem('brickBestLv',bestLv);}bricksTot+=runBricks;localStorage.setItem('brickBricks',bricksTot);runBricks=0;const cc=kitAt(W/2,H/2);Kit.burst(cc.x,cc.y,'#4ade80',18);if(level%5===0)Kit.confetti(40);spawnBricks();powerups=[];resetBall();hud();floater(W/2,H/2-40,'LEVEL '+level,'#4ade80');}
+if(cleared){level++;snd('level');saveBest();if(level>bestLv&&!cheated()){bestLv=level;localStorage.setItem('brickBestLv',bestLv);}bricksTot+=runBricks;if(!cheated())localStorage.setItem('brickBricks',bricksTot);runBricks=0;const cc=kitAt(W/2,H/2);Kit.burst(cc.x,cc.y,'#4ade80',18);if(level%5===0)Kit.confetti(40);spawnBricks();powerups=[];resetBall();hud();floater(W/2,H/2-40,'LEVEL '+level,'#4ade80');}
 for(let i=powerups.length-1;i>=0;i--){
 const p=powerups[i];p.y+=p.vy*dt;
 if(p.y>PY&&p.y<PY+paddle.h+20&&p.x>paddle.x-10&&p.x<paddle.x+paddle.w+10){applyPower(p.t);powerups.splice(i,1);}
@@ -266,7 +312,7 @@ ctx.drawImage(badges[p.t],p.x-40,p.y-40,80,80);
 const pp=Math.max(0,paddle.pop),ps=(1+pp*.14);
 ctx.save();ctx.translate(paddle.x+paddle.w/2,paddle.y+7);
 ctx.scale(ps+(state==='ready'?Math.sin(t*3)*.025:0),1+(1-ps)*.6);
-ctx.drawImage(paddle.w>90?padSprW:padSpr,-(paddle.w+40)/2,-27,paddle.w+40,54);
+ctx.drawImage(paddle.w>=110?padSprW:padSpr,-(paddle.w+40)/2,-27,paddle.w+40,54);
 ctx.restore();
 if(shield>0)ctx.drawImage(badges.shield,paddle.x+paddle.w/2-18,PY-52,36,36);
 for(const b of balls){
@@ -299,36 +345,73 @@ let cvRect=cv.getBoundingClientRect();
 window.addEventListener('resize',()=>{cvRect=cv.getBoundingClientRect();});
 function kitAt(px,py){return{x:cvRect.left+px*cvRect.width/W,y:cvRect.top+py*cvRect.height/H};}
 function moveTo(x){paddle.x=Math.max(0,Math.min(W-paddle.w,x-paddle.w/2));}
+const $=id=>document.getElementById(id);
+let tutSeen=false;try{tutSeen=localStorage.getItem('brickTut')==='1';}catch(e){}
+function tutOn(){return !$('tut').classList.contains('hidden');}
+function hideTut(){$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('brickTut','1');}catch(e){}}}
+// A run starts on the serve: the ball sits on the paddle until you launch it.
+function begin(full){['start','over'].forEach(id=>$(id).classList.add('hidden'));cvRect=cv.getBoundingClientRect();startGame();
+if(full||!tutSeen){$('tutMore').classList.remove('hidden');$('tut').classList.remove('hidden');}}
+function toTitle(){state='ready';$('over').classList.add('hidden');hideTutQuiet();bricks=[];balls=[];powerups=[];paddle={x:W/2-PW()/2,y:PY,w:PW(),h:14,wide:0,slow:0,pop:0};serving=false;showBest();$('start').classList.remove('hidden');dirty=true;scene('title');}
+function hideTutQuiet(){$('tut').classList.add('hidden');}
 window.addEventListener('pointerdown',e=>{
-if(e.target&&e.target.closest&&e.target.closest('.ov')){
- if(state==='over'&&!document.getElementById('over').classList.contains('hidden')){initAudio();document.getElementById('over').classList.add('hidden');startGame();}
+if(e.target.closest&&e.target.closest('button,a,#arcade-sdk'))return;if(SDK&&SDK.paused)return;
+if(e.target&&e.target.closest&&e.target.closest('.ov:not(#tut)')){
+ if(state==='over'&&!$('over').classList.contains('hidden')){initAudio();begin(false);}
  return;}
 initAudio();
 const x=(e.clientX-cvRect.left)*(W/cvRect.width);
-if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();}
+if(state==='ready')begin(false);
 else if(state==='play'){moveTo(x);if(serving)launch();}
 });
 window.addEventListener('pointermove',e=>{
-if(state!=='play')return;
+if(state!=='play'||(SDK&&SDK.paused))return;
 const x=(e.clientX-cvRect.left)*(W/cvRect.width);
 if(e.buttons>0||e.pointerType==='touch')moveTo(x);
 });
 window.addEventListener('keydown',e=>{
+if(SDK&&SDK.paused)return;
 if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.l=1;
 if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.r=1;
 if(e.key===' '||e.key==='Enter'){
+if(e.target&&e.target.tagName==='BUTTON')return;
 if(e.preventDefault)e.preventDefault();
 if(state==='play'&&serving)launch();
-else if(state==='ready'){initAudio();document.getElementById('start').classList.add('hidden');startGame();}
-else if(state==='over'){initAudio();document.getElementById('over').classList.add('hidden');startGame();}
+else if(state==='ready'){initAudio();begin(false);}
+else if(state==='over'){initAudio();begin(false);}
 }});
 window.addEventListener('keyup',e=>{
 if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.l=0;
 if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.r=0;
 });
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();document.getElementById('start').classList.add('hidden');startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();document.getElementById('over').classList.add('hidden');startGame();});
-showBest();
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();initAudio();fn();});el.addEventListener('click',e=>{if(e.detail===0){initAudio();fn();}});}
+press($('playBtn'),()=>begin(false));
+press($('againBtn'),()=>begin(false));
+function paintDiff(){document.querySelectorAll('.dbtn').forEach(b=>{b.classList.toggle('on',b.dataset.d===diff);b.setAttribute('aria-pressed',String(b.dataset.d===diff));});}
+document.querySelectorAll('.dbtn').forEach(b=>press(b,()=>{diff=b.dataset.d;try{localStorage.setItem('brickDiff',diff);}catch(e){}paintDiff();}));
+paintDiff();
+// Codes: just for fun; a run with a code on never replaces the saved best or the top scores.
+const CODES={FLOORSHIELD:'Floor shield: the ball bounces off the bottom, so you never lose one',BIGPADDLE:'Big paddle: the wide paddle all the time',MULTIBALL:'Multi-ball: every serve launches three balls'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='FLOORSHIELD')floorShield=true;if(c==='BIGPADDLE')bigPaddle=true;if(c==='MULTIBALL')multiServe=true;return{ok:true,message:CODES[c]};}
+function hint(){if(state!=='play')return 'Press Play. Drag or use the arrow keys to move the paddle, and tap or Space to launch.';
+if(serving)return 'Tap or press Space to launch. Move first: the ball leaves from the middle of the paddle.';
+const p=powerups.find(q=>q.y<PY);if(p&&p.t!=='slow')return 'Catch the falling '+({multi:'multi-ball',wide:'wide paddle',shield:'shield',slow:'slow ball'}[p.t])+' power-up on the '+(p.x<W/2?'left':'right')+'.';
+const live=bricks.filter(b=>b.alive);if(!live.length)return 'Level clear!';
+const cx2=live.reduce((a,b)=>a+b.x+b.w/2,0)/live.length,tough=live.filter(b=>b.hp>1).length;
+const side=cx2<W*.42?'left':cx2>W*.58?'right':'';
+return (side?'Most bricks left are on the '+side+': hit the ball with the '+(side==='left'?'left':'right')+' edge of the paddle to send it that way.':'Bricks are spread out: hit the ball near the paddle\'s middle for a steep, straight shot.')+(tough?' Bricks with a white chevron take '+(level>=6?'up to 3':'2')+' hits.':'');}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>{if(state!=='play'||!serving)begin(true);else{$('tutMore').classList.remove('hidden');$('tut').classList.remove('hidden');}},
+onHint:hint,
+onCheat:code,
+});
+showBest();showTop();
+scene('title');
 </script>
 </body>
 </html>

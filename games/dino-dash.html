@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dino Dash</title>
 <style>
@@ -45,7 +46,15 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 #over:not(.hidden) .stat:nth-of-type(5){animation-delay:.20s}
 #over:not(.hidden) .stat:nth-of-type(6){animation-delay:.24s}
 .hud small{opacity:.92;text-shadow:0 1px 4px rgba(0,0,0,.75)}
+.codes{position:absolute;top:12px;left:14px;z-index:7;background:rgba(7,7,15,.74);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:rgba(7,7,15,.3);backdrop-filter:none;pointer-events:none;justify-content:flex-start;padding-top:14px}
+#tut .card{background:rgba(7,7,15,.8);border-radius:16px;padding:10px 16px;max-width:360px}
+#tut .tap{font-size:34px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
+#tut b{color:#4ade80}
+@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(8px) scale(.9)}}
 @media (prefers-reduced-motion:reduce){
+  #tut .tap{animation:none}
+  body.kit-shake{animation:none!important}
   .ov:not(.hidden),#over:not(.hidden) .stat,.hud.pop{animation:none}
   .btn,.mute{transition:none}
 }
@@ -73,6 +82,12 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
+  <div class="ov hidden" id="tut">
+    <div class="card"><span class="tap" aria-hidden="true">👆</span>
+    <div class="stat">Tap or press Space to <b>jump</b> and start running</div>
+    <div class="sub" id="tutMore">Tap again in the air for a double jump. Swipe down or press ↓ to duck under birds. 🦴 bones, 🪶 shields and 🧲 magnets float along the way.</div></div>
+  </div>
   <div class="ov hidden" id="pause">
     <h1>Paused</h1>
     <div class="sub">Tap or press P to resume</div>
@@ -83,6 +98,12 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=260,GY=212;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SDK=window.ArcadeSDK||null;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let ironhide=false,slowmo=false,magnetCode=false;
+if(RM&&window.Kit){Kit.shake=function(){};Kit.flash=function(){};}
 const DPR=Math.min(window.devicePixelRatio||1,2);
 function fitCanvas(){
  const wrap=cv.parentElement;
@@ -150,15 +171,16 @@ if(dino.grounded){dino.vy=-560;dino.grounded=false;dino.jumps=1;snd('jump');tone
 else if(dino.jumps<2){dino.vy=-470;dino.jumps=2;snd('jump');tone(640,0.1,'square',0.05);dino.pop=1;burst(dino.x+dino.w/2,dino.y+dino.h,6,'#a7f3d0');}
 }
 function duck(){if(dino.grounded)dino.duck=.45;else dino.vy=Math.max(dino.vy,420);}
-function startGame(){Kit.click();state='play';dist=0;obs=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnT=1.6;flash=0;lastMile=0;lastFd=-1;lastBv=-1;cleared=0;shield=0;invuln=0;featherT=7;feathers.length=0;bonesRun=0;boneT=4;bones.length=0;lastMedal=0;medalsRun=0;magnetT=0;magT=9;magnets.length=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};}
+function startGame(){Kit.click();state='play';dist=0;obs=[];for(const p of parts)p.life=0;for(const x of texts)x.life=0;spawnT=1.6;flash=0;lastMile=0;lastFd=-1;lastBv=-1;cleared=0;shield=0;invuln=0;featherT=7;feathers.length=0;bonesRun=0;boneT=4;bones.length=0;lastMedal=0;medalsRun=0;magnetT=0;magT=9;magnets.length=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};scene('play');}
 function die(){if(state!=='play')return;state='over';snd('die');shake=10;flash=1;burst(dino.x+dino.w/2,dino.y+dino.h/2,24,'#34d399');
- const nb=dist>best;if(nb){best=dist;localStorage.setItem('dinoBest',best);}
+ const nb=dist>best&&!cheated();if(nb){best=dist;localStorage.setItem('dinoBest',best);}
+scene('over',{score:Math.floor(dist)});
 document.getElementById('finScore').textContent=Math.floor(dist);
 document.getElementById('finBest').textContent=Math.floor(best);
 document.getElementById('finCleared').textContent=cleared;
 document.getElementById('finBones').textContent=bonesRun;
 document.getElementById('finBonesT').textContent=totalBones;
-totalYards+=Math.floor(dist);runs++;try{localStorage.setItem('dinoYards',totalYards);localStorage.setItem('dinoRuns',runs);}catch(err){}
+totalYards+=Math.floor(dist);runs++;if(!cheated())try{localStorage.setItem('dinoYards',totalYards);localStorage.setItem('dinoRuns',runs);}catch(err){}
 document.getElementById('finMedals').textContent=medalsRun;
 document.getElementById('finMedalsT').textContent=totalMedals;
 document.getElementById('finLife').textContent=Math.floor(totalYards);
@@ -167,6 +189,7 @@ document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
 if(nb)Kit.win('NEW BEST!',Math.floor(dist)+'m — legend status');else Kit.lose('WIPEOUT!',Math.floor(dist)+'m · best '+Math.floor(best)+'m');
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),450);}
 function update(dt){
+ if(slowmo)dt*=.6;if(RM){shake=0;flash=0;}if(magnetCode&&state==='play')magnetT=Math.max(magnetT,1);
  t+=dt;if(shake>0)shake-=dt*30;if(flash>0)flash-=dt*2.4;if(dino.pop>0)dino.pop-=dt*6;
 for(let i=0;i<parts.length;i++){const p=parts[i];if(p.life<=0)continue;p.life-=dt*1.8;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;}
 for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;x.life-=dt*1.1;x.y-=42*dt;}
@@ -175,7 +198,7 @@ nightMix+=(nt-nightMix)*Math.min(1,dt*1.5);
 if(state==='play'){
 const s=spd();dist+=s*dt*.016;
 const mile=Math.floor(dist/100);if(mile>lastMile){lastMile=mile;snd('mile');hudEl.classList.remove('pop');void hudEl.offsetWidth;hudEl.classList.add('pop');Kit.text(window.innerWidth/2,110,(mile*100)+'m!','#4ade80',24);}
-const medal=Math.floor(dist/500);if(medal>lastMedal){lastMedal=medal;medalsRun++;totalMedals++;try{localStorage.setItem('dinoMedals',totalMedals);}catch(err){}sfx('win');ftext(dino.x+44,dino.y-30,'MEDAL!','#fde047');burst(dino.x+dino.w/2,dino.y,10,'#fde047');}
+const medal=Math.floor(dist/500);if(medal>lastMedal){lastMedal=medal;medalsRun++;totalMedals++;if(!cheated())try{localStorage.setItem('dinoMedals',totalMedals);}catch(err){}sfx('win');ftext(dino.x+44,dino.y-30,'MEDAL!','#fde047');burst(dino.x+dino.w/2,dino.y,10,'#fde047');}
 const ducking=dino.duck>0&&dino.grounded;
 dino.h=ducking?24:44;if(dino.grounded)dino.y=GY-dino.h;
 if(!dino.grounded){dino.vy+=1700*dt;dino.y+=dino.vy*dt;if(dino.y>=GY-dino.h){const iv=dino.vy;dino.y=GY-dino.h;dino.vy=0;dino.grounded=true;dino.jumps=0;dino.pop=1;dust(dino.x+dino.w/2,GY,5);if(iv>300)snd('land');if(iv>700)shake=Math.max(shake,4);}}
@@ -195,7 +218,7 @@ const px=dino.x+7,py=dino.y+6,pw=dino.w-14,ph=dino.h-6;
 for(const o of obs){
 let ow=o.w,oh=o.h,oy=o.type==='cactus'?GY-o.h:o.y,ox=o.x;
 if(px<ox+ow-4&&px+pw>ox+4&&py<oy+oh-4&&py+ph>oy+4){
-if(invuln>0){}
+if(invuln>0||ironhide){}
 else if(shield>0){shield--;invuln=1.2;shake=Math.max(shake,5);sfx('boom');burst(dino.x+dino.w/2,dino.y+dino.h/2,16,'#fde047');ftext(dino.x+44,dino.y-16,'SHIELD SAVED YOU!','#fde047');}
 else die();
 }
@@ -211,7 +234,7 @@ boneT-=dt*s/300;
 if(boneT<=0){boneT=2.8+Math.random()*2.6;bones.push({x:W+20,y:GY-26-Math.random()*58});}
 for(let i=0;i<bones.length;i++){const b=bones[i];b.x-=s*dt;
 if(magnetT>0&&b.x>0&&b.x<280){const ddx=dino.x+8-b.x,ddy=dino.y+dino.h/2-b.y;const dd=Math.sqrt(ddx*ddx+ddy*ddy);if(dd<140){b.x+=ddx*dt*6;b.y+=ddy*dt*6;}}
-if(px<b.x+14&&px+pw>b.x-14&&py<b.y+14&&py+ph>b.y-14){bonesRun++;totalBones++;if(magnetT>0)totalBones++;try{localStorage.setItem('dinoBones',totalBones);}catch(err){}sfx('coin');ftext(b.x,b.y-16,'+🦴','#fff');burst(b.x,b.y,5,'#fef3c7');b.x=-999;}}
+if(px<b.x+14&&px+pw>b.x-14&&py<b.y+14&&py+ph>b.y-14){bonesRun++;totalBones++;if(magnetT>0)totalBones++;if(!cheated())try{localStorage.setItem('dinoBones',totalBones);}catch(err){}sfx('coin');ftext(b.x,b.y-16,'+🦴','#fff');burst(b.x,b.y,5,'#fef3c7');b.x=-999;}}
 let bI=0;for(let i=0;i<bones.length;i++){if(bones[i].x>-40)bones[bI++]=bones[i];}bones.length=bI;
 if(magnetT>0)magnetT-=dt;
 magT-=dt*s/300;
@@ -219,7 +242,7 @@ if(magT<=0){magT=13+Math.random()*9;magnets.push({x:W+20,y:GY-70-Math.random()*3
 for(let i=0;i<magnets.length;i++){const m=magnets[i];m.x-=s*dt;
 if(px<m.x+14&&px+pw>m.x-14&&py<m.y+14&&py+ph>m.y-14){magnetT=6;sfx('levelup');ftext(dino.x+44,dino.y-14,'MAGNET!','#22d3ee');burst(m.x,m.y,8,'#22d3ee');m.x=-999;}}
 let mI=0;for(let i=0;i<magnets.length;i++){if(magnets[i].x>-40)magnets[mI++]=magnets[i];}magnets.length=mI;
-const fd=Math.floor(dist);if(fd!==lastFd){lastFd=fd;hudTxt.nodeValue=fd;const bv=Math.floor(Math.max(best,fd));if(bv!==lastBv){lastBv=bv;hudBestEl.textContent='BEST '+bv;}}
+const fd=Math.floor(dist);if(fd!==lastFd){lastFd=fd;hudTxt.nodeValue=fd;const bv=Math.floor(cheated()?best:Math.max(best,fd));if(bv!==lastBv){lastBv=bv;hudBestEl.textContent='BEST '+bv;}}
 }
 }
 function draw(){
@@ -266,7 +289,7 @@ for(const b of bones){ctx.fillRect(b.x-6,b.y-2.5,12,5);ctx.beginPath();ctx.arc(b
 for(const m of magnets){ctx.strokeStyle='#ef4444';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(m.x,m.y,8,Math.PI,0);ctx.stroke();ctx.strokeStyle='#e2e8f0';ctx.lineWidth=4.5;ctx.beginPath();ctx.moveTo(m.x-8,m.y);ctx.lineTo(m.x-8,m.y+6);ctx.moveTo(m.x+8,m.y);ctx.lineTo(m.x+8,m.y+6);ctx.stroke();ctx.lineCap='butt';}
 const d=dino;
 ctx.save();ctx.translate(d.x,d.y+d.h);
-const ip=(state==='ready'?Math.sin(t*3)*2:0),pp=Math.max(0,d.pop);
+const ip=(state==='ready'||state==='wait'?Math.sin(t*3)*2:0),pp=Math.max(0,d.pop);
 ctx.translate(0,ip);ctx.scale(1+pp*.18,1-pp*.15);
 const lp=Math.sin(t*24)*3;
 ctx.fillStyle='#1f2937';
@@ -295,7 +318,7 @@ for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;ctx.globa
 ctx.globalAlpha=1;ctx.textAlign='left';
 if(flash>0){ctx.globalAlpha=Math.min(flash,1)*.5;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
 }
-function active(){return state==='ready'||state==='play'||shake>0||flash>0||fxAlive(parts)||fxAlive(texts);}
+function active(){return state==='ready'||state==='wait'||state==='play'||shake>0||flash>0||fxAlive(parts)||fxAlive(texts);}
 let last=performance.now();
 function loop(now){
 requestAnimationFrame(loop);
@@ -309,23 +332,56 @@ draw();ctx.restore();
 }
 requestAnimationFrame(loop);
 function setPaused(on){if(on&&state==='play'){state='paused';document.getElementById('pause').classList.remove('hidden');}else if(!on&&state==='paused'){state='play';document.getElementById('pause').classList.add('hidden');last=performance.now();}}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
+// With the arcade SDK loaded, its menu is the one pause (P, Esc, the pause button, a hidden tab).
+if(!SDK)document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
 document.getElementById('pause').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();setPaused(false);});
+const $=id=>document.getElementById(id);
+let tutSeen=false;try{tutSeen=localStorage.getItem('dinoTut')==='1';}catch(e){}
+// Get ready: the dino jogs on the spot until the first jump starts the run.
+function resetScene(){obs=[];feathers.length=0;bones.length=0;magnets.length=0;dist=0;shake=0;flash=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;dino={x:56,y:GY-44,w:38,h:44,vy:0,grounded:true,jumps:0,duck:0,pop:0};hudTxt.nodeValue='0';hudBestEl.textContent='BEST '+Math.floor(best);lastFd=-1;lastBv=-1;}
+function getReady(full){state='wait';['start','over','pause'].forEach(id=>$(id).classList.add('hidden'));resetScene();
+$('tutMore').classList.toggle('hidden',!full&&tutSeen);$('tut').classList.remove('hidden');}
+function go(){$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('dinoTut','1');}catch(e){}}startGame();jump();}
+function toTitle(){state='ready';['over','pause','tut'].forEach(id=>$(id).classList.add('hidden'));resetScene();$('start').classList.remove('hidden');scene('title');}
 let touchStartY=null;
-window.addEventListener('pointerdown',e=>{if(e.target.closest('.ov'))return;initAudio();touchStartY=e.clientY;if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();jump();}else if(state==='play'){jump();}});
+window.addEventListener('pointerdown',e=>{if(e.target.closest('.ov:not(#tut)')||e.target.closest('button,a,#arcade-sdk'))return;if(SDK&&SDK.paused)return;initAudio();touchStartY=e.clientY;if(state==='ready')getReady(false);else if(state==='wait')go();else if(state==='play'){jump();}});
 window.addEventListener('pointermove',e=>{
 if(touchStartY===null||state!=='play')return;
 if(e.clientY-touchStartY>34){duck();touchStartY=null;}
 });
 window.addEventListener('pointerup',()=>{touchStartY=null;});
 window.addEventListener('keydown',e=>{
+if(SDK&&SDK.paused)return;
 initAudio();
-if(state==='ready'&&(e.key===' '||e.key==='ArrowUp')){document.getElementById('start').classList.add('hidden');startGame();jump();}
+if(e.key===' '||e.key==='ArrowUp')e.preventDefault();
+if(state==='ready'&&(e.key===' '||e.key==='ArrowUp'))getReady(false);
+else if(state==='wait'&&(e.key===' '||e.key==='ArrowUp'))go();
+else if(state==='over'&&e.key===' '&&!$('over').classList.contains('hidden'))getReady(false);
 else if(state==='play'){if(e.key===' '||e.key==='ArrowUp')jump();if(e.key==='ArrowDown')duck();}
-if(e.key==='p'||e.key==='Escape'){if(state==='play')setPaused(true);else if(state==='paused')setPaused(false);}
+if(e.key==='p'||e.key==='Escape'){if(SDK){if(!e.repeat)SDK.pause();return;}if(state==='play')setPaused(true);else if(state==='paused')setPaused(false);}
 });
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();document.getElementById('start').classList.add('hidden');startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();document.getElementById('over').classList.add('hidden');startGame();});
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();initAudio();fn();});el.addEventListener('click',e=>{if(e.detail===0){initAudio();fn();}});}
+press($('playBtn'),()=>getReady(false));
+press($('againBtn'),()=>getReady(false));
+// Codes: just for fun; a run with a code on never replaces the saved best.
+const CODES={IRONHIDE:'Iron hide: cacti and birds bounce off you',BONEMAGNET:'Bone magnet stays on for the whole run',SLOWMO:'Slow motion: the desert runs at 60% speed'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='IRONHIDE')ironhide=true;if(c==='BONEMAGNET')magnetCode=true;if(c==='SLOWMO')slowmo=true;return{ok:true,message:CODES[c]};}
+function hint(){if(state==='wait')return 'Tap to jump and start running. Tap again in the air for a double jump.';if(state!=='play')return 'Press Play. Jump the cacti, duck the low birds.';
+const o=obs.find(q=>q.x+q.w>dino.x);if(!o)return 'Clear road: grab the bones while it lasts.';
+const gap=Math.round(o.x-dino.x-dino.w);
+if(o.type==='bird')return o.y<GY-60?'A high bird is coming: stay on the ground and run under it.':'A low bird is coming: swipe down or press ↓ to duck just before it reaches you.';
+return 'Cactus '+(gap>150?'coming':'close')+': jump when it is about a dino-length away.'+(o.h>52?' It is a tall one, so jump a touch early.':'');}
+if(SDK)SDK.init({
+pauseButton:'br',
+onRestart:()=>getReady(false),
+onExit:toTitle,
+onTutorial:()=>getReady(true),
+onHint:hint,
+onCheat:code,
+});
+scene('title');
 </script>
 </body>
 </html>

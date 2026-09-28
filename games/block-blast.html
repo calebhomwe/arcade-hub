@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Block Blast</title>
 <style>
@@ -23,12 +24,12 @@ h1 {
 
 #scoreBoard { display: flex; gap: 20px; justify-content: center; width: 100%; }
 .scoreBox { background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 16px; text-align: center; min-width: 70px; }
-.scoreBox .label { font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+.scoreBox .label { font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 .scoreBox .value { font-size: 1.4rem; font-weight: 900; color: #e5e7eb; font-variant-numeric: tabular-nums; min-width: 2ch; }
 .scoreBox .value.combo { color: #facc15; }
 .scoreBox.small { padding: 8px 10px; min-width: 44px; }
 .scoreBox .value.blast { color: #f43f5e; }
-#metaStats { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-align: center; min-height: 14px; }
+#metaStats { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-align: center; min-height: 14px; }
 
 #gridCanvas { display: block; border-radius: 12px; box-shadow: 0 0 0 2px rgba(167,139,250,0.35), 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(56,189,248,0.18); touch-action: none; }
 
@@ -65,9 +66,23 @@ h1 {
 
 #controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-.back { margin-top: 12px; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 700; }
+.back { margin-top: 8px; color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; }
 .back:hover { color: #a78bfa; }
 
+.pieceSlot:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+#gridCanvas:focus-visible { outline: 2px solid #38bdf8; outline-offset: 3px; }
+.coach { display: flex; align-items: center; gap: 10px; background: #facc15; color: #1c1917; font-weight: 800; font-size: 0.85rem; border-radius: 12px; padding: 6px 8px 6px 14px; max-width: 100%; animation: coachPulse 1.4s ease-in-out infinite; }
+.coach.hidden, .ov.hidden, .codes.hidden { display: none; }
+.coach button { border: none; border-radius: 9px; background: rgba(0,0,0,.18); color: #1c1917; font-weight: 900; font-size: 0.8rem; min-height: 40px; min-width: 52px; cursor: pointer; font-family: inherit; }
+@keyframes coachPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(250,204,21,.55); } 50% { box-shadow: 0 0 0 8px rgba(250,204,21,0); } }
+.ov { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center; background: rgba(7,7,15,.84); backdrop-filter: blur(5px); }
+.ov h2 { font-size: clamp(2rem, 9vw, 3rem); font-weight: 900; background: linear-gradient(90deg, #f472b6, #fb923c, #facc15, #4ade80, #38bdf8, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ov p { color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; max-width: 380px; }
+.ov .btn.primary { font-size: 1.1rem; padding: 10px 40px; }
+.seg { display: flex; gap: 6px; }
+.seg .btn.on { border-color: #facc15; color: #facc15; }
+.codes { position: fixed; top: 12px; left: 12px; z-index: 10; background: rgba(15,23,42,.9); color: #facc15; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.15em; padding: 5px 10px; border-radius: 999px; }
+@media (prefers-reduced-motion: reduce) { .coach, .pieceSlot.fresh, .pieceSlot.selected, .scoreBox .value.bump, #comboText { animation: none; } body.kit-shake { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -84,18 +99,42 @@ h1 {
   <canvas id="gridCanvas" role="img" aria-label="Block Blast 8x8 grid"></canvas>
   <div id="comboText"></div>
   <div id="piecesArea"></div>
+  <div class="coach hidden" id="coach"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
   <div id="status" aria-live="polite">Select a block, then tap the grid</div>
   <div id="controls">
     <button class="btn" id="btnUndo">↩ Undo</button>
+    <button class="btn" id="btnHint">💡 Hint</button>
     <button class="btn primary" id="btnReset">🔄 New Game</button>
   </div>
   <div id="metaStats"></div>
 </div>
 
 <a class="back" href="../index.html">← Back to Arcade Hub</a>
+<div class="codes hidden" id="codesOn">CODES ON</div>
+<div class="ov hidden" id="start" role="dialog" aria-label="Block Blast">
+  <h2>🧊 BLOCK BLAST</h2>
+  <p>Drop the three blocks onto the 8×8 grid. Fill a whole row or column to blast it away. The game ends when no block fits.</p>
+  <div class="seg" role="group" aria-label="Mode"><button class="btn" data-m="classic">Classic</button><button class="btn" data-m="daily">Daily blocks</button></div>
+  <button class="btn primary" id="playBtn">▶ Play</button>
+  <p id="startBest" style="font-size:0.85rem;color:#94a3b8"></p>
+</div>
 
 <script src="kit/juicekit.js"></script>
 <script>
+
+// ==================== ARCADE STANDARD ====================
+const SDK = window.ArcadeSDK || null;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc, extra) { try { SDK && SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+let mode = 'classic'; try { mode = localStorage.getItem('blockblast_mode') || 'classic'; } catch (e) {}
+function bestKey() { return mode === 'daily' ? 'blockblast_daily_' + today() : 'blockblast_best'; }
+// Daily blocks: a seeded generator, so everyone gets the same blocks in the same order today.
+let rngState = 0;
+function seedRng(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } rngState = h >>> 0; }
+function R() { if (mode !== 'daily') return Math.random(); rngState = (rngState + 0x6D2B79F5) >>> 0; let t = rngState; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+let tinyBlocks = false;
 
 // ==================== POLYFILL ====================
 
@@ -198,7 +237,7 @@ let grid = [];
 let pieces = [];
 let selectedPiece = -1;
 let score = 0;
-let bestScore = parseInt(localStorage.getItem('blockblast_best') || '0');
+let bestScore = parseInt(localStorage.getItem(bestKey()) || '0');
 let prevBest = 0;
 let comboCount = 0;
 let moveHistory = [];
@@ -245,7 +284,9 @@ window.addEventListener('resize', () => { resizeGrid(); drawGrid(); drawPieces()
 
 // ==================== GAME LOGIC ====================
 
-function initGrid() {
+function initGrid(quiet) {
+  if (mode === 'daily') seedRng('blockblast-' + today());
+  bestScore = parseInt(localStorage.getItem(bestKey()) || '0');
   grid = new Array(GRID * GRID).fill(0);
   pieces = generatePieces();
   selectedPiece = -1;
@@ -268,15 +309,16 @@ function initGrid() {
   updateUI();
   drawGrid();
   drawPieces();
+  if (quiet !== true) scene('play');
 }
 
 function shapeCells(s) { return s.flat().reduce((a, b) => a + b, 0); }
 function pickShape() {
   const early = moveHistory.length < 8;
   const fill = grid.filter(Boolean).length / (GRID * GRID);
-  const maxCells = early ? 5 : (fill > 0.42 ? 6 : (fill > 0.28 ? 9 : 12));
-  for (let t = 0; t < 8; t++) {
-    const s = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  const maxCells = tinyBlocks ? 3 : early ? 5 : (fill > 0.42 ? 6 : (fill > 0.28 ? 9 : 12));
+  for (let t = 0; t < (tinyBlocks ? 40 : 8); t++) {
+    const s = SHAPES[Math.floor(R() * SHAPES.length)];
     if (shapeCells(s) <= maxCells) return s;
   }
   return [[1]];
@@ -290,7 +332,7 @@ function fitsSomewhere(shape) {
 function generatePieces() {
   const p = [];
   for (let i = 0; i < 3; i++) {
-    const colorIdx = Math.floor(Math.random() * COLORS.length);
+    const colorIdx = Math.floor(R() * COLORS.length);
     p.push({ shape: pickShape().map(r => [...r]), color: COLORS[colorIdx], used: false });
   }
   if (blastCharge >= BLAST_MAX) {
@@ -298,13 +340,13 @@ function generatePieces() {
     blastCharge -= BLAST_MAX;
     sfx('levelup');
   }
-  if (Math.random() < 0.12) p[2].star = true;
+  if (R() < 0.12) p[2].star = true;
   if (!hasAnyMoves(grid, p)) {
     const SMALLS = SHAPES.filter(s => shapeCells(s) <= 3);
     for (let t = 0; t < 12 && !hasAnyMoves(grid, p); t++) {
-      const i = Math.floor(Math.random() * 3);
+      const i = Math.floor(R() * 3);
       if (p[i].bomb) continue;
-      const cand = SMALLS[Math.floor(Math.random() * SMALLS.length)];
+      const cand = SMALLS[Math.floor(R() * SMALLS.length)];
       if (cand && fitsSomewhere(cand)) p[i] = { shape: cand.map(r => [...r]), color: p[i].color, used: false, star: p[i].star };
     }
   }
@@ -373,7 +415,8 @@ function placePieceAt(pieceIdx, row, col) {
   if (pieces[pieceIdx].used) return;
   if (!canPlace(grid, pieces[pieceIdx].shape, row, col)) return;
 
-  moveHistory.push({ grid: grid.slice(), pieces: pieces.map(p => ({...p, shape: p.shape.map(r=>[...r])})), score, comboCount });
+  moveHistory.push({ grid: grid.slice(), pieces: pieces.map(p => ({...p, shape: p.shape.map(r=>[...r])})), score, comboCount, rng: rngState, blastCharge });
+  tutPlaced();
 
   const colorIdx = COLORS.indexOf(pieces[pieceIdx].color);
   grid = placePiece(grid, pieces[pieceIdx].shape, colorIdx, row, col);
@@ -425,8 +468,7 @@ if (linesCleared > 0) {
     lifetimeClears++;
     if (linesCleared >= 4) quadEver = true;
     if (clearStreak > bestStreakEver) bestStreakEver = clearStreak;
-    localStorage.setItem('blockblast_clears', lifetimeClears);
-    localStorage.setItem('blockblast_streak', bestStreakEver);
+    if (!cheated()) { localStorage.setItem('blockblast_clears', lifetimeClears); localStorage.setItem('blockblast_streak', bestStreakEver); }
     if (rankName(lifetimeClears) !== rankName(lifetimeClears - 1)) sfx('levelup');
     comboCount++;
     if (comboCount > runMaxCombo) runMaxCombo = comboCount;
@@ -436,7 +478,7 @@ if (linesCleared > 0) {
 
     if (pieces[pieceIdx].star) {
       sparks++;
-      try { localStorage.setItem('blockblast_sparks', String(sparks)); } catch (e) {}
+      if (!cheated()) try { localStorage.setItem('blockblast_sparks', String(sparks)); } catch (e) {}
       sfx('levelup');
       layer(1568, 0.1, 'sine', 0.05, 2093);
       layer(2093, 0.12, 'sine', 0.04, 2637, 0.07);
@@ -518,6 +560,7 @@ if (linesCleared > 0) {
     gameOver = true; ended = true;
   }
   if (ended) {
+    scene('over', { score: score });
     if (beatBest || prevBest === 0) sfx('win');
     else sfxGameOver();
     if (beatBest) {
@@ -529,13 +572,13 @@ if (linesCleared > 0) {
     }
   }
 
-  if (score > bestScore) {
+  if (score > bestScore && !cheated()) {
     if (prevBest > 0 && prevBest === bestScore && !ended) {
       sfx('win');
       showCombo('🏆 NEW BEST!', 2000);
     }
     bestScore = score;
-    localStorage.setItem('blockblast_best', bestScore);
+    localStorage.setItem(bestKey(), bestScore);
   }
 
   checkAch();
@@ -552,6 +595,8 @@ function undo() {
   pieces = prev.pieces;
   score = prev.score;
   comboCount = prev.comboCount;
+  if (prev.rng !== undefined) rngState = prev.rng;
+  if (prev.blastCharge !== undefined) blastCharge = prev.blastCharge;
   selectedPiece = -1;
   hoverCell = null;
   clearingCells = [];
@@ -616,6 +661,7 @@ function drawGrid() {
 
   // Screen shake
   let sx = 0, sy = 0;
+  if (RM) shakeAmount = 0;
   if (shakeAmount > 0.01) {
     sx = (Math.random() - 0.5) * shakeAmount * cellSize * 0.3;
     sy = (Math.random() - 0.5) * shakeAmount * cellSize * 0.3;
@@ -720,7 +766,7 @@ function drawGrid() {
     ctx.shadowBlur = 0;
     ctx.font = `${cellSize * 0.25}px system-ui`;
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('Tap New Game', gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2 + cellSize * 0.5);
+    ctx.fillText('Tap the grid for a new game', gridPadding + cellSize * GRID / 2, gridPadding + cellSize * GRID / 2 + cellSize * 0.5);
   }
 
   // Particles
@@ -739,7 +785,7 @@ function drawGrid() {
   particles.length = pw;
   ctx.globalAlpha = 1;
 
-  if (clearAnim > 0 && clearingCells.length) {
+  if (clearAnim > 0 && clearingCells.length && !RM) {
     ctx.globalAlpha = clearAnim * 0.22;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(gridPadding, gridPadding, cellSize * GRID, cellSize * GRID);
@@ -762,6 +808,7 @@ function drawPieces() {
     const slot = document.createElement('div');
     slot.className = 'pieceSlot' + (i === selectedPiece ? ' selected' : '') + (piece.used ? ' used' : '') + (fresh ? ' fresh' : '');
     slot.dataset.index = i;
+    slot.tabIndex = piece.used ? -1 : 0; slot.setAttribute('role', 'button'); slot.setAttribute('aria-label', 'Block ' + (i + 1) + (piece.bomb ? ', bomb' : '') + (piece.used ? ', used' : '') + (i === selectedPiece ? ', selected' : ''));
 
     const pc = document.createElement('canvas');
     const pctx = pc.getContext('2d');
@@ -805,7 +852,9 @@ function drawPieces() {
       sfxSelect();
       drawPieces();
       drawGrid();
+      tutPicked();
     });
+    slot.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); slot.click(); if (selectedPiece === i) { if (!hoverCell) hoverCell = { row: 0, col: 0 }; drawGrid(); canvas.focus(); } } });
     area.appendChild(slot);
   }
 }
@@ -875,6 +924,7 @@ function getGridCell(e) {
 }
 
 canvas.addEventListener('click', (e) => {
+  if (e.detail === 0) return;
   if (gameOver) { Kit.click(); initGrid(); return; }
   const cell = getGridCell(e);
   if (!cell) { hoverCell = null; drawGrid(); return; }
@@ -918,6 +968,7 @@ canvas.addEventListener('mouseleave', () => { hoverCell = null; drawGrid(); });
 const _cbt = document.getElementById('comboText');
 new MutationObserver(() => { _cbt.style.animation = 'none'; void _cbt.offsetWidth; _cbt.style.animation = ''; }).observe(_cbt, { childList: true, characterData: true, subtree: true });
 document.getElementById('btnUndo').addEventListener('click', () => { Kit.click(); undo(); });
+document.getElementById('btnHint').addEventListener('click', () => { Kit.click(); showCombo('💡 ' + hint(), 5000); });
 document.getElementById('btnReset').addEventListener('click', () => { Kit.click(); initGrid(); });
 
 // ==================== ANIMATION LOOP ====================
@@ -947,10 +998,101 @@ drawGrid = function() {
   }
 };
 
+// ==================== KEYBOARD, TITLE, TUTORIAL, HINT, CODES ====================
+canvas.tabIndex = 0;
+canvas.addEventListener('keydown', (e) => {
+  if (gameOver || selectedPiece < 0) return;
+  const mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+  if (!hoverCell) hoverCell = { row: 0, col: 0 };
+  if (mv) { e.preventDefault(); hoverCell = { row: Math.max(0, Math.min(GRID - 1, hoverCell.row + mv[0])), col: Math.max(0, Math.min(GRID - 1, hoverCell.col + mv[1])) }; drawGrid(); }
+  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); placePieceAt(selectedPiece, hoverCell.row, hoverCell.col); }
+});
+window.addEventListener('keydown', (e) => {
+  if ((SDK && SDK.paused) || !document.getElementById('start').classList.contains('hidden')) return;
+  if (e.key >= '1' && e.key <= '3') { const i = +e.key - 1; if (pieces[i] && !pieces[i].used && !gameOver) { selectedPiece = i; if (!hoverCell) hoverCell = { row: 0, col: 0 }; sfxSelect(); drawPieces(); drawGrid(); tutPicked(); canvas.focus(); } }
+  if ((e.key === 'z' || e.key === 'Z' || e.key === 'u' || e.key === 'U') && !e.repeat) { undo(); }
+});
+const $ = id => document.getElementById(id);
+function paintStart() {
+  document.querySelectorAll('[data-m]').forEach(b => { b.classList.toggle('on', b.dataset.m === mode); b.setAttribute('aria-pressed', String(b.dataset.m === mode)); });
+  const b = parseInt(localStorage.getItem(bestKey()) || '0');
+  $('startBest').textContent = (mode === 'daily' ? "Today's daily best: " : 'Best: ') + (b || '–') + ' · ' + rankName(lifetimeClears);
+}
+document.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => { mode = b.dataset.m; try { localStorage.setItem('blockblast_mode', mode); } catch (e) {} paintStart(); }));
+function showTitle() { $('coach').classList.add('hidden'); paintStart(); $('start').classList.remove('hidden'); scene('title'); setTimeout(() => { try { $('playBtn').focus({ preventScroll: true }); } catch (e) {} }, 0); }
+function play(withTut) { $('start').classList.add('hidden'); initGrid(); if (withTut || !tutSeen) startTut(); else { tut = 0; $('coach').classList.add('hidden'); } }
+$('playBtn').addEventListener('click', () => { Kit.click(); play(false); });
+// First-run coach marks: each step is done by doing it.
+let tut = 0, tutSeen = false; try { tutSeen = localStorage.getItem('blockblast_tut') === '1'; } catch (e) {}
+function coach(t, b) { $('coachTxt').textContent = t; $('coachBtn').textContent = b || 'Skip'; $('coach').classList.remove('hidden'); }
+function endTut() { tut = 0; $('coach').classList.add('hidden'); tutSeen = true; try { localStorage.setItem('blockblast_tut', '1'); } catch (e) {} }
+$('coachBtn').addEventListener('click', endTut);
+function startTut() { tut = 1; coach('👇 Tap one of the three blocks below to pick it up.'); }
+function tutPicked() { if (tut === 1 && selectedPiece >= 0) { tut = 2; coach('Now tap the grid: the block lands with its top-left corner on that square.'); } }
+function tutPlaced() { if (tut === 2) { tut = 3; coach('Fill a whole row or column to blast it. Blocks never rotate. Place all three and you get three more.', 'Got it'); } else if (tut === 3) endTut(); }
+// Hint: tries every block in every spot and keeps the move that clears the most and leaves the fewest holes.
+function evalGrid(g) {
+  let empty = 0, holes = 0, semi = 0, rough = 0, big = 0;
+  for (let i = 0; i < GRID * GRID; i++) { if (g[i]) continue; empty++; const r = (i / GRID) | 0, c = i % GRID; let n = 0;
+    if (r === 0 || g[i - GRID]) n++; if (r === GRID - 1 || g[i + GRID]) n++; if (c === 0 || g[i - 1]) n++; if (c === GRID - 1 || g[i + 1]) n++;
+    if (n === 4) holes++; else if (n === 3) semi++; }
+  for (const sh of [[[1,1,1],[1,1,1],[1,1,1]], [[1,1,1,1,1]], [[1],[1],[1],[1],[1]]]) { for (let r = 0; r <= GRID - sh.length && !big; r++) for (let c = 0; c <= GRID - sh[0].length && !big; c++) if (canPlace(g, sh, r, c)) big = 1; }
+  // Ragged edges between filled and empty squares are where awkward gaps come from.
+  for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID - 1; c++) if (!!g[r * GRID + c] !== !!g[r * GRID + c + 1]) rough++;
+  for (let c = 0; c < GRID; c++) for (let r = 0; r < GRID - 1; r++) if (!!g[r * GRID + c] !== !!g[(r + 1) * GRID + c]) rough++;
+  return empty - holes * 6 - semi * 2 - rough * 0.6 + big * 10;
+}
+function bestPlacement() {
+  let best = null;
+  pieces.forEach((pc, i) => {
+    if (pc.used) return;
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (!canPlace(grid, pc.shape, r, c)) continue;
+      let g = placePiece(grid, pc.shape, 0, r, c);
+      if (pc.bomb) { for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { const rr = r + dr, cc = c + dc; if (rr >= 0 && rr < GRID && cc >= 0 && cc < GRID) g[rr * GRID + cc] = 0; } }
+      const { rows, cols } = findFullLines(g); const lines = rows.length + cols.length;
+      g = clearLines(g, rows, cols);
+      const rest = pieces.filter((q, j) => j !== i && !q.used);
+      const stuck = rest.some(q => { for (let a = 0; a < GRID; a++) for (let b = 0; b < GRID; b++) if (canPlace(g, q.shape, a, b)) return false; return true; });
+      const v = lines * 40 + evalGrid(g) - (stuck ? 60 : 0);
+      if (!best || v > best.v) best = { v, i, r, c, lines };
+    }
+  });
+  return best;
+}
+const SHAPE_NAMES = { '1': 'single square', '11': 'domino', '111': 'bar of 3', '1111': 'bar of 4', '11/11': 'square', '111/010': 'T', '10/10/11': 'L', '01/01/11': 'J', '110/011': 'S', '011/110': 'Z' };
+function pieceName(pc) { if (pc.bomb) return 'bomb'; const k = pc.shape.map(r => r.join('')).join('/'); const kt = pc.shape[0].length === 1 ? pc.shape.map(r => r.join('')).join('') : k; return SHAPE_NAMES[k] || (pc.shape[0].length === 1 && SHAPE_NAMES[kt] ? 'upright ' + SHAPE_NAMES[kt] : 'block'); }
+function hint() {
+  if (!$('start').classList.contains('hidden')) return 'Press Play: drop blocks and fill rows or columns.';
+  if (gameOver) return 'No block fits any more. Undo a move or start a new game.';
+  const b = bestPlacement(); if (!b) return 'Nothing fits: try Undo.';
+  selectedPiece = b.i; hoverCell = { row: b.r, col: b.c }; drawPieces(); drawGrid();
+  return 'Place block ' + (b.i + 1) + ' (the ' + pieceName(pieces[b.i]) + ') with its top-left on row ' + (b.r + 1) + ', column ' + (b.c + 1) + (b.lines ? ': it clears ' + b.lines + ' line' + (b.lines > 1 ? 's' : '') + '.' : ': it keeps the board open.') + ' The ghost shows where; tap there to drop it.';
+}
+// Codes: just for fun; a game with a code on never replaces a saved best.
+const CODES = { BOMBSQUAD: 'Bomb squad: a bomb joins your tray right now', TINYBLOCKS: 'Tiny blocks: every new block is 3 squares or fewer', FRESHTRAY: 'Fresh tray: swap your blocks for three new ones' };
+function code(c) {
+  if (!CODES[c]) return { ok: false }; $('codesOn').classList.remove('hidden');
+  if (c === 'TINYBLOCKS') tinyBlocks = true;
+  if (c === 'BOMBSQUAD' && !gameOver) { const i = pieces.findIndex(p => !p.used && !p.bomb); if (i >= 0) pieces[i] = { shape: [[1]], color: BOMB_COLOR, used: false, bomb: true }; }
+  if (c === 'FRESHTRAY' && !gameOver) pieces = generatePieces();
+  selectedPiece = -1; drawPieces(); drawGrid(); updateUI();
+  return { ok: true, message: CODES[c] };
+}
+if (SDK) SDK.init({
+  pauseButton: 'tr', pauseKeys: 'p+esc',
+  onRestart: () => play(false),
+  onExit: showTitle,
+  onTutorial: () => play(true),
+  onHint: hint,
+  onCheat: code,
+});
+
 // ==================== INIT ====================
 
-initGrid();
+initGrid(true);
 updateUI();
+showTitle();
 </script>
 </body>
 </html>

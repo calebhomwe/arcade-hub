@@ -2,19 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Memory Match</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#be185d,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 .mute{position:fixed;top:10px;right:12px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:#1e293b;font-size:20px;cursor:pointer;color:#fff}
 .mute:active{transform:scale(.92)}
 h1{font-size:30px;font-weight:900;letter-spacing:-1px}
 .hud{display:flex;gap:12px;font-weight:800;font-size:15px}
 .hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
-.peek{background:#1e293b;border:none;color:#fff;font-size:14px;font-weight:800;padding:8px 14px;border-radius:12px;cursor:pointer}
+.peek{background:#1e293b;border:none;color:#fff;font-size:14px;font-weight:800;padding:0 12px;min-height:40px;border-radius:12px;cursor:pointer}
+.hud{flex-wrap:wrap;justify-content:center;align-items:center}
+.hud span{display:inline-flex;align-items:center;min-height:40px}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(92vw,430px,calc(100vh - 170px));contain:layout}
 .card{aspect-ratio:1;position:relative;cursor:pointer;perspective:600px;animation:deal .45s cubic-bezier(.2,.8,.3,1.2) backwards}
 .inner{position:absolute;inset:0;transition:transform .45s;transform-style:preserve-3d;will-change:transform}
@@ -38,29 +41,60 @@ h1{font-size:30px;font-weight:900;letter-spacing:-1px}
 .btn:active{transform:scale(.94)}
 .nb{color:#4ade80;font-weight:900;letter-spacing:.06em;font-size:15px}
 .hidden{display:none}
+.card:focus-visible{outline:3px solid #facc15;outline-offset:3px;border-radius:14px}
+.btn:focus-visible,.peek:focus-visible,.back:focus-visible,.seg button:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.card.hinted .front{box-shadow:inset 0 0 0 3px #facc15,0 0 18px 4px rgba(250,204,21,.6)}
+.ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px;max-width:440px}
+.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px}
+.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,#f472b6,#a78bfa);color:#1c1024}
+.coach{display:flex;align-items:center;gap:10px;background:#f472b6;color:#1c1024;font-weight:800;font-size:14px;border-radius:12px;padding:6px 8px 6px 14px;max-width:min(94vw,440px);animation:coachPulse 1.4s ease-in-out infinite}
+.coach.hidden{display:none}
+.coach button{border:none;border-radius:9px;background:rgba(0,0,0,.18);color:#1c1024;font-weight:900;font-size:13px;min-height:40px;min-width:52px;cursor:pointer}
+@keyframes coachPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,114,182,.55)}50%{box-shadow:0 0 0 8px rgba(244,114,182,0)}}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+@media (prefers-reduced-motion:reduce){.card,.card.matched .backf,.card.shake .inner,.coach{animation:none}.inner{transition-duration:.15s}.cf{display:none}}
 </style>
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <button class="mute" id="muteBtn">🔊</button>
 <h1>Memory Match</h1>
-<div class="hud"><span>🃏 <b id="moves">0</b></span><span>⏱ <b id="time">0:00</b></span><span>🏆 <b id="best">–</b></span><button class="peek" id="peekBtn">👁 ×0</button><button class="peek" id="shufBtn">🔄 OFF</button></div>
+<div class="hud"><span>🃏 <b id="moves">0</b></span><span>⏱ <b id="time">0:00</b></span><span>🏆 <b id="best">–</b></span><button class="peek" id="hintBtn" aria-label="Hint">💡</button><button class="peek" id="peekBtn" aria-label="Peek">👁 ×0</button><button class="peek" id="shufBtn" aria-label="Shuffle mode">🔄 OFF</button></div>
+<div class="coach hidden" id="coach"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
+<div class="codes hidden" id="codesOn">CODES ON</div>
 <div class="grid" id="grid"></div>
 <div class="ov hidden" id="over">
   <h1>You Win!</h1>
   <div class="stars" id="stars">⭐⭐⭐</div>
-  <div style="color:#94a3b8;font-size:13px">3★ ≤ 16 moves · 2★ ≤ 24 moves</div>
+  <div style="color:#94a3b8;font-size:13px" id="starRule">3★ ≤ 16 moves · 2★ ≤ 24 moves</div>
   <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
   <div style="font-size:16px">Moves: <b id="finMoves">0</b> · Time: <b id="finTime">0:00</b></div>
   <div style="color:#94a3b8;font-size:14px">⭐ Star bank: <b id="finBank">0</b> (lifetime)</div>
   <div style="color:#facc15;font-size:14px" id="finFlawless"></div>
   <button class="btn" id="againBtn">Play Again</button>
 </div>
+<div class="ov hidden" id="start">
+  <h1>Memory Match</h1>
+  <div class="sub">Flip two cards at a time. Find every matching pair in as few moves as you can.</div>
+  <div class="seg" role="group" aria-label="Level"><button data-lv="easy">Easy · 6 pairs</button><button data-lv="normal">Normal · 8</button><button data-lv="hard">Hard · 10</button></div>
+  <button class="btn" id="playBtn">▶ Play</button>
+  <div style="color:#94a3b8;font-size:14px" id="startBest"></div>
+</div>
 <script>
 
-const EMOJIS=['🍎','🍕','🚀','🎈','🐸','🌟','🍩','🐙'];
+const ALL=['🍎','🍕','🚀','🎈','🐸','🌟','🍩','🐙','🦄','🍉'];
+const LEVELS={easy:{pairs:6,cols:4,s3:10,s2:15},normal:{pairs:8,cols:4,s3:16,s2:24},hard:{pairs:10,cols:5,s3:20,s2:30}};
+let level='normal';try{level=localStorage.getItem('memLevel')||'normal';}catch(e){}if(!LEVELS[level])level='normal';
+let EMOJIS=ALL.slice(0,LEVELS[level].pairs);
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+function bestKey(){return level==='normal'?'memBest':'memBest_'+level;}
+let slowFlip=false,seen=new Map();
 const grid=document.getElementById('grid');
-let open=[],lock=false,moves=0,matched=0,seconds=0,timer=null,t0=0,started=false,best=+localStorage.getItem('memBest')||0;
+let open=[],lock=false,moves=0,matched=0,seconds=0,timer=null,t0=0,started=false,best=+localStorage.getItem(bestKey())||0;
 let muted=localStorage.getItem('memMute')==='1';
 let fever=0,tokens=0,starBank=+localStorage.getItem('memStars')||0;
 let misses=0,chain=0,chainBest=+localStorage.getItem('memFlawless')||0;
@@ -79,7 +113,10 @@ document.addEventListener('visibilitychange',()=>{
 if(document.hidden){clearInterval(timer);timer=null;}
 else if(started&&!timer&&matched<EMOJIS.length){timer=setInterval(tick,250);tick();}
 });
-function newGame(){
+function newGame(quiet){
+EMOJIS=ALL.slice(0,LEVELS[level].pairs);best=+localStorage.getItem(bestKey())||0;seen=new Map();
+grid.style.gridTemplateColumns='repeat('+LEVELS[level].cols+',1fr)';
+document.getElementById('start').classList.add('hidden');
 clearInterval(timer);timer=null;open=[];lock=false;moves=0;matched=0;seconds=0;started=false;fever=0;tokens=0;misses=0;updatePeekUI();
 document.getElementById('moves').textContent=0;document.getElementById('time').textContent='0:00';
 document.getElementById('best').textContent=best||'–';
@@ -90,33 +127,34 @@ const deck=shuffle([...EMOJIS,...EMOJIS]);
 deck.forEach((emo,i)=>{
 const card=document.createElement('div');card.className='card';
 card.style.animationDelay=(i*35)+'ms';
-card.dataset.e=emo;
+card.dataset.e=emo;card.dataset.i=i;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Card '+(i+1)+', face down');
 card.innerHTML=`<div class="inner"><div class="face front"></div><div class="face backf">${emo}</div></div>`;
 grid.appendChild(card);
 });
+if(quiet!==true)scene('play');
 }
 function flip(card,emo){
 initAudio();
 if(lock||card.classList.contains('flip')||card.classList.contains('matched'))return;
 startTimer();
-card.classList.add('flip');snd('flip');
-open.push({card,emo});
+card.classList.add('flip');snd('flip');card.setAttribute('aria-label',emo+' face up');seen.set(card,emo);
+open.push({card,emo});tutStep('flip',open.length);
 if(open.length===2){
 moves++;document.getElementById('moves').textContent=moves;
 if(open[0].emo===open[1].emo){
-open.forEach(o=>o.card.classList.add('matched'));
-open=[];matched++;snd('match');
+open.forEach(o=>{o.card.classList.add('matched');o.card.setAttribute('aria-label',o.emo+' matched');});
+open=[];matched++;snd('match');tutStep('pair',true);
 fever++;if(fever%3===0&&tokens<3){tokens++;sfx('levelup');}
 updatePeekUI();
 if(matched===EMOJIS.length)win();
 }else{
-lock=true;snd('miss');fever=0;misses++;updatePeekUI();
+lock=true;snd('miss');fever=0;misses++;updatePeekUI();tutStep('pair',false);
 open.forEach(o=>o.card.classList.add('shake'));
 setTimeout(()=>{
-open.forEach(o=>{o.card.classList.remove('flip');o.card.classList.remove('shake');});
+open.forEach(o=>{o.card.classList.remove('flip');o.card.classList.remove('shake');o.card.setAttribute('aria-label','Card '+(+o.card.dataset.i+1)+', face down');});
 open=[];lock=false;
 if(shuffleMode)shuffleUnmatched();
-},820);
+},slowFlip?3000:820);
 }
 }
 }
@@ -127,7 +165,7 @@ function shuffleUnmatched(){
   const ems=cards.map(c=>c.dataset.e);
   shuffle(ems);
   for(let i=0;i<cards.length;i++){
-    cards[i].dataset.e=ems[i];
+    cards[i].dataset.e=ems[i];seen.delete(cards[i]);
     const bf=cards[i].querySelector('.backf');
     if(bf)bf.textContent=ems[i];
   }
@@ -149,7 +187,7 @@ if(!c.classList.contains('matched'))c.classList.remove('flip');
 lock=false;
 },1200);
 }
-function confetti(){
+function confetti(){if(RM)return;
 const cols=['#f472b6','#a78bfa','#4ade80','#facc15','#38bdf8','#fb923c'];
 for(let i=0;i<32;i++){
 const c=document.createElement('div');c.className='cf';
@@ -165,9 +203,9 @@ setTimeout(()=>{if(c.parentNode)c.parentNode.removeChild(c);},2300);
 }
 function win(){
 clearInterval(timer);timer=null;snd('win');confetti();
-const starCount=moves<=16?3:moves<=24?2:1;
-starBank+=starCount;localStorage.setItem('memStars',starBank);
-if(misses===0){chain++;if(chain>chainBest){chainBest=chain;localStorage.setItem('memFlawless',chainBest);}starBank+=1;localStorage.setItem('memStars',starBank);}
+const L=LEVELS[level],clean=!cheated(),starCount=moves<=L.s3?3:moves<=L.s2?2:1;
+if(clean){starBank+=starCount;localStorage.setItem('memStars',starBank);}
+if(misses===0){chain++;if(chain>chainBest&&clean){chainBest=chain;localStorage.setItem('memFlawless',chainBest);}if(clean){starBank+=1;localStorage.setItem('memStars',starBank);}}
 else{chain=0;}
 document.getElementById('finBank').textContent=starBank;
 const fl=document.getElementById('finFlawless');
@@ -175,30 +213,87 @@ if(fl)fl.textContent=misses===0?('🔥 Flawless win! +1 ⭐ · streak ×'+chain+
 document.getElementById('stars').textContent='⭐'.repeat(starCount);
 document.getElementById('finMoves').textContent=moves;
 document.getElementById('finTime').textContent=fmt(seconds);
-const isBest=!best||moves<best;
-if(isBest){best=moves;localStorage.setItem('memBest',best);}
+const isBest=clean&&(!best||moves<best);
+if(isBest){best=moves;localStorage.setItem(bestKey(),best);}
+scene('over',{score:moves,stars:starCount});
+document.getElementById('starRule').textContent='3★ ≤ '+L.s3+' moves · 2★ ≤ '+L.s2+' moves';
 document.getElementById('best').textContent=best;
 const nb=document.getElementById('newBest');if(nb)nb.classList.toggle('hidden',!isBest);
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
 }
-document.getElementById('againBtn').addEventListener('pointerdown',newGame);
+const $=id=>document.getElementById(id);
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+function busy(){return !$('start').classList.contains('hidden')||(SDK&&SDK.paused);}
+press($('againBtn'),()=>play(false));
 grid.addEventListener('pointerdown',e=>{
-const card=e.target.closest('.card');if(!card)return;
+const card=e.target.closest('.card');if(!card||busy())return;
 flip(card,card.dataset.e);
 },{passive:true});
-const muteBtn=document.getElementById('muteBtn');
+grid.addEventListener('keydown',e=>{const card=e.target.closest('.card');if(!card||busy())return;
+if(e.key==='Enter'||e.key===' '){e.preventDefault();flip(card,card.dataset.e);return;}
+const cols=LEVELS[level].cols,i=+card.dataset.i,mv={ArrowLeft:-1,ArrowRight:1,ArrowUp:-cols,ArrowDown:cols}[e.key];
+if(mv!==undefined){e.preventDefault();const n=grid.children[i+mv];if(n)n.focus();}});
+const muteBtn=$('muteBtn');
 function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
-muteBtn.addEventListener('pointerdown',()=>{muted=!muted;localStorage.setItem('memMute',muted?'1':'0');updMute();});
-document.getElementById('peekBtn').addEventListener('pointerdown',()=>{doPeek();});
-const shufBtn=document.getElementById('shufBtn');
-shufBtn.addEventListener('pointerdown',()=>{
+press(muteBtn,()=>{muted=!muted;localStorage.setItem('memMute',muted?'1':'0');updMute();});
+press($('peekBtn'),()=>{if(!busy())doPeek();});
+const shufBtn=$('shufBtn');
+press(shufBtn,()=>{
   shuffleMode=!shuffleMode;
   shufBtn.textContent=shuffleMode?'🔄 ON':'🔄 OFF';
   sfx('tap');
   newGame();
 });
+/* ---- first-run coach marks, taught by doing ---- */
+let tut=0,tutSeen=false;try{tutSeen=localStorage.getItem('memTut')==='1';}catch(e){}
+function coach(txt,btn){$('coachTxt').textContent=txt;$('coachBtn').textContent=btn||'Skip';$('coach').classList.remove('hidden');}
+function endTut(){tut=0;$('coach').classList.add('hidden');tutSeen=true;try{localStorage.setItem('memTut','1');}catch(e){}}
+press($('coachBtn'),endTut);
+function startTut(){tut=1;coach('👆 Tap any card to flip it over.');}
+function tutStep(kind,v){if(!tut)return;
+if(kind==='flip'&&tut===1&&v===1){tut=2;coach('Now tap a second card. Can you find its twin?');}
+else if(kind==='pair'&&tut===2){tut=3;coach(v?'✨ A pair! Matched cards stay face up. Match them all in as few moves as you can.':'No match, so both flip back. Remember where they were: that is the whole game!','Got it');}
+else if(kind==='pair'&&tut===3)endTut();}
+/* ---- hint: uses only the cards you have already seen ---- */
+function where(c){const cols=LEVELS[level].cols,i=+c.dataset.i;return 'row '+((i/cols|0)+1)+', card '+(i%cols+1);}
+function glow(cards){cards.forEach(c=>{c.classList.add('hinted');setTimeout(()=>c.classList.remove('hinted'),1800);});}
+function hint(){if(!$('start').classList.contains('hidden'))return 'Pick a level and press Play.';
+if(matched>=EMOJIS.length)return 'All pairs found! Press Play Again for a new deck.';
+const live=[...grid.children].filter(c=>!c.classList.contains('matched'));
+const down=live.filter(c=>!c.classList.contains('flip'));
+if(open.length===1){const o=open[0],twin=down.find(c=>seen.get(c)===o.emo);
+if(twin){glow([twin]);return 'You have seen the other '+o.emo+': it is at '+where(twin)+' (glowing).';}
+const fresh=down.find(c=>!seen.has(c));if(fresh){glow([fresh]);return 'You have not seen the other '+o.emo+' yet: try a new card, like '+where(fresh)+'.';}}
+const byE={};for(const c of down)if(seen.has(c))(byE[seen.get(c)]=byE[seen.get(c)]||[]).push(c);
+for(const e in byE)if(byE[e].length>=2){glow(byE[e].slice(0,2));return 'You already know where both '+e+' are: '+where(byE[e][0])+' and '+where(byE[e][1])+'.';}
+const fresh=down.find(c=>!seen.has(c));if(fresh){glow([fresh]);return 'Flip a card you have not seen yet, like '+where(fresh)+'. Then look for its twin.';}
+return 'Tap a card to start.';}
+press($('hintBtn'),()=>{if(busy())return;const t=hint();coach('💡 '+t,'OK');tut=0;});
+/* ---- title and levels ---- */
+function paintStart(){document.querySelectorAll('[data-lv]').forEach(b=>{b.classList.toggle('on',b.dataset.lv===level);b.setAttribute('aria-pressed',String(b.dataset.lv===level));});
+const L=LEVELS[level],b=+localStorage.getItem(bestKey())||0;$('startBest').textContent=(b?'Best: '+b+' moves':'No best yet')+' · 3★ in '+L.s3+' moves or fewer · ⭐ bank '+starBank;}
+document.querySelectorAll('[data-lv]').forEach(b=>press(b,()=>{level=b.dataset.lv;try{localStorage.setItem('memLevel',level);}catch(e){}paintStart();}));
+function showTitle(){clearInterval(timer);timer=null;$('over').classList.add('hidden');$('coach').classList.add('hidden');paintStart();$('start').classList.remove('hidden');scene('title');setTimeout(()=>{try{$('playBtn').focus({preventScroll:true});}catch(e){}},0);}
+function play(withTut){initAudio();newGame();if(withTut||!tutSeen)startTut();else{tut=0;$('coach').classList.add('hidden');}}
+press($('playBtn'),()=>play(false));
+/* ---- codes: just for fun; a game with a code on never replaces a saved best ---- */
+const CODES={PEEKABOO:'Peekaboo: three extra peeks',AUTOPAIR:'Auto pair: one pair matches itself (enter it again for more)',SLOWFLIP:'Slow flip: a wrong pair stays face up for 3 seconds'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='PEEKABOO'){tokens+=3;updatePeekUI();}if(c==='SLOWFLIP')slowFlip=true;
+if(c==='AUTOPAIR'&&!lock){const live=[...grid.children].filter(x=>!x.classList.contains('matched')&&!x.classList.contains('flip'));const e=live[0]&&live[0].dataset.e;const two=live.filter(x=>x.dataset.e===e).slice(0,2);
+if(two.length===2){startTimer();two.forEach(x=>{x.classList.add('flip','matched');seen.set(x,e);});matched++;snd('match');if(matched===EMOJIS.length)win();}}
+return{ok:true,message:CODES[c]};}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>play(false),
+onExit:showTitle,
+onTutorial:()=>play(true),
+onHint:hint,
+onCheat:code,
+});
 updMute();
-newGame();
+newGame(true);showTitle();
 </script>
 </body>
 </html>

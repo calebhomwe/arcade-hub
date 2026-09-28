@@ -2,19 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>2048</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 .mute{position:fixed;top:10px;right:12px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:#1e293b;font-size:20px;cursor:pointer;color:#fff}
 .mute:active{transform:scale(.92)}
 .head{display:flex;align-items:center;gap:12px}
 .head h1{font-size:30px;font-weight:900;letter-spacing:-1px}
 .scorebox{background:#1e293b;border-radius:12px;padding:6px 16px;text-align:center;min-width:76px}
-.scorebox small{display:block;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
+.scorebox small{display:block;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}
 .scorebox b{font-size:20px;color:#facc15;display:inline-block}
 .scorebox.bump b{animation:bump .25s ease}
 @keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
@@ -35,8 +36,20 @@ body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#070
 .btn{border:none;cursor:pointer;background:linear-gradient(90deg,#facc15,#fb923c);color:#1c1917;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(250,204,21,.35)}
 .btn:active{transform:scale(.94)}
 .hidden{display:none}
+.hint.coach{color:#1c1917;background:#facc15;border-radius:12px;padding:6px 8px 6px 14px;font-weight:800;display:flex;align-items:center;gap:10px;max-width:min(94vw,460px);animation:coachPulse 1.4s ease-in-out infinite}
+.hint.coach button{border:none;border-radius:9px;background:rgba(0,0,0,.18);color:#1c1917;font-weight:900;font-size:13px;min-height:40px;min-width:52px;cursor:pointer}
+@keyframes coachPulse{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.55)}50%{box-shadow:0 0 0 8px rgba(250,204,21,0)}}
+.ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px;max-width:440px}
+.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px}
+.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,#facc15,#fb923c);color:#1c1917}
+.btn:focus-visible,.seg button:focus-visible,.undo:focus-visible,.back:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+.tile.hinted{box-shadow:0 0 0 3px #facc15}
+@media (prefers-reduced-motion:reduce){.board.shake,.tile.pop,.tile.new,.hint.coach,.scorebox.bump b,.toast2{animation:none}.tile{transition:none}}
 .hint{color:#94a3b8;font-size:13px}
-.undo{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:8px 16px;cursor:pointer}
+.undo{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:0 14px;min-height:44px;cursor:pointer}
+.tools{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:460px}
 .undo:active{transform:scale(.94)}
 .undo.off{opacity:.35}
 .undo.armed{outline:2px solid #facc15;color:#facc15}
@@ -54,10 +67,22 @@ body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#070
   <div class="scorebox hidden" id="combobox"><small>Combo</small><b id="combo">0</b></div>
 </div>
 <div class="board" id="board"></div>
-<div class="hint">Swipe or use arrow keys to merge tiles · Best tile: <b id="bestTile">0</b></div>
+<div class="hint" id="hintLine">Swipe or use arrow keys to merge tiles · Best tile: <b id="bestTile">0</b></div>
+<div class="tools">
 <button class="undo off" id="undoBtn">↩ Undo</button>
+<button class="undo" id="hintBtn">💡 Hint</button>
 <button class="undo" id="gambleBtn">🎲 50/50</button>
 <button class="undo off" id="hammerBtn">🔨 Hammer x0</button>
+</div>
+<div class="codes hidden" id="codesOn">CODES ON</div>
+<div class="ov hidden" id="start">
+  <h1 style="color:#facc15">2048</h1>
+  <div class="sub">Swipe or press the arrow keys to slide every tile. Two tiles with the same number merge into one. Build a <b id="goalTxt">2048</b> tile!</div>
+  <div class="seg" role="group" aria-label="Board size"><button data-n="5">Easy 5×5</button><button data-n="4">Normal 4×4</button><button data-n="3">Hard 3×3</button></div>
+  <div class="seg" role="group" aria-label="Mode"><button data-m="classic">Classic</button><button data-m="daily">Daily board</button></div>
+  <button class="btn" id="playBtn">▶ Play</button>
+  <div style="font-size:14px;color:#94a3b8" id="startBest"></div>
+</div>
 <div class="ov hidden" id="over">
   <h1>Game Over!</h1>
   <div style="font-size:18px">Score: <b id="finScore" style="color:#facc15">0</b></div>
@@ -65,17 +90,31 @@ body{background:radial-gradient(900px 600px at 50% -20%,#b45309,#0f0f23 60%,#070
   <div style="font-size:14px;color:#94a3b8">🔥 Best combo: <b id="finCombo" style="color:#f472b6">0</b> · 🏆 2048 wins: <b id="finWins" style="color:#facc15">0</b></div>
   <div style="font-size:14px;color:#94a3b8">🔗 Lifetime merges: <b id="finMerges" style="color:#38bdf8">0</b> · 🏅 Club tier: <b id="finClub" style="color:#4ade80">Bronze</b></div>
   <button class="btn" id="againBtn">Try Again</button>
+  <button class="btn" id="overUndoBtn" style="background:#334155;color:#e2e8f0;box-shadow:none">↩ Undo last move</button>
 </div>
 <div class="ov hidden" id="winOv">
   <h1 style="color:#facc15">You Win! 🎉</h1>
-  <div style="font-size:18px">You made a 2048 tile!</div>
+  <div style="font-size:18px">You made a <span id="winGoal">2048</span> tile!</div>
   <button class="btn" id="keepBtn">Keep Going</button>
   <button class="btn" id="winNewBtn" style="background:#334155;color:#e2e8f0;box-shadow:none">New Game</button>
 </div>
 <script>
 
 const boardEl=document.getElementById('board');
-const N=4,PAD=12,GAP=10;
+const PAD=12,GAP=10;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+// Board size is the difficulty: 5x5 Easy, 4x4 Normal (classic), 3x3 Hard (goal 512).
+let N=4,mode='classic';try{N=+localStorage.getItem('size2048')||4;mode=localStorage.getItem('mode2048')||'classic';}catch(e){}if(![3,4,5].includes(N))N=4;
+function goal(){return N===3?512:2048;}
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function bestKey(){return mode==='daily'?'best2048_daily_'+N+'_'+today():N===4?'best2048':'best2048_'+N;}
+// Daily board: every player gets the same tiles in the same order today.
+let rngState=0;function seedRng(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}rngState=h>>>0;}
+function rng(){if(mode!=='daily')return Math.random();rngState=(rngState+0x6D2B79F5)>>>0;let t=rngState;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;}
+let allFours=false;
 let cell=0,tiles=[],nextId=1,score=0,best=+localStorage.getItem('best2048')||0,won=false,keepPlaying=false,winPending=false;
 let history=[],gen=0,gainCount=0,combo=0;
 let hammers=0,mergeCount=0,hammerMode=false,tapHandled=false,hx=0,hy=0;
@@ -98,7 +137,7 @@ let bestTile=+localStorage.getItem('bestTile2048')||0;
 let bestCombo=+localStorage.getItem('bestCombo2048')||0,wins2048=+localStorage.getItem('wins2048')||0;
 const CLUBS=[1000,2500,5000,10000,20000,50000];
 let clubIdx=0,clubsEver=+localStorage.getItem('clubs2048')||0,lifeMerges=+localStorage.getItem('lifeMerges2048')||0;
-function clubCheck(){while(clubIdx<CLUBS.length&&score>=CLUBS[clubIdx]){const v=CLUBS[clubIdx];clubIdx++;if(clubIdx>clubsEver){clubsEver=clubIdx;try{localStorage.setItem('clubs2048',String(clubsEver));}catch(e){}}riskToast('🏆 '+v+' CLUB!');sfx('levelup');}}
+function clubCheck(){while(clubIdx<CLUBS.length&&score>=CLUBS[clubIdx]){const v=CLUBS[clubIdx];clubIdx++;if(clubIdx>clubsEver&&!cheated()){clubsEver=clubIdx;try{localStorage.setItem('clubs2048',String(clubsEver));}catch(e){}}riskToast('🏆 '+v+' CLUB!');sfx('levelup');}}
 function tileToast(v){
  const t=document.createElement('div');t.className='toast2';
  t.textContent=v>=2048?'🏆 2048 — YOU WIN!':v>=1024?'💫 Godlike: '+v+'!':v>=512?'🎇 Unbelievable: '+v+'!':v>=256?'🔥 Blazing: '+v+'!':v>=128?'✨ Sharp: '+v+'!':'⭐ '+v+' tile unlocked!';
@@ -115,13 +154,15 @@ let muted=localStorage.getItem('mute2048')==='1';
 document.getElementById('best').textContent=best;
 document.getElementById('bestTile').textContent=bestTile;
 const cellEls=[];
+function buildCells(){cellEls.forEach(d=>d.remove());cellEls.length=0;
 for(let r=0;r<N;r++)for(let c=0;c<N;c++){
 const d=document.createElement('div');d.className='cell';
 d.style.left=d.style.top='0';
 boardEl.appendChild(d);cellEls.push(d);
-}
+}}
+buildCells();
 function layout(){
-const s=Math.max(120,Math.min(window.innerWidth-24,window.innerHeight-220,460));
+const s=Math.max(120,Math.min(window.innerWidth-24,window.innerHeight-230,460));
 cell=(s-PAD*2-GAP*(N-1))/N;
 boardEl.style.width=boardEl.style.height=s+'px';
 cellEls.forEach((d,idx)=>{
@@ -161,14 +202,15 @@ function spawn(){
 const empty=[];
 for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!tiles.some(t=>t.r===r&&t.c===c))empty.push({r,c});
 if(!empty.length)return;
-const pos=empty[Math.floor(Math.random()*empty.length)];
-const t={id:nextId++,val:Math.random()<.1?4:2,r:pos.r,c:pos.c};
+const pos=empty[Math.floor(rng()*empty.length)];
+const t={id:nextId++,val:(rng()<.1||allFours)?4:2,r:pos.r,c:pos.c};
 tiles.push(t);
 const el=makeEl(t);el.classList.add('new');
 }
-function updateScore(){document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('best2048',best);document.getElementById('best').textContent=best;}clubCheck();}
+function updateScore(){document.getElementById('score').textContent=score;if(score>best&&!cheated()){best=score;localStorage.setItem(bestKey(),best);document.getElementById('best').textContent=best;}clubCheck();}
 function snapshot(){return {score,tiles:tiles.filter(t=>!t.kill).map(t=>({val:t.val,r:t.r,c:t.c}))};}
 function move(dir){
+if(blocked())return;
 const snap=snapshot();
 const isRow=dir==='left'||dir==='right';
 const lines=[];
@@ -185,9 +227,9 @@ const axis=isRow?line[0].r:line[0].c;
 const slots=[];
 for(const t of line){
 const last=slots[slots.length-1];
-if(last&&last.val===t.val&&!last.locked){last.val*=2;last.tids.push(t.id);last.locked=true;gained+=last.val;t.kill=true;changed=true;if(last.val>=128)bigMerge=true;if(last.val===2048&&!won){won=true;winPending=true;wins2048++;try{localStorage.setItem('wins2048',String(wins2048));}catch(e){}}
-if(last.val>bestTile){const bt=last.val;bestTile=bt;try{localStorage.setItem('bestTile2048',String(bt));}catch(e){}
-document.getElementById('bestTile').textContent=bt;
+if(last&&last.val===t.val&&!last.locked){last.val*=2;last.tids.push(t.id);last.locked=true;gained+=last.val;t.kill=true;changed=true;if(last.val>=128)bigMerge=true;if(last.val===goal()&&!won){won=true;winPending=true;if(!cheated()){wins2048++;try{localStorage.setItem('wins2048',String(wins2048));}catch(e){}}}
+if(last.val>bestTile&&!cheated()){const bt=last.val;bestTile=bt;try{localStorage.setItem('bestTile2048',String(bt));}catch(e){}
+{const bte=document.getElementById('bestTile');if(bte)bte.textContent=bt;}
 if(bt>=64){tileToast(bt);sfx('levelup');}}}
 else slots.push({val:t.val,tids:[t.id],locked:false});
 }
@@ -196,6 +238,7 @@ const pos=(dir==='down'||dir==='right')?N-1-i:i;
 const nr=isRow?axis:pos,nc=isRow?pos:axis;
 for(const id of s.tids){
 const t=tiles.find(x=>x.id===id);
+if(id===s.tids[0])t.val=s.val;
 if(t.r!==nr||t.c!==nc)changed=true;
 t.r=nr;t.c=nc;
 const el=elMap.get(id);
@@ -204,12 +247,13 @@ el.style.transform=`translate(${PAD+nc*(cell+GAP)}px,${PAD+nr*(cell+GAP)}px)`;
 });
 }
 if(!changed)return;
+tutMoved(gained>0);
 if(gained){combo++;}else{combo=0;}
-if(combo>bestCombo){bestCombo=combo;try{localStorage.setItem('bestCombo2048',String(bestCombo));}catch(e){}}
+if(combo>bestCombo&&!cheated()){bestCombo=combo;try{localStorage.setItem('bestCombo2048',String(bestCombo));}catch(e){}}
 updCombo();
 history.push(snap);if(history.length>60)history.shift();updUndo();
 if(gained){score+=gained;updateScore();sfx('coin');const sb=document.getElementById('score').parentElement;sb.classList.remove('bump');requestAnimationFrame(()=>requestAnimationFrame(()=>sb.classList.add('bump')));}
-if(bigMerge){boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');}
+if(bigMerge&&!RM){boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');}
 const killed=tiles.filter(t=>t.kill);
 if(killed.length){mergeCount+=killed.length;lifeMerges+=killed.length;if(mergeCount>=12){mergeCount-=12;if(hammers<3){hammers++;riskToast('🔨 Hammer ready!');sfx('levelup');}updHammer();}}
 const g=gen;
@@ -235,7 +279,7 @@ if(gainCount<12){gainCount++;const g=document.createElement('div');g.className='
 }
 }
 }
-if(winPending&&!keepPlaying){winPending=false;setTimeout(()=>document.getElementById('winOv').classList.remove('hidden'),250);}
+if(winPending&&!keepPlaying){winPending=false;document.getElementById('winGoal').textContent=goal();scene('over',{score:score,outcome:'win'});setTimeout(()=>document.getElementById('winOv').classList.remove('hidden'),250);}
 },130);
 }
 setTimeout(()=>{
@@ -277,10 +321,11 @@ document.getElementById('finCombo').textContent=bestCombo;
 document.getElementById('finWins').textContent=wins2048;
 document.getElementById('finMerges').textContent=lifeMerges;
 document.getElementById('finClub').textContent=['None','Bronze','Silver','Gold','Platinum','Diamond','Master'][clubsEver]||'Master';
-try{localStorage.setItem('lifeMerges2048',String(lifeMerges));}catch(e){}
+if(!cheated())try{localStorage.setItem('lifeMerges2048',String(lifeMerges));}catch(e){}
+scene('over',{score:score});
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),350);
 }
-function newGame(){tiles=[];score=0;won=false;keepPlaying=false;winPending=false;history=[];gen++;combo=0;updCombo();hammers=0;mergeCount=0;clubIdx=0;hammerMode=false;updHammer();elMap.forEach(el=>el.remove());elMap.clear();boardEl.classList.remove('danger');updateScore();document.getElementById('over').classList.add('hidden');document.getElementById('winOv').classList.add('hidden');updUndo();spawn();spawn();}
+function newGame(){if(cellEls.length!==N*N){buildCells();layout();}if(mode==='daily')seedRng('2048-'+N+'-'+today());best=+localStorage.getItem(bestKey())||0;document.getElementById('best').textContent=best;tiles=[];score=0;won=false;keepPlaying=false;winPending=false;history=[];gen++;combo=0;updCombo();hammers=0;mergeCount=0;clubIdx=0;hammerMode=false;updHammer();elMap.forEach(el=>el.remove());elMap.clear();boardEl.classList.remove('danger');updateScore();document.getElementById('over').classList.add('hidden');document.getElementById('winOv').classList.add('hidden');document.getElementById('start').classList.add('hidden');updUndo();spawn();spawn();scene('play');}
 let tsX=null,tsY=null;
 boardEl.addEventListener('touchstart',e=>{initAudio();tsX=e.touches[0].clientX;tsY=e.touches[0].clientY;},{passive:true});
 boardEl.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
@@ -292,15 +337,77 @@ if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy>0?'down':'up
 }
 tsX=tsY=null;
 },{passive:true});
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+const $=id=>document.getElementById(id);
+function shown(id){return !$(id).classList.contains('hidden');}
+function blocked(){return shown('start')||shown('winOv')||(SDK&&SDK.paused);}
+/* ---- first-run coach marks: three steps, each taught by doing it ---- */
+let tut=0,tutSeen=false;try{tutSeen=localStorage.getItem('tut2048')==='1';}catch(e){}
+const hintLine=$('hintLine'),hintIdle=hintLine.innerHTML;
+const STEPS=['','👆 Swipe or press an arrow key: every tile slides as far as it can.','✨ Two tiles with the same number merge when they bump: 2 + 2 makes 4. Merge a pair!','↩ Undo takes back a move and 💡 Hint suggests the best one. Now build a big tile!'];
+function paintTut(){if(!tut){hintLine.className='hint';hintLine.innerHTML=hintIdle;$('bestTile').textContent=bestTile;return;}
+hintLine.className='hint coach';hintLine.innerHTML='<span>'+STEPS[tut]+'</span><button id="tutBtn">'+(tut===3?'Got it':'Skip')+'</button>';
+press($('tutBtn'),()=>{tut=0;markTut();paintTut();});}
+function markTut(){tutSeen=true;try{localStorage.setItem('tut2048','1');}catch(e){}}
+function startTut(){tut=1;paintTut();}
+let tutMoves=0;
+function tutMoved(merged){if(!tut)return;
+if(tut===1){tut=merged?3:2;tutMoves=0;}
+else if(tut===2){if(merged){tut=3;tutMoves=0;}}
+else if(tut===3&&++tutMoves>=5){tut=0;markTut();}
+paintTut();}
+/* ---- hint: a two-ply look-ahead over every new-tile spot ---- */
+function gridNow(){const g=new Array(N*N).fill(0);for(const t of tiles)if(!t.kill)g[t.r*N+t.c]=t.val;return g;}
+function slide(g,dir){const ng=new Array(N*N).fill(0);let gain=0,moved=false,top=0;
+for(let i=0;i<N;i++){const idx=[];for(let j=0;j<N;j++){const r=dir==='left'?i:dir==='right'?i:dir==='up'?j:N-1-j,c=dir==='left'?j:dir==='right'?N-1-j:i;idx.push(r*N+c);}
+const vals=idx.map(k=>g[k]).filter(v=>v),out=[];
+for(let k=0;k<vals.length;k++){if(k+1<vals.length&&vals[k]===vals[k+1]){out.push(vals[k]*2);gain+=vals[k]*2;if(vals[k]*2>top)top=vals[k]*2;k++;}else out.push(vals[k]);}
+idx.forEach((k,j)=>{ng[k]=out[j]||0;if(ng[k]!==g[k])moved=true;});}
+return {g:ng,gain,moved,top};}
+function heur(g){let empty=0,max=0,mono=0,smooth=0;const L=v=>v?Math.log2(v):0;
+for(const v of g){if(!v)empty++;if(v>max)max=v;}
+for(let i=0;i<N;i++){let a=0,b=0,c=0,d=0;for(let j=0;j<N-1;j++){const x=L(g[i*N+j]),y=L(g[i*N+j+1]),u=L(g[j*N+i]),w=L(g[(j+1)*N+i]);
+if(x>y)a+=y-x;else b+=x-y;if(u>w)c+=w-u;else d+=u-w;if(x&&y)smooth-=Math.abs(x-y);if(u&&w)smooth-=Math.abs(u-w);}mono+=Math.max(a,b)+Math.max(c,d);}
+const corner=[0,N-1,N*(N-1),N*N-1].some(k=>g[k]===max)?L(max):0;
+return empty*2.7+mono+smooth*.1+corner*1.5;}
+const DIRS=['left','right','up','down'],ARROW={left:'← left',right:'→ right',up:'↑ up',down:'↓ down'};
+function bestMove(){const g=gridNow();let pick=null,top=-1e9;
+for(const d of DIRS){const m=slide(g,d);if(!m.moved)continue;const em=[];m.g.forEach((v,k)=>{if(!v)em.push(k);});
+let exp=0,n=0;for(const e of em){const g2=m.g.slice();g2[e]=2;let b=-60;for(const d2 of DIRS){const m2=slide(g2,d2);if(m2.moved)b=Math.max(b,heur(m2.g)+Math.log2(m2.gain+1)*.4);}exp+=b;n++;}
+const v=(n?exp/n:heur(m.g))+Math.log2(m.gain+1)*.4;if(v>top){top=v;pick={d,m};}}
+return pick;}
+function hint(){if(shown('start'))return 'Pick a board size and press Play.';
+const b=bestMove();if(!b)return 'No move is left. Undo takes back your last move.';
+const m=b.m,free=m.g.filter(v=>!v).length,mx=Math.max(...m.g),corner=[0,N-1,N*(N-1),N*N-1].some(k=>m.g[k]===mx);
+return 'Swipe '+ARROW[b.d]+(m.top?': it merges two '+(m.top/2)+'s into a '+m.top:'')+(corner?(m.top?', and':':')+' it keeps your '+mx+' in a corner':'')+'. '+free+' square'+(free===1?'':'s')+' stay free.';}
+/* ---- title ---- */
+function paintStart(){document.querySelectorAll('[data-n]').forEach(b=>{b.classList.toggle('on',+b.dataset.n===N);b.setAttribute('aria-pressed',String(+b.dataset.n===N));});
+document.querySelectorAll('[data-m]').forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.setAttribute('aria-pressed',String(b.dataset.m===mode));});
+$('goalTxt').textContent=goal();const bk=+localStorage.getItem(bestKey())||0;$('startBest').textContent=(mode==='daily'?"Today's board":(N+'×'+N))+' best: '+(bk||'–')+' · Best tile ever: '+bestTile;}
+document.querySelectorAll('[data-n]').forEach(b=>press(b,()=>{N=+b.dataset.n;try{localStorage.setItem('size2048',N);}catch(e){}paintStart();}));
+document.querySelectorAll('[data-m]').forEach(b=>press(b,()=>{mode=b.dataset.m;try{localStorage.setItem('mode2048',mode);}catch(e){}paintStart();}));
+function showTitle(){['over','winOv'].forEach(id=>$(id).classList.add('hidden'));paintStart();$('start').classList.remove('hidden');scene('title');setTimeout(()=>{try{$('playBtn').focus({preventScroll:true});}catch(e){}},0);}
+function play(withTut){initAudio();newGame();if(withTut||!tutSeen)startTut();else{tut=0;paintTut();}}
+press($('playBtn'),()=>play(false));
+/* ---- codes: just for fun; a game with a code on never replaces a saved best ---- */
+const CODES={HAMMERTIME:'Hammer time: three hammers, ready to smash',ALLFOURS:'All fours: every new tile is a 4',BIGTILE:'Big tile: a 256 drops into an empty square'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='HAMMERTIME'){hammers=3;updHammer();}if(c==='ALLFOURS')allFours=true;
+if(c==='BIGTILE'){const g=gridNow(),em=[];g.forEach((v,k)=>{if(!v)em.push(k);});if(em.length){const k=em[(Math.random()*em.length)|0];const t={id:nextId++,val:256,r:(k/N)|0,c:k%N};tiles.push(t);makeEl(t).classList.add('new');}}
+return{ok:true,message:CODES[c]};}
 window.addEventListener('keydown',e=>{
 const k={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];
-if(k){initAudio();move(k);}
+if(k){e.preventDefault();initAudio();move(k);}
+if((e.key==='z'||e.key==='Z'||e.key==='u'||e.key==='U')&&!blocked()){initAudio();undo();}
 });
-document.getElementById('againBtn').addEventListener('pointerdown',newGame);
-document.getElementById('keepBtn').addEventListener('pointerdown',()=>{keepPlaying=true;document.getElementById('winOv').classList.add('hidden');});
-document.getElementById('winNewBtn').addEventListener('pointerdown',newGame);
-document.getElementById('undoBtn').addEventListener('pointerdown',()=>{initAudio();undo();});
-document.getElementById('hammerBtn').addEventListener('pointerdown',armHammer);
+press(document.getElementById('againBtn'),newGame);
+press(document.getElementById('overUndoBtn'),()=>{initAudio();undo();});
+press(document.getElementById('keepBtn'),()=>{keepPlaying=true;document.getElementById('winOv').classList.add('hidden');scene('play');});
+press(document.getElementById('winNewBtn'),newGame);
+press(document.getElementById('undoBtn'),()=>{initAudio();if(!blocked())undo();});
+press(document.getElementById('hintBtn'),()=>{initAudio();if(!blocked())riskToast('💡 '+hint());});
+press(document.getElementById('hammerBtn'),armHammer);
 boardEl.addEventListener('touchstart',e=>{hx=e.touches[0].clientX;hy=e.touches[0].clientY;},{passive:true});
 boardEl.addEventListener('touchend',e=>{
  const dx=Math.abs(e.changedTouches[0].clientX-hx),dy=Math.abs(e.changedTouches[0].clientY-hy);
@@ -313,12 +420,20 @@ function gamble(){
  if(Math.random()<.5){score*=2;updateScore();sfx('win');riskToast('🎉 DOUBLE! '+score+'');const sb=document.getElementById('score').parentElement;sb.classList.remove('bump');requestAnimationFrame(()=>requestAnimationFrame(()=>sb.classList.add('bump')));}
  else{score=Math.floor(score/2);updateScore();sfx('lose');riskToast('😬 Halved to '+score+'');}
 }
-document.getElementById('gambleBtn').addEventListener('pointerdown',()=>{initAudio();gamble();});
+press(document.getElementById('gambleBtn'),()=>{initAudio();if(!blocked())gamble();});
 const muteBtn=document.getElementById('muteBtn');
 function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
-muteBtn.addEventListener('pointerdown',()=>{muted=!muted;localStorage.setItem('mute2048',muted?'1':'0');updMute();});
+press(muteBtn,()=>{muted=!muted;localStorage.setItem('mute2048',muted?'1':'0');updMute();});
 updMute();
-newGame();
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>{newGame();},
+onExit:showTitle,
+onTutorial:()=>play(true),
+onHint:hint,
+onCheat:code,
+});
+buildCells();layout();paintTut();showTitle();
 </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bubble Pop</title>
 <style>
@@ -9,7 +10,7 @@
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
 .back{position:fixed;top:10px;left:12px;display:flex;align-items:center;min-height:44px;padding:0 14px;background:rgba(30,41,59,.72);border-radius:999px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
-.hud{display:flex;gap:14px;font-weight:800;font-size:15px;align-items:center}
+.hud{display:flex;gap:8px 12px;font-weight:800;font-size:15px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw}
 .hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
 .hud>span,.hud>.mute{animation:chipin .45s cubic-bezier(.34,1.56,.64,1) backwards}
 .hud>span:nth-child(2){animation-delay:.07s}
@@ -49,19 +50,27 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
 #score.pp,#timeLeft.pp{animation:ppop .18s ease}
 @keyframes ppop{0%{scale:1}40%{scale:1.35}100%{scale:1}}
 .hidden{display:none}
+.mute:focus-visible,.back:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.codes{position:absolute;top:10px;left:10px;z-index:7;background:rgba(7,7,15,.8);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:transparent;backdrop-filter:none;pointer-events:none;justify-content:flex-start;padding-top:60px;animation:none}
+#tut>*{animation:none}
+#tut .card{background:rgba(7,7,15,.84);border-radius:16px;padding:10px 16px;max-width:330px}
+#tut .tap{font-size:34px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
+@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(8px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){#tut .tap,.ov,.ov>*,.hud>span,.hud>.mute,#timebar.hurry,#score.pp,#timeLeft.pp{animation:none}.btn:hover,.btn:active{transform:none}body.kit-shake{animation:none!important}}
 </style>
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1 style="font-size:26px;font-weight:900">🫧 Bubble Pop</h1>
-<div class="hud"><span>Score: <b id="score">0</b></span><span>⏱ <b id="timeLeft">45</b>s</span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="hud"><span>Score: <b id="score">0</b></span><span>⏱ <b id="timeLeft">45</b>s</span><span>🏆 <b id="bestHud">0</b></span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
 <div id="timebar"><div id="timefill"></div></div>
 <div class="wrap">
   <canvas id="cv"></canvas>
   <div class="ov" id="start">
     <h1>🫧 Bubble <span>Pop</span></h1>
     <div class="sub">Pop bubbles fast! Bigger = more points.<br>Never touch 💣 bombs!<br>⭐ Star bubbles split — tap twice!</div>
-    <button class="btn" id="playBtn">▶ Start (45s)</button>
+    <button class="btn" id="playBtn">▶ Play (45s)</button>
   </div>
   <div class="ov hidden" id="over">
     <h1 id="overTitle">Time's Up!</h1>
@@ -73,6 +82,8 @@ canvas{display:block;width:100%;height:calc(100dvh - 200px);min-height:min(320px
     <div class="stat">🏅 <b id="badgeLine">0/5</b></div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
+  <div class="ov hidden" id="tut"><div class="card"><span class="tap" aria-hidden="true">👆</span><div class="stat">Tap the bubbles to <b style="color:#4ade80">pop</b> them!</div><div class="sub" style="padding:4px 0 0">Big bubbles score more. ⭐ bubbles split in two, gold ones add 4 seconds. Never touch a 💣.</div></div></div>
 </div>
 <script src="kit/juicekit.js"></script>
 <script>
@@ -81,6 +92,11 @@ const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 function kitAt(px,py){return{x:cvRect.left+px*cvRect.width/W,y:cvRect.top+py*cvRect.height/H};}
 let kitLast=0;
 const ROUND_TIME=45;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let noBombs=false,slowBubbles=false,bigBubbles=false;
 let W=400,H=600,state='ready',score=0,best=+localStorage.getItem('bubbleBest')||0,timeLeft=ROUND_TIME,t=0,dirty=true;
 let bgG=null,cvRect=null;
 const bubbles=[],particles=[],floaters=[],rings=[];
@@ -174,16 +190,16 @@ function spawn(){
 const el=ROUND_TIME-timeLeft;
 const prog=1-timeLeft/ROUND_TIME;
 diffLvl=el<5?0:Math.min(6,1+Math.floor(Math.sqrt(el-4)));
-let bombChance=el<8||timeLeft<7?0:.03+prog*.06;
+let bombChance=el<8||timeLeft<7||noBombs?0:.03+prog*.06;
 if(lastWasBomb)bombChance=0;
 const isBomb=Math.random()<bombChance;
 lastWasBomb=isBomb;
 if(isBomb)goldDry=0;else goldDry++;
-const r=isBomb?20+Math.random()*10:12+Math.random()*28;
+const r=isBomb?20+Math.random()*10:bigBubbles?34+Math.random()*6:12+Math.random()*28;
 let b=null;
 for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
 if(!b){if(bubbles.length>=MAXB)return;b={};bubbles.push(b);}
-b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5)*(1+diffLvl*.028);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&(goldDry>=16||Math.random()<.06);if(b.gold){goldDry=0;b.hue=48;}b.mega=!isBomb&&!b.gold&&r>=32&&Math.random()<.3;
+b.on=true;b.x=r+Math.random()*(W-r*2);b.y=H+r+10;b.r=r;b.hue=Math.floor(Math.random()*360);b.vy=(30+(44-r)*2.2)*(.8+Math.random()*.5)*(1+diffLvl*.028)*(slowBubbles?.6:1);b.ph=Math.random()*7;b.bomb=isBomb;b.gold=!isBomb&&(goldDry>=16||Math.random()<.06);if(b.gold){goldDry=0;b.hue=48;}b.mega=!isBomb&&!b.gold&&r>=32&&Math.random()<.3;
 }
 function addBubble(x,y,r,hue){let b=null;
 for(let i=0;i<bubbles.length;i++){if(!bubbles[i].on){b=bubbles[i];break;}}
@@ -215,6 +231,7 @@ document.getElementById('score').textContent=0;
 showTime(false);
 document.getElementById('start').classList.add('hidden');
 document.getElementById('over').classList.add('hidden');
+document.getElementById('bestHud').textContent=best;scene('play');
 clearInterval(roundTimer);
 roundTimer=setInterval(()=>{
 if(document.hidden)return;
@@ -228,7 +245,8 @@ function endGame(boom){
 state='over';clearInterval(roundTimer);
 document.getElementById('timebar').classList.remove('hurry');
 const prevBest=best;
-const newBest=score>best&&score>0;
+const clean=!cheated(),newBest=score>best&&score>0&&clean;
+scene('over',{score:score});document.getElementById('tut').classList.add('hidden');
 if(boom)sfxBombSting();else if(newBest)sfxEndWin();else sfxEndLose();
 if(newBest){best=score;localStorage.setItem('bubbleBest',best);}
 document.getElementById('overTitle').textContent=(boom?'💥 Boomed!':'Time\'s Up!')+(newBest?' 🏆 New Best!':'');
@@ -240,18 +258,18 @@ else Kit.lose('TIME UP',runLine+' · Best '+best+(prevBest>0&&score>prevBest*.85
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best;
 document.getElementById('runStats').textContent=runLine;
-lifePops+=roundPops;localStorage.setItem('bubblePops',lifePops);
-lifeRounds++;localStorage.setItem('bubbleRounds',lifeRounds);
-localStorage.setItem('bubbleGold',lifeGold);
+lifePops+=roundPops;lifeRounds++;
+if(clean){localStorage.setItem('bubblePops',lifePops);localStorage.setItem('bubbleRounds',lifeRounds);localStorage.setItem('bubbleGold',lifeGold);}
 const unlocked=[];
 for(const bd of BADGES){if(badges.indexOf(bd.id)<0&&bd.test()){badges.push(bd.id);unlocked.push(bd.name);}}
-try{localStorage.setItem('bubbleBadges',JSON.stringify(badges));}catch(e){}
+if(clean)try{localStorage.setItem('bubbleBadges',JSON.stringify(badges));}catch(e){}
 document.getElementById('badgeLine').textContent='🏅 '+badges.length+'/'+BADGES.length+(unlocked.length?' · NEW: '+unlocked.join(', '):'');
 document.getElementById('finRank').textContent=RANKS.filter(r=>score>=r[0]).pop()[1];
 document.getElementById('lifeStats').textContent=lifePops+(lifePops>=1500?' · Genius':lifePops>=700?' · Storm':lifePops>=300?' · Blaster':lifePops>=100?' · Lover':' · Rookie');
 setTimeout(()=>{const ov=document.getElementById('over');ov.classList.remove('hidden');document.getElementById('againBtn').focus({preventScroll:true});if(unlocked.length){const kp=kitAt(W/2,H*.3);Kit.burst(kp.x,kp.y,'#facc15',18);Kit.text(kp.x,kp.y-30,'🏅 BADGE!','#facc15',22);}},500);
 }
 function popBubble(b){
+hideTut();
 if(b.mega){
 b.mega=false;
 b.r=Math.max(12,b.r*.52);b.vy=(30+(44-b.r)*2.2)*.9;
@@ -286,7 +304,7 @@ if(combo>=4&&combo%4===0){layer(440+combo*28,.1,'triangle',.05,660+combo*28);lay
 roundPops++;if(roundPops%25===0){sfx('levelup');layer(1046,.14,'triangle',.05,1568);spawnFloater(W/2,H*.28,'✨ '+roundPops+' POPS!','rgba(250,204,21,.95)');}
 }
 function onTap(ev){
-if(state!=='play')return;
+if(state!=='play'||(SDK&&SDK.paused))return;
 initAudio();
 const x=ev.clientX-cvRect.left,y=ev.clientY-cvRect.top;
 for(let i=bubbles.length-1;i>=0;i--){
@@ -316,7 +334,7 @@ for(let i=0;i<floaters.length;i++){
 const f=floaters[i];if(f.life<=0)continue;f.life-=dt*1.4;f.y-=42*dt;
 }
 for(let i=0;i<rings.length;i++){const g2=rings[i];if(g2.life<=0)continue;g2.life-=dt*2.4;g2.r+=240*dt;}
-shake=Math.max(0,shake-dt*2.6);
+shake=RM?0:Math.max(0,shake-dt*2.6);
 }
 let comboImg=null,comboKey='';
 function draw(){
@@ -370,10 +388,34 @@ update(dt);draw();
 }
 requestAnimationFrame(loop);
 cv.addEventListener('pointerdown',onTap);
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();startGame();});
-document.getElementById('playBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();startGame();}});
-document.getElementById('againBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();startGame();}});
+const $=id=>document.getElementById(id);
+let tutSeen=false;try{tutSeen=localStorage.getItem('bubbleTut')==='1';}catch(e){}
+function hideTut(){if($('tut').classList.contains('hidden'))return;$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('bubbleTut','1');}catch(e){}}}
+function begin(showTut){startGame();if(showTut||!tutSeen)$('tut').classList.remove('hidden');}
+function toTitle(){state='ready';clearInterval(roundTimer);for(const b of bubbles)b.on=false;$('timebar').classList.remove('hurry');['over','tut'].forEach(id=>$(id).classList.add('hidden'));$('start').classList.remove('hidden');dirty=true;scene('title');}
+$('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();begin(false);});
+$('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();begin(false);});
+$('playBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();begin(false);}});
+$('againBtn').addEventListener('click',e=>{if(e.detail===0){Kit.click();begin(false);}});
+// Codes: just for fun; a round with codes on never replaces the best.
+const CODES={NOBOMBS:'No bombs: only bubbles float up',SLOWBUBBLES:'Slow bubbles: everything rises at 60% speed',BIGBUBBLES:'Big bubbles: every bubble is a big one'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='NOBOMBS'){noBombs=true;for(const b of bubbles)if(b.on&&b.bomb)b.on=false;}if(c==='SLOWBUBBLES'){slowBubbles=true;for(const b of bubbles)b.vy*=.6;}if(c==='BIGBUBBLES')bigBubbles=true;return{ok:true,message:CODES[c]};}
+function hint(){if(state!=='play')return 'Press Play: tap bubbles before they float away, and never tap a bomb.';
+const live=bubbles.filter(b=>b.on&&b.y<H&&b.y>0);const bomb=live.find(b=>b.bomb);
+const pick=live.filter(b=>!b.bomb).sort((a,b)=>(b.gold?100:b.mega?80:b.r)-(a.gold?100:a.mega?80:a.r))[0];
+const where=b=>(b.y<H/3?'top':b.y<H*2/3?'middle':'bottom')+' '+(b.x<W/3?'left':b.x<W*2/3?'centre':'right');
+return (pick?(pick.gold?'Grab the gold bubble at the '+where(pick)+': +4 seconds.':pick.mega?'Pop the ⭐ bubble at the '+where(pick)+' twice: it splits in two.':'Pop the big bubble at the '+where(pick)+' first: bigger bubbles score more.'):'Wait for the next wave of bubbles.')+(bomb?' Keep clear of the 💣 at the '+where(bomb)+'.':'')+(combo>=3?' Keep popping fast to hold your combo.':'');}
+if(SDK)SDK.init({
+pauseButton:'tr',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>begin(true),
+onHint:hint,
+onCheat:code,
+});
+$('bestHud').textContent=best;
+scene('title');
 </script>
 </body>
 </html>

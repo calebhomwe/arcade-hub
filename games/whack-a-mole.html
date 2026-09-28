@@ -2,22 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Whack-a-Mole</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#a16207,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 h1{font-size:26px;font-weight:900;letter-spacing:-1px}
-.hud{display:flex;gap:10px;font-weight:800;font-size:15px;align-items:center}
+.hud{display:flex;gap:8px;font-weight:800;font-size:15px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw}
 .hud span{background:#1e293b;padding:8px 14px;border-radius:12px}
 #comboChip{transition:transform .13s ease,opacity .2s;opacity:.55}
-.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
+.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:0 12px;min-width:44px;min-height:44px;border-radius:12px;cursor:pointer;line-height:1}
 #metaBar{font-size:12px;color:#94a3b8;font-weight:800}
 #timebar{width:min(90vw,380px);height:10px;background:#1e293b;border-radius:999px;overflow:hidden}
 #timefill{height:100%;width:100%;background:linear-gradient(90deg,#4ade80,#facc15);border-radius:999px;transition:width .2s linear}
-#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:min(90vw,380px,calc(100dvh - 128px));touch-action:manipulation}
+#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:min(90vw,380px,calc(100dvh - 170px));touch-action:manipulation}
 .hole{position:relative;aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;cursor:pointer}
 .ground{position:absolute;bottom:0;left:8%;right:8%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,#3f2a12 0%,#241708 70%,#120c04 100%);box-shadow:inset 0 10px 18px rgba(0,0,0,.7)}
 .mole{position:absolute;bottom:8%;font-size:clamp(34px,11vw,52px);transform:translateY(110%);transition:transform .14s cubic-bezier(.34,1.56,.64,1);z-index:2;line-height:1}
@@ -41,20 +42,30 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 #newBest{color:#facc15;font-weight:900;font-size:17px;text-shadow:0 0 14px rgba(250,204,21,.7);animation:pulse 1s ease infinite}
 @keyframes pulse{50%{scale:1.12}}
 .hidden{display:none}
+.btn:focus-visible,.mute:focus-visible,.back:focus-visible,.hole:focus-visible{outline:3px solid #facc15;outline-offset:2px;border-radius:14px}
+.hole.hinted .ground{box-shadow:0 0 0 3px #facc15,inset 0 10px 18px rgba(0,0,0,.7)}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+#tut{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:15;background:rgba(15,23,42,.94);border:2px solid #facc15;border-radius:16px;padding:10px 16px;max-width:min(92vw,380px);text-align:center;pointer-events:none;color:#e2e8f0;font-size:14px;font-weight:700;line-height:1.45}
+#tut.hidden{display:none}
+#tut .tap{font-size:30px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
+@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){#tut .tap,#newBest,#score.pp,.popup{animation:none}.mole{transition:none}}
 </style>
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1>🔨 Whack-a-Mole</h1>
-<div class="hud"><span>Score: <b id="score">0</b></span><span>⏱ <b id="timeLeft">30</b>s</span><span id="comboChip">🔥×1</span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="hud"><span>Score: <b id="score">0</b></span><span>⏱ <b id="timeLeft">30</b>s</span><span id="comboChip">🔥×1</span><span>🏆 <b id="bestHud">0</b></span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
 <div id="timebar"><div id="timefill"></div></div>
 <div id="metaBar">🎯 0 · ⭐ 0 · 👑 0 · 🎃 0 · 💣 0 · ⚪ Rookie</div>
 <div id="grid"></div>
 <canvas id="fx"></canvas>
+<div class="codes hidden" id="codesOn">CODES ON</div>
+<div id="tut" class="hidden"><span class="tap" aria-hidden="true">👆</span><div>Tap each <b>🐹 mole</b> as it pops up!</div><div id="tutMore">⭐ +5 · 👑 +10 · 🎃 boss: 3 taps · don't hit the rumbling 💣 (−3)</div></div>
 <div class="ov" id="start">
   <h1>🔨 Whack-a-Mole</h1>
   <div style="color:#cbd5e1;font-size:15px;line-height:1.6">Whack moles for points!<br>⭐ Golden = +5 · 💣 Bomb = -3 (rumbles first!) · 👑 Crown = +10 (rare!)<br>Chain hits without escapes for 🔥 ×2 ×3<br>⚡ Whack within 350ms of popping up = +1<br>🎃 BOSS every 100 pts: 3 hits to take down = +25!</div>
-  <button class="btn" id="playBtn">▶ Start (30s)</button>
+  <button class="btn" id="playBtn">▶ Play (30s)</button>
 </div>
 <div class="ov hidden" id="over">
   <h1>Time's Up!</h1>
@@ -66,7 +77,12 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 </div>
 <script>
 
-const ROUND_TIME=30;
+let ROUND_TIME=30;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let bigHammer=false,noBombs=false;
 const $=id=>document.getElementById(id);
 let score=0,best=+localStorage.getItem('whackBest')||0,timeLeft=ROUND_TIME,state='ready',spawnTimer=null,roundTimer=null,combo=0,shake=0,flashT=0;
 let bossActive=false,bossTarget=100;
@@ -131,6 +147,7 @@ requestAnimationFrame(loop);
 let dt=(ts-lastT)/1000;lastT=ts;
 if(!(dt>0)||dt>.05)dt=.016;
 if(document.hidden)return;
+if(RM){shake=0;flashT=0;grid.style.transform='';}
 if(!partsAlive()&&shake<=0&&flashT<=0){if(!fxIdle){fxIdle=true;fctx.clearRect(0,0,FW,FH);}return;}
 fxIdle=false;
 flashT=Math.max(0,flashT-dt*2.8);
@@ -185,9 +202,10 @@ function checkBossTarget(){
 if(state!=='play')return;
 if(score>=bossTarget){bossTarget=Math.max(bossTarget+100,Math.ceil(score/100)*100);spawnBoss();}
 }
-function whack(h){
-if(state!=='play')return;
+function whack(h,chain){
+if(state!=='play'||(SDK&&SDK.paused))return;
 initAudio();
+if(!chain){hideTut();if(bigHammer){const i=h._i,r=(i/3)|0,c=i%3;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dr,dc])=>{const rr=r+dr,cc=c+dc;if(rr>=0&&rr<3&&cc>=0&&cc<3){const n=holes[rr*3+cc],mm=moleOf(n);if(mm.dataset.state==='up'&&mm.dataset.type!=='bomb')whack(n,true);}});}}
 const m=moleOf(h),hc=holeC[h._i],cx=hc.x,cy=hc.y;
 if(!hc)return;
 if(m.dataset.state==='boss'){
@@ -216,7 +234,7 @@ popScore();
 checkBossTarget();
 return;
 }
-if(m.dataset.state!=='up'){snd('miss');burst(cx,cy+16,'#94a3b8',5,.5);return;}
+if(m.dataset.state!=='up'){if(chain)return;snd('miss');burst(cx,cy+16,'#94a3b8',5,.5);return;}
 clearTimeout(m._despawn);clearTimeout(m._clean);clearTimeout(m._fuse);
 m._gen=(m._gen||0)+1;const gen=m._gen;
 m.dataset.state='down';m.classList.remove('up');
@@ -259,7 +277,7 @@ const h=free[(Math.random()*free.length)|0],m=moleOf(h);
 clearTimeout(m._despawn);clearTimeout(m._clean);
 m._gen=(m._gen||0)+1;const gen=m._gen;
 const r=Math.random();
-m.dataset.type=r<.12?'bomb':r<.26?'gold':'normal';
+m.dataset.type=r<.12?(noBombs?'normal':'bomb'):r<.26?'gold':'normal';
 if(m.dataset.type==='normal'&&Math.random()<.08)m.dataset.type='crown';
 m.textContent=m.dataset.type==='bomb'?'💣':m.dataset.type==='gold'?'⭐':'🐹';
 if(m.dataset.type==='crown'){m.textContent='👑';m.classList.add('gold');}
@@ -298,8 +316,8 @@ initAudio();
 score=0;combo=0;timeLeft=ROUND_TIME;state='play';bossActive=false;bossTarget=100;
 $('score').textContent=0;$('timeLeft').textContent=timeLeft;$('timefill').style.width='100%';
 $('start').classList.add('hidden');$('over').classList.add('hidden');
-updateCombo();resetMoles();updMeta();
-clearTimeout(spawnTimer);clearInterval(roundTimer);
+updateCombo();resetMoles();updMeta();$('bestHud').textContent=best;
+clearTimeout(spawnTimer);clearInterval(roundTimer);scene('play');
 spawnTimer=setTimeout(spawn,500);
 roundTimer=setInterval(()=>{
 if(document.hidden)return;
@@ -312,19 +330,53 @@ if(timeLeft<=0)endGame();
 function endGame(){
 state='over';clearTimeout(spawnTimer);clearInterval(roundTimer);
 resetMoles();snd('end');
-const nb=score>best;
+const clean=!cheated(),nb=score>best&&clean;
 if(nb){best=score;localStorage.setItem('whackBest',best);}
-localStorage.setItem('whackTWhacks',tWhacks);localStorage.setItem('whackTGold',tGold);
+if(clean){localStorage.setItem('whackTWhacks',tWhacks);localStorage.setItem('whackTGold',tGold);
 localStorage.setItem('whackTCrown',tCrown);localStorage.setItem('whackTBoss',tBoss);
-localStorage.setItem('whackTBomb',tBomb);
+localStorage.setItem('whackTBomb',tBomb);}
+scene('over',{score:score});hideTut();$('bestHud').textContent=best;
 $('finScore').textContent=score;$('finBest').textContent=best;
 $('finRank').textContent=rankStr();
 updMeta();
 $('newBest').classList.toggle('hidden',!nb);
 setTimeout(()=>$('over').classList.remove('hidden'),450);
 }
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+let tutSeen=false;try{tutSeen=localStorage.getItem('whackTut')==='1';}catch(e){}
+function hideTut(){if($('tut').classList.contains('hidden'))return;$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('whackTut','1');}catch(e){}}}
+function begin(showTut){startGame();if(showTut||!tutSeen){$('tut').classList.remove('hidden');}}
+function toTitle(){state='ready';clearTimeout(spawnTimer);clearInterval(roundTimer);resetMoles();hideTut();$('over').classList.add('hidden');$('start').classList.remove('hidden');scene('title');}
+press($('playBtn'),()=>begin(false));
+press($('againBtn'),()=>begin(false));
+$('muteBtn').addEventListener('click',e=>{if(e.detail===0){muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();}});
+// Keyboard: the number pad layout, 7 8 9 / 4 5 6 / 1 2 3, whacks the matching hole.
+const KEYMAP={'7':0,'8':1,'9':2,'4':3,'5':4,'6':5,'1':6,'2':7,'3':8};
+window.addEventListener('keydown',e=>{if(SDK&&SDK.paused)return;if(KEYMAP[e.key]!==undefined&&state==='play'){whack(holes[KEYMAP[e.key]]);}
+if(e.key===' '&&!(e.target&&e.target.tagName==='BUTTON')){e.preventDefault();if(state!=='play')begin(false);}});
+// Codes: just for fun; a round with codes on never replaces the best.
+const CODES={BIGHAMMER:'Big hammer: a whack also hits the moles next door',NOBOMBS:'No bombs: only moles pop up',EXTRATIME:'Extra time: rounds last 45 seconds'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='BIGHAMMER')bigHammer=true;if(c==='NOBOMBS')noBombs=true;if(c==='EXTRATIME'){ROUND_TIME=45;if(state==='play'){timeLeft+=15;$('timeLeft').textContent=timeLeft;}}return{ok:true,message:CODES[c]};}
+const SPOT=['top left','top middle','top right','middle left','centre','middle right','bottom left','bottom middle','bottom right'];
+function hint(){if(state!=='play')return 'Press Play: tap every mole before it ducks, and leave the bombs alone.';
+const up=holes.filter(h=>['up','boss'].includes(moleOf(h).dataset.state));
+const boss=up.find(h=>moleOf(h).dataset.state==='boss');
+if(boss)return 'The 🎃 boss is in the '+SPOT[boss._i]+' hole: three quick taps for +25.';
+const best2=up.filter(h=>moleOf(h).dataset.type!=='bomb').sort((a,b)=>({crown:3,gold:2,normal:1}[moleOf(b).dataset.type]||0)-({crown:3,gold:2,normal:1}[moleOf(a).dataset.type]||0))[0];
+const bomb=up.find(h=>moleOf(h).dataset.type==='bomb')||holes.find(h=>moleOf(h).dataset.state==='fuse');
+if(best2){const hh=best2;hh.classList.add('hinted');setTimeout(()=>hh.classList.remove('hinted'),900);}
+return (best2?'Hit the '+(moleOf(best2).textContent)+' in the '+SPOT[best2._i]+' hole.':'Wait for the next mole: they pop up faster as the clock runs down.')+(bomb?' Leave the 💣 in the '+SPOT[bomb._i]+' alone.':'')+(combo%5>=3?' Two more hits without a miss raises your multiplier.':'');}
+if(SDK)SDK.init({
+pauseButton:'tr',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>begin(true),
+onHint:hint,
+onCheat:code,
+});
+$('bestHud').textContent=best;
+scene('title');
 </script>
 </body>
 </html>

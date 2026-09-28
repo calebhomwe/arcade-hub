@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Snake</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#15803d,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
-.hud{display:flex;gap:14px;font-weight:800;font-size:15px;align-items:center}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
+.hud{display:flex;gap:8px 10px;font-weight:800;font-size:15px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw}
 .hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
-.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
-#board{position:relative;width:min(92vw,430px,calc(100dvh - 100px));aspect-ratio:1;background:#12212e;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);overflow:hidden;touch-action:none;flex-shrink:0}
+.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:0 12px;min-width:44px;min-height:44px;border-radius:12px;cursor:pointer;line-height:1}
+#board{position:relative;width:min(92vw,430px,calc(100dvh - 130px));aspect-ratio:1;background:#12212e;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.55);overflow:hidden;touch-action:none;flex-shrink:0}
 #cv{position:absolute;inset:0;width:100%;height:100%}
 .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.74);backdrop-filter:blur(4px);border-radius:16px;z-index:6;text-align:center}
 .ov h1{font-size:40px;font-weight:900;letter-spacing:-1px}
@@ -23,6 +24,20 @@ body{background:radial-gradient(900px 600px at 50% -20%,#15803d,#0f0f23 60%,#070
 .stat{color:#e2e8f0;font-size:17px;font-weight:700}
 .best{color:#4ade80;font-weight:800}
 .hidden{display:none}
+.btn:focus-visible,.mute:focus-visible,.back:focus-visible,.seg button:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px}
+.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,#4ade80,#38bdf8);color:#06281c}
+.pups{color:#cbd5e1;font-size:13px;font-weight:700;padding:0 16px;line-height:1.5}
+.ov{overflow:auto;padding:10px 0}
+.codes{position:absolute;top:10px;left:10px;z-index:7;background:rgba(7,7,15,.8);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:transparent;backdrop-filter:none;pointer-events:none;justify-content:flex-start;padding-top:18px}
+#tut .card{background:rgba(7,7,15,.85);border-radius:16px;padding:10px 16px;max-width:320px}
+#tut b{color:#4ade80}
+#tut .tap{font-size:30px;display:inline-block;animation:swipeHint 1.2s ease-in-out infinite}
+@keyframes swipeHint{0%,100%{transform:translateX(-14px)}50%{transform:translateX(14px)}}
+@media (prefers-reduced-motion:reduce){#tut .tap{animation:none}}
+@media (prefers-reduced-motion:reduce){.ban{animation:none;opacity:1}.btn:active{transform:none}}
 .ban{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);background:rgba(15,23,42,.95);border:2px solid #facc15;padding:10px 24px;border-radius:14px;font-size:20px;font-weight:900;color:#facc15;z-index:5;pointer-events:none;animation:bflash .5s ease forwards}
 @keyframes bflash{0%{scale:.6;opacity:0}25%{scale:1.05;opacity:1}75%{opacity:1}100%{opacity:0}}
 </style>
@@ -30,26 +45,26 @@ body{background:radial-gradient(900px 600px at 50% -20%,#15803d,#0f0f23 60%,#070
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1 style="font-size:26px;font-weight:900">🐍 Snake</h1>
-<div class="hud"><span>🍎 <b id="score">0</b></span><span>⭐ <b id="goldPts">0</b></span><span style="padding:8px 10px">🍏<b id="comboPts">0</b></span><span>Best: <b class="best" id="best">0</b></span><button class="mute" id="pauseBtn" aria-label="Pause">⏸</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="hud"><span>🍎 <b id="score">0</b></span><span>LV <b id="lvl">1</b></span><span>⭐ <b id="goldPts">0</b></span><span style="padding:8px 10px">🍏<b id="comboPts">0</b></span><span>Best: <b class="best" id="best">0</b></span><button class="mute" id="pauseBtn" aria-label="Pause">⏸</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
 <div id="board">
   <canvas id="cv"></canvas>
   <div class="ov" id="start">
     <h1>🐍 <span>Snake</span></h1>
     <div class="sub">Swipe to steer. Eat apples, grow, don't crash! 🪨 Rocks appear as you grow — grab ⭐ gold to blast one. 👻 orbs make you ghost-proof for 5s.</div>
     <div class="stat" style="font-size:14px;color:#94a3b8">🍎 Lifetime: <b id="lifeApples">0</b> · Rank: <b class="best" id="rankTag">Sprout</b> · 🔥 <b id="dayTag">0</b>d streak</div>
+    <div class="seg" role="group" aria-label="Speed"><button data-d="easy">Easy</button><button data-d="normal">Normal</button><button data-d="hard">Hard</button></div>
     <button class="btn" id="playBtn">▶ Play</button>
   </div>
   <div class="ov hidden" id="over">
     <h1>Game Over</h1>
-    <div class="stat">Score: <b id="finScore">0</b></div>
-    <div class="stat">⭐ Gold: <b id="finGold">0</b></div>
-    <div class="stat">🍏 Combo: <b id="finCombo">0</b></div>
-    <div class="stat">🏅 Rank: <b id="finRank">Sprout</b></div>
-    <div class="stat">🔥 Streak: <b id="finStreak">0</b>d (best <b id="finStreakBest">0</b>)</div>
-    <div class="stat">Best: <b class="best" id="finBest">0</b></div>
-    <div class="stat" id="medals" style="font-size:26px;letter-spacing:6px">–</div>
+    <div class="stat">Score: <b id="finScore">0</b> · Best: <b class="best" id="finBest">0</b> <span id="medals" style="letter-spacing:4px">–</span></div>
+    <div class="stat" style="font-size:15px">⭐ Gold: <b id="finGold">0</b> · 🍏 Combo: <b id="finCombo">0</b> · LV <b id="finLv">1</b></div>
+    <div class="stat" style="font-size:15px">🏅 <b id="finRank">Sprout</b> · 🔥 <b id="finStreak">0</b>d (best <b id="finStreakBest">0</b>)</div>
+    <div class="stat" style="font-size:14px;color:#94a3b8" id="topList"></div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
+  <div class="ov hidden" id="tut"><div class="card"><div class="tap" aria-hidden="true">👉</div><div class="stat">Swipe or press an arrow key to <b>start</b></div><div class="sub" id="tutMore" style="padding:4px 0 0">Eat 🍎 to grow. Don't hit the walls, your own tail or 🪨 rocks. ⭐ gold blasts a rock; 👻 lets you pass rocks for 5 s.</div></div></div>
   <div class="ov hidden" id="pauseOv"><h1 style="font-size:32px">⏸ Paused</h1><div class="sub">Tap to resume</div></div>
 </div>
 <script>
@@ -73,15 +88,24 @@ if(tries>=120)return;
 rocks.push(p);
 banner('🪨 Rock!');sfx('whoosh');
 }
-let paused=false;
-function togglePause(){if(state!=='play')return;paused=!paused;document.getElementById('pauseOv').classList.toggle('hidden',!paused);document.getElementById('pauseBtn').textContent=paused?'▶':'⏸';}
+let paused=false,waiting=false;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+function save(k,v){if(cheated())return;try{localStorage.setItem(k,v);}catch(e){}}
+const SPEED={easy:190,normal:150,hard:115};
+let diff='normal';try{diff=localStorage.getItem('snakeDiff')||'normal';}catch(e){}if(!SPEED[diff])diff='normal';
+let noWalls=false,slowSnake=false,goldRush=false;
+function level(){return 1+Math.floor(score/5);}
+function togglePause(){if(state!=='play')return;paused=!paused;document.getElementById('pauseOv').classList.toggle('hidden',!paused);{const pb=document.getElementById('pauseBtn');if(pb)pb.textContent=paused?'▶':'⏸';}}
 const RANKS=[[10,'Sprout'],[25,'Vine'],[50,'Tangler'],[100,'Viper'],[200,'Anaconda'],[400,'Naga'],[700,'Ouroboros']];
 let totalApples=+localStorage.getItem('snakeTotal')||0,rankName='Sprout';
 function rankOf(n){let r=RANKS[0][1];for(const x of RANKS){if(n>=x[0])r=x[1];}return r;}
 rankName=rankOf(totalApples);
 const DAYMS=86400000;let dayStreak=0,dayBest=0,dayLast=-1;
 try{const j=JSON.parse(localStorage.getItem('snakeDays')||'');if(j){dayStreak=j.s|0;dayBest=j.b|0;dayLast=j.d|-1;}}catch(e){}
-function bumpDays(){const today=Math.floor(Date.now()/DAYMS);if(dayLast===today)return;if(dayLast===today-1)dayStreak++;else dayStreak=1;dayLast=today;if(dayStreak>dayBest)dayBest=dayStreak;try{localStorage.setItem('snakeDays',JSON.stringify({d:today,s:dayStreak,b:dayBest}));}catch(e){}
+function bumpDays(){const today=Math.floor(Date.now()/DAYMS);if(dayLast===today)return;if(dayLast===today-1)dayStreak++;else dayStreak=1;dayLast=today;if(dayStreak>dayBest)dayBest=dayStreak;save('snakeDays',JSON.stringify({d:today,s:dayStreak,b:dayBest}));
 if(dayStreak===3||dayStreak===7||dayStreak===30)setTimeout(()=>{banner('🔥 '+dayStreak+'-DAY STREAK!');sfx('levelup');},700);
 document.getElementById('dayTag').textContent=dayStreak;}
 document.getElementById('dayTag').textContent=dayStreak;
@@ -146,25 +170,16 @@ while(snake.some(s=>s.x===p.x&&s.y===p.y)||(p.x===food.x&&p.y===food.y)||rockAt(
 orb=p;orbT=ORB_LIFE;
 }
 function winGame(){
-state='over';sfx('win');
+state='over';sfx('win');endRun();
 document.querySelector('#over h1').textContent='🏆 Perfect Win!';
-if(score>best){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
-document.getElementById('finScore').textContent=score;
-document.getElementById('finGold').textContent=goldPts;
-document.getElementById('finBest').textContent=best;
-document.getElementById('medals').textContent=medalStr(score);
-document.getElementById('finCombo').textContent=comboBest;
-document.getElementById('finRank').textContent=rankName;
-document.getElementById('finStreak').textContent=dayStreak;
-document.getElementById('finStreakBest').textContent=dayBest;
 document.getElementById('lifeApples').textContent=totalApples;
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),400);
 }
 function startGame(){
 initAudio();
 bumpDays();
-paused=false;document.getElementById('pauseOv').classList.add('hidden');document.getElementById('pauseBtn').textContent='⏸';
-state='play';score=0;acc=-1000;headPop=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;
+paused=false;document.getElementById('pauseOv').classList.add('hidden');{const pb=document.getElementById('pauseBtn');if(pb)pb.textContent='⏸';}
+state='play';waiting=true;score=0;acc=0;headPop=0;for(const p of parts)p.life=0;for(const x of texts)x.life=0;
 document.querySelector('#over h1').textContent='Game Over';
 snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
 dir={x:1,y:0};queue=[];pending=null;
@@ -174,10 +189,11 @@ gold=null;goldT=0;goldPts=0;
 rocks=[];
 orb=null;orbT=0;ghost=0;
 combo=0;comboLastEat=t-10;
-document.getElementById('comboPts').textContent=0;
-spawnFood();
+document.getElementById('comboPts').textContent=0;document.getElementById('lvl').textContent=1;
+spawnFood();scene('play');
 }
 function setDir(d){
+if(state==='play'&&waiting){waiting=false;acc=0;hideTut();}
 const last=queue.length?queue[queue.length-1]:(pending||dir);
 if(d.x===-last.x&&d.y===-last.y)return;
 if(d.x===last.x&&d.y===last.y)return;
@@ -187,26 +203,27 @@ function step(){
 if(queue.length)dir=queue.shift();
 if(pending&&queue.length<2){queue.push(pending);pending=null;}
 const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+if(noWalls){head.x=(head.x+N)%N;head.y=(head.y+N)%N;}
 if(head.x<0||head.x>=N||head.y<0||head.y>=N||snake.some(s=>s.x===head.x&&s.y===head.y)||(ghost<=0&&rockAt(head.x,head.y)))return die();
 snake.unshift(head);
 if(head.x===food.x&&head.y===food.y){
-score++;document.getElementById('score').textContent=score;
+score++;document.getElementById('score').textContent=score;document.getElementById('lvl').textContent=level();
 snd('eat');headPop=1;
 for(let i=0;i<10;i++){const a=Math.random()*7,s=50+Math.random()*130;spawnPart((food.x+.5)*cell,(food.y+.5)*cell,Math.cos(a)*s,Math.sin(a)*s);}
 spawnText((food.x+.5)*cell,(food.y+.15)*cell,'+1','#fbbf24');
 if(t-comboLastEat<6)combo++;else combo=1;
 comboLastEat=t;
 document.getElementById('comboPts').textContent=combo;
-if(combo>comboBest){comboBest=combo;localStorage.setItem('snakeCombo',String(comboBest));}
+if(combo>comboBest&&!cheated()){comboBest=combo;localStorage.setItem('snakeCombo',String(comboBest));}
 if(combo>1&&combo%3===0){banner('🍏 '+combo+' EAT STREAK!');sfx('levelup');}
 totalApples++;
-localStorage.setItem('snakeTotal',String(totalApples));
+save('snakeTotal',String(totalApples));
 const rn=rankOf(totalApples);
 if(rn!==rankName){rankName=rn;banner('🏅 '+rn+'!');sfx('levelup');}
 spawnFood();
 if(score%10===0){banner('🔥 '+score+' APPLES!');sfx('levelup');}
 if(score%7===0)spawnRock();
-if(gold===null&&score%5===0)spawnGold();
+if(gold===null&&(score%5===0||goldRush))spawnGold();
 if(orb===null&&score%12===0)spawnOrb();
 }else snake.pop();
 if(gold&&head.x===gold.x&&head.y===gold.y){
@@ -225,17 +242,28 @@ for(let i=0;i<16;i++){const a=Math.random()*7,s=70+Math.random()*150;spawnPart((
 spawnText((head.x+.5)*cell,(head.y+.15)*cell,'👻','#a5f3fc');
 }
 }
-function die(){
-state='over';snd('die');deadFlash=.5;
-if(score>best){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
+function endRun(){
+$('tut').classList.add('hidden');
+if(score>best&&!cheated()){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
 document.getElementById('finScore').textContent=score;
 document.getElementById('finGold').textContent=goldPts;
 document.getElementById('finBest').textContent=best;
 document.getElementById('medals').textContent=medalStr(score);
 document.getElementById('finCombo').textContent=comboBest;
+document.getElementById('finLv').textContent=level();
 document.getElementById('finRank').textContent=rankName;
 document.getElementById('finStreak').textContent=dayStreak;
 document.getElementById('finStreakBest').textContent=dayBest;
+showTop(addTop());
+scene('over',{score:score,level:level()});
+}
+// High-score table: the five best clean runs, with their speed.
+function topScores(){try{const t=JSON.parse(localStorage.getItem('snakeTop')||'[]');return Array.isArray(t)?t:[];}catch(e){return [];}}
+function addTop(){const t=topScores();if(cheated()||score<=0)return {t,at:-1};const e={s:score,d:diff[0].toUpperCase()};t.push(e);t.sort((a,b)=>b.s-a.s);const k=t.slice(0,5);save('snakeTop',JSON.stringify(k));return {t:k,at:k.indexOf(e)};}
+function showTop(r){const t=r?r.t:topScores();document.getElementById('topList').innerHTML=t.length?'🏆 Top 5: '+t.map((e,i)=>(i===(r?r.at:-1)?'<b style="color:#facc15">':'')+e.s+' ('+e.d+')'+(i===(r?r.at:-1)?'</b>':'')).join(' · '):'';}
+function die(){
+state='over';snd('die');deadFlash=RM?0:.5;
+endRun();
 document.getElementById('lifeApples').textContent=totalApples;
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
 }
@@ -327,9 +355,9 @@ if(ghost>0)ghost=Math.max(0,ghost-dt);
 if(headPop>0)headPop-=dt*4;
 if(deadFlash>0){deadFlash-=dt;ctx.save();ctx.filter='invert(1)';draw();ctx.restore();}
 else draw();
-if(state==='play'&&!paused){
+if(state==='play'&&!paused&&!waiting){
 acc+=dt*1000;
-const speed=Math.max(68,Math.round(150*Math.pow(.985,score)));
+const speed=Math.max(SPEED[diff]*.45,Math.round(SPEED[diff]*Math.pow(.985,score)))/(slowSnake?.6:1);
 if(acc>=speed){acc-=speed;step();}
 }
 }
@@ -357,15 +385,48 @@ else setDir({x:0,y:dy>0?1:-1});
 }
 tsX=tsY=null;
 },{passive:true});
+const $=id=>document.getElementById(id);
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
 window.addEventListener('keydown',e=>{
-const k={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}}[e.key];
-if(k)setDir(k);
-if(state==='ready'&&(e.key===' ')){document.getElementById('start').classList.add('hidden');startGame();}
+if(SDK&&SDK.paused)return;
+const k={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0}}[e.key];
+if(k){e.preventDefault();setDir(k);}
+if(e.key===' '&&!(e.target&&e.target.tagName==='BUTTON')){e.preventDefault();if(state==='play'&&waiting)setDir({x:1,y:0});else if(state==='ready')begin(false);else if(state==='over'&&!$('over').classList.contains('hidden'))begin(false);}
 });
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();document.getElementById('start').classList.add('hidden');startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('over').classList.add('hidden');startGame();});
-document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});
-document.getElementById('pauseOv').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});
+let tutSeen=false;try{tutSeen=localStorage.getItem('snakeTut')==='1';}catch(e){}
+function tutOn(){return !$('tut').classList.contains('hidden');}
+function hideTut(){$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('snakeTut','1');}catch(e){}}}
+// A run waits on the start square until the first swipe or arrow key, so nobody crashes while finding the controls.
+function begin(showTut){initAudio();['start','over'].forEach(id=>$(id).classList.add('hidden'));startGame();$('tutMore').classList.toggle('hidden',!(showTut||!tutSeen));$('tut').classList.remove('hidden');}
+function toTitle(){state='ready';paused=false;['over','pauseOv','tut'].forEach(id=>$(id).classList.add('hidden'));snake=[];rocks=[];gold=null;orb=null;food={x:-9,y:-9};dirty=true;
+$('lifeApples').textContent=totalApples;$('rankTag').textContent=rankName;paintDiff();$('start').classList.remove('hidden');scene('title');}
+press($('playBtn'),()=>begin(false));
+press($('againBtn'),()=>begin(false));
+function paintDiff(){document.querySelectorAll('[data-d]').forEach(b=>{b.classList.toggle('on',b.dataset.d===diff);b.setAttribute('aria-pressed',String(b.dataset.d===diff));});}
+document.querySelectorAll('[data-d]').forEach(b=>press(b,()=>{diff=b.dataset.d;try{localStorage.setItem('snakeDiff',diff);}catch(e){}paintDiff();}));
+paintDiff();
+// With the arcade SDK its pause button and menu are the one pause; without it the game keeps its own.
+if(SDK){$('pauseBtn').remove();}
+else{press($('pauseBtn'),togglePause);$('pauseOv').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});}
+// Codes: just for fun; a run with codes on never replaces the best or the top 5.
+const CODES={NOWALLS:'No walls: the snake wraps round to the other side',SLOWSNAKE:'Slow snake: 60% speed',GOLDRUSH:'Gold rush: a gold star appears after every apple'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='NOWALLS')noWalls=true;if(c==='SLOWSNAKE')slowSnake=true;if(c==='GOLDRUSH'){goldRush=true;if(state==='play'&&!gold)spawnGold();}return{ok:true,message:CODES[c]};}
+function hint(){if(state!=='play'||!snake.length)return 'Press Play, then swipe or use the arrow keys to steer toward the apple.';
+const h=snake[0],dx=food.x-h.x,dy=food.y-h.y,parts2=[];
+if(dx)parts2.push(Math.abs(dx)+(dx>0?' right':' left'));if(dy)parts2.push(Math.abs(dy)+(dy>0?' down':' up'));
+const ahead={x:h.x+dir.x,y:h.y+dir.y},danger=(!noWalls&&(ahead.x<0||ahead.x>=N||ahead.y<0||ahead.y>=N))||snake.some(q=>q.x===ahead.x&&q.y===ahead.y)||(ghost<=0&&rockAt(ahead.x,ahead.y));
+return (danger?'Turn now: the square ahead is a '+((ahead.x<0||ahead.x>=N||ahead.y<0||ahead.y>=N)?'wall':rockAt(ahead.x,ahead.y)?'rock':'piece of your tail')+'. ':'')+'The apple is '+(parts2.join(' and ')||'right here')+'.'+(gold?' A gold star is out: grab it for +5 before it fades.':'')+(snake.length>12?' Keep to the edges so your tail does not box you in.':'');}
+if(SDK)SDK.init({
+pauseButton:'tr',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>begin(true),
+onHint:hint,
+onCheat:code,
+});
+showTop();
+scene('title');
 </script>
 </body>
 </html>

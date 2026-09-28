@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Tower Stack</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#7c3aed,#0f0f23 60%,#07070f);display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 .hud{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-size:32px;font-weight:900;z-index:5;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
 #comboHud{font-size:15px;font-weight:900;color:#fbbf24;letter-spacing:1px;min-height:20px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
 #heartHud{font-size:14px;font-weight:900;color:#f472b6;letter-spacing:3px;min-height:20px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
@@ -25,13 +26,23 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 .mute{position:fixed;top:10px;right:12px;z-index:40;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;background:#1e293b;color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 .mute:active{transform:scale(.92)}
 .hidden{display:none}
+#bestHud{display:block;font-size:12px;font-weight:800;letter-spacing:1px;opacity:.85}
+.btn:focus-visible,.mute:focus-visible,.back:focus-visible{outline:3px solid #facc15;outline-offset:3px}
+.codes{position:absolute;top:14px;left:14px;z-index:7;background:rgba(7,7,15,.74);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:transparent;backdrop-filter:none;pointer-events:none;justify-content:flex-start;padding-top:170px}
+#tut .card{background:rgba(7,7,15,.82);border-radius:16px;padding:12px 18px;max-width:340px}
+#tut .tap{font-size:40px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
+#tut b{color:#fbbf24}
+@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(8px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){#tut .tap{animation:none}.btn:active,.mute:active{transform:none}}
 </style>
 </head>
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <div class="wrap">
-  <div class="hud"><span id="hud">0</span><div id="comboHud"></div><div id="heartHud"></div></div>
+  <div class="hud"><span id="hud">0</span><span id="bestHud">BEST 0</span><div id="comboHud"></div><div id="heartHud"></div></div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
   <canvas id="cv" width="420" height="700"></canvas>
   <div class="ov" id="start">
     <h1>Tower <span>Stack</span></h1>
@@ -47,11 +58,21 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Perfect chain best: <b class="best" id="finCombo">0</b></div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="ov hidden" id="tut">
+    <div class="card"><span class="tap" aria-hidden="true">👆</span>
+    <div class="stat">Tap or press Space to <b>drop</b> the block</div>
+    <div class="sub">Only the part that lands on the tower stays. Drop it dead centre for a PERFECT.</div></div>
+  </div>
 </div>
 <script>
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=700,BH=32,BASEY=H-110;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SDK=window.ArcadeSDK||null;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let slowmo=false,magnet=false,heartCode=false;
 const DPR=Math.min(window.devicePixelRatio||1,2);
 cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
 let state='ready',score=0,best=+localStorage.getItem('towerBest')||0,t=0,shake=0,flash=0,combo=0;
@@ -80,6 +101,7 @@ function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('towerMuted',muted?'1':'0');renderMute();});
 renderMute();
 document.getElementById('startBest').textContent=best;
+document.getElementById('bestHud').textContent='BEST '+best;
 loadGhost();refreshGhostHud();
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function rrc(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
@@ -149,8 +171,8 @@ try{const g=JSON.parse(localStorage.getItem('towerGhost')||'null');ghost=(g&&g.b
 catch(e){ghost=null;ghostLen=0;}
 }
 function refreshGhostHud(){document.getElementById('startGhost').textContent=ghostLen?ghostLen+' blocks':'off';}
-function startGame(){roundToken++;state='play';score=0;combo=0;hearts=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;loadGhost();refreshGhostHud();hud();updCombo();updHearts();}
-function hud(){document.getElementById('hud').textContent=score;}
+function startGame(){roundToken++;state='play';score=0;combo=0;hearts=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;if(heartCode)hearts=3;loadGhost();refreshGhostHud();hud();updCombo();updHearts();scene('play');}
+function hud(){document.getElementById('hud').textContent=score;document.getElementById('bestHud').textContent='BEST '+(cheated()?best:Math.max(best,score));}
 function updCombo(){document.getElementById('comboHud').textContent=combo>1?'🔥 PERFECT x'+combo:'';}
 function updHearts(){document.getElementById('heartHud').textContent=hearts>0?'💜'.repeat(hearts):'💔';}
 function earnHeart(){
@@ -158,6 +180,7 @@ if(hearts<3){hearts++;updHearts();snd('gold');floats.push({x:slideX,y:BASEY-stac
 }
 function burst(x,y,c,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=sp*(.3+Math.random()*.7);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,life:.4+Math.random()*.4,t:0,c});}if(parts.length>300)parts.splice(0,parts.length-300);}
 function place(){
+if(tutOn())hideTut();
 const top=stack[stack.length-1];
 const overlap=Math.min(top.cx+top.w/2,slideX+slideW/2)-Math.max(top.cx-top.w/2,slideX-slideW/2);
 const blockY=BASEY-stack.length*BH;
@@ -175,22 +198,24 @@ falling={x:slideX,y:blockY,w:slideW,vy:0,rot:0,vr:slideDir*3.2};
 state='fall';shake=12;snd('over');buzz(80);
 return;
 }
-const perfect=Math.abs(slideX-top.cx)<3;
+const perfect=Math.abs(slideX-top.cx)<(magnet?14:3);
 let newW=perfect?top.w:overlap;
 const newX=perfect?top.cx:(Math.max(top.cx-top.w/2,slideX-slideW/2)+Math.min(top.cx+top.w/2,slideX+slideW/2))/2;
 stack.push({cx:newX,w:newW,born:t});
 if(perfect){combo++;score+=2;flash=1;shake=5;snd('perfect');buzz(20);burst(newX,blockY+BH/2,'#fbbf24',16,190);floats.push({x:newX,y:blockY,life:1,txt:combo>1?'PERFECT x'+combo+' +2':'PERFECT +2'});
-if(!comboFlash&&combo>comboBest){comboBest=combo;localStorage.setItem('towerComboBest',comboBest);comboFlash=true;snd('gold');floats.push({x:newX,y:blockY-52,life:1.4,txt:'NEW CHAIN RECORD!'});}
+if(!comboFlash&&combo>comboBest&&!cheated()){comboBest=combo;localStorage.setItem('towerComboBest',comboBest);comboFlash=true;snd('gold');floats.push({x:newX,y:blockY-52,life:1.4,txt:'NEW CHAIN RECORD!'});}
 if(combo>=3&&newW<190){newW=Math.min(190,newW+12);stack[stack.length-1].w=newW;floats.push({x:newX,y:blockY-26,life:1.2,txt:'WIDTH UP!'});burst(newX,blockY+BH/2,'#4ade80',10,150);}}
 else{combo=0;score++;shake=2.5;snd('drop');buzz(8);burst(newX,blockY+BH,'rgba(255,255,255,.8)',5,90);}
 if(goldOn){score+=3;snd('gold');burst(newX,blockY+BH/2,'#facc15',18,200);floats.push({x:newX,y:blockY-42,life:1.2,txt:'GOLD +3'});goldT=0;goldOn=false;}else{goldT++;if(goldT>=9)goldOn=true;}
 if(stack.length%12===0&&hearts<3){earnHeart();}
+if(heartCode&&hearts<3){hearts=3;updHearts();}
 if(floats.length>24)floats.splice(0,floats.length-24);
 hud();updCombo();
 slideW=newW;
 camTarget=Math.max(0,(stack.length-4)*BH);
 }
 function update(dt){
+if(RM){shake=0;flash=0;}
 t+=dt;
 shake=Math.max(0,shake-34*dt);
 flash=Math.max(0,flash-2.6*dt);
@@ -198,7 +223,7 @@ camY+=(camTarget-camY)*Math.min(1,dt*7);
 for(let i=floats.length-1;i>=0;i--){floats[i].life-=dt*1.1;floats[i].y-=dt*46;if(floats[i].life<=0)floats.splice(i,1);}
 for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;if(p.t>=p.life)parts.splice(i,1);}
 if(state==='play'||state==='ready'){
-const sp=state==='ready'?130:Math.min(400,220+stack.length*5);
+const sp=(state==='ready'?130:Math.min(400,220+stack.length*5))*(slowmo?.55:1);
 slideX+=slideDir*sp*dt;
 if(slideX-slideW/2<0){slideX=slideW/2;slideDir=1;}
 if(slideX+slideW/2>W){slideX=W-slideW/2;slideDir=-1;}
@@ -206,8 +231,9 @@ if(slideX+slideW/2>W){slideX=W-slideW/2;slideDir=-1;}
 falling.vy+=2000*dt;falling.y+=falling.vy*dt;falling.rot+=falling.vr*dt;
 if(falling.y>H+120){
 state='over';
-const nb=score>best;if(nb){best=score;localStorage.setItem('towerBest',best);}
-if(stack.length>3){
+const nb=score>best&&!cheated();if(nb){best=score;localStorage.setItem('towerBest',best);}
+scene('over',{score:score});
+if(stack.length>3&&!cheated()){
 const glen=+localStorage.getItem('towerGhostLen')||0;
 if(stack.length>glen){
 const g={b:stack.slice(0,400).map(s=>[+s.cx.toFixed(1),+s.w.toFixed(1)]),len:stack.length};
@@ -283,12 +309,36 @@ update(dt);draw();
 requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+const $=id=>document.getElementById(id);
+let tutSeen=false;try{tutSeen=localStorage.getItem('towerTut')==='1';}catch(e){}
+function tutOn(){return !$('tut').classList.contains('hidden');}
+function hideTut(){$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('towerTut','1');}catch(e){}}}
+function begin(showTut){initAudio();['start','over'].forEach(id=>$(id).classList.add('hidden'));startGame();if(showTut||!tutSeen)$('tut').classList.remove('hidden');}
+function toTitle(){roundToken++;state='ready';['over','tut'].forEach(id=>$(id).classList.add('hidden'));stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;camY=0;camTarget=0;falling=null;score=0;hud();$('startBest').textContent=best;refreshGhostHud();$('start').classList.remove('hidden');scene('title');}
 window.addEventListener('pointerdown',e=>{
-if(e.target.closest('.ov,.mute,.back'))return;initAudio();
+if(e.target.closest('.ov:not(#tut),.mute,.back,button,#arcade-sdk'))return;if(SDK&&SDK.paused)return;initAudio();
 if(state==='play')place();
 });
-document.getElementById('playBtn').addEventListener('click',()=>{initAudio();snd('click');document.getElementById('start').classList.add('hidden');startGame();});
-document.getElementById('againBtn').addEventListener('click',()=>{initAudio();snd('click');document.getElementById('over').classList.add('hidden');startGame();});
+window.addEventListener('keydown',e=>{if(SDK&&SDK.paused)return;if(e.key!==' '&&e.key!=='Enter')return;if(e.target&&e.target.tagName==='BUTTON')return;e.preventDefault();
+if(state==='play')place();else if(state==='over'&&!$('over').classList.contains('hidden'))begin(false);else if(state==='ready'&&!$('start').classList.contains('hidden'))begin(false);});
+$('playBtn').addEventListener('click',()=>{snd('click');begin(false);});
+$('againBtn').addEventListener('click',()=>{snd('click');begin(false);});
+// Codes: just for fun; a run with a code on never replaces the saved best.
+const CODES={SLOWMO:'Slow motion: the block slides at 55% speed',MAGNET:'Magnet: anything within 14 px of centre counts as PERFECT',FULLHEARTS:'Full hearts: three hearts, topped up after every save'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='SLOWMO')slowmo=true;if(c==='MAGNET')magnet=true;if(c==='FULLHEARTS'){heartCode=true;hearts=3;updHearts();}return{ok:true,message:CODES[c]};}
+function hint(){if(state!=='play')return 'Press Play, then tap to drop each block onto the tower.';
+const top=stack[stack.length-1],d=slideX-top.cx,toward=(d>0&&slideDir<0)||(d<0&&slideDir>0);
+return 'The dashed line marks the tower\'s centre: tap as the block\'s middle crosses it (within 3 px is PERFECT, +2). Right now it is '+Math.round(Math.abs(d))+' px '+(d>0?'right':'left')+' of centre and moving '+(toward?'towards':'away from')+' it.'+(combo?' You are on a '+combo+'x PERFECT chain: three in a row widens the block.':'')+(goldOn?' This block is GOLD: +3.':'');}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>begin(true),
+onHint:hint,
+onCheat:code,
+});
+scene('title');
 </script>
 </body>
 </html>

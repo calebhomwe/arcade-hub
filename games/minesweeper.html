@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Minesweeper</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#334155,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 .mute{position:fixed;top:10px;right:12px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:#1e293b;font-size:20px;cursor:pointer;color:#fff}
 .mute:active{transform:scale(.92)}
 h1{font-size:26px;font-weight:900;letter-spacing:-1px}
-.bar{display:flex;align-items:center;justify-content:space-between;width:min(92vw,400px,calc(100vh - 190px));background:#1e293b;border-radius:12px;padding:8px 16px;font-weight:900;font-size:18px}
+.bar{display:flex;align-items:center;justify-content:space-between;width:min(calc(100vw - 8px),400px,calc(100vh - 230px));background:#1e293b;border-radius:12px;padding:8px 16px;font-weight:900;font-size:18px}
 .counter{color:#f87171}
-.smiley{font-size:26px;cursor:pointer;background:none;border:none}
-#grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;width:min(92vw,400px,calc(100vh - 190px));touch-action:manipulation;contain:layout paint}
+.smiley{font-size:26px;cursor:pointer;background:none;border:none;min-width:44px;min-height:44px}
+#grid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;width:min(calc(100vw - 8px),400px,calc(100vh - 230px));touch-action:manipulation;contain:layout paint}
 .c{aspect-ratio:1;border:none;border-radius:8px;background:#2b3b57;font-size:clamp(14px,4.6vw,20px);font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);color:#fff}
 .c:active{scale:.9}
 .c.rev{background:#17233c;box-shadow:none}
@@ -37,8 +38,22 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .btn{border:none;cursor:pointer;background:linear-gradient(90deg,#34d399,#38bdf8);color:#06281c;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(52,211,153,.35)}
 .btn:active{transform:scale(.94)}
 .hidden{display:none}
+.c:focus-visible,.btn:focus-visible,.flagmode:focus-visible,.smiley:focus-visible,.back:focus-visible,.seg button:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.c.hinted{box-shadow:0 0 0 3px #facc15,inset 0 -3px 0 rgba(0,0,0,.25)}
+.c.radar::after{content:'💣';opacity:.28;font-size:.8em}
+.hint.coach{color:#06281c;background:#34d399;border-radius:12px;padding:6px 8px 6px 14px;font-size:13px;font-weight:800;display:flex;align-items:center;gap:10px;max-width:min(96vw,420px);animation:coachPulse 1.4s ease-in-out infinite}
+.hint.coach button{border:none;border-radius:9px;background:rgba(0,0,0,.18);color:#06281c;font-weight:900;font-size:13px;min-height:40px;min-width:52px;cursor:pointer;flex:none}
+@keyframes coachPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 8px rgba(52,211,153,0)}}
+.ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px;max-width:420px}
+.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px;flex-wrap:wrap;justify-content:center}
+.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,#34d399,#38bdf8);color:#06281c}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+@media (prefers-reduced-motion:reduce){#grid.shake,.c.boom,.c.popin,.achtoast,.hint.coach{animation:none}.jflash,.confetti{display:none}}
 .hint{color:#94a3b8;font-size:12px}
-.flagmode{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:8px 14px;cursor:pointer}
+.flagmode{border:none;border-radius:10px;background:#1e293b;color:#cbd5e1;font-size:13px;font-weight:800;padding:0 14px;min-height:44px;cursor:pointer}
+.flagmode:disabled{opacity:.4}
+.tools{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:400px}
 .flagmode.on{background:#f87171;color:#2b0808}
 .achtoast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);border:2px solid #38bdf8;color:#e2e8f0;font-weight:900;font-size:15px;padding:10px 18px;border-radius:12px;z-index:50;pointer-events:none;animation:achin .4s ease}
 @keyframes achin{0%{opacity:0;translate:0 -12px;scale:.7}100%{opacity:1;translate:0 0;scale:1}}
@@ -63,9 +78,21 @@ h1{font-size:20px}
 <div class="bar"><span class="counter">💣 <b id="mineCnt">10</b></span><button class="smiley" id="face">🙂</button><span>⏱ <b id="time">0</b></span><span>🏆 <b id="best">–</b></span></div>
 <div class="badges"><span id="bWins">🏆 0</span><span id="bStreak">🔥 0</span><span id="bFast">⚡ 0</span><span id="bStars">⭐ 0</span><span id="bPure">🧭 0</span><span id="bRank">🎖 Rookie</span></div>
 <div id="grid"></div>
-<div class="hint">Tap to reveal · Hold / right-click to flag · Tap a number to chord</div>
+<div class="hint" id="hintLine">Tap to reveal · Hold / right-click to flag · Tap a number to chord</div>
+<div class="tools">
 <button class="flagmode" id="flagBtn">🚩 Flag mode: OFF</button>
+<button class="flagmode" id="hintBtn">💡 Hint</button>
+<button class="flagmode" id="undoBtn" disabled>↶ Undo</button>
 <button class="flagmode" id="pureBtn">🧭 Pure mode: OFF</button>
+</div>
+<div class="codes hidden" id="codesOn">CODES ON</div>
+<div class="ov hidden" id="start">
+  <h1>💣 Minesweeper</h1>
+  <div class="sub">Open every square that is not a mine. A number says how many mines touch that square.</div>
+  <div class="seg" role="group" aria-label="Difficulty"><button data-lv="easy">Easy · 8 mines</button><button data-lv="normal">Normal · 10</button><button data-lv="hard">Hard · 16</button><button data-lv="daily">Daily board</button></div>
+  <button class="btn" id="playBtn">▶ Play</button>
+  <div style="font-size:14px;color:#94a3b8" id="startBest"></div>
+</div>
 <div class="ov hidden" id="over">
   <h1 id="overTitle">💥 Boom!</h1>
   <div style="font-size:16px">Time: <b id="finTime">0</b>s</div>
@@ -76,12 +103,23 @@ h1{font-size:20px}
   <div style="font-size:14px;color:#94a3b8" id="rankLine"></div>
   <div style="font-size:14px;color:#38bdf8" id="achLine"></div>
   <button class="btn" id="againBtn">Play Again</button>
+  <button class="btn" id="takeBack" style="background:#1e293b;color:#e2e8f0;box-shadow:none;font-size:16px">↶ Take back that move</button>
 </div>
 <script>
 
-const S=9,MINES=10;
+const S=9;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+const LEVELS={easy:8,normal:10,hard:16,daily:12};
+let level='normal';try{level=localStorage.getItem('minesLevel')||'normal';}catch(e){}if(!LEVELS[level])level='normal';
+let MINES=LEVELS[level];
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function bestKey(){return level==='normal'?'minesBest':level==='daily'?'minesBest_daily_'+today():'minesBest_'+level;}
+let hist=[],tookBack=false,radar=false,extraLife=false;
 let grid=[],started=false,dead=false,won=false,secs=0,timer=null,flags=0,revealed=0,firstClick=true,flagMode=false;
-let muted=localStorage.getItem('minesMute')==='1',lastLong=0;
+let muted=localStorage.getItem('minesMute')==='1',lastLong=0,chording=false;
 let wins=+localStorage.getItem('minesWins')||0,streak=+localStorage.getItem('minesStreak')||0,fast=+localStorage.getItem('minesFast')||0;
 let stars=+localStorage.getItem('minesStars')||0;
 let pureMode=localStorage.getItem('minesPure')==='1',pureWins=+localStorage.getItem('minesPureWins')||0;
@@ -102,19 +140,30 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function snd(n){if(n==='rev')sfx('tap');else if(n==='flag')sfx('hit');else if(n==='boom')sfx('boom');else if(n==='win')sfx('win');}
-function confetti(n){var cols=['#34d399','#38bdf8','#facc15','#f472b6','#a78bfa'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function confetti(n){if(RM)return;var cols=['#34d399','#38bdf8','#facc15','#f472b6','#a78bfa'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 var jflashEl=null;
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
-function shakeGrid(){const g=document.getElementById('grid');g.classList.remove('shake');void g.offsetWidth;g.classList.add('shake');}
-function newGame(){
+function jflash(col){if(RM)return;if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function shakeGrid(){if(RM)return;const g=document.getElementById('grid');g.classList.remove('shake');void g.offsetWidth;g.classList.add('shake');}
+function newGame(quiet){
+MINES=LEVELS[level];hist=[];tookBack=false;updUndo();
 grid=[];started=false;dead=false;won=false;secs=0;flags=0;revealed=0;firstClick=true;flagTotal=0;flagRight=0;
 clearInterval(timer);
 document.getElementById('time').textContent='0';document.getElementById('mineCnt').textContent=MINES;
-const pb0=+localStorage.getItem('minesBest');document.getElementById('best').textContent=pb0?pb0+'s':'–';
+const pb0=+localStorage.getItem(bestKey());document.getElementById('best').textContent=pb0?pb0+'s':'–';
 document.getElementById('face').textContent='🙂';document.getElementById('over').classList.add('hidden');
 for(let i=0;i<S*S;i++)grid.push({mine:false,adj:0,rev:false,flag:false});
+if(level==='daily')dailyStart();
 render();
+if(quiet!==true)scene('play');
 }
+// Daily board: seeded mines, the same for everyone today, opened from the empty square nearest the middle.
+function dailyStart(){let h=2166136261;const str='mines-'+today();for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}let st=h>>>0;
+const rnd=()=>{st=(st+0x6D2B79F5)>>>0;let t=st;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};
+const all=[...Array(S*S).keys()];for(let i=all.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+for(const m of all.slice(0,MINES))grid[m].mine=true;computeAdj();
+let best=-1,bd=99;for(let i=0;i<S*S;i++){if(grid[i].mine||grid[i].adj)continue;const d=Math.abs((i/S|0)-4)+Math.abs(i%S-4);if(d<bd){bd=d;best=i;}}
+firstClick=false;if(best>=0)flood(best);}
+function computeAdj(){for(let i=0;i<S*S;i++){grid[i].adj=0;if(grid[i].mine)continue;const r=Math.floor(i/S),c=i%S;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<S&&nc>=0&&nc<S&&grid[nr*S+nc].mine)grid[i].adj++;}}}
 function plantMines(safe){
 const safeSet=new Set([safe]);const sr=Math.floor(safe/S),sc=safe%S;
 for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
@@ -156,9 +205,12 @@ if(!b._rev)cls+=' popin';
 if(cell.mine)txt='💣';
 else if(cell.adj){txt=String(cell.adj);cls+=' n'+cell.adj;}
 }else if(cell.flag){cls+=' flag';if(!b._flag)cls+=' popin';txt='🚩';}
+else if(radar&&cell.mine&&!dead&&!won)cls+=' radar';
+if(b.classList.contains('hinted'))cls+=' hinted';
 b._rev=cell.rev;b._flag=cell.flag;
 if(b.className!==cls)b.className=cls;
 if(b.textContent!==txt)b.textContent=txt;
+b.setAttribute('aria-label',cell.rev?(cell.mine?'mine':cell.adj?cell.adj+' mines around':'empty'):cell.flag?'flagged':'hidden square '+(Math.floor(i/S)+1)+','+(i%S+1));
 });
 document.getElementById('mineCnt').textContent=MINES-flags;
 }
@@ -174,7 +226,7 @@ b.addEventListener('pointerleave',()=>{clearTimeout(holdTimer);b.removeEventList
 }
 function toggleFlag(i){
 if(pureMode||grid[i].rev||dead||won)return;
-initAudio();
+initAudio();snap();
 grid[i].flag=!grid[i].flag;
 if(grid[i].flag){flagTotal++;if(grid[i].mine)flagRight++;}else{flagTotal--;if(grid[i].mine)flagRight--;}
 flags+=grid[i].flag?1:-1;snd('flag');render();
@@ -190,16 +242,20 @@ if(nr>=0&&nr<S&&nc>=0&&nc<S){const n=grid[nr*S+nc];
 if(n.flag)cnt++;else if(!n.rev)nbrs.push(nr*S+nc);}
 }
 if(cnt!==cell.adj||!nbrs.length)return;
-for(const n of nbrs){if(dead||won)break;reveal(n);}
+chording=true;for(const n of nbrs){if(dead||won)break;reveal(n);}chording=false;
 }
 function reveal(i){
 initAudio();
 const cell=grid[i];
 if(dead||won)return;
-if(cell.rev){chord(i);return;}
+if(cell.rev){if(cell.adj)snap();chord(i);return;}
 if(cell.flag)return;
+if(!chording)snap();
 if(firstClick){firstClick=false;plantMines(i);startTimer();}
+else if(!started)startTimer();
+if(cell.mine&&extraLife){extraLife=false;cell.flag=true;flags++;flagTotal++;flagRight++;snd('flag');achToast('Extra life used: that was a mine');render();return;}
 if(cell.mine){cell.rev=true;cell.boom=true;dead=true;snd('rev');lose(i);return;}
+tutRevealed();
 flood(i);snd('rev');
 if(revealed===S*S-MINES)win();
 render();
@@ -222,7 +278,8 @@ if(document.hidden){clearInterval(timer);timer=null;}
 else if(started&&!dead&&!won)startTimer();
 });
 function lose(i){
-clearInterval(timer);timer=null;
+clearInterval(timer);timer=null;scene('over',{score:0,outcome:'mine'});
+document.getElementById('takeBack').classList.remove('hidden');
 snd('boom');shakeGrid();jflash('#ef4444');document.getElementById('face').textContent='😵';
 grid.forEach((cell,k)=>{
 if(cell.mine&&!cell.flag)cell.rev=true;
@@ -232,20 +289,22 @@ if(k===i)cell.boom=true;
 render();
 document.getElementById('overTitle').textContent='💥 Boom!';
 document.getElementById('finTime').textContent=secs;
-const pb1=+localStorage.getItem('minesBest');
+const pb1=+localStorage.getItem(bestKey());
 document.getElementById('finBest').textContent=pb1?pb1+'s':'–';
 document.getElementById('newBest').classList.add('hidden');
 document.getElementById('accLine').textContent=flagTotal?('🎯 '+flagRight+'/'+flagTotal+(flagRight===flagTotal?' ✨ Perfect flags!':'')):'';
 document.getElementById('starLine').textContent='⭐ All-time: '+stars;
 document.getElementById('pureLine').textContent='🧭 Pure wins: '+pureWins;
-streak=0;localStorage.setItem('minesStreak',streak);updBadges();checkAch();
+streak=0;if(!cheated())localStorage.setItem('minesStreak',streak);updBadges();checkAch();
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),700);
 }
 function win(){
-won=true;clearInterval(timer);timer=null;snd('win');confetti(90);jflash('#4ade80');
-const prevBest=+localStorage.getItem('minesBest')||0;
-const isNewBest=!prevBest||secs<prevBest;
-if(isNewBest)localStorage.setItem('minesBest',secs);
+won=true;clearInterval(timer);timer=null;snd('win');confetti(90);jflash('#4ade80');scene('over',{score:secs,outcome:'cleared'});
+document.getElementById('takeBack').classList.add('hidden');
+const clean=!cheated()&&!tookBack;
+const prevBest=+localStorage.getItem(bestKey())||0;
+const isNewBest=clean&&(!prevBest||secs<prevBest);
+if(isNewBest)localStorage.setItem(bestKey(),secs);
 document.getElementById('finBest').textContent=(isNewBest?secs:prevBest)+'s';
 document.getElementById('newBest').classList.toggle('hidden',!isNewBest);
 document.getElementById('face').textContent='😎';
@@ -254,37 +313,108 @@ render();
 document.getElementById('overTitle').textContent='🎉 Cleared!';
 document.getElementById('finTime').textContent=secs;
 document.getElementById('mineCnt').textContent=0;
-const pb0=+localStorage.getItem('minesBest');document.getElementById('best').textContent=pb0?pb0+'s':'–';
+const pb0=+localStorage.getItem(bestKey());document.getElementById('best').textContent=pb0?pb0+'s':'–';
 document.getElementById('accLine').textContent=flagTotal?('🎯 '+flagRight+'/'+flagTotal+(flagRight===flagTotal?' ✨ Perfect flags!':'')):'';
-wins++;streak++;if(secs<45)fast++;
-if(pureMode){pureWins++;localStorage.setItem('minesPureWins',pureWins);}
+if(clean){wins++;streak++;if(secs<45)fast++;}
+if(pureMode&&clean){pureWins++;localStorage.setItem('minesPureWins',pureWins);}
 document.getElementById('pureLine').textContent='🧭 Pure wins: '+pureWins;
 const st=secs<45?3:secs<90?2:1;
-stars+=st;localStorage.setItem('minesStars',stars);
+if(clean){stars+=st;localStorage.setItem('minesStars',stars);}
 document.getElementById('starLine').textContent='⭐ '+st+' star'+(st>1?'s':'')+'! · All-time: '+stars;
-localStorage.setItem('minesWins',wins);localStorage.setItem('minesStreak',streak);localStorage.setItem('minesFast',fast);
+if(clean){localStorage.setItem('minesWins',wins);localStorage.setItem('minesStreak',streak);localStorage.setItem('minesFast',fast);}
 updBadges();checkAch();
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),700);
 }
-document.getElementById('againBtn').addEventListener('pointerdown',newGame);
-document.getElementById('face').addEventListener('pointerdown',newGame);
-const muteBtn=document.getElementById('muteBtn');
+const $=id=>document.getElementById(id);
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+press($('againBtn'),()=>newGame());
+press($('face'),()=>newGame());
+press($('takeBack'),undo);
+const muteBtn=$('muteBtn');
 function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
-muteBtn.addEventListener('pointerdown',()=>{muted=!muted;localStorage.setItem('minesMute',muted?'1':'0');updMute();});
+press(muteBtn,()=>{muted=!muted;localStorage.setItem('minesMute',muted?'1':'0');updMute();});
 updMute();
-const flagBtn=document.getElementById('flagBtn');
+const flagBtn=$('flagBtn');
 function updFlagBtn(){flagBtn.textContent='🚩 Flag mode: '+(flagMode?'ON':'OFF');flagBtn.classList.toggle('on',flagMode);}
-flagBtn.addEventListener('pointerdown',()=>{flagMode=!flagMode;updFlagBtn();});
+press(flagBtn,()=>{flagMode=!flagMode;updFlagBtn();});
 updFlagBtn();
-const pureBtn=document.getElementById('pureBtn');
+const pureBtn=$('pureBtn');
 function updPureBtn(){pureBtn.textContent='🧭 Pure mode: '+(pureMode?'ON':'OFF');pureBtn.classList.toggle('on',pureMode);}
-pureBtn.addEventListener('pointerdown',()=>{pureMode=!pureMode;localStorage.setItem('minesPure',pureMode?'1':'0');updPureBtn();});
+press(pureBtn,()=>{pureMode=!pureMode;localStorage.setItem('minesPure',pureMode?'1':'0');updPureBtn();});
 updPureBtn();
 updBadges();
-document.getElementById('achLine').textContent='🏅 '+ach.length+'/'+ACH.length+' achievements';
+$('achLine').textContent='🏅 '+ach.length+'/'+ACH.length+' achievements';
 window.addEventListener('contextmenu',e=>{if(e.target.closest('#grid'))e.preventDefault();});
+/* ---- keyboard play: arrows move, Enter opens, F flags ---- */
+$('grid').addEventListener('keydown',e=>{const b=e.target.closest('.c');if(!b||(SDK&&SDK.paused))return;const i=+b.dataset.i;
+if(e.key==='Enter'||e.key===' '){e.preventDefault();if(flagMode&&!pureMode&&!grid[i].rev)toggleFlag(i);else reveal(i);render();}
+else if(e.key==='f'||e.key==='F'){toggleFlag(i);}
+else{const mv={ArrowLeft:-1,ArrowRight:1,ArrowUp:-S,ArrowDown:S}[e.key];if(mv!==undefined){e.preventDefault();const n=i+mv;if(n>=0&&n<S*S&&Math.abs(n%S-i%S)<2)cellEls[n].focus();}}});
+/* ---- undo: every flag and every opening can be taken back; a game with a take-back keeps no record ---- */
+function snap(){hist.push({g:grid.map(c=>Object.assign({},c)),flags,revealed,firstClick,flagTotal,flagRight});if(hist.length>300)hist.shift();updUndo();}
+function updUndo(){const b=$('undoBtn');if(b)b.disabled=!hist.length||won;}
+function undo(){if(!hist.length||won)return;const h=hist.pop();grid=h.g;flags=h.flags;revealed=h.revealed;firstClick=h.firstClick;flagTotal=h.flagTotal;flagRight=h.flagRight;
+if(dead){dead=false;tookBack=true;$('over').classList.add('hidden');$('face').textContent='🙂';if(started)startTimer();scene('play');}
+cellEls.forEach(b=>{b._rev=false;b._flag=false;});snd('flag');render();updUndo();}
+press($('undoBtn'),undo);
+/* ---- hint: logic from what is on the board (numbers and your flags) ---- */
+function nbrs(i){const r=Math.floor(i/S),c=i%S,a=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const nr=r+dr,nc=c+dc;if(nr>=0&&nr<S&&nc>=0&&nc<S)a.push(nr*S+nc);}return a;}
+function rc(i){return 'row '+(Math.floor(i/S)+1)+', column '+(i%S+1);}
+function glow(i){const b=cellEls[i];b.classList.add('hinted');setTimeout(()=>{b.classList.remove('hinted');},2200);try{b.focus({preventScroll:true});}catch(e){}}
+function deduce(){const cons=[];
+for(let i=0;i<S*S;i++){const c=grid[i];if(!c.rev||c.mine||!c.adj)continue;const n=nbrs(i),u=n.filter(k=>!grid[k].rev&&!grid[k].flag),f=n.filter(k=>grid[k].flag).length;if(u.length)cons.push({at:i,u,m:c.adj-f});}
+for(const k of cons){if(k.m===0)return {safe:k.u[0],why:'the '+grid[k.at].adj+' at '+rc(k.at)+' already has all its mines flagged'};if(k.m===k.u.length)return {mine:k.u[0],why:'the '+grid[k.at].adj+' at '+rc(k.at)+' has exactly that many hidden squares left'};}
+for(const a of cons)for(const b of cons){if(a===b||a.u.length>=b.u.length||!a.u.every(x=>b.u.includes(x)))continue;const d=b.u.filter(x=>!a.u.includes(x)),dm=b.m-a.m;
+if(dm===0&&d.length)return {safe:d[0],why:'the '+grid[a.at].adj+' at '+rc(a.at)+' and the '+grid[b.at].adj+' at '+rc(b.at)+' share the same mines'};
+if(dm===d.length&&d.length)return {mine:d[0],why:'the '+grid[b.at].adj+' at '+rc(b.at)+' needs '+dm+' more mine'+(dm>1?'s':'')+' than the '+grid[a.at].adj+' at '+rc(a.at)+' can hold'};}
+let best=-1,risk=2;const frontier=new Set();for(const k of cons)for(const x of k.u){frontier.add(x);const r=k.m/k.u.length;if(r<risk||(r===risk&&best<0)){risk=r;best=x;}}
+const inner=[];for(let i=0;i<S*S;i++)if(!grid[i].rev&&!grid[i].flag&&!frontier.has(i))inner.push(i);
+if(inner.length){let fm=0;for(const k of cons)fm+=k.m/Math.max(1,cons.filter(q=>q.u.some(x=>k.u.includes(x))).length);const ir=Math.max(0,(MINES-flags-fm))/inner.length;if(ir<risk){risk=ir;best=inner[(inner.length/2)|0];}}
+return best>=0?{guess:best,risk}:null;}
+function hint(){if(!$('start').classList.contains('hidden'))return 'Pick a level and press Play.';
+if(won)return 'Board cleared! Press Play Again.';
+if(dead)return 'That was a mine. Take back that move, or start a new game.';
+if(firstClick){const m=Math.floor(S*S/2);glow(m);return 'Tap any square to start: the first tap is always safe and opens an area. The middle is a good start.';}
+const wrong=grid.findIndex(c=>c.flag&&!c.mine);
+const d=deduce();if(!d)return 'Keep going!';
+if(d.safe!==undefined){if(grid[d.safe].mine&&wrong>=0){glow(wrong);return 'Check your flags: the one at '+rc(wrong)+' does not add up with the numbers around it.';}glow(d.safe);return rc(d.safe)+' is safe to open: '+d.why+'.';}
+if(d.mine!==undefined){if(!grid[d.mine].mine&&wrong>=0){glow(wrong);return 'Check your flags: the one at '+rc(wrong)+' does not add up with the numbers around it.';}glow(d.mine);return rc(d.mine)+' must be a mine: '+d.why+'. Flag it (hold or right-click).';}
+glow(d.guess);return 'Nothing is certain right now. The least risky square looks like '+rc(d.guess)+' (about '+Math.round(d.risk*100)+'% chance of a mine).';}
+/* ---- coach marks on the first game ---- */
+let tut=0,tutSeen=false;try{tutSeen=localStorage.getItem('minesTut')==='1';}catch(e){}
+const hintLine=$('hintLine'),hintIdle=hintLine.innerHTML;
+const STEPS=['','👆 Tap any square to start. The first tap is always safe.','🔢 A number counts the mines touching that square, diagonals too. Use them to find safe squares.','🚩 Hold a square (or right-click) to flag a mine. Tap a number whose mines are all flagged to open the rest.'];
+function paintTut(){if(!tut){hintLine.className='hint';hintLine.innerHTML=hintIdle;return;}hintLine.className='hint coach';hintLine.innerHTML='<span>'+STEPS[tut]+'</span><button id="tutBtn">'+(tut===3?'Got it':'Skip')+'</button>';press($('tutBtn'),()=>{if(tut===2){tut=3;paintTut();return;}endTut();});}
+function endTut(){tut=0;paintTut();tutSeen=true;try{localStorage.setItem('minesTut','1');}catch(e){}}
+function startTut(){tut=level==='daily'?2:1;paintTut();}
+function tutRevealed(){if(tut===1){tut=2;paintTut();}}
+const _toggle=toggleFlag;toggleFlag=function(i){_toggle(i);if(tut===2||tut===3){if(grid[i].flag)endTut();}};
+press($('hintBtn'),()=>{if(tut)endTut();hintLine.className='hint coach';hintLine.innerHTML='<span>💡 '+hint()+'</span><button id="tutBtn">OK</button>';press($('tutBtn'),()=>{hintLine.className='hint';hintLine.innerHTML=hintIdle;});});
+/* ---- title ---- */
+function paintStart(){document.querySelectorAll('[data-lv]').forEach(b=>{b.classList.toggle('on',b.dataset.lv===level);b.setAttribute('aria-pressed',String(b.dataset.lv===level));});
+const b=+localStorage.getItem(bestKey());$('startBest').textContent=(level==='daily'?"Today's board: ":'Best: ')+(b?b+'s':'–')+' · 🎖 '+rankName()+' · 🏆 '+wins+' wins';}
+document.querySelectorAll('[data-lv]').forEach(b=>press(b,()=>{level=b.dataset.lv;try{localStorage.setItem('minesLevel',level);}catch(e){}paintStart();}));
+function showTitle(){clearInterval(timer);timer=null;$('over').classList.add('hidden');paintStart();$('start').classList.remove('hidden');scene('title');setTimeout(()=>{try{$('playBtn').focus({preventScroll:true});}catch(e){}},0);}
+function play(withTut){initAudio();$('start').classList.add('hidden');newGame();if(withTut||!tutSeen)startTut();else{tut=0;paintTut();}}
+press($('playBtn'),()=>play(false));
+/* ---- codes: just for fun; a game with a code on keeps no record ---- */
+const CODES={SAFEPATH:'Safe path: five safe squares open for you',MINERADAR:'Mine radar: hidden mines show faintly',EXTRALIFE:'Extra life: the next mine you tap is flagged instead'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='MINERADAR')radar=true;if(c==='EXTRALIFE')extraLife=true;
+if(c==='SAFEPATH'&&!dead&&!won){if(firstClick)reveal(Math.floor(S*S/2));for(let n=0;n<5&&!won;n++){const k=grid.findIndex(x=>!x.rev&&!x.mine&&!x.flag);if(k<0)break;reveal(k);}}
+render();return{ok:true,message:CODES[c]};}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>play(false),
+onExit:showTitle,
+onTutorial:()=>play(true),
+onHint:hint,
+onCheat:code,
+});
 buildUI();
-newGame();
+newGame(true);
+showTitle();
 </script>
 </body>
 </html>

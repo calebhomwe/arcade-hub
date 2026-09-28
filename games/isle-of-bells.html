@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Isle of Bells — Cozy Life</title>
 <style>
@@ -10,14 +11,14 @@
   body{background:#0e0a14;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#ffe9c7;
     overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
   .back{position:fixed;top:10px;left:12px;z-index:60;color:#cbb8d9;text-decoration:none;font-size:13px;
-    font-weight:800;background:rgba(0,0,0,.35);padding:6px 12px;border-radius:10px;backdrop-filter:blur(4px)}
+    font-weight:800;background:rgba(0,0,0,.35);padding:0 12px;border-radius:10px;backdrop-filter:blur(4px);display:inline-flex;align-items:center;min-height:44px}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 0%,#123, #0c1520 70%)}
   #game{display:block;position:absolute;max-width:none;max-height:none;touch-action:none}
   #hud{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:7px;padding:8px 10px;
     pointer-events:none;z-index:50;flex-wrap:wrap;justify-content:center}
   .stat{background:rgba(20,14,28,.74);border:1px solid rgba(255,233,199,.16);border-radius:12px;padding:4px 10px;
     font-weight:800;font-size:13px;color:#ffe9c7;display:flex;gap:5px;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.35)}
-  .stat small{color:#b9a3c9;font-weight:600;font-size:10px}
+  .stat small{color:#b9a3c9;font-weight:600;font-size:12px}
   #toolbar{position:fixed;left:0;right:0;bottom:6px;display:flex;gap:6px;justify-content:center;z-index:50;
     padding:0 8px;flex-wrap:nowrap;overflow-x:auto}
   .tool,.iconbtn{background:rgba(20,14,28,.82);border:2px solid rgba(255,233,199,.14);border-radius:13px;
@@ -70,21 +71,35 @@
   .li{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 10px}
   .li .e{font-size:24px;flex:none}
   .li .n{flex:1;font-weight:700;font-size:13px}
-  .li .n small{display:block;color:#b9a3c9;font-weight:600;font-size:11px}
+  .li .n small{display:block;color:#b9a3c9;font-weight:600;font-size:12px}
   .li .p{font-weight:800;color:#ffd86b;font-size:13px;white-space:nowrap}
   .li .a{background:linear-gradient(180deg,#ffb347,#e8881f);color:#3a1d02;border:none;border-radius:10px;min-height:40px;
     padding:0 14px;font-weight:900;cursor:pointer;font-size:13px;flex:none}
   .li .a.gray{background:#4a3a55;color:#ffe9c7}
   .bagnote{font-size:12px;color:#b9a3c9;font-weight:600}
-  .mini{font-size:11px;color:#8d7a9c}
+  .mini{font-size:12px;color:#8d7a9c}
   .hint{font-size:12px;color:#b9a3c9;font-weight:600;background:rgba(255,255,255,.07);border-radius:10px;padding:6px 10px}
   .jrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700}
   .jrow span{color:#b9a3c9;font-weight:600}
   .jrow b{color:#ffd86b}
-  .jsection{font-size:11px;color:#8d7a9c;font-weight:800;text-transform:uppercase;letter-spacing:.14em;margin:10px 0 4px;text-align:left}
+  .jsection{font-size:12px;color:#8d7a9c;font-weight:800;text-transform:uppercase;letter-spacing:.14em;margin:10px 0 4px;text-align:left}
   .jback{width:100%;background:#1a1322;border:2px solid rgba(255,233,199,.25);border-radius:12px;color:#ffe9c7;font-size:12px;font-weight:600;padding:8px;text-align:center;outline:none;margin:6px 0;box-sizing:border-box;min-height:60px}
   .jspl{display:flex;gap:8px;margin-top:6px}
   .jspl .btn{flex:1;margin:0 0 4px}
+  #coach{position:fixed;left:50%;top:96px;transform:translateX(-50%);z-index:72;max-width:min(92vw,420px);
+    background:linear-gradient(180deg,#fff6e3,#ffe6bd);border:3px solid #fff;border-radius:18px;padding:9px 10px 9px 14px;
+    color:#4a2f1f;font-weight:800;font-size:14px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.5);display:flex;gap:10px;align-items:center}
+  #coach.hidden,#dayCard.hidden,.codes.hidden{display:none}
+  #coach button,#dayCard button{flex:none;border:none;border-radius:10px;min-height:40px;min-width:52px;padding:0 12px;font-weight:900;cursor:pointer;
+    background:linear-gradient(180deg,#ffb347,#e8881f);color:#3a1d02}
+  #dayCard{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:79;width:min(90vw,340px);text-align:center;
+    background:linear-gradient(180deg,#2b2033,#3a2c44);border:1px solid rgba(255,216,107,.4);border-radius:20px;padding:16px;box-shadow:0 16px 60px rgba(0,0,0,.7)}
+  #dayCard .title{font-size:22px}
+  #dayCard .jrow{margin:4px 0}
+  #dayCard button{width:100%;margin-top:10px;min-height:46px}
+  .codes{position:fixed;left:12px;top:60px;z-index:60;background:rgba(20,14,28,.85);color:#ffd86b;font-size:12px;font-weight:900;letter-spacing:.12em;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,216,107,.4)}
+  button:focus-visible,input:focus-visible,.back:focus-visible{outline:3px solid #ffd86b;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){.big,.toast{animation:none}.tool,.iconbtn,.btn,.chip,.li .a,.x{transition:none}}
 </style>
 </head>
 <body>
@@ -113,6 +128,9 @@
 </div>
 
 <div id="speech"></div>
+<div id="coach" class="hidden" role="status"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
+<div id="dayCard" class="hidden" role="dialog" aria-label="Day summary"><div class="title" id="dayTitle">🌙 Day 1 wrapped</div><div id="dayRows"></div><button id="dayBtn">☀️ Keep playing</button></div>
+<div class="codes hidden" id="codesOn">CODES ON · NOT SAVING</div>
 <div id="toastWrap"></div>
 <button class="iconbtn" id="muteBtn">🔊</button>
 <button id="help">❔</button>
@@ -1042,10 +1060,12 @@ function actRock(r){
   render();
 }
 function actPlot(p){
+  var pc=p.crop&&(typeof p.crop==="string"?CROP_BY_ID[p.crop]:p.crop);
+  if(p.crop&&!pc){ p.crop=null; p.progress=0; }
   if(p.crop){
-    if(p.progress>=p.crop.grow){
+    if(p.progress>=pc.grow){
       state.stats.harvests++; questInc("harvest");
-      giveItem({id:p.crop.id+"" ,e:p.crop.e,name:p.crop.name,price:p.crop.value,kind:"item"},1,{x:p.x+0.5,y:p.y});
+      giveItem({id:pc.id+"" ,e:pc.e,name:pc.name,price:pc.value,kind:"item"},1,{x:p.x+0.5,y:p.y});
       p.crop=null; p.progress=0; p.waterUntil=0;
       sfx("catch"); burst(p.x+0.5,p.y+0.5,["✨","🌾"],6,26,true);
       floatText(p.x+0.5,p.y-0.4,"Harvest!","#bbf7d0");
@@ -1054,9 +1074,9 @@ function actPlot(p){
     if(activeTool()==="can"&&state.tools.can){
       p.waterUntil=nowMs()+30000;
       sfx("water"); burst(p.x+0.5,p.y+0.4,["💧","✨"],4,20,false);
-      toast(p.crop.name+" watered — growing 2× faster!"); snapshotObjects(); return;
+      toast(pc.name+" watered — growing 2× faster!"); snapshotObjects(); return;
     }
-    toast(p.crop.name+" growing… "+(p.waterUntil>nowMs()?"(wet! 🚿)":"water it with 🚿 for 2×"));
+    toast(pc.name+" growing… "+(p.waterUntil>nowMs()?"(wet! 🚿)":"water it with 🚿 for 2×"));
     return;
   }
   /* plant: auto-buy seed */
@@ -1529,6 +1549,7 @@ function update(dt){
     rocks.forEach(function(r){ r.hits=0; r.at=0; });
     toast("🌅 Day "+day+" — a new dawn on Isle of Bells!");
     sfx("quest");
+    dayRecap(day-1);
   }
   lastDay=day;
 
@@ -2437,6 +2458,8 @@ function startGame(){
   save();
   toast("Welcome to Isle of Bells, "+state.name+"!");
   loopStart();
+  scene("play");
+  if(!tutSeen) startTut();
 }
 var loopStarted=false;
 function loopStart(){
@@ -2506,8 +2529,78 @@ function init(){
   setInterval(function(){ snapshotObjects(); },8000);
   if(state.muted) $("muteBtn").textContent="🔇";
 }
+/* ============================== ARCADE SDK ============================== */
+var SDK=window.ArcadeSDK||null;
+function scene(sc,extra){ try{ SDK&&SDK.state(Object.assign({scene:sc},extra||{})); }catch(e){} }
+function cheated(){ return !!(SDK&&SDK.cheated); }
+/* A session with codes on is never written to the save or the awards. */
+var _save=save; save=function(){ if(cheated()) return; _save(); };
+var _awards=checkAwards; checkAwards=function(){ if(cheated()) return; _awards(); };
+/* Day summary: what the day just finished brought in. */
+var dayBase=null;
+function statSnap(){ var s=state.stats; return {bells:s.bellsEarned||0,bugs:s.bugs||0,fish:s.fish||0,digs:s.digs||0,harvests:s.harvests||0,shakes:s.shakes||0}; }
+function dayRecap(d){
+  var now=statSnap(),b=dayBase||now; dayBase=now;
+  if(!loopStarted||!$("ovIntro").classList.contains("hidden")) return;
+  var rows=[["💰 Bells earned",now.bells-b.bells],["🦋 Bugs caught",now.bugs-b.bugs],["🐟 Fish caught",now.fish-b.fish],["⛏️ Digs",now.digs-b.digs],["🌾 Harvests",now.harvests-b.harvests],["🌳 Trees shaken",now.shakes-b.shakes]];
+  $("dayTitle").textContent="🌙 Day "+d+" wrapped";
+  $("dayRows").innerHTML=rows.map(function(r){ return '<div class="jrow"><span>'+r[0]+'</span><b>'+fmtB(r[1])+'</b></div>'; }).join("")+'<div class="jrow"><span>🏡 Island vibe</span><b>'+state.vibe+'</b></div>';
+  $("dayCard").classList.remove("hidden");
+  scene("over",{score:now.bells-b.bells,day:d});
+}
+$("dayBtn").addEventListener("click",function(){ $("dayCard").classList.add("hidden"); scene("play"); sfx("click"); });
+/* First-time coach: each step is done by doing it. */
+var tutSeen=false; try{ tutSeen=localStorage.getItem("isleTut")==="1"; }catch(e){}
+var tut=0,tutFrom=null,tutTimer=null;
+var TUT=["","👣 Walk around: WASD or the arrow keys, or drag anywhere on the island.","🌳 Shake a tree: walk up to one and press Space, or tap it.","🦋 Catch a bug: pick the net 🪡 (key 1) and tap a bug.","🗯️ Tap a villager to chat: they give requests for bells and furniture. 🎒 bag, 🏪 shop and 🏛️ museum are on the bar below."];
+function coachShow(){ $("coachTxt").textContent=TUT[tut]; $("coachBtn").textContent=tut===4?"Got it":"Skip"; $("coach").classList.remove("hidden"); }
+function endTut(){ tut=0; $("coach").classList.add("hidden"); tutSeen=true; try{ localStorage.setItem("isleTut","1"); }catch(e){} if(tutTimer){ clearInterval(tutTimer); tutTimer=null; } }
+function startTut(){ tut=1; tutFrom={x:player.x,y:player.y,s:statSnap()}; coachShow(); if(tutTimer) clearInterval(tutTimer);
+  tutTimer=setInterval(function(){ var n=statSnap();
+    if(tut===1&&dist(player.x,player.y,tutFrom.x,tutFrom.y)>1.5){ tut=2; tutFrom.s=n; coachShow(); }
+    else if(tut===2&&n.shakes>tutFrom.s.shakes){ tut=3; tutFrom.s=n; coachShow(); }
+    else if(tut===3&&n.bugs>tutFrom.s.bugs){ tut=4; coachShow(); }
+  },400); }
+$("coachBtn").addEventListener("click",function(){ endTut(); sfx("click"); });
+/* Hint: what to do next for the request you are on. */
+function hint(){
+  if(!$("ovIntro").classList.contains("hidden")) return "Type a name, pick a look and press Set Sail.";
+  if(bagCount()>=BAG_MAX) return "Your pockets are full ("+BAG_MAX+"): sell things at the shop 🏪 or donate new finds to the museum 🏛️.";
+  var q=state.quest;
+  if(q&&q.finished) return "Your request is done: go and talk to "+villName(q.vill)+" for your reward.";
+  if(q){
+    var how={bugs:"pick the net 🪡 (key 1) and tap bugs"+(isNight(gameMinutes())?"; more come out at night":""),
+      fish:state.tools.rod?"pick the rod 🎣 (key 2) and tap the water":"buy the fishing rod 🎣 at the shop, then tap the water",
+      fruit:"shake a fruit tree: fruit drops next to it",harvest:"tap a soil patch by your house to plant, water it with 🚿 (key 4), and tap it again when it is ripe",
+      dig:"dig the sparkle spots ⭐ with the shovel ⛏️ (key 3)",shake:"walk up to trees and press Space, or tap them",furn:"buy furniture at the shop 🏪 and place it from your bag"}[q.t]||"keep exploring";
+    return villName(q.vill)+" asked: "+q.prog+" of "+q.goal+" done. Next: "+how+".";
+  }
+  return "Nobody has asked you for anything yet: tap a villager to chat and get a request."+(state.bells<200?" Low on bells? Sell fruit or bugs at the shop.":"");
+}
+/* Codes: just for fun; while one is on nothing is saved. */
+var CODES={BELLRAIN:"Bell rain: 10,000 bells",ALLTOOLS:"All tools: rod, axe and slingshot unlocked",QUICKGROW:"Quick grow: every planted crop ripens now"};
+function code(c){ if(!CODES[c]) return {ok:false}; $("codesOn").classList.remove("hidden");
+  if(c==="BELLRAIN"){ state.bells+=10000; renderHud(); toast("💰 +10,000 bells!"); }
+  if(c==="ALLTOOLS"){ ["net","rod","shovel","can","axe","sling"].forEach(function(t){ state.tools[t]=true; }); renderTools(); }
+  if(c==="QUICKGROW"){ plots.forEach(function(p){ var pc=p.crop&&(typeof p.crop==="string"?CROP_BY_ID[p.crop]:p.crop); if(pc) p.progress=pc.grow; }); render(); }
+  return {ok:true,message:CODES[c]}; }
+function toTitle(){ ["ovHelp","ovShop","ovBag","ovMus","ovHome","ovQuest","ovJrn"].forEach(close); $("dayCard").classList.add("hidden"); endTutQuiet(); snapshotObjects(); $("nameIn").value=state.name||""; open("ovIntro"); scene("title"); }
+function endTutQuiet(){ tut=0; $("coach").classList.add("hidden"); if(tutTimer){ clearInterval(tutTimer); tutTimer=null; } }
+/* Restart puts you back at your front door with nothing open; the island itself is never wiped. */
+function backHome(){ ["ovHelp","ovShop","ovBag","ovMus","ovHome","ovQuest","ovJrn","ovIntro"].forEach(close); $("dayCard").classList.add("hidden");
+  player.x=player.tx=PLAN.home[0]+0.5; player.y=player.ty=PLAN.home[1]+1.5; player.path=[]; player.moving=false; player.moveAct=null; cutActions(); loopStart(); scene("play"); }
+if(SDK) SDK.init({
+  pauseButton:"tr",pauseKeys:"p+esc",
+  onRestart:backHome,
+  onExit:toTitle,
+  onTutorial:function(){ if(!$("ovIntro").classList.contains("hidden")) startGame(); else startTut(); },
+  onHint:hint,
+  onCheat:code
+});
 load();
 init();
+dayBase=statSnap();
+scene($("ovIntro").classList.contains("hidden")?"play":"title");
 })();
 </script>
 </body>

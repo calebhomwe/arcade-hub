@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Tic Tac Toe</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#0d9488,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .hud{display:flex;gap:14px;align-items:center;font-weight:900;font-size:15px}
 .hud .p1{color:#38bdf8}.hud .p2{color:#f472b6}
@@ -39,6 +40,17 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 @keyframes winboom{0%,100%{transform:translate(0,0)}20%{transform:translate(-4px,2px)}45%{transform:translate(4px,-2px)}70%{transform:translate(-2px,1px)}}
 #wrap.boom{animation:winboom .35s ease}
 .hidden{display:none}
+.mbtn.on{background:linear-gradient(90deg,#34d399,#38bdf8);color:#06281c}
+.mbtn:disabled{opacity:.4}
+.cell:focus-visible,.btn:focus-visible,.mbtn:focus-visible,.mute:focus-visible,.back:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.cell.hinted{box-shadow:0 0 0 3px #34d399,0 0 18px rgba(52,211,153,.7)}
+.cell.xray{box-shadow:inset 0 0 0 3px #f472b6}
+.rules{text-align:left;color:#cbd5e1;font-size:15px;line-height:1.55;max-width:340px;padding:0 22px 0 42px}
+.rules b{color:#fff}
+.say{font-size:13px;color:#6ee7b7;font-weight:800;min-height:18px;text-align:center;max-width:min(92vw,360px)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+@media (prefers-reduced-motion:reduce){.cell.win,.cell.appear,#wrap.boom,.banner{animation:none}.confetti{display:none}.cell{transition:none}}
 .confetti{position:fixed;left:50%;top:35%;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:60;transition:transform .9s cubic-bezier(.15,.8,.3,1),opacity .9s ease-in;will-change:transform,opacity}
 </style>
 </head>
@@ -55,16 +67,24 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 <div class="streak" id="meta">🏆 0 · 💀 0 · 🤝 0</div>
 <div class="streak" id="metaM" style="color:#fda4af">⚠️ Misère: 🏆 0 · 💀 0</div>
 <div id="wrap"><div id="board"></div></div>
-<button class="btn" id="newBtn">🔄 New Round</button>
+<div class="say" id="say" aria-live="polite"></div>
+<div class="tools"><button class="btn" id="newBtn">🔄 New Round</button><button class="mbtn" id="undoBtn" disabled>↩ Undo</button><button class="mbtn" id="hintBtn">💡 Hint</button></div>
+<div class="codes hidden" id="codesOn">CODES ON</div>
 <div class="ov" id="start">
   <h1>Tic Tac Toe</h1>
+  <ol class="rules">
+    <li>Tap an empty square. <b>X</b> goes first, then <b>O</b>.</li>
+    <li>Three in a row across, down or corner to corner wins.</li>
+    <li>A full board with no line is a draw.</li>
+  </ol>
   <div style="color:#cbd5e1;font-size:15px">Choose mode:</div>
-  <div class="modes">
-    <button class="mbtn big" data-m="pvp">👥 2 Players</button>
-    <button class="mbtn big" data-m="ai">🤖 vs Computer</button>
-    <button class="mbtn big" data-m="ai-easy">🤖 Easy</button>
-    <button class="mbtn big" data-m="misere">⚠️ Misère</button>
+  <div class="modes" role="group" aria-label="Mode">
+    <button class="mbtn" data-m="pvp">👥 2 Players</button>
+    <button class="mbtn" data-m="ai-easy">🤖 Easy CPU</button>
+    <button class="mbtn" data-m="ai">🤖 Hard CPU</button>
+    <button class="mbtn" data-m="misere">⚠️ Misère</button>
   </div>
+  <button class="btn" id="playBtn">▶ Play</button>
   <div style="color:#64748b;font-size:12px;max-width:300px">⚠️ Misère: making 3-in-a-row LOSES — force your opponent!</div>
 </div>
 <div class="ov hidden" id="over">
@@ -75,7 +95,12 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 </div>
 <script>
 
-let board=[],turn=1,mode='ai',scores=[0,0],winner=0,locked=false,overTimer=null,roundToken=0;
+let board=[],turn=1,mode='ai',scores=[0,0],winner=0,locked=false,overTimer=null,roundToken=0,hist=[],cpuNaps=0,xray=false;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+function save(k,v){if(cheated())return;try{localStorage.setItem(k,v);}catch(e){}}
 let streak=0,lastWinner=0,best=+localStorage.getItem('tttBest')||0;
 let recW=+localStorage.getItem('tttRecW')||0,recL=+localStorage.getItem('tttRecL')||0,recD=+localStorage.getItem('tttRecD')||0,nextBadge=+localStorage.getItem('tttBadge')||5;
 let fastRound=+localStorage.getItem('tttFastRound')||0,roundT0=0;
@@ -90,7 +115,7 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function snd(n){if(muted)return;if(n==='place')sfx('pop');if(n==='win')sfx('win');if(n==='lose')sfx('lose');if(n==='draw')sfx('tick');if(n==='badge')sfx('levelup');}
-function confetti(){const cols=['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.background=cols[i%cols.length];document.body.appendChild(d);const a=Math.random()*Math.PI*2,s=90+Math.random()*240,dx=Math.cos(a)*s,dy=Math.sin(a)*s-140,rot=(Math.random()*720-360)|0;requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)';d.style.opacity='0';}));setTimeout(()=>d.remove(),1000);}}
+function confetti(){if(RM)return;const cols=['#38bdf8','#f472b6','#34d399','#fbbf24','#a78bfa'];for(let i=0;i<30;i++){const d=document.createElement('div');d.className='confetti';d.style.background=cols[i%cols.length];document.body.appendChild(d);const a=Math.random()*Math.PI*2,s=90+Math.random()*240,dx=Math.cos(a)*s,dy=Math.sin(a)*s-140,rot=(Math.random()*720-360)|0;requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transform='translate('+dx+'px,'+dy+'px) rotate('+rot+'deg)';d.style.opacity='0';}));setTimeout(()=>d.remove(),1000);}}
 const muteBtn=document.getElementById('muteBtn');
 function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('tttMuted',muted?'1':'0');renderMute();});
@@ -100,19 +125,20 @@ updStreak();
 updMisMeta();
 function updMeta(){document.getElementById('meta').textContent='🏆 '+recW+' \u2022 💀 '+recL+' \u2022 🤝 '+recD+(fastRound?' \u2022 ⚡ '+(fastRound/1000).toFixed(1)+'s':'');}
 function updMisMeta(){document.getElementById('metaM').textContent='⚠️ Misère: 🏆 '+misW+' \u2022 💀 '+misL;}
-function recordRound(){if(mode!=='ai'&&mode!=='ai-easy')return;const ms=performance.now()-roundT0;if(!fastRound||ms<fastRound){fastRound=Math.round(ms);localStorage.setItem('tttFastRound',fastRound);bannerP('⚡ FASTEST '+((fastRound/1000).toFixed(1))+'s!');}updMeta();}
+function recordRound(){if(mode!=='ai'&&mode!=='ai-easy')return;if(cheated())return;const ms=performance.now()-roundT0;if(!fastRound||ms<fastRound){fastRound=Math.round(ms);localStorage.setItem('tttFastRound',fastRound);bannerP('⚡ FASTEST '+((fastRound/1000).toFixed(1))+'s!');}updMeta();}
 function bannerP(txt){const bn=document.createElement('div');bn.className='banner';bn.id='pBanner';bn.textContent=txt;document.body.appendChild(bn);snd('badge');setTimeout(()=>{const b=document.getElementById('pBanner');if(b)b.remove();},1600);}
-function checkBadge(){if(recW>=nextBadge){bannerP('🏅 '+nextBadge+' WINS BADGE!');nextBadge*=2;localStorage.setItem('tttBadge',nextBadge);}}
-function recordResult(r){if(!aiMode()||mode==='misere')return;if(r===1)recW++;else if(r===2)recL++;else recD++;localStorage.setItem('tttRecW',recW);localStorage.setItem('tttRecL',recL);localStorage.setItem('tttRecD',recD);updMeta();checkBadge();}
-function newRound(){
-  clearTimeout(overTimer);
+function checkBadge(){if(recW>=nextBadge){bannerP('🏅 '+nextBadge+' WINS BADGE!');nextBadge*=2;save('tttBadge',nextBadge);}}
+function recordResult(r){if(!aiMode()||mode==='misere')return;if(r===1)recW++;else if(r===2)recL++;else recD++;save('tttRecW',recW);save('tttRecL',recL);save('tttRecD',recD);updMeta();checkBadge();}
+function newRound(quiet){
+  clearTimeout(overTimer);hist=[];say('');
   roundToken++;
   document.getElementById('over').classList.add('hidden');
   board=Array(9).fill(0);turn=1;winner=0;locked=false;
   roundT0=performance.now();
 document.getElementById('banner')?.remove();
 document.getElementById('winline')?.remove();
-render();updateTurn();
+render();updateTurn();updTools();
+if(quiet!==true)scene('play');
 }
 function updateTurn(){
 const t=document.getElementById('turn');
@@ -122,7 +148,8 @@ else t.textContent=aiMode()?(turn===1?'Your turn (X)':'CPU thinking... (O)'):tur
 const boardEl=document.getElementById('board');
 const cellEls=[];
 function buildUI(){
-for(let i=0;i<9;i++){const d=document.createElement('div');d.className='cell';d.dataset.i=i;boardEl.appendChild(d);cellEls.push(d);}
+for(let i=0;i<9;i++){const d=document.createElement('div');d.className='cell';d.dataset.i=i;d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label','Square '+(i+1));boardEl.appendChild(d);cellEls.push(d);}
+boardEl.addEventListener('keydown',e=>{const d=e.target.closest('.cell');if(!d)return;const i=+d.dataset.i;if(e.key==='Enter'||e.key===' '){e.preventDefault();place(i);}else{const mv={ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3}[e.key];if(mv!==undefined){e.preventDefault();const n=i+mv;if(n>=0&&n<9&&Math.abs(n%3-i%3)<2)cellEls[n].focus();}}});
 boardEl.addEventListener('pointerdown',e=>{
 const d=e.target.closest('.cell');if(!d)return;
 place(+d.dataset.i);
@@ -134,7 +161,7 @@ const d=cellEls[i];
 const cls='cell'+(v===1?' x':v===2?' o':'');
 if(d._cls!==cls){d._cls=cls;d.className=cls;}
 const t=v===1?'X':v===2?'O':'';
-if(d.textContent!==t)d.textContent=t;
+if(d.textContent!==t)d.textContent=t;d.setAttribute('aria-label','Square '+(i+1)+(t?', '+t:', empty'));
 d.style.animationDelay='';
 });
 }
@@ -142,7 +169,9 @@ function place(i,isAI){
 if(board[i]||winner||locked)return;
 if(!isAI&&aiMode()&&turn===2)return;
 initAudio();
+hist.push({i,p:turn});if(!isAI)say('');
 board[i]=turn;snd('place');
+if(!isAI&&tutOn)tutStep();
 const b=document.getElementById('board');
 b.children[i].textContent=turn===1?'X':'O';
 b.children[i].classList.add(turn===1?'x':'o','appear');
@@ -151,16 +180,16 @@ b.children[i].classList.add(turn===1?'x':'o','appear');
     const isMis=mode==='misere';
     winner=isMis?(turn===1?2:1):turn;
     line.forEach((k,i)=>{b.children[k].classList.add('win');b.children[k].style.animationDelay=(i*80)+'ms';});
-    const wEl=document.getElementById('wrap');wEl.classList.remove('boom');void wEl.offsetWidth;wEl.classList.add('boom');
+    if(!RM){const wEl=document.getElementById('wrap');wEl.classList.remove('boom');void wEl.offsetWidth;wEl.classList.add('boom');}
 scores[winner-1]++;
 document.getElementById('s1').textContent='X: '+scores[0];
 document.getElementById('s2').textContent=(aiMode()?'CPU: ':'O: ')+scores[1];
 if(winner===lastWinner)streak++;else{streak=1;lastWinner=winner;}
-if(streak>best){best=streak;localStorage.setItem('tttBest',best);}
+if(streak>best&&!cheated()){best=streak;localStorage.setItem('tttBest',best);}
 updStreak();
 if(isMis){
   if(winner===1)misW++;else misL++;
-  localStorage.setItem('tttMisW',misW);localStorage.setItem('tttMisL',misL);
+  save('tttMisW',misW);save('tttMisL',misL);
   updMisMeta();
 }else if(aiMode()){recordResult(winner);}
 recordRound();
@@ -171,7 +200,7 @@ const title=isMis?(winner===1?'You win (Misère)! 🎉':'CPU wins (Misère)! �
 const bn=document.createElement('div');bn.className='banner';bn.id='banner';
 bn.textContent=title;
 document.body.appendChild(bn);
-locked=true;updateTurn();
+locked=true;updateTurn();updTools();scene('over',{score:scores[0],outcome:aiMode()?(winner===1?'win':'loss'):'p'+winner});
 showOver(title,'Score '+scores[0]+' : '+scores[1]);
 return;
 }
@@ -179,12 +208,13 @@ if(!board.includes(0)){
 snd('draw');streak=0;lastWinner=0;updStreak();recordResult(0);recordRound();
 const bn=document.createElement('div');bn.className='banner';bn.id='banner';bn.textContent='Draw! 🤝';
 document.body.appendChild(bn);
-locked=true;updateTurn();
+locked=true;updateTurn();updTools();scene('over',{score:scores[0],outcome:'draw'});
 showOver('Draw! 🤝','Score '+scores[0]+' : '+scores[1]);
 return;
 }
 turn=turn===1?2:1;
-updateTurn();
+if(aiMode()&&turn===2&&cpuNaps>0){cpuNaps--;turn=1;say('The CPU is napping: go again ('+cpuNaps+' naps left).');}
+updateTurn();updTools();
   if(aiMode()&&turn===2&&!winner){locked=true;const tk=roundToken;const delay=420+Math.random()*380;setTimeout(()=>{if(tk!==roundToken)return;locked=false;aiMove();},delay);}
 }
 function showOver(title,sub){
@@ -301,23 +331,72 @@ if(isMax){if(s>best)best=s;}else{if(s<best)best=s;}
 }
 return best;
 }
-document.querySelectorAll('.modes .mbtn').forEach(b=>b.addEventListener('pointerdown',()=>{
-mode=b.dataset.m;scores=[0,0];
-document.getElementById('s1').textContent='X: 0';
-document.getElementById('s2').textContent=aiMode()?'CPU: 0':'O: 0';
-document.getElementById('start').classList.add('hidden');
-newRound();
-}));
-document.getElementById('newBtn').addEventListener('pointerdown',newRound);
-document.getElementById('nextBtn').addEventListener('pointerdown',newRound);
-document.getElementById('modeBtn').addEventListener('pointerdown',()=>{
-clearTimeout(overTimer);
-document.getElementById('over').classList.add('hidden');
-document.getElementById('start').classList.remove('hidden');
+const $=id=>document.getElementById(id);
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+function say(t){const el=$('say');if(el)el.textContent=t;}
+let pick='ai';try{pick=localStorage.getItem('tttMode')||'ai';}catch(e){}if(!['pvp','ai','ai-easy','misere'].includes(pick))pick='ai';
+function paintModes(){document.querySelectorAll('.modes .mbtn').forEach(b=>{b.classList.toggle('on',b.dataset.m===pick);b.setAttribute('aria-pressed',String(b.dataset.m===pick));});}
+document.querySelectorAll('.modes .mbtn').forEach(b=>press(b,()=>{pick=b.dataset.m;try{localStorage.setItem('tttMode',pick);}catch(e){}paintModes();}));
+function startMatch(){mode=pick;scores=[0,0];
+$('s1').textContent='X: 0';$('s2').textContent=aiMode()?'CPU: 0':'O: 0';
+$('start').classList.add('hidden');newRound();if(!tutSeen)startTut();setTimeout(()=>{try{cellEls[4].focus({preventScroll:true});}catch(e){}},0);}
+press($('playBtn'),startMatch);
+press($('newBtn'),()=>newRound());
+press($('nextBtn'),()=>newRound());
+function toTitle(){clearTimeout(overTimer);roundToken++;locked=false;$('over').classList.add('hidden');paintModes();$('start').classList.remove('hidden');scene('title');}
+press($('modeBtn'),toTitle);
+/* ---- undo: your move and the CPU's reply come off the board ---- */
+function updTools(){const u=$('undoBtn');if(u)u.disabled=!hist.length||!!winner||(locked&&!winner)||!board.includes(0);if(xray)peek();}
+function takeOne(){const m=hist.pop();if(!m)return;board[m.i]=0;turn=m.p;}
+function undo(){if(winner||locked||!hist.length)return;
+if(aiMode()){if(hist[hist.length-1].p===2)takeOne();if(hist.length&&hist[hist.length-1].p===1)takeOne();turn=1;}else takeOne();
+cellEls.forEach(c=>{c._cls='';c.classList.remove('win','appear');});render();updateTurn();updTools();say('');}
+press($('undoBtn'),undo);
+document.addEventListener('keydown',e=>{if((SDK&&SDK.paused)||!$('start').classList.contains('hidden'))return;
+if((e.key==='z'||e.key==='Z'||e.key==='u'||e.key==='U')&&!e.repeat)undo();
+else if(e.key>='1'&&e.key<='9'&&!(e.target&&e.target.tagName==='INPUT'))place(+e.key-1);});
+/* ---- hint: the best square by full look-ahead ---- */
+function bestFor(p){const mis=mode==='misere';let pick=-1,top=-Infinity;
+for(let i=0;i<9;i++){if(board[i])continue;board[i]=p;let v;
+if(p===2)v=mis?minimaxMis(false,1):minimax(false,1);
+else{v=-(mis?minimaxMis(true,1):minimax(true,1));}
+board[i]=0;if(v>top){top=v;pick=i;}}
+return pick;}
+const NAMES=['top left','top middle','top right','middle left','centre','middle right','bottom left','bottom middle','bottom right'];
+function glow(i){const c=cellEls[i];c.classList.add('hinted');setTimeout(()=>c.classList.remove('hinted'),1800);}
+function hint(){if(!$('start').classList.contains('hidden'))return 'Pick a mode and press Play. X goes first.';
+if(winner||!board.includes(0))return 'Round over: press Next Round.';
+if(aiMode()&&turn===2)return 'Wait for the CPU to move.';
+const p=turn,i=bestFor(p);if(i<0)return '';glow(i);
+const me=p===1?'X':'O',them=p===1?'O':'X';
+board[i]=p;const wins=checkWin(p);board[i]=0;board[i]=3-p;const blocks=checkWin(3-p);board[i]=0;
+if(mode==='misere')return 'Misère: three in a row loses. The safest square is the '+NAMES[i]+'.';
+return wins?me+' can win right now: take the '+NAMES[i]+'.':blocks?'Block '+them+': take the '+NAMES[i]+'.':'Take the '+NAMES[i]+': it keeps the most lines open for '+me+'.';}
+press($('hintBtn'),()=>{const t=hint();if(t)say('💡 '+t);});
+/* ---- first-round coach ---- */
+let tutOn=false,tutSeen=false;try{tutSeen=localStorage.getItem('tttTut')==='1';}catch(e){}
+function startTut(){tutOn=true;say('👆 You are X. Tap any square (or press 1 to 9) to play your first move.');}
+function tutStep(){tutOn=false;tutSeen=true;try{localStorage.setItem('tttTut','1');}catch(e){}setTimeout(()=>say(aiMode()?'The CPU answers with O. Undo takes back a move; Hint suggests one.':'Now O takes a turn. Undo takes back a move.'),0);}
+/* ---- codes: just for fun; a session with codes on saves no records ---- */
+function peek(){cellEls.forEach(c=>c.classList.remove('xray'));if(!aiMode()||winner||turn!==1||!board.includes(0))return;const i=bestFor(2);if(i>=0)cellEls[i].classList.add('xray');}
+const CODES={CPUNAP:'The CPU naps: you move twice, three times',XRAY:'X-ray: see the square the CPU wants next (pink outline)',CLEANSLATE:'Clean slate: the score board goes back to 0-0'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='CPUNAP')cpuNaps+=3;if(c==='XRAY'){xray=true;peek();}if(c==='CLEANSLATE'){scores=[0,0];$('s1').textContent='X: 0';$('s2').textContent=(aiMode()?'CPU: ':'O: ')+'0';}
+return{ok:true,message:CODES[c]};}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>{if(!$('start').classList.contains('hidden'))startMatch();else newRound();},
+onExit:toTitle,
+onTutorial:()=>{tutSeen=false;toTitle();},
+onHint:hint,
+onCheat:code,
 });
 buildUI();
-newRound();
-document.getElementById('start').classList.remove('hidden');
+paintModes();
+newRound(true);
+$('start').classList.remove('hidden');
+scene('title');
 </script>
 </body>
 </html>
