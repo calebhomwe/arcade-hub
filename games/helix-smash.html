@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Helix Smash</title>
 <style>
@@ -20,11 +21,17 @@
   .best { color:#fbbf24; font-size:clamp(16px,4vw,22px); font-weight:700; }
   .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
   .pill { background:rgba(10,12,26,.65); border:1px solid rgba(56,189,248,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#e0f2fe; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(56,189,248,.3); }
-  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
   .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
   .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(56,189,248,.4); background:rgba(10,12,26,.65); color:#e0f2fe; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(56,189,248,.3); }
   #hub { position:fixed; top:14px; left:16px; z-index:20; color:#bae6fd; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(56,189,248,.35); }
   @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+  #tut { position:fixed; left:0; right:0; bottom:9vh; z-index:9; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; text-align:center; padding:0 16px; }
+  #tut .tap { font-size:54px; animation:tapHint 1s ease-in-out infinite; }
+  #tut .card { background:rgba(10,12,26,.8); border:1px solid rgba(125,211,252,.45); border-radius:18px; padding:12px 18px; max-width:340px; color:#e0f2fe; font-weight:800; font-size:17px; }
+  #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
+  @keyframes tapHint { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(10px) scale(.9); } }
+  @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
 </style>
 </head>
 <body>
@@ -37,6 +44,7 @@
 </div>
 <div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
 <a id="hub" href="../index.html">← Hub</a>
+<div id="tut" class="hidden"><div class="tap" aria-hidden="true">👆</div><div class="card">Tap to smash through the platform<small id="tutMore">Blue and purple break, green bounces you down for a combo, and red or orange ends the run. Tap when a safe colour is at the front.</small></div></div>
 <div class="overlay" id="start">
   <h1>HELIX SMASH</h1>
   <div class="sub">Tap to <b>smash</b> through the platform below. <b style="color:#60a5fa">Blue/purple</b> break &rarr; <b style="color:#4ade80">green</b> bounces (combo!) &middot; <b style="color:#f87171">red/orange</b> = game over. Grab 💎 gems &amp; 💍 golden rings. 🧲 magnets vacuum gems toward you!</div>
@@ -174,7 +182,7 @@ function layout() {
   rx = Math.min(W, H) * 0.42;
   ry = Math.min(W, H) * 0.10;
   ringHalf = ry * 0.7;
-  ballR = Math.min(W, H) * 0.075;
+  ballR = Math.min(W, H) * 0.075 * (codes.BIGBALL ? 1.6 : 1);
   cx = W / 2;
   desired = H * 0.32;
   buildBallSprite();
@@ -190,6 +198,13 @@ let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
 let squash = 0, shake = 0, tGlobal = 0;
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+const SDK = window.ArcadeSDK || null;
+const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+const codes = {};
+let tutSeen = false, waiting = false;
+try { tutSeen = localStorage.getItem(KEY + '-tut') === '1'; } catch (e) {}
 try { ringBest = parseInt(localStorage.getItem(KEY + '-rings') || '0', 10) || 0; } catch (e) {}
 let comboRec = 0, runComboBest = 0, recCeleb = false;
 try { comboRec = parseInt(localStorage.getItem(KEY + '-combo') || '0', 10) || 0; } catch (e) {}
@@ -280,7 +295,37 @@ function startGame() {
   $('topbtns').classList.remove('hidden');
   $('start').classList.add('hidden');
   $('gameover').classList.add('hidden');
-  floaters.push({ text: 'TAP TO SMASH!', x: cx, y: desired - ballR - 26, t: 0, life: 2.4, color: '#7dd3fc' });
+  waiting = true;
+  $('tutMore').classList.toggle('hidden', tutSeen);
+  $('tut').classList.remove('hidden');
+  if (codes.SHIELDUP) shield = 3;
+  scene('play');
+}
+function toTitle() {
+  phase = 'ready'; waiting = false; particles = []; floaters = []; trail = []; rings = [];
+  ['gameover', 'tut', 'hud', 'topbtns'].forEach(id => $(id).classList.add('hidden'));
+  initWorld(); by = ballRestY(0); camY = by - desired;
+  $('ringInfo').textContent = '💍 Golden Rings Ever: ' + ringBest;
+  $('gemEverInfo').textContent = '💎 Gems Ever: ' + gemEverTotal;
+  $('start').classList.remove('hidden');
+  scene('title');
+}
+function sdkHint() {
+  if (phase === 'ready' || phase === 'dying') return 'Press Play, then tap to smash down through the tower.';
+  if (phase === 'falling') return 'Falling! Tap again as soon as you land.';
+  const p = platAt(cur + 1);
+  if (!p) return 'Tap to smash through the platform.';
+  const save = p.rot; p.rot += p.rs * 0.2; const c = topColor(p); p.rot = save;
+  if ((c === 'red' || c === 'orange') && !shield) return 'Wait: ' + c + ' is coming round on the next platform. Tap when a blue, purple or green part is at the front.';
+  if (c === 'green') return 'Green below: smash now to bounce through for a combo!';
+  return (shield && (c === 'red' || c === 'orange') ? 'Your shield will block the ' + c + ' part: smash now.' : 'Safe below: smash now.') + ' Grab gems and rings on the way for bonus points.';
+}
+function code(c) {
+  if (c === 'IRONBALL') codes.IRONBALL = 1;
+  else if (c === 'SHIELDUP') { codes.SHIELDUP = 1; shield = 3; }
+  else if (c === 'BIGBALL') { codes.BIGBALL = 1; layout(); }
+  else return { ok: false };
+  return { ok: true, message: { IRONBALL: 'Iron ball: red and orange break like the rest', SHIELDUP: 'Shield up: every run starts with 3 shields', BIGBALL: 'Big ball: a giant ball that grabs gems from further away' }[c] + '. Codes on: this run will not set a best.' };
 }
 function updateHUD() {
   $('score').textContent = score;
@@ -289,25 +334,27 @@ function updateHUD() {
   $('gems').textContent = gemsRun;
 }
 function endGame() {
-  const nb = score > best;
+  const cht = cheated();
+  const nb = score > best && !cht;
   if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
   $('finalScore').textContent = score;
   $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
-  const nr = runComboBest >= 2 && runComboBest > comboRec;
+  const nr = !cht && runComboBest >= 2 && runComboBest > comboRec;
   if (nr) {
     comboRec = runComboBest;
     try { localStorage.setItem(KEY + '-combo', String(comboRec)); } catch (e) {}
     sfx('win');
   }
   $('comboInfo').textContent = 'Best Combo: ×' + comboRec + (nr ? '  🏆 NEW!' : '');
-  const ngr = gemsRun > gemsBestRun;
+  const ngr = !cht && gemsRun > gemsBestRun;
   if (ngr) {
     gemsBestRun = gemsRun;
     try { localStorage.setItem(KEY + '-gemsbest', String(gemsBestRun)); } catch (e) {}
   }
-  try { localStorage.setItem(KEY + '-gemsever', String(gemEverTotal)); } catch (e) {}
+  try { if (!cht) localStorage.setItem(KEY + '-gemsever', String(gemEverTotal)); } catch (e) {}
   $('gemInfo').textContent = '💎 Best Gem Run: ' + gemsBestRun + ' (' + gemMilestone + ' bonuses) · Ever: ' + gemEverTotal + (ngr ? '  🏆 NEW!' : '');
   $('gameover').classList.remove('hidden');
+  scene('over', { score });
 }
 function die() {
   if (phase === 'dying') return;
@@ -339,7 +386,7 @@ function resolveLanding() {
   ensureWorld(fallTarget + 20);
   const p = platAt(fallTarget);
   const c = topColor(p);
-  if (c === 'red' || c === 'orange') {
+  if ((c === 'red' || c === 'orange') && !codes.IRONBALL) {
     if (shield > 0) {
       shield--;
       addFloater('🛡 BLOCKED!', cx, by - camY - 34, '#22d3ee');
@@ -394,6 +441,7 @@ function resolveLanding() {
 
 function update(dt) {
   tGlobal += dt;
+  if (RM) shake = 0;
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (squash > 0) squash = Math.max(0, squash - 6 * dt);
   if (magnet > 0) magnet = Math.max(0, magnet - dt);
@@ -466,7 +514,7 @@ function update(dt) {
         burst(px, psy, '#fbbf24', 12, 190);
         addRing(px, psy, '#fde68a');
         const nc = ringGot > ringBest;
-        if (nc) { ringBest = ringGot; try { localStorage.setItem(KEY + '-rings', String(ringBest)); } catch (e) {} }
+        if (nc && !cheated()) { ringBest = ringGot; try { localStorage.setItem(KEY + '-rings', String(ringBest)); } catch (e) {} }
         if (nc) { addFloater('🏆 NEW RING RECORD!', cx, psy - 84, '#fde68a'); sfx('levelup'); }
         else if (ringGot % 5 === 0) { addFloater('💍 RING COLLECTOR ×' + ringGot, cx, psy - 84, '#fde68a'); sfx('levelup'); }
         updateHUD();
@@ -679,6 +727,8 @@ function tap(e) {
   e.preventDefault();
   ensureAudio();
   if (phase !== 'resting') return;
+  if (SDK && SDK.paused) return;
+  if (waiting) { waiting = false; $('tut').classList.add('hidden'); if (!tutSeen) { tutSeen = true; try { localStorage.setItem(KEY + '-tut', '1'); } catch (e) {} } }
   shatter(cur);
   sfx('hit');
   buzz(8);
@@ -689,6 +739,7 @@ function tap(e) {
 }
 canvas.addEventListener('touchstart', tap, { passive: false });
 canvas.addEventListener('mousedown', tap);
+window.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'ArrowDown') { if (phase === 'resting') tap(e); else e.preventDefault(); } });
 
 $('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
 $('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
@@ -703,6 +754,15 @@ $('gemEverInfo').textContent = '💎 Gems Ever: ' + gemEverTotal;
 $('comboInfo').textContent = 'Best Combo: ×' + comboRec;
 updateHUD();
 requestAnimationFrame(loop);
+scene('title');
+if (SDK) SDK.init({
+  pauseButton: 'bl',
+  onRestart: () => startGame(),
+  onExit: toTitle,
+  onTutorial: () => { tutSeen = false; startGame(); },
+  onHint: sdkHint,
+  onCheat: code
+});
 </script>
 </body>
 </html>

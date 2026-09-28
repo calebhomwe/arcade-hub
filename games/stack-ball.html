@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Stack Ball</title>
 <style>
@@ -20,11 +21,17 @@
   .best { color:#4ade80; font-size:clamp(16px,4vw,22px); font-weight:700; }
   .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
   .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fef3c7; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(251,191,36,.3); }
-  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
   .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
   .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(251,191,36,.4); background:rgba(10,12,26,.65); color:#fef3c7; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(251,191,36,.3); }
   #hub { position:fixed; top:14px; left:16px; z-index:20; color:#fde68a; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); }
   @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+  #tut { position:fixed; left:0; right:0; bottom:9vh; z-index:9; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; text-align:center; padding:0 16px; }
+  #tut .tap { font-size:54px; animation:tapHint 1s ease-in-out infinite; }
+  #tut .card { background:rgba(10,12,26,.8); border:1px solid rgba(252,211,77,.45); border-radius:18px; padding:12px 18px; max-width:340px; color:#fef3c7; font-weight:800; font-size:17px; }
+  #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
+  @keyframes tapHint { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(10px) scale(.9); } }
+  @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
 </style>
 </head>
 <body>
@@ -36,6 +43,7 @@
 </div>
 <div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
 <a id="hub" href="../index.html">← Hub</a>
+<div id="tut" class="hidden"><div class="tap" aria-hidden="true">👆</div><div class="card">Tap to smash down through the tower<small id="tutMore">Tap again in mid-air to slam faster. Coloured parts break; landing on a black part ends the run.</small></div></div>
 <div class="overlay" id="start">
   <h1>STACK BALL</h1>
   <div class="sub">Tap to <b>smash down</b> through the rotating platforms — tap again mid-air to <b>slam</b> faster! Land on a <b style="color:#0a0a0f;background:#fff;padding:0 4px;border-radius:4px">black</b> segment = game over. Dodge the gaps & collect 💎 gems!</div>
@@ -151,7 +159,7 @@ function layout() {
   GAP = Math.min(W, H) * 0.19;
   rx = Math.min(W, H) * 0.42;
   ry = Math.min(W, H) * 0.09;
-  ballR = Math.min(W, H) * 0.075;
+  ballR = Math.min(W, H) * 0.075 * (codes.BIGBALL ? 1.6 : 1);
   cx = W / 2;
   desired = H * 0.30;
   buildBallSprite();
@@ -183,6 +191,13 @@ function bumpDays() {
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 try { slamChainBest = parseInt(localStorage.getItem('stack-ball-chain') || '0', 10) || 0; } catch (e) {}
 try { closeBest = parseInt(localStorage.getItem('stack-ball-close') || '0', 10) || 0; } catch (e) {}
+const SDK = window.ArcadeSDK || null;
+const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+const codes = {};
+let tutSeen = false, waiting = false;
+try { tutSeen = localStorage.getItem('stack-ball-tut') === '1'; } catch (e) {}
 try { gemTotal = parseInt(localStorage.getItem('stack-ball-gems') || '0', 10) || 0; } catch (e) {}
 gemRank = gemRankOf(gemTotal);
 
@@ -218,7 +233,7 @@ function makeSegs(i) {
 function makePlatform(i) {
   const gap = i > 2 && Math.random() < 0.09;
   const ramp = 1 + Math.min(i, 90) / 140;
-  return { i, rot: Math.random() * TAU, rs: rand(0.4, 1.0) * ramp * (Math.random() < 0.5 ? -1 : 1), gap, broken: false, segs: gap ? [] : makeSegs(i) };
+  return { i, rot: Math.random() * TAU, rs: rand(0.4, 1.0) * ramp * (codes.SLOWSPIN ? 0.5 : 1) * (Math.random() < 0.5 ? -1 : 1), gap, broken: false, segs: gap ? [] : makeSegs(i) };
 }
 function topColor(p) {
   const seg = TAU / SEGS;
@@ -259,7 +274,10 @@ function startGame() {
   $('topbtns').classList.remove('hidden');
   $('start').classList.add('hidden');
   $('gameover').classList.add('hidden');
-  floaters.push({ text: 'TAP TO SMASH!', x: cx, y: desired - ballR - 26, t: 0, life: 2.4, color: '#fcd34d' });
+  waiting = true;
+  $('tutMore').classList.toggle('hidden', tutSeen);
+  $('tut').classList.remove('hidden');
+  scene('play');
   bumpDays();
   $('dayStreakVal').textContent = dayStreak;
   $('dayBestVal').textContent = dayBest;
@@ -270,18 +288,45 @@ function updateHUD() {
   $('depth').textContent = cur;
   $('best').textContent = best;
 }
+function toTitle() {
+  phase = 'ready'; waiting = false; slam = false; particles = []; floaters = []; trail = []; rings = [];
+  ['gameover', 'tut', 'hud', 'topbtns'].forEach(id => $(id).classList.add('hidden'));
+  initWorld(); by = ballRestY(0); camY = by - desired;
+  $('chainBestVal').textContent = slamChainBest; $('closeBestVal').textContent = closeBest; $('gemTotalVal').textContent = gemTotal;
+  $('gemRankVal').textContent = gemRank; $('depthBestVal').textContent = depthBest;
+  $('start').classList.remove('hidden');
+  scene('title');
+}
+function sdkHint() {
+  if (phase === 'ready' || phase === 'dying') return 'Press Play, then tap to smash down through the tower.';
+  if (phase === 'falling') return slam ? 'Slamming! Get ready to tap again when you land.' : 'Tap again now to slam down faster.';
+  const i = nextSolid(cur + 1), p = platAt(i);
+  if (!p) return 'Tap to smash down.';
+  const save = p.rot; p.rot += p.rs * 0.25; const c = topColor(p); p.rot = save;
+  if (c === BLACK && !codes.STEELBALL) return 'Wait: a black part is coming round' + (i > cur + 1 ? ' on the platform after the gap' : ' below you') + '. Tap once a coloured part is at the front.';
+  return 'Safe below: smash now.' + (slamChain > 0 ? ' Keep slamming to grow your streak.' : ' Tap again mid-air to slam for bonus points.');
+}
+function code(c) {
+  if (c === 'STEELBALL') codes.STEELBALL = 1;
+  else if (c === 'SLOWSPIN') { codes.SLOWSPIN = 1; for (const p of platforms) p.rs *= 0.5; }
+  else if (c === 'BIGBALL') { codes.BIGBALL = 1; layout(); }
+  else return { ok: false };
+  return { ok: true, message: { STEELBALL: 'Steel ball: black parts break like the rest', SLOWSPIN: 'Slow spin: platforms turn at half speed', BIGBALL: 'Big ball: a giant ball that grabs gems from further away' }[c] + '. Codes on: this run will not set a best.' };
+}
 function endGame() {
-  const nb = score > best;
+  const cht = cheated();
+  const nb = score > best && !cht;
   if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
   $('finalScore').textContent = score;
   $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
   $('finalChain').textContent = '🔥 Best slam streak: ' + slamChainBest;
-  try { localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
+  try { if (!cht) localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
   $('finalClose').textContent = '😅 Close calls: ' + closeBest;
-  try { localStorage.setItem('stack-ball-close', String(closeBest)); } catch (e) {}
+  try { if (!cht) localStorage.setItem('stack-ball-close', String(closeBest)); } catch (e) {}
   $('finalGems').textContent = '💎 Gems banked: ' + gemTotal + ' · 📿 ' + gemRank;
   $('finalDepth').textContent = '🗼 Best depth: ' + depthBest + ' · 🔥 ' + dayStreak + 'd streak (best ' + dayBest + ')';
   $('gameover').classList.remove('hidden');
+  scene('over', { score });
 }
 function die() {
   if (phase === 'dying') return;
@@ -316,7 +361,7 @@ function resolveLanding() {
   ensureWorld(fallTarget + 20);
   const p = platAt(fallTarget);
   const c = topColor(p);
-  if (c === BLACK) { die(); return; }
+  if (c === BLACK && !codes.STEELBALL) { die(); return; }
   const segA = TAU / SEGS;
   const aC0 = (-Math.PI / 2 - p.rot) % TAU;
   const k0 = Math.floor((aC0 < 0 ? aC0 + TAU : aC0) / segA) % SEGS;
@@ -361,7 +406,7 @@ function resolveLanding() {
   }
   if (cur > depthBest) {
     depthBest = cur;
-    try { localStorage.setItem('stack-ball-depth', String(depthBest)); } catch (e) {}
+    try { if (!cheated()) localStorage.setItem('stack-ball-depth', String(depthBest)); } catch (e) {}
     if (cur > 5) { addFloater('🗼 NEW DEPTH ' + cur + '!', cx, desired - 120, '#a78bfa'); sfx('levelup'); }
   }
   updateHUD();
@@ -369,6 +414,7 @@ function resolveLanding() {
 
 function update(dt) {
   tGlobal += dt;
+  if (RM) shake = 0;
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (squash > 0) squash = Math.max(0, squash - 6 * dt);
   for (const p of platforms) { if (!p.broken && !p.gap) p.rot += p.rs * dt; }
@@ -403,7 +449,7 @@ function update(dt) {
         burst(gx, gsy, '#67e8f9', 10, 180);
         rings.push({ y: gsy, t: 0, col: '#67e8f9' });
         gemTotal++;
-        try { localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
+        try { if (!cheated()) localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
         const gr = gemRankOf(gemTotal);
         if (gr !== gemRank) { gemRank = gr; addFloater('🏅 ' + gemRank + '!', gx, gsy - 56, '#fcd34d'); sfx('levelup'); }
         if (gm.elite) {
@@ -551,6 +597,8 @@ function loop(ts) {
 function tap(e) {
   e.preventDefault();
   ensureAudio();
+  if (SDK && SDK.paused) return;
+  if (phase === 'resting' && waiting) { waiting = false; $('tut').classList.add('hidden'); if (!tutSeen) { tutSeen = true; try { localStorage.setItem('stack-ball-tut', '1'); } catch (e) {} } }
   if (phase === 'resting') {
     shatter(cur);
     sfx('hit');
@@ -568,6 +616,7 @@ function tap(e) {
 }
 canvas.addEventListener('touchstart', tap, { passive: false });
 canvas.addEventListener('mousedown', tap);
+window.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'ArrowDown') && !e.repeat) { if (phase === 'resting' || phase === 'falling') tap(e); else e.preventDefault(); } });
 
 $('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
 $('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
@@ -586,6 +635,15 @@ $('depthBestVal').textContent = depthBest;
 $('dayStreakVal').textContent = dayStreak;
 $('dayBestVal').textContent = dayBest;
 requestAnimationFrame(loop);
+scene('title');
+if (SDK) SDK.init({
+  pauseButton: 'bl',
+  onRestart: () => startGame(),
+  onExit: toTitle,
+  onTutorial: () => { tutSeen = false; startGame(); },
+  onHint: sdkHint,
+  onCheat: code
+});
 </script>
 </body>
 </html>

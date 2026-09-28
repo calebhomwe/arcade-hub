@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Farm Idle Tycoon</title>
 <style>
@@ -17,13 +18,13 @@
     overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
   }
   #app{max-width:620px; margin:0 auto; padding:8px 10px 30px; min-height:100%;}
-  a.hub{display:inline-block; color:var(--dim); text-decoration:none; font-size:14px; margin:2px 0 6px;}
+  a.hub{display:inline-flex; align-items:center; min-height:44px; color:var(--dim); text-decoration:none; font-size:14px; margin:0 0 4px;}
   .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.16);
     border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
   /* HUD */
   #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
   .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
-  .stat small{display:block; color:var(--dim); font-size:11px; font-weight:500;}
+  .stat small{display:block; color:var(--dim); font-size:12px; font-weight:500;}
   #coins{display:inline-block;}
   #coins.pop{animation:coinPop .22s ease-out;}
   @keyframes coinPop{0%{transform:scale(1);}40%{transform:scale(1.35); color:#fff;}100%{transform:scale(1);}}
@@ -48,7 +49,7 @@
   .bRow .ic{font-size:30px;}
   .bRow .info{flex:1; min-width:0;}
   .bRow .name{font-weight:700; font-size:14px;}
-  .bRow .sub{color:var(--dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bRow .sub{color:var(--dim); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .bRow .cnt{font-weight:800; font-size:16px; min-width:40px; text-align:right;}
   .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
     border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
@@ -95,6 +96,8 @@
   @keyframes bflyfly{0%{left:-70px;top:32vh}10%{left:6vw;top:27vh}20%{left:16vw;top:36vh}30%{left:28vw;top:28vh}
     40%{left:40vw;top:34vh}50%{left:52vw;top:26vh}60%{left:64vw;top:33vh}70%{left:76vw;top:27vh}
     80%{left:88vw;top:32vh}92%{left:100vw;top:29vh}100%{left:110vw;top:32vh}}
+  #welcome .sub b{color:var(--gold);}
+  @media (prefers-reduced-motion:reduce){#coins.pop,.buyBtn.afford,.bRow.flash,#tapArea,.big{animation:none!important;} #tractor:active,.buyBtn:active:not(:disabled){transform:none;}}
 </style>
 </head>
 <body>
@@ -151,6 +154,7 @@
     <h1>Farm Idle Tycoon</h1>
     <p class="sub">Tap the tractor, buy buildings, and grow an endless farming empire!</p>
     <button class="btn green" id="playBtn">▶ Play</button>
+    <button class="btn alt" id="howBtn" type="button">❓ Learn to play</button>
     <p class="sub" style="margin:10px 0 0;">Best Legacy: <span id="startBest">0</span></p>
   </div>
 </div>
@@ -163,19 +167,41 @@
   </div>
 </div>
 
+<div id="prestigeCard" class="overlay hidden">
+  <div class="box">
+    <div class="big">🌟</div>
+    <h1 style="font-size:26px;">New Farm+</h1>
+    <div style="font-size:32px;font-weight:800;color:var(--gold);margin:4px 0 8px" id="pcGain">+0 🏆</div>
+    <p class="sub" id="pcMsg"></p>
+    <button class="btn green" id="pcBtn">🚜 Keep Farming</button>
+  </div>
+</div>
+<div id="welcome" class="overlay hidden">
+  <div class="box">
+    <div class="big">⏳</div>
+    <h1 style="font-size:26px;">Welcome back!</h1>
+    <p class="sub" id="welcomeMsg"></p>
+    <button class="btn green" id="welcomeBtn">🪙 Collect</button>
+  </div>
+</div>
 <div id="menuScreen" class="overlay hidden">
   <div class="box">
-    <h1>⚙️ Menu</h1>
-    <button class="btn green" id="resumeBtn">▶ Resume</button>
+    <h1>⚙️ Farm settings</h1>
+    <button class="btn green" id="resumeBtn">✓ Close</button>
     <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
     <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
   </div>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
   "use strict";
+  var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null,codes={};
+  function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+  function did(n){if(coach)coach.did(n);}
+  function cheated(){return !!(SDK&&SDK.cheated);}
   var BUILDINGS = [
     {id:"wheat",  name:"Wheat Field",    emoji:"🌾", baseCost:15,      baseIncome:0.5},
     {id:"chicken",name:"Chicken Coop",   emoji:"🐔", baseCost:100,     baseIncome:2.5},
@@ -269,7 +295,7 @@
     return s;
   }
   function currentClickPower(){
-    return state.clickPower + state.legacy;
+    return (state.clickPower + state.legacy)*(codes.BUMPERCROP?10:1);
   }
   function buildingCost(b){
     return b.baseCost * Math.pow(1.15, state.owned[b.id]);
@@ -388,6 +414,7 @@
     var gExtra = goldTap();
     if(gExtra > 0) floatText(c0.x, c0.y - 74, "+" + fmt(gExtra) + " ✨");
     ordHit("tap", 1);
+    did("tap");
     try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
     sfx("click");
     render();
@@ -401,6 +428,7 @@
     ordHit("buy", n);
     popCoins();
     sfx("buy");
+    did("buy");
     try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
     var rr = rowRefs[BUILDINGS.indexOf(b)];
     if(rr && rr.row){
@@ -412,6 +440,7 @@
   function prestige(){
     var gain = Math.floor(Math.sqrt(state.lifetime / 1e6));
     if(gain < 1){ sfx("deny"); return; }
+    var earned = state.lifetime;
     state.legacy += gain;
     state.coins = 0;
     state.lifetime = 0;
@@ -421,6 +450,10 @@
     confetti();
     save();
     render();
+    $("pcGain").textContent = "+" + gain + " 🏆";
+    $("pcMsg").innerHTML = "This farm earned <b>" + fmt(earned) + "</b> coins.<br>Legacy Points: <b>" + state.legacy + "</b> · income now <b>×" + prestigeMult().toFixed(2) + "</b>";
+    $("prestigeCard").classList.remove("hidden");
+    scene("over", {score: state.legacy});
   }
 
   // ---- Farm Market gamble ----
@@ -579,6 +612,7 @@
     setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
   }
   function partBurst(x, y, chars, n, spread){
+    if(RM) return;
     for(var i=0;i<n;i++){
       var s = pPool.pop();
       if(!s){
@@ -609,6 +643,7 @@
     }
   }
   function confetti(){
+    if(RM) return;
     var chars=["🌾","✨","🪙","🎉"], i;
     for(i=0;i<24;i++){
       var s=pPool.pop();
@@ -777,6 +812,7 @@
 
   // ---- Save / Load / Offline ----
   function save(){
+    if(cheated()) return;
     state.lastSave = Date.now();
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
   }
@@ -796,8 +832,11 @@
     var gain = totalIncome() * elapsed * OFFLINE_RATE;
     if(gain > 0){ state.coins += gain; state.lifetime += gain; }
     if(elapsed >= 15 && gain > 0){
-      var mins = Math.floor(elapsed/60);
-      showToast("⏰ Away " + (mins >= 1 ? mins + "m" : Math.floor(elapsed) + "s") + ": +" + fmt(gain) + " coins");
+      var mins = Math.floor(elapsed/60), hrs = Math.floor(mins/60);
+      var away = hrs >= 1 ? hrs + "h " + (mins % 60) + "m" : mins >= 1 ? mins + "m" : Math.floor(elapsed) + "s";
+      $("welcomeMsg").innerHTML = "You were away for <b>" + away + "</b>" + (elapsed >= OFFLINE_CAP ? " (8h cap)" : "") + ".<br>Your farm earned <b>" + fmt(gain) + "</b> coins at half rate (" + fmt(totalIncome() * OFFLINE_RATE) + "/s).";
+      $("welcomeBtn").textContent = "🪙 Collect " + fmt(gain);
+      $("welcome").classList.remove("hidden");
     }
   }
   function num(v, d){ v = Number(v); return isFinite(v) ? v : d; }
@@ -840,7 +879,48 @@
   }
 
   // ---- Events ----
-  $("playBtn").addEventListener("click", function(){ $("startScreen").classList.add("hidden"); render(); sfx("click"); });
+  function startPlay(teach){
+    ["startScreen","achScreen","menuScreen","welcome","prestigeCard"].forEach(function(id){ $(id).classList.add("hidden"); });
+    render(); scene("play");
+    if(coach){ coach.stop(true); coach = null; }
+    if(window.PlayKit && (teach === true || !PlayKit.seen("fi_tut"))){
+      coach = PlayKit.coach({key:"fi_tut", theme:{panel:"#11261a", fg:"#e8ffe9", accent:"#8dff9b"}, steps:[
+        {text:"Tap the tractor to earn coins.", target:"#tractor", on:"tap"},
+        {text:"Buy a building when you can afford one (a Wheat Field costs 15). Buildings earn coins every second, even while you are away.", target:"#bList", on:"buy"},
+        {text:"Fill orders for bonus coins and tap for a Golden Harvest. At 1M coins earned, New Farm+ gives Legacy Points: +10% income each.", target:"#prestige"}
+      ]});
+    }
+  }
+  function toTitle(){
+    save(); if(coach){ coach.stop(true); coach = null; }
+    ["achScreen","menuScreen","welcome","prestigeCard"].forEach(function(id){ $(id).classList.add("hidden"); });
+    $("startBest").textContent = fmt(state.legacy);
+    $("startScreen").classList.remove("hidden"); scene("title");
+  }
+  function sdkHint(){
+    if($("startScreen").className.indexOf("hidden") === -1) return "Press Play, tap the tractor, and buy buildings: they earn coins every second.";
+    var lp = Math.floor(Math.sqrt(state.lifetime / 1e6));
+    if(lp >= 3) return "New Farm+ now for " + lp + " Legacy Points: +" + (lp * 10) + "% income forever.";
+    if(state.goldMeter >= GOLD_TAPS && state.goldActive <= 0) return "Your Golden Harvest is ready: tap it for a burst of coins.";
+    var best = null, bv = 0;
+    BUILDINGS.forEach(function(b, i){ if(i > 0 && !state.owned[BUILDINGS[i-1].id]) return; var v = b.baseIncome / buildingCost(b); if(v > bv){ bv = v; best = b; } });
+    if(!best) return "Tap the tractor to earn your first 15 coins, then buy a Wheat Field.";
+    var c = buildingCost(best);
+    return (state.coins >= c ? "Buy a " + best.name + " now" : "Save " + fmt(c - state.coins) + " more coins for a " + best.name) + ": " + best.emoji + " gives the most income for its price.";
+  }
+  function code(c){
+    if(c === "HAYRAIN"){ var g = Math.max(10000, totalIncome() * 600); state.coins += g; state.lifetime += g; }
+    else if(c === "GOLDENHOUR"){ state.goldActive = GOLD_DUR * 6; }
+    else if(c === "BUMPERCROP"){ codes.BUMPERCROP = 1; }
+    else return {ok:false};
+    if(window.PlayKit) PlayKit.codes(true);
+    render();
+    return {ok:true, message:{HAYRAIN:"Hay rain: a big pile of coins", GOLDENHOUR:"Golden hour: a Golden Harvest that lasts a whole minute", BUMPERCROP:"Bumper crop: every tractor tap is worth 10 times more"}[c] + ". Codes on: this session is not saved."};
+  }
+  $("playBtn").addEventListener("click", function(){ startPlay(); sfx("click"); });
+  $("howBtn").addEventListener("click", function(){ startPlay(true); sfx("click"); });
+  $("pcBtn").addEventListener("click", function(){ $("prestigeCard").classList.add("hidden"); sfx("click"); scene("play"); });
+  $("welcomeBtn").addEventListener("click", function(){ $("welcome").classList.add("hidden"); sfx("buy"); });
   $("tractor").addEventListener("click", doClick);
   document.querySelectorAll(".qty").forEach(function(q){
     q.addEventListener("click", function(){
@@ -892,6 +972,16 @@
   document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
   lastTick = Date.now();
   requestAnimationFrame(frame);
+  $("startBest").textContent = fmt(state.legacy);
+  scene("title");
+  if(SDK) SDK.init({
+    pauseButton: "tr",
+    onRestart: function(){ startPlay(); },
+    onExit: toTitle,
+    onTutorial: function(){ startPlay(true); },
+    onHint: sdkHint,
+    onCheat: code
+  });
 })();
 </script>
 </body>

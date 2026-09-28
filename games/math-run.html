@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Run</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07070f);display:flex;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40}
-#muteBtn{position:fixed;top:10px;right:12px;z-index:40;background:#1e293b;border:none;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.back{position:fixed;top:6px;left:6px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
+#muteBtn{position:fixed;top:6px;right:60px;z-index:40;background:#1e293b;border:none;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 #stage{flex:1;display:flex;flex-direction:column;width:100%;min-height:0}
 .top{text-align:center;padding:38px 10px 4px}
 .top h1{font-size:clamp(18px,5vw,26px);font-weight:900;letter-spacing:-.5px;background:linear-gradient(90deg,#22d3ee,#4ade80,#facc15);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -43,6 +44,10 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
 #count.show{opacity:1;animation:countpop .62s ease}
 @keyframes countpop{0%{scale:1.7;opacity:0}30%{opacity:1}100%{scale:1;opacity:1}}
 @media (max-height:430px){.ov{gap:8px;padding:10px}.ov h1{font-size:26px}.ov p{font-size:13px;line-height:1.35}.op{width:46px;height:46px;font-size:20px;border-radius:12px}.diff button{min-height:40px;padding:0 16px;font-size:14px}.btn{min-height:44px;padding:10px 36px;font-size:18px}.top{padding-top:30px}}
+.diff button small{display:block;font-size:12px;font-weight:700;opacity:.8}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.gu-row button{min-height:44px;padding:0 18px;border-radius:14px;border:2px solid #334155;background:#1e293b;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.hud span.jpop,#count.show,.popup,#msg.show{animation-duration:.01s!important}.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -73,6 +78,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
   <div class="diff" id="diff"></div>
   <div id="prog" style="font-size:14px;color:#cbd5e1"><b id="progLv">Lv 1</b> · <span id="progTitle">🎓 Rookie</span><div style="width:min(70vw,300px);height:8px;background:#1e293b;border-radius:999px;overflow:hidden;margin:6px auto 2px"><div id="xpfill" style="height:100%;width:0%;background:linear-gradient(90deg,#a78bfa,#38bdf8);border-radius:999px"></div></div><div id="progNext" style="font-size:12px;color:#94a3b8"></div></div>
   <button class="btn" id="playBtn">▶ Start</button>
+  <div class="gu-row" id="guRow"><button id="howBtn" type="button">❓ Learn to play</button></div>
 </div>
 <div class="ov hidden" id="over">
   <h1>💥 Crashed!</h1>
@@ -85,9 +91,15 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
   <button class="btn" id="againBtn">Play Again</button>
 </div>
 <div class="ov hidden" id="pause"><h1>⏸ Paused</h1><button class="btn" id="resumeBtn">▶ Resume</button></div>
+<script src="kit/playkit.js"></script>
 <script>
 
 const DIFF={easy:{add:[1,9],sub:[2,9],mul:[2,5],div:[2,5],sp:.26},medium:{add:[4,20],sub:[4,20],mul:[3,9],div:[3,9],sp:.34},hard:{add:[10,50],sub:[10,50],mul:[6,12],div:[6,12],sp:.44},insane:{add:[25,120],sub:[25,120],mul:[9,19],div:[9,15],sp:.5},max:{add:[50,400],sub:[50,400],mul:[12,25],div:[12,19],sp:.62}};
+const SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm);
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+let coach=null,countTok=0,wantTeach=false,problemText='';function did(n){if(coach)coach.did(n);}function coachOn(){return !!(coach&&coach.active);}
+const AGES={easy:'ages 5–6',medium:'ages 7–8',hard:'ages 9–10',insane:'ages 11–12',max:'ages 13+'};
+const LP=window.PlayKit?PlayKit.progress({key:'mathRunReport',title:'Math Run',bands:{easy:'Easy (ages 5–6)',medium:'Medium (ages 7–8)',hard:'Hard (ages 9–10)',insane:'Insane (ages 11–12)',max:'Max (ages 13+)'},unit:'gates',theme:{panel:'#0c2438',fg:'#e2e8f0',accent:'#22d3ee'}}):null;
 function saveLS(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}
 function getLS(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}}
 const PROGKEY='mathRunProg';
@@ -124,7 +136,7 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 const TONEF={tap:440,pop:660,coin:880,hit:220,boom:110,jump:520,whoosh:300,win:700,lose:180,buzz:140,levelup:760,tick:980};
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a){tone(TONEF[n]||440,.12,'sine',.12);return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function flashColor(col,o){flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
+function flashColor(col,o){if(RM)return;flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 const startPanel=document.getElementById('start'),overPanel=document.getElementById('over'),pausePanel=document.getElementById('pause');
 function resumeGame(){pausePanel.classList.add('hidden');state='play';lastTs=performance.now();}
@@ -157,7 +169,7 @@ function spawnRow(){
   let j=0;
   for(let i=0;i<3;i++)row.values[i]=(i===correctLane)?p.ans:opts[j++];
   row.y=-GATE_H;row.hold=0.35;row.correctLane=correctLane;row.evaluated=false;row.active=true;row.gold=Math.random()<0.16;revealT=0;
-  problemEl.textContent=p.text+' = ?';
+  problemText=p.text;problemEl.textContent=p.text+' = ?';
 }
 function laneCenter(i){return W/6+i*W/3;}
 function speed(){const b=H*DIFF[difficulty].sp;const comboBoost=combo>0?Math.min(combo*0.02,0.2):0;return b*(1+Math.min(score*0.04,1)+comboBoost);}
@@ -264,7 +276,7 @@ function move(dir){
   if(state!=='play')return;
   const nl=playerLane+dir;
   if(nl<0||nl>2)return;
-  playerLane=nl;initAudio();sfx('tap');
+  playerLane=nl;initAudio();sfx('tap');did('move');
 }
 function spawnParticles(x,y,n){
   for(let i=0;i<n;i++){
@@ -279,6 +291,7 @@ function projY(t){return horizonY+(playerY()-horizonY)*t*t;}
 function rrPath(x,y,w,h,r){r=Math.min(r,w/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function draw(){
   ctx.clearRect(0,0,W,H);
+  if(RM)shakeT=0;
   if(shakeT>0)ctx.translate((Math.random()-.5)*shakeT*16,(Math.random()-.5)*shakeT*16);
   const now=Date.now();
   if(bgSprite)ctx.drawImage(bgSprite,0,0,W,H);
@@ -386,13 +399,14 @@ function gameOver(){
   document.getElementById('finGems').textContent=gems;
   document.getElementById('finGemBank').textContent=gemBank;
   document.getElementById('reviveBtn').style.display=gemBank>=REVIVE_COST?'':'none';
-  setTimeout(()=>overPanel.classList.remove('hidden'),650);
+  scene('over',{score:score});
+  setTimeout(()=>{if(state==='over')overPanel.classList.remove('hidden');},650);
 }
 function loadProg(){try{const d=JSON.parse(localStorage.getItem(PROGKEY));if(d&&typeof d==='object'){PROG.level=Math.max(1,Math.floor(+d.level)||1);PROG.xp=Math.max(0,Math.floor(+d.xp)||0);}}catch(e){}}
 function saveProg(){saveLS(PROGKEY,JSON.stringify(PROG));}
 function nextUnlockTxt(){for(const t of TIERS){if(UNLOCK[t[0]]>PROG.level)return 'Next unlock: '+t[1]+' at Lv '+UNLOCK[t[0]];}return 'All tiers unlocked!';}
 function renderProg(){document.getElementById('progLv').textContent='Lv '+PROG.level;document.getElementById('progTitle').textContent=titleFor(PROG.level);document.getElementById('xpfill').style.width=Math.min(100,PROG.xp/xpNeed(PROG.level)*100)+'%';document.getElementById('progNext').textContent=nextUnlockTxt();}
-function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];});}
+function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];const sm=document.createElement('small');sm.textContent=AGES[TIERS[i][0]];b.appendChild(sm);});}
 function gainXP(n){PROG.xp+=n;while(PROG.xp>=xpNeed(PROG.level)){PROG.xp-=xpNeed(PROG.level);PROG.level++;popup('LEVEL UP! Lv '+PROG.level,laneCenter(playerLane)+canvasRect.left,playerY()+canvasRect.top-140,'#a78bfa');sfx('levelup');}saveProg();renderProg();refreshDiffLocks();}
 function loop(ts){
   requestAnimationFrame(loop);
@@ -403,9 +417,12 @@ function loop(ts){
     if(!row.active){
       if(spawnCd>0)spawnCd-=dt;else spawnRow();
     }else{
-      if(row.hold>0){row.hold-=dt;}else row.y+=speed()*dt;
+      const teachNow=coachOn();
+      if(teachNow){if(row.y<playerY()*0.72)row.y+=speed()*dt;}
+      else if(row.hold>0){row.hold-=dt;}else row.y+=speed()*dt;
       if(!row.evaluated&&row.y+GATE_H>playerY()){
         row.evaluated=true;
+        if(LP)LP.record(difficulty,playerLane===row.correctLane,problemText);
         if(playerLane===row.correctLane){
           score++;combo++;sfx('coin');spawnCd=0.6;
           gainXP(TIER_XP[difficulty]);
@@ -426,8 +443,8 @@ function loop(ts){
       }
       if(row.active&&row.y>H+40)row.active=false;
     }
-    if(!shieldUp&&!shield.active){shieldCd-=dt;if(shieldCd<=0){shieldCd=rnd(5,8);shield.active=true;shield.lane=rnd(0,2);shield.y=-GATE_H;}}
-    if(shield.active){
+    if(!shieldUp&&!shield.active&&!coachOn()){shieldCd-=dt;if(shieldCd<=0){shieldCd=rnd(5,8);shield.active=true;shield.lane=rnd(0,2);shield.y=-GATE_H;}}
+    if(shield.active&&!coachOn()){
       shield.y+=speed()*dt;
       const shx=laneCenter(shield.lane);
       if(shield.y>playerY()-80&&shield.y<playerY()+60&&playerLane===shield.lane){
@@ -457,13 +474,30 @@ function startGame(){
   updateHUD();
   startPanel.classList.add('hidden');
   overPanel.classList.add('hidden');
-  state='countdown';showCount(3);
+  state='countdown';countTok++;showCount(3,countTok);
+  if(coach){coach.stop(true);coach=null;}
+  if(LP)LP.session();
+  scene('play');
 }
-function showCount(n){
-  if(document.hidden){setTimeout(()=>showCount(n),300);return;}
+function toTitle(){countTok++;if(coach){coach.stop(true);coach=null;}state='ready';row.active=false;shield.active=false;document.getElementById('count').classList.remove('show');overPanel.classList.add('hidden');pausePanel.classList.add('hidden');startPanel.classList.remove('hidden');renderProg();refreshDiffLocks();scene('title');}
+function teach(){
+  if(!window.PlayKit)return;
+  coach=PlayKit.coach({key:'mr_tut',theme:{panel:'#0c2438',fg:'#e2e8f0',accent:'#22d3ee'},steps:[
+    {text:'Work out the sum at the top of the screen.',target:'#problem'},
+    {text:'Move to the lane with the answer: tap a lane, swipe, or use the arrow keys. The gates wait while these tips are up.',target:'#game',on:'move',place:'top'},
+    {text:'Run through the right gate. A wrong gate costs a heart. Grab a 🛡 to block one mistake, and gold gates give gems.',target:'.hud'}
+  ]});
+}
+function sdkHint(){
+  if(state!=='play'&&state!=='countdown')return 'Pick the kinds of sums and a level, then press Start. Run through the gate with the answer.';
+  return ((window.PlayKit&&PlayKit.mathHint(problemText))||'Work out '+problemText+'.')+' Then move to that gate.';
+}
+function showCount(n,tok){
+  if(tok!==countTok)return;
+  if(document.hidden){setTimeout(()=>showCount(n,tok),300);return;}
   const c=document.getElementById('count');
-  if(n>0){c.textContent=n;c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('tick');setTimeout(()=>showCount(n-1),620);}
-  else{c.textContent='GO!';c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('coin');setTimeout(()=>{c.classList.remove('show');state='play';lastTs=performance.now();},560);}
+  if(n>0){c.textContent=n;c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('tick');setTimeout(()=>showCount(n-1,tok),620);}
+  else{c.textContent='GO!';c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('coin');setTimeout(()=>{if(tok!==countTok)return;c.classList.remove('show');state='play';lastTs=performance.now();if(wantTeach||!(window.PlayKit&&PlayKit.seen('mr_tut'))){wantTeach=false;teach();}},560);}
 }
 let sx=0;
 canvas.addEventListener('pointerdown',e=>{sx=e.clientX;});
@@ -500,10 +534,20 @@ const opsBox=document.getElementById('ops');
 const diffBox=document.getElementById('diff');
 TIERS.forEach(d=>{const b=document.createElement('button');b.textContent=d[1];if(d[0]===difficulty)b.classList.add('on');b.addEventListener('pointerdown',e=>{e.stopPropagation();if(progLv()<UNLOCK[d[0]])return;difficulty=d[0];[...diffBox.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');});diffBox.appendChild(b);});
 window.addEventListener('resize',resize);
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';pausePanel.classList.remove('hidden');}});
+if(!SDK)document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';pausePanel.classList.remove('hidden');}});
 document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPropagation();resumeGame();});
 loadProg();renderProg();refreshDiffLocks();
 resize();requestAnimationFrame(loop);
+if(LP)LP.button(document.getElementById('guRow'));
+document.getElementById('howBtn').addEventListener('click',()=>{initAudio();wantTeach=true;startGame();});
+scene('title');
+if(SDK)SDK.init({
+  pauseButton:'tr',
+  onRestart:()=>startGame(),
+  onExit:toTitle,
+  onTutorial:()=>{wantTeach=true;startGame();},
+  onHint:sdkHint
+});
 </script>
 </body>
 </html>

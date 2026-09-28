@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Hole Swallow</title>
 <style>
@@ -20,12 +21,18 @@
   .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
   .hud > div { pointer-events:auto; }
   .pill { background:rgba(10,12,26,.65); border:1px solid rgba(167,139,250,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#e9e6ff; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(124,58,237,.35); }
-  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
   #timer { color:#fca5a5; }
   .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
   .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(167,139,250,.4); background:rgba(10,12,26,.65); color:#e9e6ff; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(124,58,237,.3); }
   #hub { position:fixed; top:14px; left:16px; z-index:20; color:#c7c9ff; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(167,139,250,.35); }
   @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+  #tut { position:fixed; left:0; right:0; bottom:9vh; z-index:9; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; text-align:center; padding:0 16px; }
+  #tut .tap { font-size:54px; animation:dragHint 1.4s ease-in-out infinite; }
+  #tut .card { background:rgba(10,12,26,.8); border:1px solid rgba(167,139,250,.45); border-radius:18px; padding:12px 18px; max-width:340px; color:#ede9fe; font-weight:800; font-size:17px; }
+  #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
+  @keyframes dragHint { 0%,100% { transform:translateX(-26px); } 50% { transform:translateX(26px); } }
+  @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
 </style>
 </head>
 <body>
@@ -37,6 +44,7 @@
 </div>
 <div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
 <a id="hub" href="../index.html">← Hub</a>
+<div id="tut" class="hidden"><div class="tap" aria-hidden="true">👆</div><div class="card">Drag to move the hole (or use the arrow keys)<small id="tutMore">Swallow anything smaller than the hole to score and grow. Bigger things bounce off, so grow first. The clock starts when you move.</small></div></div>
 <div class="overlay" id="start">
   <h1>HOLE SWALLOW</h1>
   <div class="sub">Drag the black hole around the field. Eat anything <b>smaller</b> than the hole to score & grow. Bigger stuff is off-limits — grow first! Rare golden items are extra tasty.</div>
@@ -125,6 +133,14 @@ let bestR = 34, gild = 0, gildL = 0, gildMilestone = 5;
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 try { bestR = parseFloat(localStorage.getItem('hole-swallow-rank') || '0', 10) || 34; } catch (e) {}
 try { gildL = parseInt(localStorage.getItem('hole-swallow-gild') || '0', 10) || 0; } catch (e) {}
+const SDK = window.ArcadeSDK || null;
+const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+const codes = {}, keys = {};
+let tutSeen = false, waiting = false;
+try { tutSeen = localStorage.getItem('hole-swallow-tut') === '1'; } catch (e) {}
+function go() { if (!waiting) return; waiting = false; $('tut').classList.add('hidden'); if (!tutSeen) { tutSeen = true; try { localStorage.setItem('hole-swallow-tut', '1'); } catch (e) {} } }
 
 const EDGES = ['top', 'bottom', 'left', 'right'];
 const elTime = $('time'), elScore = $('score');
@@ -141,6 +157,7 @@ function rankInfoText() {
 function updateRank() {
   if (hole.r <= bestR) return;
   const ri = rankIdxOf(bestR), ni = rankIdxOf(hole.r);
+  if (cheated()) return;
   bestR = hole.r;
   try { localStorage.setItem('hole-swallow-rank', String(bestR)); } catch (e) {}
   if (ni > ri) {
@@ -152,7 +169,7 @@ function updateRank() {
 
 function spawnObject(smallOnly, edge) {
   const clock = !smallOnly && Math.random() < 0.06;
-  const gold = !clock && !smallOnly && Math.random() < 0.05;
+  const gold = !clock && (codes.GOLDRUSH ? true : !smallOnly && Math.random() < 0.05);
   const it = clock ? { e:'⏰', r:26, v:0 } : (smallOnly ? ITEMS[(Math.random() * 4) | 0] : pick(ITEMS));
   const m = it.r + 8;
   let x = W / 2, y = H / 2;
@@ -190,7 +207,7 @@ function addFloater(text, x, y, color) {
 function startGame() {
   objects = []; particles = []; floaters = [];
   score = 0; timeLeft = 60; spawnT = 0; shake = 0; chain = 0; chainT = 0; gild = 0; gildMilestone = 5;
-  hole.r = 34; hole.x = W / 2; hole.y = H / 2; hole.tx = W / 2; hole.ty = H / 2;
+  hole.r = codes.MEGAHOLE ? 110 : 34; hole.x = W / 2; hole.y = H / 2; hole.tx = W / 2; hole.ty = H / 2;
   for (let i = 0; i < 16; i++) spawnObject(i < 9);
   running = true;
   $('hud').classList.remove('hidden');
@@ -199,17 +216,56 @@ function startGame() {
   $('gameover').classList.add('hidden');
   $('score').textContent = '0';
   $('best').textContent = best;
-  floaters.push({ text: '👆 DRAG TO MOVE!', x: W / 2, y: H / 2 - hole.r - 34, t: 0, life: 2.4, color: '#e9e6ff' });
+  if (codes.EXTRATIME) timeLeft = 90;
+  elTime.textContent = String(Math.ceil(timeLeft)); lastTimeTxt = '';
+  waiting = true;
+  $('tutMore').classList.toggle('hidden', tutSeen);
+  $('tut').classList.remove('hidden');
+  scene('play');
+}
+function toTitle() {
+  running = false; waiting = false; objects = []; particles = []; floaters = [];
+  ['gameover', 'tut', 'hud', 'topbtns'].forEach(id => $(id).classList.add('hidden'));
+  hole.r = 34; hole.tx = hole.x = W / 2; hole.ty = hole.y = H / 2;
+  $('rankInfo').textContent = rankInfoText();
+  $('start').classList.remove('hidden');
+  scene('title');
+}
+function dirWord(dx, dy) {
+  const v = Math.abs(dy) > 40 ? (dy < 0 ? 'up' : 'down') : '', h = Math.abs(dx) > 40 ? (dx < 0 ? 'left' : 'right') : '';
+  return v && h ? v + ' and ' + h : v || h || 'right next to you';
+}
+function sdkHint() {
+  if (!running) return 'Press Play, then drag the hole over things smaller than it.';
+  let bestO = null, bd = Infinity, big = null;
+  for (const o of objects) {
+    if (o.suck || o.clock) continue;
+    const d = Math.hypot(o.x - hole.x, o.y - hole.y);
+    if (o.r < hole.r) { const sc = d / (o.v + 1); if (sc < bd) { bd = sc; bestO = o; } }
+    else if (!big || o.r < big.r) big = o;
+  }
+  const clock = objects.find(o => o.clock && o.r < hole.r && !o.suck);
+  if (clock && timeLeft < 20) return 'Grab the ⏰ ' + dirWord(clock.x - hole.x, clock.y - hole.y) + ' for 5 more seconds!';
+  if (bestO) return 'Swallow the ' + bestO.e + ' ' + dirWord(bestO.x - hole.x, bestO.y - hole.y) + '.' + (big ? ' The ' + big.e + ' is still too big: grow first.' : '');
+  return 'Nothing small enough nearby: wait for new things to drift in from the edges.';
+}
+function code(c) {
+  if (c === 'MEGAHOLE') { codes.MEGAHOLE = 1; if (running) hole.r = Math.max(hole.r, 110); }
+  else if (c === 'EXTRATIME') { codes.EXTRATIME = 1; if (running) timeLeft += 30; }
+  else if (c === 'GOLDRUSH') { codes.GOLDRUSH = 1; for (const o of objects) if (!o.clock) o.gold = true; }
+  else return { ok: false };
+  return { ok: true, message: { MEGAHOLE: 'Mega hole: the hole starts huge', EXTRATIME: 'Extra time: 30 more seconds on the clock', GOLDRUSH: 'Gold rush: everything is golden and worth +2' }[c] + '. Codes on: this run will not set a best.' };
 }
 function endGame() {
   running = false;
   $('finalScore').textContent = score;
-  const nb = score > best;
+  const nb = score > best && !cheated();
   if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
   $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
   $('gildInfo').textContent = rankName() + ' · 🌠 Golden Feast: ' + gildL;
   $('gameover').classList.remove('hidden');
   sfx('lose');
+  scene('over', { score });
 }
 
 function update(dt) {
@@ -228,7 +284,7 @@ function update(dt) {
     if (f.t >= f.life) { fFree.push(f); floaters[i] = floaters[floaters.length - 1]; floaters.pop(); }
   }
   if (!running) return;
-  timeLeft -= dt;
+  if (!waiting) timeLeft -= dt;
   if (timeLeft <= 0) {
     timeLeft = 0;
     if (lastTimeTxt !== '0') { lastTimeTxt = '0'; elTime.textContent = '0'; }
@@ -271,7 +327,7 @@ function update(dt) {
           if (o.gold) {
             score += 2;
             gild++;
-            if (gild > gildL) { gildL = gild; try { localStorage.setItem('hole-swallow-gild', String(gildL)); } catch (e) {} }
+            if (gild > gildL && !cheated()) { gildL = gild; try { localStorage.setItem('hole-swallow-gild', String(gildL)); } catch (e) {} }
             if (gild === gildMilestone) {
               gildMilestone += 5;
               addFloater('🌠 GOLD FEAST ×' + gild + '!', hole.x, hole.y - hole.r - 80, '#fde68a');
@@ -358,6 +414,7 @@ function draw() {
   ctx.drawImage(bgCan, 0, 0, W, H);
 
   ctx.save();
+  if (RM) shake = 0;
   if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
 
   for (const o of objects) {
@@ -427,11 +484,17 @@ function pointer(e) {
   else { x = e.clientX; y = e.clientY; }
   const tx = Math.max(hole.r, Math.min(W - hole.r, x));
   const ty = Math.max(hole.r, Math.min(H - hole.r, y));
+  if (!running || (SDK && SDK.paused)) return;
   dragging = true;
   hole.tx = tx; hole.ty = ty;
+  go();
 }
 function pointerEnd() { dragging = false; }
 function moveHole(dt) {
+  if (running) {
+    const kx = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0), ky = (keys.ArrowDown || keys.s ? 1 : 0) - (keys.ArrowUp || keys.w ? 1 : 0);
+    if (kx || ky) { const sp = 360 * dt; hole.tx = Math.max(hole.r, Math.min(W - hole.r, hole.x + kx * sp * 4)); hole.ty = Math.max(hole.r, Math.min(H - hole.r, hole.y + ky * sp * 4)); go(); }
+  }
   const k = 1 - Math.exp(-16 * dt);
   hole.x += (hole.tx - hole.x) * k;
   hole.y += (hole.ty - hole.y) * k;
@@ -445,6 +508,9 @@ canvas.addEventListener('touchend', e => { e.preventDefault(); pointerEnd(); }, 
 canvas.addEventListener('mousedown', e => { ensureAudio(); pointer(e); });
 canvas.addEventListener('mousemove', e => { if (dragging) pointer(e); });
 window.addEventListener('mouseup', pointerEnd);
+window.addEventListener('keydown', e => { if (/^Arrow/.test(e.key) || 'wasd'.indexOf(e.key) >= 0 && e.key.length === 1) { keys[e.key] = true; if (/^Arrow/.test(e.key)) e.preventDefault(); } });
+window.addEventListener('keyup', e => { keys[e.key] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
 $('playBtn').addEventListener('click', () => { ensureAudio(); sfx('tap'); startGame(); });
 $('restartBtn').addEventListener('click', () => { ensureAudio(); sfx('tap'); startGame(); });
@@ -456,6 +522,15 @@ $('mute').textContent = muted ? '🔇' : '🔊';
 hole.tx = W / 2; hole.ty = H / 2; hole.x = W / 2; hole.y = H / 2;
 $('rankInfo').textContent = rankInfoText();
 requestAnimationFrame(loop);
+scene('title');
+if (SDK) SDK.init({
+  pauseButton: 'bl',
+  onRestart: () => startGame(),
+  onExit: toTitle,
+  onTutorial: () => { tutSeen = false; startGame(); },
+  onHint: sdkHint,
+  onCheat: code
+});
 </script>
 </body>
 </html>

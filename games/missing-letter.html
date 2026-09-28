@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#03130f">
 <title>Missing Letter</title>
@@ -10,8 +11,8 @@
 html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#03130f;color:#e4fff4;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#064e3b 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#123e5e 0%,transparent 55%),#03130f}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#6ee7b7;text-decoration:none;font-weight:700;font-size:16px;background:rgba(6,40,30,.85);border:1px solid rgba(110,231,183,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(16,185,129,.25)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(110,231,183,.35);background:rgba(6,40,30,.85);color:#fff;cursor:pointer}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#6ee7b7;text-decoration:none;font-weight:700;font-size:16px;background:rgba(6,40,30,.85);border:1px solid rgba(110,231,183,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(16,185,129,.25)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(110,231,183,.35);background:rgba(6,40,30,.85);color:#fff;cursor:pointer}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden}
 .screen.s-active{display:flex}
 .logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(16,185,129,.6));animation:bob 2.2s ease-in-out infinite}
@@ -65,6 +66,15 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 @keyframes barPulse{40%{filter:brightness(1.9)}}
 .score-big{font-size:64px;font-weight:900;color:#34d399;text-shadow:0 0 26px rgba(52,211,153,.7);margin:6px 0}
 @media (min-width:700px){.title{font-size:56px}.word-display{font-size:58px}}
+.lvl-label{font-size:13px;letter-spacing:3px;color:#6ee7b7;margin-bottom:8px;text-transform:uppercase}
+.lvl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.lvl-btn{font-size:15px;padding:10px 14px;min-height:44px;background:rgba(6,40,30,.85);border:1px solid #2dd4bf;box-shadow:none}
+.lvl-btn.sel{background:linear-gradient(135deg,#059669,#0d9488);border-color:#a7f3d0}
+.lvl-btn small{display:block;font-size:12px;font-weight:700;opacity:.85}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.gu-row .btn{font-size:15px;padding:10px 18px;min-height:44px;background:rgba(6,40,30,.85);border:1px solid #2dd4bf;box-shadow:none}
+@media (max-width:620px){#s-game{padding-top:62px}}
+@media (prefers-reduced-motion:reduce){.logo,.ch,.ch>span,.opt,.shake,.cardhit,.cardmiss,.hud-item.jpop,.time-bar.gain{animation:none!important}.float,.penalty{animation-duration:.01s!important}.btn:active,.opt:active{transform:none}}
 </style>
 </head>
 <body>
@@ -82,8 +92,16 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <p class="tip">🏅 Medals to collect all-time: ⭐ 10 words in one run · 💨 3 lightning answers · 🎯 flawless run (0 wrong)</p>
   <p class="tip">📈 Career: <b id="lStart">0</b> words solved all-time</p>
   <p class="tip">⚡ Combo multiplier grows every 4 in a row · 🚀 Words get harder as you rack up correct answers · 😀 Emoji hint appears if you stall 3s · ❌ Wrong answer costs 2 seconds</p>
+  <div class="lvl-label">Level</div>
+  <div class="lvl-row" id="lvlRow">
+    <button class="btn lvl-btn" data-l="A" type="button">Climb<small>starts easy, grows</small></button>
+    <button class="btn lvl-btn" data-l="E" type="button">3 letters<small>ages 5–6</small></button>
+    <button class="btn lvl-btn" data-l="M" type="button">5 letters<small>ages 6–7</small></button>
+    <button class="btn lvl-btn" data-l="H" type="button">6 letters<small>ages 7–8</small></button>
+  </div>
   <button class="btn btn-big" id="btnPlay">▶ Play</button>
   <button class="btn" id="btnEndless" style="margin-top:12px;font-size:16px;padding:12px 30px">♾ Endless mode</button>
+  <div class="gu-row" id="guRow"><button class="btn" id="btnHow" type="button">❓ Learn to play</button></div>
 </div>
 
 <div class="screen" id="s-game">
@@ -119,6 +137,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <button class="btn btn-ghost" id="btnMenu">Menu</button>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -126,6 +145,15 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 var EASY=[['cat','🐱'],['dog','🐶'],['sun','☀️'],['hat','🎩'],['cup','☕'],['box','📦'],['ice','🧊'],['egg','🥚'],['ant','🐜'],['owl','🦉'],['pie','🥧'],['jam','🍯'],['net','🥅'],['bed','🛏️'],['car','🚗'],['bus','🚌'],['fox','🦊'],['pig','🐷'],['map','🗺️'],['pen','🖊️'],['key','🔑'],['leg','🦵'],['nut','🥜'],['oak','🌳'],['pot','🍲'],['rat','🐀'],['rug','🧶'],['sky','🌌'],['toy','🧸'],['van','🚐'],['zip','🤐'],['bee','🐝'],['cow','🐮'],['hen','🐔'],['bat','🦇']];
 var MID=[['apple','🍎'],['bread','🍞'],['clock','⏰'],['cloud','☁️'],['crown','👑'],['dream','💭'],['drum','🥁'],['earth','🌍'],['fairy','🧚'],['fruit','🍇'],['ghost','👻'],['grape','🍇'],['heart','❤️'],['honey','🍯'],['horse','🐴'],['house','🏠'],['juice','🧃'],['knife','🔪'],['lemon','🍋'],['light','💡'],['money','💰'],['mouse','🐭'],['music','🎵'],['pizza','🍕'],['queen','👸'],['river','🏞️'],['robot','🤖'],['snake','🐍'],['spoon','🥄'],['train','🚂'],['whale','🐳'],['plant','🪴'],['tiger','🐯'],['shirt','👕'],['sheep','🐑']];
 var HARD=[['banana','🍌'],['basket','🧺'],['bridge','🌉'],['bubble','🫧'],['camera','📷'],['candle','🕯️'],['castle','🏰'],['cherry','🍒'],['cookie','🍪'],['dragon','🐉'],['flower','🌸'],['forest','🌲'],['guitar','🎸'],['hammer','🔨'],['helmet','⛑️'],['island','🏝️'],['jacket','🧥'],['jungle','🌴'],['ladder','🪜'],['magnet','🧲'],['mirror','🪞'],['monkey','🐵'],['orange','🍊'],['pencil','✏️'],['rocket','🚀'],['spider','🕷️'],['turtle','🐢'],['window','🪟'],['garden','🏡'],['peanut','🥜']];
+var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null;
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function did(n){if(coach){coach.did(n);}}
+function coachOn(){return !!(coach&&coach.active);}
+var LVL_NAME={E:'3-letter words (ages 5–6)',M:'5-letter words (ages 6–7)',H:'6-letter words (ages 7–8)'};
+var lvl='A';try{lvl=localStorage.getItem('ml_level')||'A';}catch(e){}if(lvl!=='A'&&!LVL_NAME[lvl]){lvl='A';}
+var wordTier='E';
+var LP=window.PlayKit?PlayKit.progress({key:'ml_progress',title:'Missing Letter',bands:LVL_NAME,unit:'words tried',theme:{panel:'#062a20',fg:'#e4fff4',accent:'#34d399'}}):null;
+function rec(ok){if(LP){LP.record(wordTier,ok,word);}}
 var CHEERS=['GREAT','SUPER','WOW','NICE','AWESOME','FANTASTIC'];
 var DURATION=60,HINT_DELAY=3000,PENALTY=2;
 var score=0,combo=0,bestCombo=0,bestComboAll=0,correct=0,best=0,timeLeft=60,busy=false;
@@ -159,15 +187,17 @@ function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)
 function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function confetti(n){var cols=['#34d399','#22d3ee','#a7f3d0','#fbbf24','#6ee7b7'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function confetti(n){if(RM){return;}var cols=['#34d399','#22d3ee','#a7f3d0','#fbbf24','#6ee7b7'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
 function penaltyText(txt){var f=document.createElement('div');f.className='penalty';f.textContent=txt;document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
 var jflashEl=null;
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jflash(col){if(RM){return;}if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function cardFlash(cls){elWordCard.classList.remove('cardhit','cardmiss');void elWordCard.offsetWidth;elWordCard.classList.add(cls);setTimeout(function(){elWordCard.classList.remove(cls);},650);}
 function tierPool(){
+  if(lvl!=='A'){wordTier=lvl;return lvl==='E'?EASY:lvl==='M'?MID:HARD;}
   var tier=Math.min(2,Math.floor(correct/6));
+  wordTier=['E','M','H'][tier];
   if(tier===0){return EASY;}
   if(tier===1){return MID;}
   return HARD;
@@ -246,6 +276,7 @@ function answer(ch,idx,btn){
   if(fastestAns===0||rt<fastestAns){fastestAns=rt;}
   if(hintTimer){clearTimeout(hintTimer);}
   var i;
+  rec(ch===ans);did('answer');
   if(ch===ans){
     if(rt<2000){slip+=5;fastRun++;}
     combo++;correct++;
@@ -315,8 +346,8 @@ function updateHud(){
   elTimeBar.style.width=pct+'%';
   if(pct<25){elTimeBar.classList.add('low');}else{elTimeBar.classList.remove('low');}
 }
-function tick(){if(busy||endless){return;}timeLeft-=0.1;if(timeLeft<=0){timeLeft=0;gameOver();return;}updateHud();}
-function startGame(es){
+function tick(){if(busy||endless||coachOn()){return;}timeLeft-=0.1;if(timeLeft<=0){timeLeft=0;gameOver();return;}updateHud();}
+function startGame(es,teach){
   endless=!!es;wrongs=0;slip=0;
   $('heartsWrap').style.display=endless?'':'none';
   $('hearts').textContent='3';
@@ -330,6 +361,26 @@ function startGame(es){
   nextWord();
   if(tickId){clearInterval(tickId);}
   tickId=setInterval(tick,100);
+  if(LP){LP.session();}
+  scene('play');
+  if(coach){coach.stop(true);coach=null;}
+  if(window.PlayKit&&(teach||!PlayKit.seen('ml_tut'))){
+    coach=PlayKit.coach({key:'ml_tut',theme:{panel:'#062a20',fg:'#e4fff4',accent:'#34d399'},steps:[
+      {text:'One letter is missing from this word. Find the ? spot and say the word out loud.',target:'#wordCard'},
+      {text:'Tap the letter that fills the gap. You can also type it.',target:'#opts',on:'answer'},
+      {text:'Stuck? After 3 seconds a picture clue appears above the word. The clock waits while these tips are up.',target:'#hintZone'}
+    ]});
+  }
+}
+function stopRun(){running=false;busy=true;if(tickId){clearInterval(tickId);tickId=null;}if(hintTimer){clearTimeout(hintTimer);hintTimer=null;}if(wordTimer){clearTimeout(wordTimer);wordTimer=null;}if(coach){coach.stop(true);coach=null;}}
+function toTitle(){stopRun();loadBest();$('startBest').textContent=best;$('startCombo').textContent=bestComboAll;$('lStart').textContent=lRight;updBook();show('s-start');scene('title');}
+function paintLvl(){var bs=document.querySelectorAll('.lvl-btn'),i;for(i=0;i<bs.length;i++){bs[i].classList.toggle('sel',bs[i].getAttribute('data-l')===lvl);}}
+function sdkHint(){
+  if(!running||!word){return 'Pick a level and press Play. A letter is missing from each word: tap the one that fits.';}
+  var shown=word.slice(0,blankIdx).toUpperCase()+'_'+word.slice(blankIdx+1).toUpperCase();
+  var wrong=optsArr.filter(function(c){return c!==ans;}),no=wrong.length?wrong[(Math.random()*wrong.length)|0].toUpperCase():'';
+  var kind='aeiou'.indexOf(ans)!==-1?'a vowel (A, E, I, O or U)':'a consonant (not a vowel)';
+  return 'Say it out loud: '+shown+'. The picture is '+wordEmoji+'. The missing letter is '+kind+(no?', and it is not '+no+'.':'.');
 }
 function gameOver(){
   running=false;
@@ -351,6 +402,7 @@ function gameOver(){
   else if(correct>=6){msg='Great job! You got '+correct+' words right. Keep it up! 💪';}
   else{msg='You got '+correct+' word'+(correct===1?'':'s')+' right. Practice makes perfect — try again! 💪';}
   $('overMsg').textContent=msg;
+  scene('over',{score:score});
   if(timesN>0){$('avgSpeed').textContent=(timesSum/timesN/1000).toFixed(1);$('fastSpeed').textContent=(fastestAns/1000).toFixed(1);$('speedLine').style.display='';}
   else{$('speedLine').style.display='none';}
   if(timesN>0&&wrongRun===0){earnMedal('p');}
@@ -373,7 +425,7 @@ function init(){
   $('btnPlay').addEventListener('click',function(){sfx('coin');startGame();});
   $('btnAgain').addEventListener('click',function(){sfx('coin');startGame();});
   $('btnEndless').addEventListener('click',function(){sfx('coin');startGame(true);});
-  $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
+  $('btnMenu').addEventListener('click',function(){sfx('tap');toTitle();});
   $('muteBtn').addEventListener('click',function(){muted=!muted;lsSet('ml_muted',muted?'1':'0');$('muteBtn').textContent=muted?'\u{1F507}':'\u{1F50A}';});
   $('muteBtn').textContent=muted?'\u{1F507}':'\u{1F50A}';
   document.addEventListener('keydown',function(e){
@@ -386,6 +438,19 @@ function init(){
       for(m=0;m<optsArr.length;m++){if(optsArr[m]===k){if(optEls[m]){optEls[m].click();}break;}}
     }
   });
+  var lbs=document.querySelectorAll('.lvl-btn'),q;
+  for(q=0;q<lbs.length;q++){lbs[q].addEventListener('click',function(){lvl=this.getAttribute('data-l');try{localStorage.setItem('ml_level',lvl);}catch(e){}sfx('tap');paintLvl();});}
+  paintLvl();
+  if(LP){LP.button($('guRow'),'btn');}
+  $('btnHow').addEventListener('click',function(){sfx('tap');startGame(false,true);});
+  scene('title');
+  if(SDK){SDK.init({
+    pauseKeys:'esc',
+    onRestart:function(){startGame(endless);},
+    onExit:toTitle,
+    onTutorial:function(){startGame(false,true);},
+    onHint:sdkHint
+  });}
 }
 init();
 })();

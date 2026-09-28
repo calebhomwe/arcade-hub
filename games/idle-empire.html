@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#141005">
 <title>Idle Empire</title>
@@ -10,8 +11,8 @@
 html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#141005;color:#fff7e0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#5e4a12 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#4a1663 0%,transparent 55%),#141005}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#fde68a;text-decoration:none;font-weight:700;font-size:16px;background:rgba(50,40,10,.85);border:1px solid rgba(253,230,138,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(251,191,36,.25)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(253,230,138,.35);background:rgba(50,40,10,.85);color:#fff;cursor:pointer}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#fde68a;text-decoration:none;font-weight:700;font-size:16px;background:rgba(50,40,10,.85);border:1px solid rgba(253,230,138,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(251,191,36,.25)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(253,230,138,.35);background:rgba(50,40,10,.85);color:#fff;cursor:pointer}
 #fx{position:fixed;inset:0;z-index:65;pointer-events:none}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto}
 .screen.s-active{display:flex}
@@ -84,6 +85,9 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   .list-col{max-height:none}
   .title{font-size:56px}
 }
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+@media (max-width:620px){#s-game{padding-top:60px}}
+@media (prefers-reduced-motion:reduce){.logo,.coin-btn.pop,.coin-btn.rush,.brow.flash,.brow .buy.afford,.prestige-btn.ready,.pfill.full{animation:none!important}.float,.toast{animation-duration:.01s!important}.coin-btn:active,.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -100,6 +104,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <p class="tip">✨ Prestige for golden coins — each gives +10% income · 📴 Offline earnings: 50% rate, up to 8 hours · 💾 Auto-saves every 5 seconds</p>
   <button class="btn btn-big" id="btnPlay">▶ Play</button>
   <button class="btn btn-ghost" id="btnReset">New Run (keep golden coins)</button>
+  <div class="gu-row"><button class="btn btn-ghost" id="btnHow" type="button">❓ Learn to play</button></div>
 </div>
 
 <div class="screen" id="s-game">
@@ -153,6 +158,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   </div>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -185,6 +191,10 @@ var DEEDS=[
 ];
 var mult=1,rows=[],rowsBuilt=false,disp=0,lastTick=0,inGame=false,rushT=0,rushNext=0,carDue=0,carEnd=0,carStake=0,tribDay=-1;
 var AC=null,muted=localStorage.getItem('ie_muted')==='1';
+var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null,codes={};
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function did(n){if(coach){coach.did(n);}}
+function cheated(){return !!(SDK&&SDK.cheated);}
 function $(id){return document.getElementById(id);}
 var elCoins=$('coins'),elPersec=$('persec'),elGold=$('gold'),elTapPow=$('tapPow'),elPB=$('btnPrestige'),elPfill=$('pfill'),elPNext=$('pNext'),elPPrev=$('pPrev');
 function setText(el,v){if(el.textContent!==v){el.textContent=v;}}
@@ -262,7 +272,7 @@ function incomePerSec(){
   for(i=0;i<DEFS.length;i++){t+=DEFS[i].i*S.owned[i]*milestoneMult(S.owned[i]);}
   return t*mult*deedMult();
 }
-function tapPower(){return (1+S.owned[0]*0.5)*mult*(rushT>0?2:1);}
+function tapPower(){return (1+S.owned[0]*0.5)*mult*(rushT>0?2:1)*(codes.MIDAS?10:1);}
 function costOf(i,amt){
   var b=DEFS[i],o=S.owned[i];
   return b.c*Math.pow(1.15,o)*(Math.pow(1.15,amt)-1)/0.15;
@@ -278,6 +288,7 @@ function maxAfford(i){
 }
 function prestigeGain(){return Math.floor(Math.sqrt(S.lifetime/1e6));}
 function save(){
+  if(cheated()){return;}
   S.last=Date.now();
   try{localStorage.setItem('ie_state',JSON.stringify(S));}catch(e){}
 }
@@ -324,6 +335,7 @@ function resizeFx(){
 }
 function burst(x,y,n,spd,grav,life,size){
   var k,a,v,p;
+  if(RM){return;}
   for(k=0;k<n;k++){
     p=getP();if(!p){break;}
     a=Math.random()*6.2832;v=spd*(0.3+Math.random()*0.7);
@@ -335,6 +347,7 @@ function burst(x,y,n,spd,grav,life,size){
 }
 function confetti(){
   var k,p;
+  if(RM){return;}
   for(k=0;k<36;k++){
     p=getP();if(!p){break;}
     p.x=Math.random()*FW;p.y=-10;p.vx=(Math.random()-0.5)*90;p.vy=60+Math.random()*120;
@@ -451,7 +464,7 @@ function buyBuilding(i){
   var before=S.owned[i];
   S.coins-=c;
   S.owned[i]+=amt;
-  sfx('buy');vib(12);
+  sfx('buy');vib(12);did('buy');
   if(Math.random()<0.07){
     S.chests++;
     setTxt($('chestCount'),S.chests);
@@ -491,7 +504,7 @@ function tapMilestone(){
 function tapCoin(e){
   var tp=tapPower();
   S.coins+=tp;S.lifetime+=tp;S.alltime+=tp;
-  S.taps++;tapMilestone();
+  S.taps++;tapMilestone();did('tap');
   var cb=$('coinBtn');
   cb.classList.remove('pop');
   void cb.offsetWidth;
@@ -578,6 +591,8 @@ function doPrestige(){
   for(i=0;i<DEFS.length;i++){S.owned[i]=0;}
   save();
   show('s-over');
+  inGame=false;
+  scene('over',{score:g});
   renderBuildings();
   updateRows();
   updateHud();
@@ -669,7 +684,8 @@ function updateHudFrame(){
     bk.style.display='none';
   }
 }
-function startGame(){
+function startGame(teach){
+  $('offlineModal').classList.remove('open');
   show('s-game');
   renderBuildings();
   disp=S.coins;
@@ -681,6 +697,43 @@ function startGame(){
   cacheRects();
   refreshTrib();
   updateHud();
+  scene('play');
+  if(coach){coach.stop(true);coach=null;}
+  if(window.PlayKit&&(teach===true||!PlayKit.seen('ie_tut'))){
+    coach=PlayKit.coach({key:'ie_tut',theme:{panel:'#241a06',fg:'#fde68a',accent:'#fbbf24'},steps:[
+      {text:'Tap the big coin to earn coins.',target:'#coinBtn',on:'tap'},
+      {text:'Buy a building when you can afford one (a Cursor costs 15). Buildings earn coins every second, even while you are away.',target:'#buildings',on:'buy'},
+      {text:'Own 25, 50 or 100 of a building to double its output. At 1M coins earned, Prestige for golden coins: +10% income each, forever.',target:'#btnPrestige'}
+    ]});
+  }
+}
+function refreshStart(){
+  $('startGold').textContent=S.gold;$('startMult').textContent=mult.toFixed(2);$('startAll').textContent=fmt(S.alltime);
+  $('startDeeds').textContent=deedCount()+'/10 (+'+(deedCount()*2)+'%)';$('startCar').textContent=S.trades;$('startChest').textContent=S.chests;
+  $('startTrib').textContent=S.tribs;$('startTaps').textContent=S.taps;
+}
+function toTitle(){save();inGame=false;if(coach){coach.stop(true);coach=null;}$('offlineModal').classList.remove('open');refreshStart();$('btnPlay').textContent='▶ Continue';show('s-start');scene('title');}
+function payback(i){var inc=DEFS[i].i*milestoneMult(S.owned[i]+1)*mult*deedMult();return costOf(i,1)/inc;}
+function sdkHint(){
+  if(!inGame){return 'Press Play, tap the coin, and buy buildings: they earn coins every second.';}
+  if(prestigeGain()>=3){return 'Prestige now for '+prestigeGain()+' golden coins: your income goes up '+Math.round((Math.pow(1.1,prestigeGain())-1)*100)+'% forever.';}
+  var i,bi=-1,bp=Infinity,pb;
+  for(i=0;i<DEFS.length;i++){if(i>0&&S.owned[i-1]===0){break;}pb=payback(i);if(pb<bp){bp=pb;bi=i;}}
+  if(bi<0){return 'Tap the coin to earn your first 15 coins, then buy a Cursor.';}
+  var c=costOf(bi,1),next=S.owned[bi]<25?25:S.owned[bi]<50?50:S.owned[bi]<100?100:0;
+  var tip=DEFS[bi].e+' '+DEFS[bi].n+' pays for itself fastest (about '+fmtTime(bp)+').';
+  if(S.coins>=c){return 'Buy a '+DEFS[bi].n+' now: '+tip;}
+  return 'Save up '+fmt(c-S.coins)+' more coins for a '+tip+(next&&next-S.owned[bi]<=5?' Only '+(next-S.owned[bi])+' more to its ×2 milestone!':'');
+}
+function code(c){
+  var inc=incomePerSec();
+  if(c==='GOLDRAIN'){var g=Math.max(1e6,inc*600);S.coins+=g;S.lifetime+=g;S.alltime+=g;}
+  else if(c==='MIDAS'){codes.MIDAS=1;}
+  else if(c==='TIMEWARP'){var h=inc*3600;S.coins+=h;S.lifetime+=h;S.alltime+=h;}
+  else{return {ok:false};}
+  if(window.PlayKit){PlayKit.codes(true);}
+  if(inGame){updateHud();}
+  return {ok:true,message:{GOLDRAIN:'Gold rain: +'+fmt(Math.max(1e6,inc*600))+' coins',MIDAS:'Midas touch: every tap is worth 10 times more',TIMEWARP:'Time warp: one hour of income right now (+'+fmt(inc*3600)+')'}[c]+'. Codes on: this session is not saved.'};
 }
 function init(){
   load();
@@ -704,6 +757,7 @@ function init(){
     if(n0===S.buy){amts[i].classList.add('sel');}else{amts[i].classList.remove('sel');}
   }
   $('btnPlay').addEventListener('click',function(){sfx('buy');startGame();});
+  $('btnHow').addEventListener('click',function(){sfx('buy');startGame(true);});
   $('btnReset').addEventListener('click',function(){
     if(!confirm('Start a new run? Buildings and coins reset (golden coins are kept).')){return;}
     S.coins=0;S.lifetime=0;S.last=Date.now();
@@ -747,6 +801,15 @@ function init(){
   offlineProgress();
   disp=S.coins;
   requestAnimationFrame(frame);
+  scene('title');
+  if(SDK){SDK.init({
+    pauseButton:'tr',
+    onRestart:function(){startGame();},
+    onExit:toTitle,
+    onTutorial:function(){startGame(true);},
+    onHint:sdkHint,
+    onCheat:code
+  });}
 }
 init();
 })();

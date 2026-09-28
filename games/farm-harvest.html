@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Farm Harvest</title>
 <style>
@@ -36,7 +37,7 @@
     border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
   #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
   .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
-  .stat small{display:block; color:var(--dim); font-size:11px; font-weight:500;}
+  .stat small{display:block; color:var(--dim); font-size:12px; font-weight:500;}
   .iconBtn{background:var(--card2); border:1px solid rgba(125,255,138,.25); color:var(--txt);
     border-radius:10px; min-width:48px; min-height:48px; font-size:20px; cursor:pointer;}
   #cropBar{display:flex; gap:6px; padding:8px; margin-bottom:8px; overflow-x:auto;}
@@ -54,7 +55,7 @@
   .plot .emoji{font-size:34px; line-height:1;}
   .plot .emoji.pop{animation:readyPop .4s ease-out;}
   .plot .emptyHint{font-size:28px; color:var(--dim); opacity:.5;}
-  .plot .label{font-size:11px; color:var(--dim);}
+  .plot .label{font-size:12px; color:var(--dim);}
   .bar{width:80%; height:6px; background:rgba(0,0,0,.4); border-radius:4px; overflow:hidden;}
   .fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--gold)); width:0%; border-radius:4px; transition:width .2s linear;}
   .plot.ready{border:2px solid var(--ready); box-shadow:0 0 16px rgba(255,240,168,.7); animation:pulse 1s infinite;}
@@ -70,7 +71,7 @@
   .shopItem .ic{font-size:28px;}
   .shopItem .info{flex:1;}
   .shopItem .name{font-weight:700; font-size:14px;}
-  .shopItem .desc{color:var(--dim); font-size:11px;}
+  .shopItem .desc{color:var(--dim); font-size:12px;}
   .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
     border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
     transition:transform .1s;}
@@ -95,6 +96,14 @@
     border-radius:12px; min-height:52px; font-size:18px; font-weight:800; cursor:pointer; margin:6px 0; box-shadow:0 4px 14px rgba(53,160,79,.5);}
   .btn.alt{background:linear-gradient(180deg,#4a5560,#2b343c); border-color:#7a8a96;}
   .hidden{display:none !important;}
+  #goalBar{padding:8px 12px; margin-bottom:8px; font-size:14px;}
+  #goalBar .gt{display:flex; justify-content:space-between; gap:8px; font-weight:700;}
+  #goalBar .gt span:last-child{color:var(--gold); white-space:nowrap;}
+  #goalBar .bar{width:100%; margin-top:6px; height:8px;}
+  #app.night{filter:brightness(.82) saturate(.85);}
+  .barnRow{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:6px 0; text-align:left; font-size:14px;}
+  .barnRow .ic{font-size:28px;} .barnRow .info{flex:1;} .barnRow b{color:var(--gold);}
+  .barnRow small{display:block; color:var(--dim); font-size:12px;}
   #fx{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
   .fxFloat{position:absolute; transform:translate(-50%,-50%); font-weight:800; font-size:16px; color:var(--gold);
     text-shadow:0 0 10px rgba(255,216,107,.9); white-space:nowrap; animation:fxUp .9s ease-out forwards;}
@@ -118,9 +127,12 @@
     <div class="stat">⏱ <span id="cps">0</span>/s<small>income</small></div>
     <div class="stat">🏆 <span id="best">0</span><small>lifetime</small></div>
     <div class="stat">🌱 <span id="seeds">0</span><small>seeds</small></div>
+    <div class="stat"><span id="clock">☀️ Day 1 · 6:00</span><small>farm time</small></div>
+    <button class="iconBtn" id="barnBtn" aria-label="Barn: your seeds and helpers">🎒</button>
     <button class="iconBtn" id="muteBtn">🔊</button>
     <button class="iconBtn" id="menuBtn">⚙️</button>
   </div>
+  <div id="goalBar" class="panel"><div class="gt"><span id="goalTxt">🎯 Goal</span><span id="goalRew"></span></div><div class="bar"><div class="fill" id="goalFill"></div></div></div>
   <div id="cropBar" class="panel"></div>
   <div id="plotGrid"></div>
   <div id="shopTitle">🏪 SHOP</div>
@@ -133,20 +145,38 @@
     <h1>Farm Harvest</h1>
     <p class="sub">Plant · Water · Harvest. Build helpers &amp; grow your fortune!</p>
     <button class="btn" id="playBtn">▶ Play</button>
+    <button class="btn alt" id="howBtn" type="button">❓ Learn to play</button>
     <p class="sub" style="margin:10px 0 0;">Best: <span id="startBest">0</span> coins earned</p>
   </div>
 </div>
 
+<div id="barnScreen" class="overlay hidden">
+  <div class="box">
+    <h1 style="font-size:24px;">🎒 Barn</h1>
+    <p class="sub" style="margin:0 0 6px;">Saved seeds are planted first, for free.</p>
+    <div id="barnList" style="max-height:52vh; overflow-y:auto;"></div>
+    <button class="btn" id="barnClose">✓ Close</button>
+  </div>
+</div>
+<div id="dayCard" class="overlay hidden">
+  <div class="box">
+    <div class="big">🌙</div>
+    <h1 style="font-size:26px;" id="dayTitle">Day 1 done</h1>
+    <p class="sub" id="dayMsg"></p>
+    <button class="btn" id="dayNext">☀️ Start the next day</button>
+  </div>
+</div>
 <div id="menuScreen" class="overlay hidden">
   <div class="box">
-    <h1>⚙️ Menu</h1>
-    <button class="btn" id="resumeBtn">▶ Resume</button>
+    <h1>⚙️ Farm settings</h1>
+    <button class="btn" id="resumeBtn">✓ Close</button>
     <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
     <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
   </div>
 </div>
 
 <script src="kit/juicekit.js"></script>
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -165,6 +195,12 @@
   var MASTERY_BONUS = 0.06;
   var SAVE_KEY = "farmHarvestSave_v1";
   var CHICKEN_PER_LEVEL = 2;
+  var DAY_LEN = 240; // seconds of play per farm day (6:00 to 22:00)
+  var SDK = window.ArcadeSDK || null, RM = !!(window.PlayKit && PlayKit.rm), coach = null;
+  function scene(sc, extra){ try{ if(SDK) SDK.state(Object.assign({scene:sc}, extra || {})); }catch(e){} }
+  function did(n){ if(coach) coach.did(n); }
+  function cheated(){ return !!(SDK && SDK.cheated); }
+  function playing(){ return ["startScreen","menuScreen","barnScreen","dayCard"].every(function(id){ return $(id).classList.contains("hidden"); }); }
 
   function emptyPlot(){ return {crop:null, progress:0, waterUntil:0}; }
   function defaultState(){
@@ -174,7 +210,8 @@
       mastery:{carrot:0,tomato:0,corn:0,pumpkin:0},
       seeds:{carrot:0,tomato:0,corn:0,pumpkin:0}, seedBadge:false,
       sprinkler:false, harvester:false, chicken:0,
-      muted:false, lastSave:Date.now(), plots:plots
+      muted:false, lastSave:Date.now(), plots:plots,
+      day:1, dayT:0, dayH:0, dayE:0
     };
   }
   var state = defaultState();
@@ -275,6 +312,7 @@
     setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
   }
   function burst(x, y, chars, n, spread, up){
+    if(RM) return;
     for(var i=0;i<n;i++){
       var s = pPool.pop();
       if(!s){
@@ -305,6 +343,7 @@
     }
   }
   function confetti(){
+    if(RM) return;
     var chars=["✨","🪙","🌾","🎉"], i;
     for(i=0;i<24;i++){
       var s=pPool.pop();
@@ -360,8 +399,9 @@
     var fired = -1;
     while(mileIdx < MILES.length && state.earned >= MILES[mileIdx]) fired = mileIdx++;
     if(fired < 0) return;
-    var v = MILES[fired];
-    toast("🏆 Milestone: " + fmt(v) + " coins earned!");
+    var v = MILES[fired], rew = Math.round(v * 0.1);
+    state.coins += rew;
+    toast("🏆 Goal reached: " + fmt(v) + " coins earned! +" + fmt(rew) + " 🪙");
     sfx("levelup");
     var r = coinsEl.getBoundingClientRect();
     burst(r.left + r.width/2, r.top + r.height/2, ["🪙","✨"], 8, 30, true);
@@ -375,7 +415,8 @@
 
   function plant(i){
     var id = state.selected, c = CROPS[id];
-    if(state.coins < c.cost){
+    var fromSeed = (state.seeds[id] || 0) > 0;
+    if(!fromSeed && state.coins < c.cost){
       sfx("deny");
       // visible refusal: a sound alone is nothing on a muted phone
       if(plotRefs[i]){
@@ -394,11 +435,13 @@
         : ("Harvest a ready plot first \u2014 " + CROPS[id].name + " costs " + fmt(c.cost)));
       return;
     }
-    state.coins -= c.cost;
+    if(fromSeed) state.seeds[id]--; else state.coins -= c.cost;
     var p = state.plots[i];
     p.crop = id; p.progress = 0; p.waterUntil = 0;
     wasReady[i] = false;
     sfx("plant");
+    did("plant");
+    if(fromSeed && plotRefs[i]){ var cs = plotCenter(i); floatText(cs.x, cs.y - 30, "🌱 saved seed"); }
     if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y, ["🌱","✨"], 3, 18, true); }
     render();
   }
@@ -407,6 +450,7 @@
     if(p.waterUntil > Date.now()) return;
     p.waterUntil = Date.now() + WATER_MS;
     sfx("water");
+    did("water");
     if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y - 8, ["💧"], 4, 22, false); }
     render();
   }
@@ -416,6 +460,8 @@
     var id = p.crop, val = cropValue(id);
     state.coins += val; state.earned += val;
     state.mastery[id]++;
+    state.dayH++; state.dayE += val;
+    if(!silent) did("harvest");
     p.crop = null; p.progress = 0; p.waterUntil = 0;
     wasReady[i] = false;
     if(!silent){
@@ -742,6 +788,51 @@
       if(r.html !== html){ r.html = html; r.btn.innerHTML = html; }
     }
     checkMiles();
+    renderGoal();
+    renderClock();
+  }
+  var lastGoal = "", lastClock = "";
+  function renderGoal(){
+    var t;
+    if(mileIdx >= MILES.length) t = "🎯 Every goal reached. What a farm!";
+    else t = "🎯 Goal: earn " + fmt(MILES[mileIdx]) + " coins in all · " + fmt(state.earned) + "/" + fmt(MILES[mileIdx]);
+    if(t !== lastGoal){
+      lastGoal = t; $("goalTxt").textContent = t;
+      $("goalRew").textContent = mileIdx < MILES.length ? "+" + fmt(Math.round(MILES[mileIdx] * 0.1)) + " 🪙" : "";
+      var lo = mileIdx > 0 ? MILES[mileIdx - 1] : 0, hi = mileIdx < MILES.length ? MILES[mileIdx] : 1;
+      $("goalFill").style.width = (mileIdx < MILES.length ? Math.max(0, Math.min(100, (state.earned - lo) / (hi - lo) * 100)) : 100) + "%";
+    }
+  }
+  function clockText(){
+    var mins = 360 + Math.floor(state.dayT / DAY_LEN * 960), h = Math.floor(mins / 60), m = mins % 60;
+    var night = h >= 19;
+    return (night ? "🌙" : h < 8 ? "🌅" : "☀️") + " Day " + state.day + " · " + h + ":" + (m < 10 ? "0" : "") + m;
+  }
+  function renderClock(){
+    var t = clockText();
+    if(t !== lastClock){ lastClock = t; $("clock").textContent = t; $("app").classList.toggle("night", t.charAt(0) === "🌙"); }
+  }
+  function endDay(){
+    $("dayTitle").textContent = "Day " + state.day + " done";
+    $("dayMsg").innerHTML = "You harvested <b>" + state.dayH + "</b> crop" + (state.dayH === 1 ? "" : "s") + " and earned <b>" + fmt(state.dayE) + "</b> coins today.<br>" +
+      (mileIdx < MILES.length ? "Next goal: " + fmt(MILES[mileIdx]) + " coins in all (" + fmt(state.earned) + " so far)." : "Every goal reached!");
+    scene("over", {score: Math.round(state.dayE)});
+    state.day++; state.dayT = 0; state.dayH = 0; state.dayE = 0;
+    save();
+    $("dayCard").classList.remove("hidden");
+    sfx("levelup");
+  }
+  function openBarn(){
+    var h = "";
+    CROP_IDS.forEach(function(id){
+      var c = CROPS[id];
+      h += '<div class="barnRow panel"><div class="ic">' + c.emoji + '</div><div class="info">' + c.name + ' seeds: <b>' + (state.seeds[id] || 0) + '</b>' +
+        '<small>' + state.mastery[id] + ' harvested · sells for ' + cropValue(id) + ' (+' + Math.round(state.mastery[id] * MASTERY_BONUS * 100) + '% mastery)</small></div></div>';
+    });
+    h += '<div class="barnRow panel"><div class="ic">🧺</div><div class="info">Plots: <b>' + state.unlocked + '/' + PLOT_MAX + '</b><small>' +
+      (state.sprinkler ? '💧 Sprinkler · ' : '') + (state.harvester ? '🤖 Harvester · ' : '') + '🐔 Chickens Lv ' + state.chicken + '</small></div></div>';
+    $("barnList").innerHTML = h;
+    $("barnScreen").classList.remove("hidden");
   }
   function render(){
     renderHud();
@@ -775,6 +866,10 @@
       var gain = chickenIncome() * dt;
       state.coins += gain; state.earned += gain;
     }
+    if(playing() && !(coach && coach.active)){
+      state.dayT += dt;
+      if(state.dayT >= DAY_LEN) endDay();
+    }
   }
   function frame(){
     var now = Date.now();
@@ -801,6 +896,7 @@
   }
 
   function save(){
+    if(cheated()) return;
     state.lastSave = Date.now();
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
   }
@@ -844,6 +940,10 @@
       state.seeds[id] = Math.max(0, Math.floor(num(sd[id], 0)));
     });
     state.seedBadge = s.seedBadge === true;
+    state.day = Math.max(1, Math.floor(num(s.day, 1)));
+    state.dayT = Math.max(0, Math.min(DAY_LEN, num(s.dayT, 0)));
+    state.dayH = Math.max(0, Math.floor(num(s.dayH, 0)));
+    state.dayE = Math.max(0, num(s.dayE, 0));
     var sp = Array.isArray(s.plots) ? s.plots : [];
     state.plots = [];
     for(var i=0;i<state.unlocked;i++){
@@ -875,17 +975,60 @@
     save();
   }
 
-  function startGame(){
-    $("startScreen").classList.add("hidden");
+  function startGame(teach){
+    ["startScreen","menuScreen","barnScreen","dayCard"].forEach(function(id){ $(id).classList.add("hidden"); });
     buildGrid();
     render();
     sfx("click");
+    scene("play");
     if(pendingToast){
       var t = pendingToast; pendingToast = null;
       setTimeout(function(){ toast(t); }, 400);
     }
+    if(coach){ coach.stop(true); coach = null; }
+    if(window.PlayKit && (teach === true || !PlayKit.seen("fh_tut"))){
+      coach = PlayKit.coach({key:"fh_tut", theme:{panel:"#153a20", fg:"#e8ffe9", accent:"#7dff8a"}, steps:[
+        {text:"Pick a crop to grow. Carrots are cheap and quick.", target:"#cropBar"},
+        {text:"Tap an empty plot to plant it.", target:"#plotGrid", on:"plant"},
+        {text:"Tap a growing plot to water it: watered crops grow twice as fast.", target:"#plotGrid", on:"water"},
+        {text:"When a crop glows, tap it to harvest and sell it.", target:"#plotGrid", on:"harvest"},
+        {text:"Spend coins in the shop on more plots and helpers, and chase the goal at the top. The day ends at 22:00 with a summary.", target:"#goalBar"}
+      ]});
+    }
   }
-  $("playBtn").addEventListener("click", startGame);
+  function toTitle(){
+    save(); if(coach){ coach.stop(true); coach = null; }
+    ["menuScreen","barnScreen","dayCard"].forEach(function(id){ $(id).classList.add("hidden"); });
+    $("startScreen").classList.remove("hidden"); scene("title");
+  }
+  function sdkHint(){
+    if(!$("startScreen").classList.contains("hidden")) return "Press Play, pick a crop, then tap a plot to plant, water and harvest.";
+    var ready = 0, empty = 0, dry = 0, i;
+    for(i = 0; i < state.unlocked; i++){ var p = state.plots[i]; if(!p.crop) empty++; else if(p.progress >= growTime(p.crop)) ready++; else if(p.waterUntil <= Date.now()) dry++; }
+    if(ready) return ready + " crop" + (ready > 1 ? "s are" : " is") + " ready: tap the glowing plots to harvest.";
+    if(empty && (state.coins >= CROPS[state.selected].cost || state.seeds[state.selected] > 0)) return "You have " + empty + " empty plot" + (empty > 1 ? "s" : "") + ": tap to plant " + CROPS[state.selected].name + ".";
+    if(empty) return "Pick a cheaper crop you can afford, then plant your empty plots.";
+    if(dry && !state.sprinkler) return "Tap growing crops to water them: they grow twice as fast.";
+    if(!state.sprinkler && state.coins >= 1200) return "Buy the Sprinkler: it waters every crop for you.";
+    if(state.unlocked < PLOT_MAX && state.coins >= PLOT_COSTS[state.unlocked]) return "Unlock another plot in the shop to grow more at once.";
+    var best = CROP_IDS.filter(function(id){ return state.coins >= CROPS[id].cost; }).sort(function(a, b){ return (cropValue(b) - CROPS[b].cost) / growTime(b) - (cropValue(a) - CROPS[a].cost) / growTime(a); })[0];
+    return best ? CROPS[best].emoji + " " + CROPS[best].name + " earns the most per second of the crops you can afford." : "Wait for your crops to grow, then harvest them.";
+  }
+  function code(c){
+    var i;
+    if(c === "COINSHOWER"){ state.coins += Math.max(1000, Math.round(state.earned * 0.2)); }
+    else if(c === "QUICKGROW"){ for(i = 0; i < state.unlocked; i++){ var p = state.plots[i]; if(p.crop) p.progress = growTime(p.crop); } }
+    else if(c === "MAGICBEANS"){ CROP_IDS.forEach(function(id){ state.seeds[id] = (state.seeds[id] || 0) + 10; }); }
+    else return {ok:false};
+    if(window.PlayKit) PlayKit.codes(true);
+    render();
+    return {ok:true, message:{COINSHOWER:"Coin shower: a big pile of coins", QUICKGROW:"Quick grow: every planted crop is ready now", MAGICBEANS:"Magic beans: 10 free seeds of every crop"}[c] + ". Codes on: the farm is not saved."};
+  }
+  $("playBtn").addEventListener("click", function(){ startGame(); });
+  $("howBtn").addEventListener("click", function(){ startGame(true); });
+  $("barnBtn").addEventListener("click", function(){ openBarn(); sfx("click"); });
+  $("barnClose").addEventListener("click", function(){ $("barnScreen").classList.add("hidden"); sfx("click"); });
+  $("dayNext").addEventListener("click", function(){ $("dayCard").classList.add("hidden"); sfx("click"); scene("play"); });
   $("resumeBtn").addEventListener("click", function(){
     $("menuScreen").classList.add("hidden"); sfx("click");
   });
@@ -930,6 +1073,15 @@
   document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
   lastTick = Date.now();
   requestAnimationFrame(frame);
+  scene("title");
+  if(SDK) SDK.init({
+    pauseButton: "tr",
+    onRestart: function(){ startGame(); },
+    onExit: toTitle,
+    onTutorial: function(){ startGame(true); },
+    onHint: sdkHint,
+    onCheat: code
+  });
 })();
 </script>
 </body>

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0a1208">
 <title>Idle Miner</title>
@@ -10,8 +11,8 @@
 html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#0a1208;color:#eafff0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#14532d 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#164e63 0%,transparent 55%),#0a1208}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#86efac;text-decoration:none;font-weight:700;font-size:16px;background:rgba(15,40,20,.85);border:1px solid rgba(134,239,172,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(74,222,128,.25)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(134,239,172,.35);background:rgba(15,40,20,.85);color:#fff;cursor:pointer}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#86efac;text-decoration:none;font-weight:700;font-size:16px;background:rgba(15,40,20,.85);border:1px solid rgba(134,239,172,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(74,222,128,.25)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(134,239,172,.35);background:rgba(15,40,20,.85);color:#fff;cursor:pointer}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto}
 .screen.s-active{display:flex}
 .logo{font-size:72px;margin-bottom:6px;filter:drop-shadow(0 0 20px rgba(74,222,128,.6));animation:bob 2.2s ease-in-out infinite}
@@ -88,6 +89,9 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   .shop-col{max-height:none}
   .title{font-size:56px}
 }
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+@media (max-width:620px){#s-game{padding-top:60px}}
+@media (prefers-reduced-motion:reduce){.logo,.rock-btn.pop,.shake,.srow.flash,.srow .buy.afford,.buy-amt.afford,.prestige-btn.ready{animation:none!important}.float,.toast{animation-duration:.01s!important}.btn:active,.rock-btn:active,.srow .buy:active{transform:none}}
 </style>
 </head>
 <body>
@@ -103,6 +107,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <p class="tip">🪨 Stone → ⚫ Coal → ⚙️ Iron → 🪙 Gold → 💎 Diamond → 💚 Emerald → 🌀 Void · ✨ 1 gem per 1000m, +3% mining each · 📴 Offline: 50% rate, 8h cap · 💾 Auto-saves every 5 seconds</p>
   <button class="btn btn-big" id="btnPlay">▶ Play</button>
   <button class="btn btn-ghost" id="btnReset">New Run (keep gems)</button>
+  <div class="gu-row"><button class="btn btn-ghost" id="btnHow" type="button">❓ Learn to play</button></div>
 </div>
 
 <div class="screen" id="s-game">
@@ -153,6 +158,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   </div>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -269,7 +275,12 @@ function maxAfford(){
 }
 function dynaCost(){return 100*Math.pow(1.6,S.dynUses);}
 function gemsGain(){return Math.floor(depth()/(S.up[3]?800:1000));}
+var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null;
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function did(n){if(coach){coach.did(n);}}
+function cheated(){return !!(SDK&&SDK.cheated);}
 function save(){
+  if(cheated()){return;}
   S.last=Date.now();
   try{localStorage.setItem('im_state',JSON.stringify(S));}catch(e){}
 }
@@ -315,6 +326,7 @@ var PCOLS=['#9ca3af','#6b7280','#cbd5e1','#facc15','#22d3ee','#34d399','#a78bfa'
 var ptPool=[],ptFree=[],PTMAX=60;
 function burst(x,y,ti){
   var c=PCOLS[ti]||PCOLS[0],i,p,ang,dist,dx,dy,an;
+  if(RM){return;}
   for(i=0;i<5;i++){
     p=ptFree.pop();
     if(!p){
@@ -347,6 +359,7 @@ function floater(x,y,txt){
   f.style.animation='none';void f.offsetWidth;f.style.animation='';
 }
 function confetti(){
+  if(RM){return;}
   var i,p,an,vw=window.innerWidth,vh=window.innerHeight,cols=[PCOLS[3],PCOLS[4],PCOLS[5],PCOLS[6]];
   for(i=0;i<28;i++){
     p=ptFree.pop();
@@ -377,7 +390,7 @@ function dig(e){
   var v=tapValue();
   var crit=Math.random()<0.06;
   if(crit){v*=5;}
-  S.stones+=v;S.lifetime+=v;
+  S.stones+=v;S.lifetime+=v;did('dig');
   var nt=Date.now();
   if(nt-lastDigT<=1200){flow++;}else{flow=1;}
   lastDigT=nt;
@@ -406,7 +419,7 @@ function buyPick(){
   var c=pickCost();
   if(S.stones<c){sfx('error');return;}
   S.stones-=c;S.pick++;
-  sfx('buy');
+  sfx('buy');did('buy');
   if(shopR){rowFx(shopR.pickBtn);}
   toast('⛏️ Pickaxe Lv '+S.pick+'!');
   updateHud();
@@ -418,7 +431,7 @@ function buyMiner(){
   if(S.stones<c){sfx('error');return;}
   var first=S.miners===0;
   S.stones-=c;S.miners+=n;
-  sfx('buy');
+  sfx('buy');did('buy');
   if(shopR){rowFx(shopR.minerBtn);}
   if(first){toast('🤖 Auto-Miner hired!');}
   updateHud();
@@ -464,6 +477,7 @@ function doPrestige(){
   for(i=0;i<TIERS.length;i++){S.miles[i]=false;}
   save();
   show('s-over');
+  scene('over',{score:g});
   updateHud();
 }
 var E=null,digColEl=null,shopR=null;
@@ -668,12 +682,48 @@ function step(){
   }
   requestAnimationFrame(step);
 }
-function startGame(){
+function startGame(teach){
+  $('offlineModal').classList.remove('open');
   show('s-game');
   renderShop();
   updateHud();
   running=true;
   lastTick=Date.now();
+  scene('play');
+  if(coach){coach.stop(true);coach=null;}
+  if(window.PlayKit&&(teach===true||!PlayKit.seen('im_tut'))){
+    coach=PlayKit.coach({key:'im_tut',theme:{panel:'#0c2016',fg:'#dcfce7',accent:'#4ade80'},steps:[
+      {text:'Tap the rock to dig. Every stone you dig takes you deeper.',target:'#rockBtn',on:'dig'},
+      {text:'Spend stones in the shop: a better pickaxe digs more per tap, and auto-miners dig every second, even while you are away.',target:'#shop',on:'buy'},
+      {text:'Deeper tiers have richer ore. Light dynamite for ×10 digging, and at 1000m Prestige for gems: +3% mining each, forever.',target:'#btnDyna'}
+    ]});
+  }
+}
+function toTitle(){
+  save();running=false;if(coach){coach.stop(true);coach=null;}$('offlineModal').classList.remove('open');
+  $('startGems').textContent=fmt(S.gems);$('startMult').textContent=prestigeMult().toFixed(2);$('startBest').textContent=Math.floor(S.best)+'m';$('startRank').textContent=RANKS[rankIdx()].n;
+  $('btnPlay').textContent='▶ Continue';show('s-start');scene('title');
+}
+function sdkHint(){
+  if(!running){return 'Press Play and tap the rock. Buy a better pickaxe and auto-miners with your stones.';}
+  if(gemsGain()>=3){return 'Prestige now for '+gemsGain()+' gems: +'+(gemsGain()*3)+'% mining forever.';}
+  var pc=pickCost(),mc=minerCostAmt(1),t=TIERS[tierIdx()].v*mileMult()*prestigeMult();
+  var pickGain=t*(S.up[0]?2:1),minerGain=0.5*t*(S.up[1]?2:1)*3;
+  var pickNext=pickGain/pc>minerGain/mc;
+  var name=pickNext?'a pickaxe upgrade':'an auto-miner',c=pickNext?pc:mc;
+  if(S.dynT<=0&&S.stones>=dynaCost()&&S.miners>=5){return 'Light the dynamite: ×10 digging for '+dynaDur()+' seconds.';}
+  var ti=tierIdx(),nx=TIERS[ti+1];
+  return (S.stones>=c?'Buy '+name+' next':'Save '+fmt(c-S.stones)+' more stones for '+name)+': it is the best value right now.'+(nx?' '+nx.e+' '+nx.n+' ore starts at '+nx.min+'m.':'');
+}
+function code(c){
+  var r=Math.max(minerRate(),tapValue());
+  if(c==='STONERAIN'){var g=Math.max(1000,r*600);S.stones+=g;S.lifetime+=g;}
+  else if(c==='BIGBOOM'){S.dynT=60;}
+  else if(c==='DEEPDIVE'){S.lifetime+=5000;S.stones+=5000;}
+  else{return {ok:false};}
+  if(window.PlayKit){PlayKit.codes(true);}
+  if(running){updateHud();}
+  return {ok:true,message:{STONERAIN:'Stone rain: a big pile of stones',BIGBOOM:'Big boom: free dynamite (×10 digging) for 60 seconds',DEEPDIVE:'Deep dive: 500m deeper at once'}[c]+'. Codes on: this session is not saved.'};
 }
 function init(){
   load();
@@ -686,6 +736,7 @@ function init(){
   try{hasSave=!!localStorage.getItem('im_state');}catch(e){}
   $('btnPlay').textContent=hasSave?'▶ Continue':'▶ Play';
   $('btnPlay').addEventListener('click',function(){sfx('prestige');startGame();});
+  $('btnHow').addEventListener('click',function(){sfx('buy');startGame(true);});
   $('btnReset').addEventListener('click',function(){
     S.stones=0;S.lifetime=0;S.pick=1;S.miners=0;S.dynUses=0;S.dynT=0;S.last=Date.now();
     var i;
@@ -713,6 +764,15 @@ function init(){
   cacheEls();
   lastTick=Date.now();
   requestAnimationFrame(step);
+  scene('title');
+  if(SDK){SDK.init({
+    pauseButton:'tr',
+    onRestart:function(){startGame();},
+    onExit:toTitle,
+    onTutorial:function(){startGame(true);},
+    onHint:sdkHint,
+    onCheat:code
+  });}
 }
 init();
 })();

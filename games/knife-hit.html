@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Knife Hit</title>
 <style>
@@ -19,11 +20,17 @@
   .best { color:#fbbf24; font-size:clamp(16px,4vw,22px); font-weight:700; }
   .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
   .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,113,133,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fde9ec; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(225,29,72,.3); }
-  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
   .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
   .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(251,113,133,.4); background:rgba(10,12,26,.65); color:#fde9ec; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(225,29,72,.3); }
   #hub { position:fixed; top:14px; left:16px; z-index:20; color:#fecdd3; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(251,113,133,.35); }
   @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+  #tut { position:fixed; left:0; right:0; bottom:9vh; z-index:9; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; text-align:center; padding:0 16px; }
+  #tut .tap { font-size:54px; animation:tapHint 1s ease-in-out infinite; }
+  #tut .card { background:rgba(10,12,26,.8); border:1px solid rgba(251,113,133,.45); border-radius:18px; padding:12px 18px; max-width:340px; color:#fde9ec; font-weight:800; font-size:17px; }
+  #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
+  @keyframes tapHint { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(10px) scale(.9); } }
+  @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
 </style>
 </head>
 <body>
@@ -36,6 +43,7 @@
 </div>
 <div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
 <a id="hub" href="../index.html">← Hub</a>
+<div id="tut" class="hidden"><div class="tap" aria-hidden="true">👆</div><div class="card">Tap anywhere to throw a knife<small id="tutMore">Land it in the spinning log, but never on a knife that is already stuck. Slice the golden apple for +5.</small></div></div>
 <div class="overlay" id="start">
   <h1>KNIFE HIT</h1>
   <div class="sub">Tap to throw a knife into the spinning log. Don't hit a stuck knife! Slice golden apples for +5. Clear the level to speed things up.</div>
@@ -122,6 +130,13 @@ let lvlApples = 0, perfectTot = 0, perfectTier = 0;
 try { perfectTot = parseInt(localStorage.getItem('knife-hit-perfect') || '0', 10) || 0; perfectTier = parseInt(localStorage.getItem('knife-hit-ptier') || '0', 10) || 0; } catch (e) {}
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+const SDK = window.ArcadeSDK || null;
+const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+const codes = {};
+let tutSeen = false, waiting = false;
+try { tutSeen = localStorage.getItem('knife-hit-tut') === '1'; } catch (e) {}
 
 let emblems = [];
 function loadEmblems() { try { emblems = JSON.parse(localStorage.getItem(EKEY) || '[]'); if (!Array.isArray(emblems)) emblems = []; } catch (e) { emblems = []; } }
@@ -143,7 +158,7 @@ function renderPerfect() {
   s.textContent = txt;
 }
 function earnEmblem(lv) {
-  if (EM_LEVELS.indexOf(lv) < 0 || emblems.indexOf('L' + lv) >= 0) return;
+  if (cheated() || EM_LEVELS.indexOf(lv) < 0 || emblems.indexOf('L' + lv) >= 0) return;
   emblems.push('L' + lv);
   saveEmblems();
   renderEmblems();
@@ -191,7 +206,7 @@ function addFloater(text, x, y, color) {
 function setupLevel() {
   knives = []; flying = null; apple = null;
   log.segs = 5 + Math.min(4, level - 1) + ((Math.random() * 3) | 0);
-  log.omega = (1.2 + level * 0.16) * log.dir;
+  log.omega = (1.2 + level * 0.16) * log.dir * (codes.SLOWLOG ? 0.5 : 1);
   lvlApples = 0;
   target = 5 + ((Math.random() * 6) | 0);
   if (level >= 2 && Math.random() < 0.5) log.dir *= -1;
@@ -220,28 +235,63 @@ function startGame() {
   $('score').textContent = '0';
   $('level').textContent = '1';
   $('best').textContent = best;
-  floaters.push({ text: 'TAP TO THROW!', x: W / 2, y: H * 0.78, t: 0, life: 2.4, color: '#fda4af' });
+  // Get ready: the log spins and the tap card waits for the first throw.
+  waiting = true;
+  $('tutMore').classList.toggle('hidden', tutSeen);
+  $('tut').classList.remove('hidden');
+  scene('play');
+}
+function toTitle() {
+  running = false; exploding = false; waiting = false; flying = null;
+  particles = []; pieces = []; floaters = []; knives = []; apple = null;
+  ['gameover', 'tut', 'hud', 'topbtns'].forEach(id => $(id).classList.add('hidden'));
+  renderEmblems(); renderApples(); renderPerfect();
+  $('start').classList.remove('hidden');
+  draw();
+  scene('title');
+}
+function sdkHint() {
+  if (!running) return 'Press Play, then tap to throw knives into the spinning log.';
+  if (exploding) return 'Level clear! The next log spins faster.';
+  // Where would a knife thrown now land? It takes about 0.18 s to fly.
+  const a = norm(Math.PI / 2 - (log.angle + log.omega * 0.18));
+  let near = Infinity;
+  for (const k of knives) near = Math.min(near, angDiff(a, k.angle));
+  const left = target - knives.length;
+  if (near < 0.35) return 'Wait: a stuck knife is coming round to the bottom. Throw just after it passes.';
+  if (apple && angDiff(a, apple.angle) < 0.3) return 'Throw now to slice the golden apple for +5!';
+  return 'Clear at the bottom: throw now. ' + left + ' knife' + (left === 1 ? '' : 'ves') + ' left in this log.';
+}
+function code(c) {
+  if (c === 'SLOWLOG') { codes.SLOWLOG = 1; log.omega *= 0.5; }
+  else if (c === 'GHOSTBLADE') codes.GHOSTBLADE = 1;
+  else if (c === 'APPLERAIN') { codes.APPLERAIN = 1; if (!apple && running) spawnApple(); }
+  else return { ok: false };
+  return { ok: true, message: { SLOWLOG: 'Slow log: every log spins at half speed', GHOSTBLADE: 'Ghost blade: knives slip past stuck knives', APPLERAIN: 'Apple rain: a new golden apple after every slice' }[c] + '. Codes on: this run will not set a best.' };
 }
 function endGame() {
   running = false;
   $('finalScore').textContent = score;
-  const nb = score > best;
+  const nb = score > best && !cheated();
   if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
   $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
   renderEmblems();
   $('gameover').classList.remove('hidden');
+  scene('over', { score });
 }
 
 function throwKnife() {
   if (!running || exploding || flying) return;
+  if (SDK && SDK.paused) return;
   ensureAudio();
+  if (waiting) { waiting = false; $('tut').classList.add('hidden'); if (!tutSeen) { tutSeen = true; try { localStorage.setItem('knife-hit-tut', '1'); } catch (e) {} } }
   flying = { y: H + 30, ang: 0 };
   sfx('whoosh');
 }
 function landKnife() {
   const a = norm(Math.PI / 2 - log.angle);
   for (const k of knives) {
-    if (angDiff(a, k.angle) < Math.min(0.24, 8 / log.R + 0.12)) {
+    if (!codes.GHOSTBLADE && angDiff(a, k.angle) < Math.min(0.24, 8 / log.R + 0.12)) {
       gameOver(); return;
     }
   }
@@ -253,8 +303,9 @@ function landKnife() {
     buzz(18);
     apple = null;
     lvlApples++;
-    appleTot++;
-    try { localStorage.setItem('knife-hit-apples', String(appleTot)); } catch (e) {}
+    if (codes.APPLERAIN) setTimeout(() => { if (running && !apple) spawnApple(); }, 200);
+    if (!cheated()) appleTot++;
+    try { if (!cheated()) localStorage.setItem('knife-hit-apples', String(appleTot)); } catch (e) {}
     while (appleTier < APT.length && appleTot >= APT[appleTier]) {
       appleTier++;
       addFloater('🏅 ' + APT[appleTier - 1] + ' APPLES!', log.x, log.y - log.R - 58, '#fde047');
@@ -313,6 +364,7 @@ function gameOver() {
 }
 
 function update(dt) {
+  if (RM) shake = 0;
   if (shake > 0) shake = Math.max(0, shake - 60 * dt);
   if (log.pulse > 0) log.pulse = Math.max(0, log.pulse - 3.5 * dt);
   if (log.squash > 0) log.squash = Math.max(0, log.squash - 5 * dt);
@@ -337,7 +389,7 @@ function update(dt) {
     if (explodeT > 0.7) {
       exploding = false;
       level++;
-      if (lvlApples === 0) {
+      if (lvlApples === 0 && !cheated()) {
         perfectTot++;
         try { localStorage.setItem('knife-hit-perfect', String(perfectTot)); } catch (e) {}
         while (perfectTier < PFT.length && perfectTot >= PFT[perfectTier]) {
@@ -405,7 +457,7 @@ function drawLog() {
   }
   ctx.beginPath(); ctx.arc(x, y, R, 0, TAU);
   ctx.strokeStyle = '#4c3317'; ctx.lineWidth = 6; ctx.stroke();
-  ctx.beginPath(); ctx.arc(x, y, R - 4, 0, TAU);
+  ctx.beginPath(); ctx.arc(x, y, Math.max(0, R - 4), 0, TAU);
   ctx.strokeStyle = 'rgba(253,164,175,.25)'; ctx.lineWidth = 1.5; ctx.stroke();
   if (log.pulse > 0) {
     ctx.save();
@@ -511,6 +563,7 @@ function loop(ts) {
 }
 
 function tap(e) { e.preventDefault(); ensureAudio(); throwKnife(); }
+window.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'ArrowUp') && running) { e.preventDefault(); throwKnife(); } });
 canvas.addEventListener('touchstart', tap, { passive: false });
 canvas.addEventListener('mousedown', tap);
 
@@ -526,6 +579,15 @@ renderApples();
 renderPerfect();
 $('mute').textContent = muted ? '🔇' : '🔊';
 requestAnimationFrame(loop);
+scene('title');
+if (SDK) SDK.init({
+  pauseButton: 'bl',
+  onRestart: () => startGame(),
+  onExit: toTitle,
+  onTutorial: () => { tutSeen = false; startGame(); },
+  onHint: sdkHint,
+  onCheat: code
+});
 </script>
 </body>
 </html>

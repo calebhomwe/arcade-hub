@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#070a14">
 <title>Word Scramble</title>
@@ -11,8 +12,8 @@ html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#05060f;color:#e9edff;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1200px 800px at 50% -12%,#1e3a8a 0%,#152a5e 34%,transparent 64%),radial-gradient(950px 720px at 108% 112%,#6d28d9 0%,#4a1663 40%,transparent 60%),radial-gradient(720px 520px at -8% 88%,#0e7490 0%,transparent 55%),#05060f}
 .bg::after{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 42%,transparent 55%,rgba(2,3,10,.62) 100%)}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#7dd3fc;text-decoration:none;font-weight:700;font-size:16px;background:rgba(13,20,40,.6);border:1px solid rgba(125,211,252,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(34,211,238,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(125,211,252,.35);background:rgba(13,20,40,.6);color:#fff;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#7dd3fc;text-decoration:none;font-weight:700;font-size:16px;background:rgba(13,20,40,.6);border:1px solid rgba(125,211,252,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(34,211,238,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(125,211,252,.35);background:rgba(13,20,40,.6);color:#fff;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden;background:rgba(5,8,18,.32);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
 .screen.s-active{display:flex}
 .logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(34,211,238,.6));animation:bob 2.2s ease-in-out infinite}
@@ -94,6 +95,10 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 @keyframes wrongPulseW{0%{box-shadow:inset 0 3px 8px rgba(0,0,0,.55),0 0 0 rgba(251,113,133,0)}40%{box-shadow:inset 0 3px 8px rgba(0,0,0,.55),0 0 20px rgba(251,113,133,.85)}100%{box-shadow:inset 0 3px 8px rgba(0,0,0,.55),0 0 10px rgba(251,113,133,.5)}}
 @media (min-width:700px){.title{font-size:56px}.tile{width:62px;height:66px}.slot{width:58px;height:66px}}
 @media (max-height:430px){.logo{display:none}.title{font-size:26px;margin-bottom:4px}.sub{font-size:12px;margin-bottom:8px}.diff-label{margin-bottom:4px}.diff-row{margin-bottom:8px}.best-box{padding:6px 14px;font-size:13px;margin-bottom:8px}.tip{font-size:11px;margin-bottom:8px}.btn{padding:9px 16px;font-size:15px;min-height:38px}.btn-big{font-size:18px;padding:10px 28px;min-height:44px}.btn-ghost{margin-top:6px}.score-big{font-size:40px;margin:2px 0}#s-game{padding-top:18px}.hud{margin:6px 0 4px;gap:6px}.hud-item{padding:4px 10px;font-size:13px;min-width:52px}.slots{margin:8px 0;min-height:46px}.slot{width:40px;height:46px;font-size:22px}.tiles{margin:6px 0}.tile{width:44px;height:46px;font-size:20px}.ctrl-row{margin:8px 0 12px}.ctrl{padding:8px 14px;font-size:14px}}
+@media (max-width:620px){#s-game{padding-top:60px}}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.gu-row .btn{font-size:15px;padding:10px 18px;min-height:44px}
+@media (prefers-reduced-motion:reduce){.logo,.fl,.stars::before,.stars::after,.shake,.slot.filled,.slot.win,.slot.wrong,.tile.deal,.ctrl.deny,.hud-item.jpop,.bar.flash{animation:none!important}.float{animation-duration:.01s!important}.btn:active,.tile:active{transform:none}}
 </style>
 </head>
 <body>
@@ -118,6 +123,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best streak: <b id="startStreak">0</b> · ⚡ Fastest word: <b id="startFast">—</b></div>
   <div class="best-box" id="startMeta">🪙 Gold tiles: 0 · 🧠 Best clean run: 0</div>
   <div class="xp-box"><div id="xpText">LV 1 · Rookie · 0/50 XP</div><div class="xp-bar-wrap"><div class="xp-bar" id="xpBar"></div></div><div id="xpNext">Next unlock: MEDIUM at LV 2</div></div>
+  <div class="gu-row" id="guRow"><button class="btn btn-ghost" id="btnHow" type="button">❓ Learn to play</button></div>
   <p class="tip">💡 Hint reveals a letter (−5 pts, +5 per extra hint on the same word) · ⏭ Skip resets streak · ⏳ Speed bonus for fast solves · ❤️ 3 time-outs and you're out · 🎯 No hint + no mistake = PERFECT +5</p>
 </div>
 
@@ -149,6 +155,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <button class="btn btn-ghost" id="btnMenu">Change Difficulty</button>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -163,6 +170,13 @@ var diff='45',score=0,streak=0,lives=3,best=0,bestStreak=0,word='',timeLeft=0,ti
 var slots=[],tiles=[],slotEls=[],slotChEls=[],tileEls=[],tickId=null,busy=false;
 var wrongCount=0,wordBorn=0;
 var deadline=0,prevBest=0,pausedMidWord=false;
+var runId=0,coach=null;
+function later(f,ms){var r=runId;setTimeout(function(){if(r===runId){f();}},ms);}
+function coachOn(){return !!(coach&&coach.active);}
+function did(n){if(coach){coach.did(n);}}
+var BANDS={'3':'3 letters (ages 5–6)','45':'4–5 letters (ages 6–7)','6':'6 letters (ages 7–8)','78':'7–8 letters (ages 8–9)','9':'9+ letters (ages 9+)'};
+var LP=window.PlayKit?PlayKit.progress({key:'ws_progress',title:'Word Scramble',bands:BANDS,unit:'words tried',theme:{panel:'#0d1428',fg:'#e9edff',accent:'#22d3ee'}}):null;
+function rec(ok){if(LP){LP.record(diff,ok,word);}}
 var XP_KEY='ws_xp';var TIER_KEYS=['3','45','6','78','9'];var UNLOCK={'3':1,'45':2,'6':4,'78':6,'9':9};var XP_TIER={'3':5,'45':8,'6':12,'78':16,'9':22};var TIER_NAME={'3':'EASY','45':'MEDIUM','6':'HARD','78':'INSANE','9':'MAX MAX'};
 var xpLv=1,xpCur=0;
 var TITLES=['Rookie','Word Cub','Letter Scout','Spell Cadet','Word Smith','Puzzle Pro','Letter Wizard','Word Master','Spell Champion','Word Legend'];
@@ -200,10 +214,12 @@ function voiceKnown(name){if(!voiceMan||!voiceMan.words){return true;}return voi
 function voiceRun(name,rate){try{var a=ac(),s=a.createBufferSource();s.buffer=voiceBuf[name];s.playbackRate.value=rate||1;s.connect(a.destination);s.start(0);}catch(e){}}
 function voicePlay(name,rate,fallback){if(muted){if(fallback){fallback();}return;}if(voiceDead||!window.fetch||voiceMiss[name]||!voiceKnown(name)){if(fallback){fallback();}return;}if(voiceBuf[name]){voiceRun(name,rate);return;}try{fetch(VOICE_BASE+name+'.mp3').then(function(r){if(!r.ok){throw new Error('nf');}return r.arrayBuffer();}).then(function(ab){return ac().decodeAudioData(ab);}).then(function(buf){voiceBuf[name]=buf;voiceRun(name,rate);}).catch(function(){voiceMiss[name]=1;if(fallback){fallback();}});}catch(e){voiceDead=true;if(fallback){fallback();}}}
 function voiceCheer(){if(!voiceMan||!voiceMan.cheers||!voiceMan.cheers.length){return;}voicePlay(voiceMan.cheers[(Math.random()*voiceMan.cheers.length)|0],1,null);}
-function confetti(n){var cols=['#22d3ee','#a78bfa','#e879f9','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+var RM=!!(window.PlayKit&&PlayKit.rm);var SDK=window.ArcadeSDK||null;
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function confetti(n){if(RM){return;}var cols=['#22d3ee','#a78bfa','#e879f9','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
 var jflashEl=null;
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jflash(col){if(RM){return;}if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function updateHud(){elScore.textContent=score;elStreak.textContent=streak>0?streak+' (+'+(Math.min(streak,10)*3)+')':'0';var h='',i;for(i=0;i<3;i++){h+=i<lives?'♥':'♡';}elLives.textContent=h;elBest.textContent=best;updateHintBtn();}
 function updateBar(){var pct=(timeLeft/timeTotal)*100;elBar.style.width=pct+'%';if(pct<30){elBar.classList.add('low');}else{elBar.classList.remove('low');}}
@@ -229,7 +245,7 @@ function nextWord(){
   else{tickId=setInterval(tick,100);}
   voicePlay(word,1,null);
 }
-function tick(){if(document.hidden){return;}timeLeft=(deadline-performance.now())/1000;if(timeLeft<=0){timeLeft=0;updateBar();timeOut();return;}updateBar();}
+function tick(){if(document.hidden){return;}if(coachOn()){deadline=performance.now()+timeLeft*1000;return;}timeLeft=(deadline-performance.now())/1000;if(timeLeft<=0){timeLeft=0;updateBar();timeOut();return;}updateBar();}
 function tileTap(j){
   if(busy){return;}
   if(tiles[j].used){return;}
@@ -240,6 +256,7 @@ function tileTap(j){
   tileEls[j].classList.add('used');
   slotChEls[i].textContent=tiles[j].ch.toUpperCase();
   slotEls[i].classList.add('filled');
+  did('place');
   if(slots.indexOf(-1)===-1){checkWord();}
 }
 function slotTap(i){
@@ -251,6 +268,7 @@ function slotTap(i){
   tileEls[j].classList.remove('used');
   slotChEls[i].textContent='';
   slotEls[i].classList.remove('filled');
+  did('unplace');
 }
 function checkWord(){var built='',i;for(i=0;i<slots.length;i++){built+=tiles[slots[i]].ch;}if(built===word){wordCorrect();}else{wordWrong();}}
 function wordCorrect(){
@@ -260,7 +278,7 @@ function wordCorrect(){
   var sb=Math.min(streak,10)*3;
   var gain=10+speed+sb;
   score+=gain;bumpStreak();
-  addXp(XP_TIER[diff]);voiceCheer();pausedMidWord=false;
+  addXp(XP_TIER[diff]);voiceCheer();pausedMidWord=false;rec(true);did('solve');
   var perfectBonus=(hintsUsed===0&&wrongCount===0)?5:0;
   if(perfectBonus){score+=perfectBonus;sfx('levelup');setTimeout(function(){floatText('PERFECT +'+perfectBonus);},600);}
   if(hintsUsed===0&&wrongCount===0&&!shuffledThis){cleanRun++;if(cleanRun>cleanBest){cleanBest=cleanRun;lsSet('ws_cleanbest',String(cleanBest));}if(cleanRun%5===0){setTimeout(function(){floatText('🧠 CLEAN RUN x'+cleanRun+'!');sfx('levelup');},1000);}}else{cleanRun=0;}
@@ -277,10 +295,10 @@ function wordCorrect(){
   floatText('+'+gain);
   if(streak>=3&&streak%3===0){sfx('levelup');setTimeout(function(){floatText('🔥 STREAK '+streak+'!');},260);}
   updateHud();
-  setTimeout(nextWord,900);
+  later(nextWord,900);
 }
 function wordWrong(){
-  busy=true;lives--;streak=0;wrongCount++;
+  busy=true;lives--;streak=0;wrongCount++;rec(false);
   deadline=Math.max(deadline,performance.now()+1000);
   markWrong();
   sfx('buzz');
@@ -288,8 +306,8 @@ function wordWrong(){
   elSlots.classList.add('shake');
   setTimeout(function(){elSlots.classList.remove('shake');},450);
   updateHud();
-  if(lives<=0){if(tickId){clearInterval(tickId);tickId=null;}revealWord();setTimeout(gameOver,900);return;}
-  setTimeout(function(){
+  if(lives<=0){if(tickId){clearInterval(tickId);tickId=null;}revealWord();later(gameOver,900);return;}
+  later(function(){
     if(slotEls.length&&slotEls[0].classList.contains('reveal')){return;}
     var i,j;
     for(i=0;i<slots.length;i++){j=slots[i];if(j!==-1){tiles[j].used=false;tileEls[j].classList.remove('used');slotChEls[i].textContent='';slotEls[i].classList.remove('filled','hinted','wrong');slots[i]=-1;}}
@@ -299,15 +317,15 @@ function wordWrong(){
 function markWrong(){var i,j;for(i=0;i<slots.length;i++){j=slots[i];if(j!==-1&&tiles[j].ch!==word[i]){slotEls[i].classList.add('wrong');}}}
 function shuffleTiles(){if(busy){return;}shuffledThis=true;sfx('whoosh');var order=[],k;for(k=0;k<tiles.length;k++){order.push(k);}shuffle(order);var nt=[],remap={};for(k=0;k<order.length;k++){nt.push(tiles[order[k]]);remap[order[k]]=k;}for(k=0;k<slots.length;k++){if(slots[k]!==-1){slots[k]=remap[slots[k]];}}tiles=nt;renderTiles();for(k=0;k<tiles.length;k++){if(tiles[k].used){tileEls[k].classList.add('used');}}var si,sj;for(si=0;si<slots.length;si++){sj=slots[si];slotChEls[si].textContent=sj===-1?'':tiles[sj].ch.toUpperCase();}}
 function timeOut(){
-  busy=true;lives--;streak=0;wrongCount++;
+  busy=true;lives--;streak=0;wrongCount++;rec(false);
   if(tickId){clearInterval(tickId);tickId=null;}
   sfx('buzz');
   elBar.classList.add('flash');
   revealWord();
   floatText('⏰ '+word.toUpperCase());
   updateHud();
-  if(lives<=0){setTimeout(gameOver,900);return;}
-  setTimeout(function(){elBar.classList.remove('flash');nextWord();},1100);
+  if(lives<=0){later(gameOver,900);return;}
+  later(function(){elBar.classList.remove('flash');nextWord();},1100);
 }
 function hintCost(){return 5*(hintsUsed+1);}
 function updateHintBtn(){var cost=hintCost();elHint.textContent='💡 Hint −'+cost;elHint.classList.toggle('off',score<cost||slots.indexOf(-1)===-1);}
@@ -347,14 +365,46 @@ $('overMeta').textContent='🪙 Gold: '+goldTot+' · 🧠 Best clean run: '+clea
   else{msg='Keep the streak going next round!';}
   $('overMsg').textContent=msg;
   show('s-over');
+  scene('over',{score:score});
 }
-function startGame(d){
+function stopRun(){runId++;if(tickId){clearInterval(tickId);tickId=null;}busy=true;pausedMidWord=false;if(coach){coach.stop(true);coach=null;}}
+function startGame(d,teach){
+  stopRun();
   diff=d;score=0;streak=0;lives=3;pausedMidWord=false;
   loadBest();
   prevBest=best;
   show('s-game');
   updateHud();
   nextWord();
+  if(LP){LP.session();}
+  scene('play');
+  if(window.PlayKit&&(teach||!PlayKit.seen('ws_tut'))){
+    coach=PlayKit.coach({key:'ws_tut',theme:{panel:'#0d1428',fg:'#e9edff',accent:'#22d3ee'},steps:[
+      {text:'Tap the letter tiles to spell the word. The first tile you tap fills the first slot.',target:'#tiles',on:'place'},
+      {text:'Oops? Tap a filled slot to send its letter back down.',target:'#slots',on:'unplace'},
+      {text:'Stuck? 💡 Hint puts in the next letter for a few points, and 🔀 Shuffle mixes the tiles.',target:'.ctrl-row'},
+      {text:'Now spell the whole word. The time bar waits while these tips are on screen.',target:'#slots',on:'solve'}
+    ]});
+  }
+}
+function refreshStart(){
+  loadBest();
+  $('startBest').textContent=best;
+  $('startStreak').textContent=bestStreak;
+  var iF,fvF,bestF=0;for(iF=0;iF<TIER_KEYS.length;iF++){fvF=parseInt(lsGet('ws_fast_'+TIER_KEYS[iF])||'0',10)||0;if(fvF>0&&(bestF===0||fvF<bestF))bestF=fvF;}
+  $('startFast').textContent=bestF?((bestF/1000).toFixed(1)+'s'):'—';
+  $('startMeta').textContent='🪙 Gold tiles: '+goldTot+' · 🧠 Best clean run: '+cleanBest;
+  refreshXpHud();
+}
+function toTitle(){stopRun();refreshStart();show('s-start');scene('title');}
+function sdkHint(){
+  if(!elGameScr.classList.contains('s-active')||!word){return 'Pick a level, then tap the letter tiles in order to spell the hidden word. Start with 3 letters if you are new.';}
+  var i;
+  for(i=0;i<slots.length;i++){if(slots[i]!==-1&&tiles[slots[i]].ch!==word[i]){return 'Slot '+(i+1)+' has the wrong letter. Tap it to send it back.';}}
+  var nx=slots.indexOf(-1);
+  if(nx===-1){return 'Every slot is full. Check the word you built.';}
+  if(nx===0){return 'The word has '+word.length+' letters and starts with "'+word[0].toUpperCase()+'".';}
+  return 'Good so far! The next letter is "'+word[nx].toUpperCase()+'".';
 }
 function init(){
   elScore=$('score');elStreak=$('streak');elLives=$('lives');elBest=$('best');elBar=$('bar');elSlots=$('slots');elTiles=$('tiles');elHint=$('btnHint');elGameScr=$('s-game');
@@ -383,7 +433,7 @@ $('startMeta').textContent='🪙 Gold tiles: '+goldTot+' · 🧠 Best clean run:
     });
   }
   $('btnAgain').addEventListener('click',function(){sfx('coin');startGame(diff);});
-  $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
+  $('btnMenu').addEventListener('click',function(){sfx('tap');toTitle();});
   $('btnHint').addEventListener('click',useHint);
   $('btnShuffle').addEventListener('click',shuffleTiles);
   $('btnSkip').addEventListener('click',skipWord);
@@ -412,6 +462,16 @@ $('startMeta').textContent='🪙 Gold tiles: '+goldTot+' · 🧠 Best clean run:
   });
   refreshXpHud();
   voiceLoadManifest();
+  if(LP){LP.button($('guRow'),'btn btn-ghost');}
+  $('btnHow').addEventListener('click',function(){sfx('tap');startGame(diff,true);});
+  scene('title');
+  if(SDK){SDK.init({
+    pauseKeys:'esc',
+    onRestart:function(){startGame(diff);},
+    onExit:toTitle,
+    onTutorial:function(){startGame(diff,true);},
+    onHint:sdkHint
+  });}
 }
 init();
 })();
