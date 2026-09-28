@@ -425,7 +425,8 @@ function pointer(e) {
   let x, y;
   if (e.touches) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
   else { x = e.clientX; y = e.clientY; }
-  const tx = x, ty = y;
+  const tx = Math.max(hole.r, Math.min(W - hole.r, x));
+  const ty = Math.max(hole.r, Math.min(H - hole.r, y));
   dragging = true;
   hole.tx = tx; hole.ty = ty;
 }
@@ -434,6 +435,8 @@ function moveHole(dt) {
   const k = 1 - Math.exp(-16 * dt);
   hole.x += (hole.tx - hole.x) * k;
   hole.y += (hole.ty - hole.y) * k;
+  hole.x = Math.max(hole.r, Math.min(W - hole.r, hole.x));
+  hole.y = Math.max(hole.r, Math.min(H - hole.r, hole.y));
 }
 
 canvas.addEventListener('touchstart', e => { e.preventDefault(); ensureAudio(); pointer(e); }, { passive:false });

@@ -194,7 +194,8 @@ function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOsci
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 var VOICE_BASE='assets/voice/',voiceBuf={},voiceMiss={},voiceMan=null,voiceDead=false,voiceSrc=null;
-function voiceLoadManifest(){if(voiceMan||voiceDead||!window.fetch){return;}try{fetch(VOICE_BASE+'MANIFEST.json').then(function(r){return r.ok?r.json():null;}).then(function(j){voiceMan=(j&&j.words)?j:{words:[],cheers:[]};}).catch(function(){voiceMan={words:[],cheers:[]};});}catch(e){voiceDead=true;}}
+var VOICE_ASSETS_SHIPPED=false; /* assets/voice/ isn't bundled with this build — skip the network round-trip and go straight to the speechSynthesis fallback below */
+function voiceLoadManifest(){if(voiceMan||voiceDead||!window.fetch){return;}if(!VOICE_ASSETS_SHIPPED){voiceMan={words:[],cheers:[]};return;}try{fetch(VOICE_BASE+'MANIFEST.json').then(function(r){return r.ok?r.json():null;}).then(function(j){voiceMan=(j&&j.words)?j:{words:[],cheers:[]};}).catch(function(){voiceMan={words:[],cheers:[]};});}catch(e){voiceDead=true;}}
 function voiceKnown(name){if(!voiceMan||!voiceMan.words){return true;}return voiceMan.words.indexOf(name)!==-1;}
 function voiceStop(){try{if(voiceSrc){voiceSrc.stop();}}catch(e){}voiceSrc=null;}
 function voiceRun(name,rate){try{voiceStop();var a=ac(),s=a.createBufferSource();s.buffer=voiceBuf[name];s.playbackRate.value=rate||1;s.connect(a.destination);voiceSrc=s;s.start(0);}catch(e){}}

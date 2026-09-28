@@ -137,6 +137,10 @@ return;
 locked=false;
 sfx('buzz');
 boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');
+const topCell=cells[col],tcr=topCell.getBoundingClientRect();
+const cf=document.createElement('div');cf.className='cfloat chain';cf.textContent='COLUMN FULL';
+cf.style.left=(tcr.left+tcr.width/2)+'px';cf.style.top=(tcr.top-4)+'px';cf.style.transform='translateX(-50%)';cf.style.fontSize='12px';
+document.body.appendChild(cf);setTimeout(()=>{if(cf.parentNode)cf.parentNode.removeChild(cf);},750);
 }
 function mergePass(){
 let count=0;mergedIdxs=[];

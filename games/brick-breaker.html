@@ -153,6 +153,7 @@ function loseBall(){
 if(state!=='play')return;
 if(shield>0){shield--;snd('power');floater(paddle.x+paddle.w/2,PY-30,'🛡 SAVED','#f472b6');shake=8;flash=.6;resetBall();return;}
 snd('life');lives--;combo=0;hud();shake=10;flash=1;
+floater(paddle.x+paddle.w/2,PY-30,'BALL LOST','#f87171');
 if(lives<=0){state='over';snd('over');const pb=best;const pl=bestLv;saveBest();bricksTot+=runBricks;localStorage.setItem('brickBricks',bricksTot);
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
 document.getElementById('finStats').textContent='LV '+level+' · Bricks '+runBricks+' this run · max ×'+Math.max(1,runMaxCombo)+' combo · '+runPowers+' power-ups · Games '+runs;
