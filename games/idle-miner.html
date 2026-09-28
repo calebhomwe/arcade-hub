@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0a1208">
@@ -717,5 +718,10 @@ function init(){
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-idle-miner',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#stones',restartSelector:'#btnContinue',exitSelector:'#btnPlay',tutorialButtonSelector:'#btnPlay',tutorialText:'Tap to mine, buy upgrades, then prestige for permanent mining multipliers.',pauseButton:'tr',codesOnLabel:true,onCheat:function(code,ctx){var c=(code||'').toUpperCase();if(c==='ROCKRAIN'){ctx.autoTap('#rockBtn',200,10);ctx.toast('ROCKRAIN: instant mining burst!');return true;}if(c==='BLAST60'){ctx.autoTap('#rockBtn',600,16);ctx.toast('BLAST60: boosted mining for 60s.');return true;}if(c==='DYNAMITE'){ctx.click('#btnDyna')||ctx.click('#btnPrestige');ctx.toast('DYNAMITE: triggered your strongest action.');return true;}return false;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

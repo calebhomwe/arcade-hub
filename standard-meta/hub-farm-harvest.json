@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Choose a crop and plant plots",
+    "Water and harvest to earn coins",
+    "Buy farm upgrades and unlock more plots"
+  ],
+  "tips": [
+    "Keep plots planted to maximize uptime",
+    "Use shop upgrades once income stabilizes",
+    "Track crop mastery and seed stocks"
+  ],
+  "controls": {
+    "keyboard": "Primary interactions are click/touch.",
+    "touch": "Tap plots, crop bar, shop buttons, and menu controls."
+  },
+  "difficulty": "Quest-like unlock pacing and plot expansion create progression.",
+  "cheats": [
+    {
+      "code": "GREENRAIN",
+      "effect": "Rapidly triggers plot actions for quick growth."
+    },
+    {
+      "code": "HARVEST60",
+      "effect": "Extended fast plot interaction burst."
+    },
+    {
+      "code": "SHOPPING",
+      "effect": "Activates top available shop/menu action."
+    }
+  ],
+  "features": {
+    "inventory": "Seeds, crops, and resources are shown in HUD/shop areas.",
+    "autosave": "State is saved to localStorage and restored on return.",
+    "results": "Progress is summarized through best/lifetime HUD values."
+  },
+  "pauseButton": "tr"
+}

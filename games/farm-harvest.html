@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Farm Harvest</title>
@@ -932,5 +933,10 @@
   requestAnimationFrame(frame);
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-farm-harvest',titleSelector:'#startScreen',playSelector:'#app',overSelector:'#menuScreen',scoreSelector:'#coins',restartSelector:'#playBtn',exitSelector:'#playBtn',tutorialButtonSelector:'#playBtn',tutorialText:'Plant, water, and harvest crops; then spend coins on farm upgrades.',pauseButton:'tr',codesOnLabel:true,sceneResolver:function(){var st=document.getElementById('startScreen'),menu=document.getElementById('menuScreen');if(st&&!st.classList.contains('hidden'))return'title';if(menu&&!menu.classList.contains('hidden'))return'over';return'play';},onCheat:function(code,ctx){var c=(code||'').toUpperCase();if(c==='GREENRAIN'){ctx.autoTap('#plotGrid button',120,12);ctx.toast('GREENRAIN: rapid field actions!');return true;}if(c==='HARVEST60'){ctx.autoTap('#plotGrid button',480,18);ctx.toast('HARVEST60: rapid farm actions for 60s.');return true;}if(c==='SHOPPING'){ctx.click('#shop .btn')||ctx.click('#menuBtn');ctx.toast('SHOPPING: used your top available action.');return true;}return false;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

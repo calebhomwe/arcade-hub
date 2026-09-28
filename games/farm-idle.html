@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Farm Idle Tycoon</title>
@@ -894,5 +895,10 @@
   requestAnimationFrame(frame);
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-farm-idle',titleSelector:'#startScreen',playSelector:'#app',overSelector:'#menuScreen',scoreSelector:'#coins',restartSelector:'#playBtn',exitSelector:'#playBtn',tutorialButtonSelector:'#playBtn',tutorialText:'Tap the tractor, buy farm buildings, and prestige for legacy boosts.',pauseButton:'tr',codesOnLabel:true,sceneResolver:function(){var st=document.getElementById('startScreen'),menu=document.getElementById('menuScreen');if(st&&!st.classList.contains('hidden'))return'title';if(menu&&!menu.classList.contains('hidden'))return'over';return'play';},onCheat:function(code,ctx){var c=(code||'').toUpperCase();if(c==='TRACTOR'){ctx.autoTap('#tractor',180,10);ctx.toast('TRACTOR: turbo harvest!');return true;}if(c==='HARVEST60'){ctx.autoTap('#tractor',600,16);ctx.toast('HARVEST60: boosted tapping for 60s.');return true;}if(c==='MARKET'){ctx.click('#wheelBtn')||ctx.click('#goldBtn');ctx.toast('MARKET: market action triggered.');return true;}return false;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

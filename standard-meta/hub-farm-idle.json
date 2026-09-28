@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Tap the tractor to earn coins",
+    "Buy farm buildings and market boosts",
+    "Prestige into New Farm+ for legacy multipliers"
+  ],
+  "tips": [
+    "Use quantity toggles to optimize purchases",
+    "Spin market when affordable for spikes",
+    "Prestige when returns flatten"
+  ],
+  "controls": {
+    "keyboard": "Primary interactions are click/touch.",
+    "touch": "Tap tractor, shop rows, and prestige controls."
+  },
+  "difficulty": "Progression scales via building costs, orders, and legacy resets.",
+  "cheats": [
+    {
+      "code": "TRACTOR",
+      "effect": "Burst of rapid tractor taps."
+    },
+    {
+      "code": "HARVEST60",
+      "effect": "Extended rapid tapping for one-minute speed run."
+    },
+    {
+      "code": "MARKET",
+      "effect": "Triggers market/golden action when available."
+    }
+  ],
+  "features": {
+    "offline earnings": "Save data applies capped offline income on return.",
+    "upgrade tree": "Building ladder + market + legacy loop.",
+    "results": "Session values remain visible in HUD and legacy panel."
+  },
+  "pauseButton": "tr"
+}

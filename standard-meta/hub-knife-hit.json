@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Tap play and start throwing immediately",
+    "Hit the spinning log without colliding with stuck knives",
+    "Replay instantly from the clash screen"
+  ],
+  "tips": [
+    "Watch knife spacing before each throw",
+    "Use rhythm over speed on fast spins",
+    "Focus on clean hits for higher streaks"
+  ],
+  "controls": {
+    "keyboard": "Mouse/touch style input is primary.",
+    "touch": "Tap anywhere on the playfield to throw knives."
+  },
+  "difficulty": "Speed and pattern intensity ramp each level.",
+  "cheats": [
+    {
+      "code": "SPINUP",
+      "effect": "Quick auto-throw burst for fast scoring attempts."
+    },
+    {
+      "code": "BLAZE60",
+      "effect": "Extended rapid-throw mode for one minute."
+    },
+    {
+      "code": "APPLES",
+      "effect": "Extra throw burst focused on bonus opportunities."
+    }
+  ],
+  "features": {
+    "best-score rule": "Best score is not saved when ArcadeSDK cheat mode is active.",
+    "tutorial": "First-play tutorial card explains throw timing and collision rule.",
+    "results": "Game-over panel shows score, best badge, and one-tap replay."
+  },
+  "pauseButton": "tr"
+}

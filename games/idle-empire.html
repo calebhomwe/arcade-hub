@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#141005">
@@ -751,5 +752,10 @@ function init(){
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-idle-empire',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#coins',restartSelector:'#btnContinue',exitSelector:'#btnPlay',tutorialButtonSelector:'#btnPlay',tutorialText:'Tap the coin, buy producers, then prestige to grow your multiplier.',pauseButton:'tr',codesOnLabel:true,onCheat:function(code,ctx){var c=(code||'').toUpperCase();if(c==='COINRAIN'){ctx.autoTap('#coinBtn',160,12);ctx.toast('COINRAIN: coin storm!');return true;}if(c==='RUSH60'){ctx.autoTap('#coinBtn',600,18);ctx.toast('RUSH60: turbo taps for 60s.');return true;}if(c==='CARAVAN'){ctx.click('#btnCaravan')||ctx.click('#btnChest')||ctx.click('#btnTrib');ctx.toast('CARAVAN: triggered a special action.');return true;}return false;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

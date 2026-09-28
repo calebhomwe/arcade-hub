@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Battle</title>
@@ -490,5 +491,10 @@ setInterval(()=>{if(state==='play'||state==='shop'){monT-=.25;if(monT<=0){monste
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';document.getElementById('pause').classList.remove('hidden');}});
 document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('pause').classList.add('hidden');state='play';});
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-math-battle',titleSelector:'#start',playSelector:'#battle',overSelector:'#over',scoreSelector:'#kills',restartSelector:'#restartBtn',tutorialButtonSelector:'#playBtn',tutorialText:'Answer each question correctly to attack and build combo damage.',pauseButton:'tr',sceneResolver:function(){var st=document.getElementById('start'),ov=document.getElementById('over');if(st&&!st.classList.contains('hidden'))return'title';if(ov&&!ov.classList.contains('hidden'))return'over';return'play';},onExit:function(){var st=document.getElementById('start'),ov=document.getElementById('over'),p=document.getElementById('pause');if(ov)ov.classList.add('hidden');if(p)p.classList.add('hidden');if(st)st.classList.remove('hidden');try{state='ready';}catch(e){}return true;},onHint:function(_,h){h((window.ArcadeBridge&&window.ArcadeBridge.mathHint('#question'))||'Estimate first, then pick the nearest exact answer.');return true;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

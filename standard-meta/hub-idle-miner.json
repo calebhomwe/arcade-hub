@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Tap the rock to mine resources",
+    "Buy miners/upgrades to increase passive output",
+    "Prestige for gems and permanent mining multiplier"
+  ],
+  "tips": [
+    "Use dynamite when bars are full for burst value",
+    "Invest in miners early for passive growth",
+    "Prestige after reaching a new depth tier"
+  ],
+  "controls": {
+    "keyboard": "Gameplay is click/touch focused.",
+    "touch": "Tap rock, upgrades, dynamite, and prestige actions."
+  },
+  "difficulty": "Depth tiers and upgrade costs create a steady visible ramp.",
+  "cheats": [
+    {
+      "code": "ROCKRAIN",
+      "effect": "Rapid auto-taps the mining rock for burst gains."
+    },
+    {
+      "code": "BLAST60",
+      "effect": "Extended mining auto-tap burst mode."
+    },
+    {
+      "code": "DYNAMITE",
+      "effect": "Uses strongest available action (dynamite or prestige)."
+    }
+  ],
+  "features": {
+    "offline earnings": "Welcome-back modal grants capped offline mined resources.",
+    "upgrade tree": "Pick/miner upgrades plus prestige gems progress the run.",
+    "results": "Prestige summary screen reports depth and gem gains."
+  },
+  "pauseButton": "tr"
+}

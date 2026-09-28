@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#1a0d05">
@@ -477,5 +478,10 @@ function init(){
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-spell-and-say',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'#btnPlay',tutorialText:'Listen to the spoken word, spell it letter by letter, then submit to score.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Say the word slowly and start with its first sound.');return true;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>
