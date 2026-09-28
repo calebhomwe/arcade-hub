@@ -29,8 +29,14 @@ function setup(cfg){
  }
  var last='';
  var obs=new MutationObserver(function(){report();});
- obs.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});
- setInterval(function(){var now=scene()+':'+score();if(now!==last){last=now;report();}},600);
+ var sceneNodes=[el(cfg.titleSelector),el(cfg.playSelector),el(cfg.overSelector)];
+ for(var s=0;s<sceneNodes.length;s++){
+   if(sceneNodes[s]){obs.observe(sceneNodes[s],{attributes:true,attributeFilter:['class','style']});}
+ }
+ var pollId=setInterval(function(){var now=scene()+':'+score();if(now!==last){last=now;report();}},700);
+ function stopPoll(){if(pollId){clearInterval(pollId);pollId=0;}}
+ window.addEventListener('pagehide',stopPoll,{once:true});
+ window.addEventListener('beforeunload',stopPoll,{once:true});
  if(window.ArcadeSDK&&window.ArcadeSDK.init){
    window.ArcadeSDK.init({
      onRestart:function(){if(typeof cfg.onRestart==='function'){if(cfg.onRestart({click:click,toast:toast,autoTap:autoTap})===true){return;}}if(cfg.restartSelector){click(cfg.restartSelector);}else if(cfg.tutorialButtonSelector){click(cfg.tutorialButtonSelector);}report();},

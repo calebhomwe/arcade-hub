@@ -19,5 +19,5 @@
     "progress": "Best scores and learning progress are saved in localStorage.",
     "results": "End screen shows score plus best and replay shortcut."
   },
-  "pauseButton": "tr"
+  "pauseButton": "none"
 }
