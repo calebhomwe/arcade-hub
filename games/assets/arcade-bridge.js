@@ -15,7 +15,7 @@ function setup(cfg){
  function scene(){if(typeof cfg.sceneResolver==='function'){return cfg.sceneResolver();}if(visible(el(cfg.overSelector))){return 'over';}if(visible(el(cfg.playSelector))&&!visible(el(cfg.titleSelector))){return 'play';}return 'title';}
  function score(){return textScore(cfg.scoreSelector);}
  function report(){if(window.ArcadeSDK&&window.ArcadeSDK.state){window.ArcadeSDK.state({scene:scene(),score:score()});}}
- function labelCodesOn(){if(!cfg.codesOnLabel||!codesOn){return;}if(document.getElementById('arcadeCodesOn')){return;}var b=document.createElement('div');b.id='arcadeCodesOn';b.textContent='CODES ON';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99998;background:#7f1d1d;color:#fff;padding:6px 10px;border-radius:9px;font:800 12px system-ui;letter-spacing:.6px';document.body.appendChild(b);} 
+ function labelCodesOn(){if(!cfg.codesOnLabel||!codesOn){return;}var badgeId='arcadeCodesOn_'+String(cfg.gameId||'game').replace(/[^a-z0-9_-]/gi,'_');if(document.getElementById(badgeId)){return;}var b=document.createElement('div');b.id=badgeId;b.textContent='CODES ON';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99998;background:#7f1d1d;color:#fff;padding:6px 10px;border-radius:9px;font:800 12px system-ui;letter-spacing:.6px';document.body.appendChild(b);} 
  function showTutorial(force){
    var seen=false;try{seen=localStorage.getItem(stateKey)==='1';}catch(e){}
    if(seen&&!force){return;}
@@ -61,7 +61,7 @@ function setup(cfg){
      },
      onTutorial:function(){showTutorial(true);},
      onHint:function(){if(typeof cfg.onHint==='function'){cfg.onHint(mathHint,toast);return;}if(cfg.hintSelector&&click(cfg.hintSelector)){return;}toast('Try one small step first, then check your result.');},
-     onCheat:cfg.onCheat?function(code){var c=String(code||'').trim();if(!c){c=promptCode();}if(!c){return;}if(cfg.onCheat(c,{click:click,toast:toast,autoTap:autoTap,mathHint:mathHint})){codesOn=true;labelCodesOn();}}:undefined,
+     onCheat:cfg.onCheat?function(code){var c=String(code||'').trim();if(!c){c=promptCode();}if(!c){return;}if(cfg.onCheat(c,{click:click,toast:toast,autoTap:autoTap,mathHint:mathHint})){codesOn=true;if(window.ArcadeSDK){window.ArcadeSDK.cheated=true;}labelCodesOn();}}:undefined,
      pauseButton:cfg.pauseButton||'tr'
    });
  }

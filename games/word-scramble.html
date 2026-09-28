@@ -420,7 +420,7 @@ init();
 
 <!-- arcade-bridge:start -->
 <script src="assets/arcade-bridge.js"></script>
-<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-word-scramble',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'.diff-btn.sel,.diff-btn',tutorialText:'Tap a letter tile, place it in a slot, then build the full word before time runs out.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Try the first sound. Start with the first letter and build around it.');return true;}});</script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-word-scramble',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'.diff-btn.sel',tutorialText:'Tap a letter tile, place it in a slot, then build the full word before time runs out.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Try the first sound. Start with the first letter and build around it.');return true;}});</script>
 <!-- arcade-bridge:end -->
 </body>
 </html>

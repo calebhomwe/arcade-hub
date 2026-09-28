@@ -481,7 +481,7 @@ init();
 
 <!-- arcade-bridge:start -->
 <script src="assets/arcade-bridge.js"></script>
-<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-spell-and-say',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'#btnPlay',tutorialText:'Listen to the spoken word, spell it letter by letter, then submit to score.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Say the word slowly and start with its first sound.');return true;}});</script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-spell-and-say',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'#btnPlay,#btnAgain',tutorialText:'Listen to the spoken word, spell it letter by letter, then submit to score.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Say the word slowly and start with its first sound.');return true;}});</script>
 <!-- arcade-bridge:end -->
 </body>
 </html>
