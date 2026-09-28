@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/jsm/"}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Stack Ball</title>
 <style>
@@ -19,7 +20,7 @@
   button:active { transform:scale(.94); }
   .score-big { font-size:clamp(40px,10vw,72px); font-weight:900; color:#fff; text-shadow:0 0 24px rgba(251,191,36,.9); }
   .best { color:#4ade80; font-size:clamp(16px,4vw,22px); font-weight:700; }
-  .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
+  .hud { position:fixed; top:64px; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
   .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fef3c7; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(251,191,36,.3); }
   .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
   .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
@@ -32,10 +33,15 @@
   #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
   @keyframes tapHint { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(10px) scale(.9); } }
   @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
+  .overlay { background:radial-gradient(120% 120% at 50% 20%, rgba(12,14,40,.45), rgba(7,10,22,.80)); }
+  .gfx { font-size:15px; padding:10px 18px; min-height:44px; color:#fff; background:rgba(10,12,26,.7); border:1px solid rgba(255,255,255,.35); box-shadow:none; }
+  #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
+  #fx .pop { position:absolute; left:0; top:0; font-weight:900; font-size:22px; white-space:nowrap; text-shadow:0 2px 0 rgba(0,0,0,.55), 0 0 12px rgba(0,0,0,.45); will-change:transform,opacity; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="fx"></div>
 <div class="hud hidden" id="hud">
   <div class="pill"><small>Score</small><span id="score">0</span></div>
   <div class="pill"><small>Depth</small><span id="depth">0</span></div>
@@ -52,6 +58,7 @@
   <div class="sub" style="margin:-4px 0 0">💎 Gems banked: <b id="gemTotalVal">0</b> · 📿 <b id="gemRankVal">Trinketeer</b> — bank gems to climb ranks</div>
   <div class="sub" style="margin:-4px 0 0">🗼 Best depth: <b id="depthBestVal">0</b> · 🔥 <b id="dayStreakVal">0</b>d streak (best <b id="dayBestVal">0</b>)</div>
   <button id="playBtn">▶ PLAY</button>
+  <button class="gfx" id="gfxBtn" aria-label="Graphics quality">GRAPHICS: HIGH</button>
 </div>
 <div class="overlay hidden" id="gameover">
   <h1>CRACKED!</h1>
@@ -63,32 +70,23 @@
   <div class="best" id="finalDepth" style="color:#a78bfa">🗼 Best depth: 0 · 🔥 0d streak (best 0)</div>
   <button id="restartBtn">↻ PLAY AGAIN</button>
 </div>
-<script>
+<script type="module">
+import { TowerWorld, REDUCED } from './kit3d/tower3d.js';
 
-'use strict';
 const KEY = 'stack-ball-best';
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
 const $ = id => document.getElementById(id);
-let W = 0, H = 0, DPR = 1, bgCan = null;
-function buildBg() {
-  bgCan = document.createElement('canvas');
-  bgCan.width = Math.max(1, Math.round(W * DPR));
-  bgCan.height = Math.max(1, Math.round(H * DPR));
-  const b = bgCan.getContext('2d');
-  b.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const g = b.createRadialGradient(W / 2, H * 0.4, 10, W / 2, H * 0.4, Math.max(W, H) * 0.8);
-  g.addColorStop(0, '#2a1c0c'); g.addColorStop(1, '#070a16');
-  b.fillStyle = g; b.fillRect(0, 0, W, H);
-}
+let W = 0, H = 0;
+let GFX = 'high';
+try { GFX = localStorage.getItem(KEY + '-gfx') === 'low' ? 'low' : 'high'; } catch (e) {}
+const T = new TowerWorld(canvas, { quality: GFX, style: 'stack', colors: {}, skyTop: '#ff9a5a', skyLow: '#ffe7b0' });
+T.deadly = '#0e1017';
+T.bands = [['#22c3ee', '#1aa6cf'], ['#f472b6', '#e2559c'], ['#facc15', '#eab308'], ['#34d399', '#10b981'], ['#a855f7', '#9333ea'], ['#fb923c', '#f97316']];
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
-  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  T.resize();
   layout();
-  buildBg();
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 80));
@@ -120,41 +118,6 @@ const BLACK = '#0e1017';
 const SAFE = ['#22d3ee', '#a855f7', '#f472b6', '#facc15', '#34d399', '#38bdf8'];
 let GAP, rx, ry, ballR, cx, desired;
 let ballSpr = null, gemSpr = null, eliteSpr = null;
-function buildBallSprite() {
-  const pad = 26, S = Math.ceil((ballR + pad) * 2);
-  ballSpr = document.createElement('canvas');
-  ballSpr.width = S; ballSpr.height = S;
-  const x = ballSpr.getContext('2d');
-  const g = x.createRadialGradient(S / 2 - ballR * 0.3, S / 2 - ballR * 0.3, ballR * 0.1, S / 2, S / 2, ballR);
-  g.addColorStop(0, '#e0f2fe'); g.addColorStop(0.55, '#38bdf8'); g.addColorStop(1, '#0369a1');
-  x.shadowColor = '#38bdf8'; x.shadowBlur = 18;
-  x.fillStyle = g;
-  x.beginPath(); x.arc(S / 2, S / 2, ballR, 0, TAU); x.fill();
-  x.shadowBlur = 0;
-  x.fillStyle = 'rgba(255,255,255,.75)';
-  x.beginPath(); x.arc(S / 2 - ballR * 0.35, S / 2 - ballR * 0.4, ballR * 0.24, 0, TAU); x.fill();
-}
-function buildGemSprite() {
-  const pad = 20, S = (10 + pad) * 2;
-  gemSpr = document.createElement('canvas');
-  gemSpr.width = S; gemSpr.height = S;
-  const x = gemSpr.getContext('2d');
-  x.shadowColor = '#22d3ee'; x.shadowBlur = 14;
-  x.fillStyle = '#22d3ee';
-  x.beginPath(); x.moveTo(S / 2, S / 2 - 10); x.lineTo(S / 2 + 6, S / 2); x.lineTo(S / 2, S / 2 + 10); x.lineTo(S / 2 - 6, S / 2); x.closePath(); x.fill();
-}
-function buildEliteSprite() {
-  const pad = 20, S = (14 + pad) * 2;
-  eliteSpr = document.createElement('canvas');
-  eliteSpr.width = S; eliteSpr.height = S;
-  const x = eliteSpr.getContext('2d');
-  x.shadowColor = '#fcd34d'; x.shadowBlur = 16;
-  x.fillStyle = '#fcd34d';
-  x.beginPath(); x.moveTo(S / 2, S / 2 - 14); x.lineTo(S / 2 + 9, S / 2); x.lineTo(S / 2, S / 2 + 14); x.lineTo(S / 2 - 9, S / 2); x.closePath(); x.fill();
-  x.shadowBlur = 0;
-  x.fillStyle = 'rgba(255,255,255,.9)';
-  x.beginPath(); x.arc(S / 2 - 4, S / 2 - 6, 2.2, 0, TAU); x.fill();
-}
 function layout() {
   GAP = Math.min(W, H) * 0.19;
   rx = Math.min(W, H) * 0.42;
@@ -162,9 +125,7 @@ function layout() {
   ballR = Math.min(W, H) * 0.075 * (codes.BIGBALL ? 1.6 : 1);
   cx = W / 2;
   desired = H * 0.30;
-  buildBallSprite();
-  buildGemSprite();
-  buildEliteSprite();
+  T.metrics(GAP, ry, ballR);
 }
 
 let platforms = [], gems = [], particles = [], floaters = [], trail = [], rings = [], visBuf = [];
@@ -204,22 +165,23 @@ gemRank = gemRankOf(gemTotal);
 function rand(a, b) { return a + Math.random() * (b - a); }
 function py(i) { return i * GAP - camY; }
 function ballRestY(i) { return i * GAP - ry - ballR; }
-const PMAX = 220, FMAX = 16, pFree = [], fFree = [];
-function burst(x, y, color, n, speed) {
-  for (let i = 0; i < n; i++) {
-    let p = pFree.pop();
-    if (!p) { if (particles.length >= PMAX) return; p = {}; }
-    const a = Math.random() * TAU, s = rand(speed * 0.3, speed);
-    p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s;
-    p.life = rand(0.3, 0.7); p.t = 0; p.r = rand(2, 5); p.color = color;
-    particles.push(p);
-  }
-}
+const BALLCOL = '#38bdf8';
+function burst(x, y, color, n, speed) { T.burstBall(color, T.quality === 'high' ? n : Math.ceil(n / 3)); }
+const fxEl = $('fx'), pops = [];
 function addFloater(text, x, y, color) {
-  let f = fFree.pop();
-  if (!f) { if (floaters.length >= FMAX) return; f = {}; }
-  f.text = text; f.x = x; f.y = y; f.t = 0; f.life = 0.9; f.color = color;
-  floaters.push(f);
+  if (pops.length > 12) { const o = pops.shift(); o.el.remove(); }
+  const el = document.createElement('div'); el.className = 'pop'; el.textContent = text; el.style.color = color;
+  fxEl.appendChild(el); pops.push({ el, dy: y - (by - camY), dx: x - cx, t: 0 });
+}
+function stepPops(dt) {
+  const b = T.ballScreen();
+  for (let i = pops.length - 1; i >= 0; i--) {
+    const o = pops[i]; o.t += dt;
+    if (o.t > 0.9) { o.el.remove(); pops.splice(i, 1); continue; }
+    const x = Math.max(80, Math.min(W - 80, b.x + o.dx * 0.5)), y = Math.max(90, b.y + o.dy * 0.7 - o.t * 60);
+    o.el.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + (RM ? 1 : 0.85 + Math.min(0.25, o.t * 2)) + ')';
+    o.el.style.opacity = String(1 - Math.pow(o.t / 0.9, 2));
+  }
 }
 
 function makeSegs(i) {
@@ -342,19 +304,7 @@ function die() {
 function shatter(i) {
   const p = platAt(i); if (!p || p.broken) return;
   p.broken = true;
-  const sy = py(i);
-  for (let n = 0; n < 16; n++) {
-    let q = pFree.pop();
-    if (!q) { if (particles.length >= PMAX) break; q = {}; }
-    const a = Math.random() * TAU;
-    q.x = cx + Math.cos(a) * rx * Math.random();
-    q.y = sy - ry + Math.random() * ry * 2;
-    q.vx = Math.cos(a) * rand(60, 280);
-    q.vy = Math.sin(a) * rand(60, 280) - 60;
-    q.life = rand(0.3, 0.65); q.t = 0; q.r = rand(2, 6);
-    q.color = p.segs[(Math.random() * SEGS) | 0] || '#64748b';
-    particles.push(q);
-  }
+  T.shatter(p);
   shake = Math.max(shake, 4);
 }
 function resolveLanding() {
@@ -378,7 +328,7 @@ function resolveLanding() {
   sfx('hit');
   buzz(12);
   cur = fallTarget;
-  if (slam) { shake = Math.max(shake, 7); sfx('boom'); burst(cx, by - camY + ballR, '#fb923c', 14, 260); rings.push({ y: by - camY + ballR, t: 0 }); }
+  if (slam) { shake = Math.max(shake, 7); sfx('boom'); burst(cx, by - camY + ballR, '#fb923c', 14, 260); T.ring('#fb923c'); }
   if (slam) {
     slamChain++;
     if (slamChain > slamChainBest) slamChainBest = slamChain;
@@ -396,8 +346,9 @@ function resolveLanding() {
   vy = 0;
   squash = 1;
   trail = [];
+  T.splat(p, BALLCOL);
   burst(cx, by - camY + ballR, '#fcd34d', 10, 180);
-  rings.push({ y: by - camY + ballR, t: 0, col: '#fcd34d' });
+  T.ring('#fcd34d');
   shake = Math.max(shake, 2);
   if (cur > 0 && cur % 10 === 0) {
     addFloater('DEPTH ' + cur + '!', cx, desired - 60, '#fbbf24');
@@ -447,7 +398,7 @@ function update(dt) {
         sfx('coin');
         buzz(14);
         burst(gx, gsy, '#67e8f9', 10, 180);
-        rings.push({ y: gsy, t: 0, col: '#67e8f9' });
+        T.ring('#67e8f9');
         gemTotal++;
         try { if (!cheated()) localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
         const gr = gemRankOf(gemTotal);
@@ -457,140 +408,43 @@ function update(dt) {
           addFloater('+15 ✨', gx, gsy - 30, '#fcd34d');
           sfx('boom');
           burst(gx, gsy, '#fcd34d', 16, 260);
-          rings.push({ y: gsy, t: 0, col: '#fcd34d' });
+          T.ring('#fcd34d');
         }
         updateHUD();
       }
     }
   }
 
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 520 * dt; p.vx *= 0.98;
-    if (p.t >= p.life) { pFree.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); }
-  }
-  for (let i = floaters.length - 1; i >= 0; i--) {
-    const f = floaters[i];
-    f.t += dt; f.y -= 42 * dt;
-    if (f.t >= f.life) { fFree.push(f); floaters[i] = floaters[floaters.length - 1]; floaters.pop(); }
-  }
-  for (let i = rings.length - 1; i >= 0; i--) {
-    rings[i].t += dt;
-    if (rings[i].t > 0.34) rings.splice(i, 1);
-  }
+  stepPops(dt);
 }
 
-function drawPlatform(p, sy) {
-  const seg = TAU / SEGS;
-  ctx.fillStyle = 'rgba(0,0,0,.35)';
-  ctx.beginPath(); ctx.ellipse(cx, sy + ry * 0.18, rx, ry, 0, 0, TAU); ctx.fill();
-  for (let k = 0; k < SEGS; k++) {
-    const col = p.segs[k];
-    const a0 = p.rot + k * seg, a1 = p.rot + (k + 1) * seg;
-    if (col !== BLACK) {
-      ctx.globalAlpha = 0.3; ctx.fillStyle = col;
-      ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx + 6, ry + 6, 0, a0, a1); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx, ry, 0, a0, a1); ctx.closePath(); ctx.fill();
-  }
-  ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(cx, sy, rx, ry, 0, 0, TAU); ctx.stroke();
+// ---------- 3D drawing ----------
+function draw(dt) {
+  T.begin();
+  for (const p of platforms) T.platform(p);
+  for (const gm of gems) if (!gm.collected) T.item(gm.elite ? 'elite' : 'gem', gm.i * GAP - ry - ballR * 0.5, gm.off, tGlobal);
+  const stretch = phase === 'falling' ? Math.min(0.22, Math.max(0, vy) / (GAP * 16)) : 0;
+  T.ball(by, squash, stretch, { resting: phase === 'resting' || phase === 'ready', t: tGlobal, shield: false, magnet: false, hidden: phase === 'dying', trail: phase === 'falling' ? trail : [] });
+  T.end();
+  if (RM) shake = 0;
+  T.view(camY + desired, shake * 0.03);
+  T.render(dt);
 }
-function drawGem(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tGlobal * 1.5);
-  ctx.drawImage(gemSpr, -gemSpr.width / 2, -gemSpr.height / 2);
-  ctx.restore();
-}
-function drawEliteGem(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tGlobal * 2.2);
-  const k = 1 + Math.sin(tGlobal * 5) * 0.08;
-  ctx.scale(k, k);
-  ctx.drawImage(eliteSpr, -eliteSpr.width / 2, -eliteSpr.height / 2);
-  ctx.restore();
-}
-function drawBall() {
-  let sy = by - camY;
-  if (phase === 'resting') sy += Math.sin(tGlobal * 7) * 2.5;
-  if (phase === 'falling') {
-    for (let i = 0; i < trail.length; i++) {
-      const a = (i + 1) / trail.length;
-      ctx.globalAlpha = a * 0.18;
-      ctx.fillStyle = '#38bdf8';
-      ctx.beginPath(); ctx.arc(cx, trail[i] - camY, ballR * (0.4 + 0.5 * a), 0, TAU); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
-  ctx.save();
-  ctx.translate(cx, sy);
-  let sx = 1 + squash * 0.3, syy = 1 - squash * 0.35;
-  if (phase === 'falling') { const k = Math.min(0.22, Math.max(0, vy) / (GAP * 16)); sx -= k; syy += k; }
-  ctx.scale(sx, syy);
-  ctx.drawImage(ballSpr, -ballSpr.width / 2, -ballSpr.height / 2);
-  ctx.restore();
-}
-function draw() {
-  ctx.drawImage(bgCan, 0, 0, W, H);
-  ctx.fillStyle = 'rgba(251,191,36,.05)';
-  ctx.fillRect(cx - rx - 18, 0, 12, H);
-  ctx.fillRect(cx + rx + 6, 0, 12, H);
-
-  ctx.save();
-  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
-
-  visBuf.length = 0;
-  for (const p of platforms) { if (p.broken || p.gap) continue; const sy = py(p.i); if (sy > -3 * GAP && sy < H + 3 * GAP) visBuf.push({ p, sy }); }
-  visBuf.sort((a, b) => a.sy - b.sy);
-  for (const v of visBuf) drawPlatform(v.p, v.sy);
-
-  for (const gm of gems) {
-    if (gm.collected) continue;
-    const sy = gm.i * GAP - ry - ballR * 0.5 - camY;
-    if (sy > -60 && sy < H + 60) {
-      if (gm.elite) drawEliteGem(cx + gm.off, sy + Math.sin(tGlobal * 3) * 3);
-      else drawGem(cx + gm.off, sy);
-    }
-  }
-
-  if (phase !== 'dying') drawBall();
-
-  for (const rg of rings) {
-    const k = rg.t / 0.34;
-    ctx.globalAlpha = (1 - k) * 0.7;
-    ctx.strokeStyle = rg.col || '#fb923c'; ctx.lineWidth = 3 * (1 - k) + 1;
-    ctx.beginPath(); ctx.ellipse(cx, rg.y, rx * (0.3 + 0.9 * k), ry * (0.3 + 0.9 * k), 0, 0, TAU); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-
-  for (const p of particles) {
-    const a = 1 - p.t / p.life;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.t / p.life), 0, TAU); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  for (const f of floaters) {
-    ctx.globalAlpha = 1 - f.t / f.life;
-    ctx.fillStyle = f.color;
-    ctx.font = '800 24px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText(f.text, f.x, f.y);
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
-}
+function paintGfx() { $('gfxBtn').textContent = 'GRAPHICS: ' + GFX.toUpperCase(); }
+$('gfxBtn').addEventListener('click', () => {
+  GFX = GFX === 'high' ? 'low' : 'high';
+  try { localStorage.setItem(KEY + '-gfx', GFX); } catch (e) {}
+  T.setQuality(GFX); paintGfx(); layout(); sfx('tap');
+});
+paintGfx();
+T.load('models/tower-items.glb').catch(() => {});
 
 let last = 0;
 function loop(ts) {
   const dt = Math.min(0.04, (ts - last) / 1000 || 0.016);
   last = ts;
   update(dt);
-  draw();
+  draw(dt);
   requestAnimationFrame(loop);
 }
 
