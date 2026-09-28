@@ -60,7 +60,14 @@ function setup(cfg){
        report();
      },
      onTutorial:function(){showTutorial(true);},
-     onHint:function(){if(typeof cfg.onHint==='function'){cfg.onHint(mathHint,toast);return;}if(cfg.hintSelector&&click(cfg.hintSelector)){return;}toast('Try one small step first, then check your result.');},
+     onHint:function(){
+       if(typeof cfg.onHint==='function'){
+         cfg.onHint({click:click,toast:toast,autoTap:autoTap,mathHint:mathHint},function(msg){toast(msg);});
+         return;
+       }
+       if(cfg.hintSelector&&click(cfg.hintSelector)){return;}
+       toast('Try one small step first, then check your result.');
+     },
      onCheat:cfg.onCheat?function(code){var c=String(code||'').trim();if(!c){c=promptCode();}if(!c){return;}if(cfg.onCheat(c,{click:click,toast:toast,autoTap:autoTap,mathHint:mathHint})){codesOn=true;if(window.ArcadeSDK){window.ArcadeSDK.cheated=true;}labelCodesOn();}}:undefined,
      pauseButton:cfg.pauseButton||'tr'
    });
