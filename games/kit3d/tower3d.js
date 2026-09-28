@@ -30,6 +30,18 @@ export function dequantize(g) {
   return g;
 }
 
+/** true when WebGL runs on a CPU rasteriser (SwiftShader, llvmpipe): such a device starts on Low */
+export function softwareGL() {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
+    if (!gl) return false;
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /swiftshader|llvmpipe|software/i.test(name);
+  } catch (e) { return false; }
+}
+
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(),
   _e = new THREE.Euler(), _c = new THREE.Color(), _v = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
 
@@ -72,6 +84,8 @@ export class TowerWorld {
   constructor(canvas, opts = {}) {
     this.canvas = canvas; this.style = opts.style || 'helix';
     this.quality = opts.quality === 'low' ? 'low' : 'high';
+    this.autoQ = opts.quality === 'auto';
+    if (this.autoQ && softwareGL()) this.quality = 'low';
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.quality === 'high' && (window.devicePixelRatio || 1) < 2, powerPreference: 'high-performance' });
     r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1.0;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -219,7 +233,7 @@ export class TowerWorld {
   begin() {
     for (const k in this.inst) this.inst[k].n = 0;
     for (const k in this.items) this.items[k].n = 0;
-    this.collarN = 0; this.minY = this.focusY - this.step * (this.below + 1); this.maxY = this.focusY + this.step * 4;
+    this.collarN = 0; this.splatMesh.count = 0; this.minY = this.focusY - this.step * (this.below + 1); this.maxY = this.focusY + this.step * 4;
   }
   _wedge(color, x, y, z, yawAng, sc, rx, rz) {
     const it = this.inst[color] || this.inst[this._fallback(color)];
@@ -391,6 +405,10 @@ export class TowerWorld {
   }
   render(dt) {
     this._adapt();
+    // on a device that cannot keep up (under ~8 fps even at the lowest resolution) draw every other
+    // frame, so input, pause and menus still get main-thread time between frames
+    if (this.dyn <= 0.5 && this.ema > 120) { this.odd = !this.odd; if (this.odd) { this._stepSkipped = (this._stepSkipped || 0) + (dt || 0.016); return; } }
+    if (this._stepSkipped) { dt = (dt || 0.016) + this._stepSkipped; this._stepSkipped = 0; }
     this._stepFx(dt || 0.016);
     this.renderer.render(this.scene, this.camera);
     this.splatMesh.count = 0;

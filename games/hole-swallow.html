@@ -74,8 +74,9 @@ const $ = id => document.getElementById(id);
 let W = 0, H = 0;
 const M = 0.05;   // metres per screen px of the play field
 let GFX = 'high';
-try { GFX = localStorage.getItem('hole-swallow-gfx') === 'low' ? 'low' : 'high'; } catch (e) {}
+try { const g = localStorage.getItem('hole-swallow-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
 const W3 = new HoleWorld(canvas, { quality: GFX, skyTop: '#5fb0ff', skyLow: '#e8f6ff' });
+GFX = W3.quality;   // 'auto' starts on Low when WebGL runs on the CPU
 let ready = false;
 function resize() {
   W = window.innerWidth; H = window.innerHeight;

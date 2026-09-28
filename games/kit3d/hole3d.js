@@ -12,6 +12,7 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 export const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -59,6 +60,18 @@ export function dequantize(g) {
   return g;
 }
 
+/** true when WebGL runs on a CPU rasteriser (SwiftShader, llvmpipe): such a device starts on Low */
+export function softwareGL() {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl');
+    if (!gl) return false;
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /swiftshader|llvmpipe|software/i.test(name);
+  } catch (e) { return false; }
+}
+
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _p = new THREE.Vector3(),
   _s = new THREE.Vector3(), _ax = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _c = new THREE.Color(), _v = new THREE.Vector3();
 
@@ -66,6 +79,8 @@ export class HoleWorld {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
     this.quality = opts.quality === 'low' ? 'low' : 'high';
+    this.autoQ = opts.quality === 'auto';
+    if (this.autoQ && softwareGL()) this.quality = 'low';
     // phones at 2x and up do not need MSAA; desktops on High get it
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.quality === 'high' && (window.devicePixelRatio || 1) < 2, stencil: true, powerPreference: 'high-performance' });
     this.dyn = 1; this.ema = 16; this.lastT = 0; this.slowFor = 0; this.fastFor = 0;
@@ -133,7 +148,7 @@ export class HoleWorld {
 
   /** Load a pack GLB: every top-level node is one model, named by its id. */
   async load(url) {
-    const gltf = await new GLTFLoader().loadAsync(url);
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);   // packs are meshopt-compressed by gltfpack
     const mats = new Map();
     gltf.scene.updateMatrixWorld(true);
     for (const node of gltf.scene.children) {
@@ -392,6 +407,10 @@ export class HoleWorld {
 
   render(dt) {
     this._adapt();
+    // on a device that cannot keep up (under ~8 fps even at the lowest resolution) draw every other
+    // frame, so input, pause and menus still get main-thread time between frames
+    if (this.dyn <= 0.5 && this.ema > 120) { this.odd = !this.odd; if (this.odd) { this._stepSkipped = (this._stepSkipped || 0) + (dt || 0.016); return; } }
+    if (this._stepSkipped) { dt = (dt || 0.016) + this._stepSkipped; this._stepSkipped = 0; }
     this._stepParticles(dt || 0.016);
     this.renderer.render(this.scene, this.camera);
   }

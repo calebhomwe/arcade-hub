@@ -78,8 +78,9 @@ const canvas = document.getElementById('c');
 const $ = id => document.getElementById(id);
 let W = 0, H = 0;
 let GFX = 'high';
-try { GFX = localStorage.getItem(KEY + '-gfx') === 'low' ? 'low' : 'high'; } catch (e) {}
+try { const g = localStorage.getItem(KEY + '-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
 const T = new TowerWorld(canvas, { quality: GFX, style: 'stack', colors: {}, skyTop: '#ff9a5a', skyLow: '#ffe7b0' });
+GFX = T.quality;   // 'auto' starts on Low when WebGL runs on the CPU
 T.deadly = '#0e1017';
 T.bands = [['#22c3ee', '#1aa6cf'], ['#f472b6', '#e2559c'], ['#facc15', '#eab308'], ['#34d399', '#10b981'], ['#a855f7', '#9333ea'], ['#fb923c', '#f97316']];
 function resize() {
