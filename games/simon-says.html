@@ -120,11 +120,11 @@ const rf=document.createElement('div');rf.className='roundflash';rf.textContent=
 document.body.appendChild(rf);setTimeout(()=>rf.remove(),600);
 const tk=token;setTimeout(()=>{if(tk===token)playSeq(0);},650);
 }
-function playSeq(i){
-if(i>=seq.length){listening=true;return;}
+function playSeq(i,setListening){
+if(i>=seq.length){if(setListening!==false)listening=true;return;}
 const ms=padMs();
 flash(seq[i],ms);
-setTimeout(()=>playSeq(i+1),ms);
+setTimeout(()=>playSeq(i+1,setListening),ms);
 }
 function mirror(i){return mirrorMode?3-i:i;}
 function press(i){
@@ -173,7 +173,16 @@ if(gEl){if(gambit){gEl.style.display='';gEl.textContent=gWon?('⚔ Gambit bonus:
 if(nb)confetti();
 const tk=token;
 setTimeout(()=>{if(tk===token)sfx('lose');},450);
-setTimeout(()=>{if(tk===token)document.getElementById('over').classList.remove('hidden');},800);
+// Teach the miss: flash the correct sequence back before the game-over screen,
+// instead of just ending — a wrong tap should show what the right answer was.
+const replayDelay=750,ms=padMs(),replayDur=seq.length*ms;
+setTimeout(()=>{
+  if(tk!==token)return;
+  const rf=document.createElement('div');rf.className='roundflash';rf.textContent='✅ Correct sequence:';
+  document.body.appendChild(rf);setTimeout(()=>rf.remove(),600);
+  playSeq(0,false);
+},replayDelay);
+setTimeout(()=>{if(tk===token)document.getElementById('over').classList.remove('hidden');},replayDelay+replayDur+300);
 }
 }
 const hintBtn=document.getElementById('hintBtn');

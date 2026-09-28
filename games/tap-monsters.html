@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#1a070b">
@@ -728,5 +729,10 @@ function init(){
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-tap-monsters',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#gold',restartSelector:'#btnContinue',exitSelector:'#btnPlay',tutorialButtonSelector:'#btnPlay',tutorialText:'Tap the monster, buy heroes, and ascend for permanent power.',pauseButton:'tr',codesOnLabel:true,onCheat:function(code,ctx){var c=(code||'').toUpperCase();if(c==='MONRAIN'){ctx.autoTap('#monBtn',180,10);ctx.toast('MONRAIN: frenzy strikes!');return true;}if(c==='RAGE60'){ctx.autoTap('#monBtn',500,16);ctx.toast('RAGE60: boosted taps for 60s.');return true;}if(c==='LOOTNOW'){ctx.click('#btnCache')||ctx.click('#btnAscend');ctx.toast('LOOTNOW: force-opened your best reward button.');return true;}return false;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

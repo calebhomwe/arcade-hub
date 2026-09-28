@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Tap monsters to deal damage and earn gold",
+    "Hire heroes for passive DPS",
+    "Ascend to gain souls and permanent damage multipliers"
+  ],
+  "tips": [
+    "Save gems for high-value cache usage",
+    "Use ascension when level growth slows down",
+    "Keep tapping bosses to avoid stalled runs"
+  ],
+  "controls": {
+    "keyboard": "Gameplay is click/touch driven.",
+    "touch": "Tap monster, buy heroes, ascend, and collect rewards."
+  },
+  "difficulty": "Monster HP and boss checkpoints provide a visible progression ramp.",
+  "cheats": [
+    {
+      "code": "MONRAIN",
+      "effect": "Triggers a fast attack burst via repeated monster taps."
+    },
+    {
+      "code": "RAGE60",
+      "effect": "Extended rapid-tap mode for sustained burst damage."
+    },
+    {
+      "code": "LOOTNOW",
+      "effect": "Triggers the best available reward action (cache/ascend)."
+    }
+  ],
+  "features": {
+    "offline earnings": "Welcome-back modal grants capped offline gold.",
+    "upgrade tree": "Hero roster and ascension bonuses form progression path.",
+    "results": "Ascend summary screen reports level reached and soul gains."
+  },
+  "pauseButton": "tr"
+}

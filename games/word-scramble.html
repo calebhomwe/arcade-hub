@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#070a14">
@@ -191,7 +192,11 @@ function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOsci
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 var VOICE_BASE='assets/voice/',voiceBuf={},voiceMiss={},voiceMan=null,voiceDead=false;
-function voiceLoadManifest(){if(voiceMan||voiceDead||!window.fetch){return;}try{fetch(VOICE_BASE+'MANIFEST.json').then(function(r){return r.ok?r.json():null;}).then(function(j){voiceMan=(j&&j.words)?j:{words:[],cheers:[]};}).catch(function(){voiceMan={words:[],cheers:[]};});}catch(e){voiceDead=true;}}
+/* The assets/voice/ directory isn't shipped with this build, so fetching
+   MANIFEST.json (or any per-word .mp3) always 404s. Short-circuit straight
+   to the "no voice available" state instead of ever hitting the network -
+   voiceKnown()/voicePlay() already fall back to silent/no-op gracefully. */
+function voiceLoadManifest(){if(voiceMan){return;}voiceMan={words:[],cheers:[]};}
 function voiceKnown(name){if(!voiceMan||!voiceMan.words){return true;}return voiceMan.words.indexOf(name)!==-1;}
 function voiceRun(name,rate){try{var a=ac(),s=a.createBufferSource();s.buffer=voiceBuf[name];s.playbackRate.value=rate||1;s.connect(a.destination);s.start(0);}catch(e){}}
 function voicePlay(name,rate,fallback){if(muted){if(fallback){fallback();}return;}if(voiceDead||!window.fetch||voiceMiss[name]||!voiceKnown(name)){if(fallback){fallback();}return;}if(voiceBuf[name]){voiceRun(name,rate);return;}try{fetch(VOICE_BASE+name+'.mp3').then(function(r){if(!r.ok){throw new Error('nf');}return r.arrayBuffer();}).then(function(ab){return ac().decodeAudioData(ab);}).then(function(buf){voiceBuf[name]=buf;voiceRun(name,rate);}).catch(function(){voiceMiss[name]=1;if(fallback){fallback();}});}catch(e){voiceDead=true;if(fallback){fallback();}}}
@@ -412,5 +417,10 @@ $('startMeta').textContent='🪙 Gold tiles: '+goldTot+' · 🧠 Best clean run:
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-word-scramble',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'.diff-btn.sel',tutorialText:'Tap a letter tile, place it in a slot, then build the full word before time runs out.',pauseButton:'tr',onHint:function(_,h){var b=document.querySelector('#btnHint');if(b){b.click();return true;}h('Try the first sound. Start with the first letter and build around it.');return true;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

@@ -1,0 +1,23 @@
+{
+  "howto": [
+    "Pick a level band on the title screen",
+    "Start the round and answer with taps/typing",
+    "Use Hint when you are stuck to learn the pattern"
+  ],
+  "tips": [
+    "Say the word/problem out loud before answering",
+    "Use hints early to learn patterns, not after guesses run out",
+    "Watch your streak and protect lives by choosing accuracy first"
+  ],
+  "controls": {
+    "keyboard": "Type letters or numbers where supported; Enter submits in text rounds.",
+    "touch": "Tap buttons, letters, answers or lanes to play each round."
+  },
+  "difficulty": "Level bands are selected from the start screen and unlock harder ranges as progress grows.",
+  "features": {
+    "learning hints": "Available from Arcade hint action (and in-game hint buttons where present).",
+    "progress": "Best scores and learning progress are saved in localStorage.",
+    "results": "End screen shows score plus best and replay shortcut."
+  },
+  "pauseButton": "tr"
+}

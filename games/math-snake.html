@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Snake</title>
@@ -121,7 +122,7 @@ function xpNeed(lv){return 80+(lv-1)*40;}
 function titleFor(lv){return lv>=12?'🌟 Mythic':lv>=10?'👑 Grandmaster':lv>=8?'💎 Master':lv>=6?'🥇 Elite':lv>=4?'🥈 Adept':lv>=2?'🥉 Cadet':'🎓 Rookie';}
 function progLv(){return PROG.level;}
 const COLS=16,ROWS=19,FOOD_COUNT=4;
-let difficulty='easy',state='ready',score=0,best=+readLS('mathSnakeBest','0')||0,lives=3,currentAns=0,streak=0;
+let difficulty='easy',state='ready',score=0,best=+readLS('mathSnakeBest','0')||0,lives=3,currentAns=0,streak=0,wrongPicks=0,hintActive=false;
 let selected={'+':true,'-':true,'×':true,'÷':true};
 const goldPool=[],goldens=[];let bonus=0,goldCd=8,sprGold=null;
 let chest=null,chestCd=15,sprChest=null;
@@ -181,7 +182,7 @@ function getFood(x,y,value,correct){let f=foodPool.pop();if(!f)f={x:0,y:0,value:
 function getGold(x,y){let g=goldPool.pop();if(!g)g={x:0,y:0};g.x=x;g.y=y;return g;}
 function placeFoods(){
   const p=genProblem(),opts=genOptions(p.ans,FOOD_COUNT);
-  currentAns=p.ans;problemEl.textContent=p.text+' = ?';
+  currentAns=p.ans;problemEl.textContent=p.text+' = ?';wrongPicks=0;hintActive=false;
   while(foods.length){foodPool.push(foods.pop());}
   for(let i=0;i<FOOD_COUNT;i++){const c=emptyCell();foods.push(getFood(c.x,c.y,opts[i],opts[i]===p.ans));}
 }
@@ -285,6 +286,11 @@ function draw(){
   if(boardSprite)ctx.drawImage(boardSprite,0,0,W,H);
   for(const f of foods){
     const cx=ox+f.x*cell+cell/2,cy=oy+f.y*cell+cell/2,r=cell*0.42*(1+0.06*Math.sin(elapsed*4+f.x+f.y)),k=r/0.8;
+    if(hintActive&&f.correct){
+      const hr=r+3+Math.sin(elapsed*6)*2;
+      ctx.save();ctx.strokeStyle='#facc15';ctx.lineWidth=3;ctx.shadowColor='#facc15';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.arc(cx,cy,hr,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
     ctx.drawImage(sprFood,cx-k,cy-k,k*2,k*2);
     ctx.fillStyle='#0f172a';ctx.font='900 '+Math.round(r*1.1)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(f.value,cx,cy+1);
@@ -398,6 +404,7 @@ function tick(){
       const c=emptyCell();foods.push(getFood(c.x,c.y,f.value,false));
       foodPool.push(f);
       pulseProblem(false);
+      wrongPicks++;if(wrongPicks>=2)hintActive=true;
       loseLife();
     }
   }else{
@@ -512,5 +519,10 @@ document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPr
 loadProg();renderProg();refreshDiffLocks();
 buildSprites();resize();resetSnake();placeFoods();updateHUD();requestAnimationFrame(loop);
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-math-snake',titleSelector:'#start',playSelector:'#game',overSelector:'#over',scoreSelector:'#score',restartSelector:'#againBtn',tutorialButtonSelector:'#playBtn',tutorialText:'Steer the snake into the number that matches the shown answer.',pauseButton:'none',sceneResolver:function(){var st=document.getElementById('start'),ov=document.getElementById('over');if(st&&!st.classList.contains('hidden'))return'title';if(ov&&!ov.classList.contains('hidden'))return'over';return'play';},onExit:function(){var st=document.getElementById('start'),ov=document.getElementById('over'),p=document.getElementById('pause');if(ov)ov.classList.add('hidden');if(p)p.classList.add('hidden');if(st)st.classList.remove('hidden');try{state='ready';}catch(e){}return true;},onHint:function(_,h){h((window.ArcadeBridge&&window.ArcadeBridge.mathHint('#problem'))||'Eliminate impossible answers first, then choose the closest value.');return true;}});var pb=document.getElementById('pauseBtn');if(pb){pb.style.display='none';}</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

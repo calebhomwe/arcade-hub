@@ -1,0 +1,37 @@
+{
+  "howto": [
+    "Tap the coin button to earn starter coins",
+    "Buy buildings and scale passive income",
+    "Prestige for golden coins to multiply future income"
+  ],
+  "tips": [
+    "Use x10/x25 buy modes once cashflow is stable",
+    "Take offline earnings before spending",
+    "Prestige once gains slow to keep momentum"
+  ],
+  "controls": {
+    "keyboard": "Use mouse/touch primarily; keyboard is optional.",
+    "touch": "Tap coin, buy buttons, prestige, and special actions."
+  },
+  "difficulty": "Difficulty ramps naturally through building costs and prestige loops.",
+  "cheats": [
+    {
+      "code": "COINRAIN",
+      "effect": "Rapid auto-taps the coin button for a burst of coins."
+    },
+    {
+      "code": "RUSH60",
+      "effect": "Long turbo auto-tap burst for extended fast income."
+    },
+    {
+      "code": "CARAVAN",
+      "effect": "Triggers the highest available special action button."
+    }
+  ],
+  "features": {
+    "offline earnings": "Welcome-back modal grants capped offline gains.",
+    "upgrade tree": "Building ladder and prestige multipliers drive progression.",
+    "results": "Prestige summary screen shows run earnings and multiplier growth."
+  },
+  "pauseButton": "tr"
+}

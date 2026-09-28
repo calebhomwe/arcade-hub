@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Blast</title>
@@ -34,7 +35,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#4338ca,#0f0f23 55%,#07
 .ops{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .op{width:58px;height:58px;border-radius:16px;border:2px solid #334155;background:#1e293b;color:#fff;font-size:26px;font-weight:900;cursor:pointer}
 .op.on{border-color:#4ade80;background:#14532d;box-shadow:0 0 16px rgba(74,222,128,.5)}
-.diff{display:flex;gap:10px}
+.diff{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:100%}
 .diff button{min-height:50px;padding:0 22px;border-radius:14px;border:2px solid #334155;background:#1e293b;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 .diff button.on{border-color:#38bdf8;background:#0c4a6e;box-shadow:0 0 16px rgba(56,189,248,.5)}
 .btn{border:none;cursor:pointer;background:linear-gradient(90deg,#4ade80,#38bdf8);color:#04240f;font-size:22px;font-weight:900;padding:16px 48px;border-radius:999px;box-shadow:0 8px 26px rgba(74,222,128,.4);min-height:56px}
@@ -464,5 +465,10 @@ loadProg();renderProg();refreshDiffLocks();
 resize();initBubbles();newProblem();draw();
 requestAnimationFrame(loop);
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-math-blast',titleSelector:'#start',playSelector:'#game',overSelector:'#over',scoreSelector:'#score',restartSelector:'#againBtn',tutorialButtonSelector:'#playBtn',tutorialText:'Solve the problem and pop the bubble with the correct answer first.',pauseButton:'tr',sceneResolver:function(){var st=document.getElementById('start'),ov=document.getElementById('over');if(st&&!st.classList.contains('hidden'))return'title';if(ov&&!ov.classList.contains('hidden'))return'over';return'play';},onExit:function(){var st=document.getElementById('start'),ov=document.getElementById('over'),p=document.getElementById('pause');if(ov)ov.classList.add('hidden');if(p)p.classList.add('hidden');if(st)st.classList.remove('hidden');try{state='ready';}catch(e){}return true;},onHint:function(_,h){h((window.ArcadeBridge&&window.ArcadeBridge.mathHint('#problem'))||'Break the problem into smaller steps and estimate first.');return true;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>

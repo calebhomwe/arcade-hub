@@ -440,7 +440,7 @@ function defaultState(){
     trees:{}, rocks:{}, plots:{},
     quest:null,
     stats:{bugs:0,fish:0,digs:0,harvests:0,shakes:0,bellsEarned:0,placed:0},
-    offsetMin:0, muted:false, lastSave:nowMs()
+    offsetMin:0, muted:false, lastSave:nowMs(), startMs:nowMs()
   };
 }
 var state=defaultState();
@@ -455,6 +455,7 @@ function mergeSave(s){
   st.bells=Math.max(0,nr(s.bells,500));
   st.day=Math.max(1,Math.floor(nr(s.day,1)));
   st.offsetMin=nr(s.offsetMin,0);
+  st.startMs=nr(s.startMs,nowMs());
   st.muted=!!s.muted;
   ["net","rod","shovel","can","axe","sling"].forEach(function(t){
     st.tools[t]=!(s.tools[t]===false);
@@ -656,7 +657,7 @@ function stopAmbient(){
 }
 
 /* ============================== TIME & WEATHER ============================== */
-function gameMinutes(){ return state.offsetMin+(nowMs()/1000)*MIN_PER_REAL_SEC; }
+function gameMinutes(){ return state.offsetMin+((nowMs()-state.startMs)/1000)*MIN_PER_REAL_SEC; }
 function clockStr(gm){
   gm=gm%1440; if(gm<0)gm+=1440;
   var h=Math.floor(gm/60),m=Math.floor(gm%60);

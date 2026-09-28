@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#070a14">
@@ -58,7 +59,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 #rhymeInput.shake{animation:shakeX .4s}
 #btnDrop{min-width:110px}
 @keyframes shakeX{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
-.last-line{min-height:22px;font-size:14px;font-weight:700;color:#9fb3d9;margin-bottom:4px}
+.last-line{min-height:40px;font-size:14px;font-weight:700;color:#9fb3d9;margin-bottom:4px;line-height:1.3}
 .last-line.bad{color:#fb7185}
 .last-line.good{color:#34d399}
 .ctrl-row{display:flex;gap:12px;margin:8px 0 20px}
@@ -388,6 +389,12 @@ function pickSeed(){var p=pool(),w,g=0;do{w=p[(Math.random()*p.length)|0];g++;}w
 function nextRound(){
 round++;
 seed=pickSeed();
+var fi=FAMIDX[seed];
+if(fi!==undefined){
+  var fam=FAMS[fi].split(' '),hasAnswer=false,k;
+  for(k=0;k<fam.length;k++){if(fam[k]!==seed&&!used[fam[k]]){hasAnswer=true;break;}}
+  if(!hasAnswer){for(k=0;k<fam.length;k++){if(fam[k]!==seed){delete used[fam[k]];}}}
+}
 used[seed]=1;
 timeTotal=Math.max(8,14-round*0.3);
 timeLeft=timeTotal;
@@ -563,5 +570,10 @@ else{paused=false;lastT=performance.now();if(mode==='builtin'&&AC){nextBeatTime=
 init();
 })();
 </script>
+
+<!-- arcade-bridge:start -->
+<script src="assets/arcade-bridge.js"></script>
+<script>window.ArcadeBridge&&window.ArcadeBridge.setup({gameId:'hub-rhyme-time',titleSelector:'#s-start',playSelector:'#s-game',overSelector:'#s-over',scoreSelector:'#score',restartSelector:'#btnAgain',exitSelector:'#btnMenu',tutorialButtonSelector:'#btnStart',tutorialText:'Read the seed word and type a rhyme before the beat runs out.',pauseButton:'tr',onHint:function(_,h){var s=((document.getElementById('seed')||{}).textContent||'').trim().toLowerCase();if(!s){h('Use the same ending sound as the seed word.');return true;}var end=s.slice(-2);h('Use a word with the same ending sound as "'+s+'" (try -*'+end+').');return true;}});</script>
+<!-- arcade-bridge:end -->
 </body>
 </html>
