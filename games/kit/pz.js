@@ -351,19 +351,20 @@
     P.lifeAdd = (k, n) => P.life(k, (S.life[k] || 0) + (n == null ? 1 : n));
     P.lifeMax = (k, v) => { if (v > (S.life[k] || 0)) P.life(k, v); return S.life[k] || 0; };
 
-    /* the little "Lv N" button that lives in the game's HUD */
-    let chipEl = null;
+    /* the little "Lv N" button that lives in the game's HUD (call chip() once per place you want one) */
+    const chips = [];
     P.chip = (parent) => {
-      chipEl = D.createElement('button'); chipEl.className = 'pz-chip'; chipEl.type = 'button'; chipEl.setAttribute('aria-label', 'Your progress, goals and looks');
-      chipEl.innerHTML = '<span class="lv" data-lv="1"></span><span class="txt">Goals</span><span class="dot"></span>';
-      chipEl.addEventListener('click', () => { snd.play('tap'); P.open(); });
-      if (parent) parent.appendChild(chipEl); refresh(); return chipEl;
+      const el = D.createElement('button'); el.className = 'pz-chip'; el.type = 'button'; el.setAttribute('aria-label', 'Your progress, goals and looks');
+      el.innerHTML = '<span class="lv" data-lv="1"></span><span class="txt">Goals</span><span class="dot"></span>';
+      el.addEventListener('click', () => { snd.play('tap'); P.open(); });
+      chips.push(el); if (parent) parent.appendChild(el); refresh(); return el;
     };
     function refresh() {
-      if (!chipEl) return; const li = lvOf(S.xp), lv = chipEl.querySelector('.lv');
-      lv.setAttribute('data-lv', li.level); lv.style.setProperty('--p', Math.round(li.into / li.need * 100));
-      const open = P.quests().some(q => !S.q.done[q.id]); chipEl.classList.toggle('has', P.chestReady());
-      chipEl.querySelector('.txt').textContent = open ? 'Goals' : 'All done';
+      if (!chips.length) return; const li = lvOf(S.xp), open = P.quests().some(q => !S.q.done[q.id]);
+      chips.forEach(chipEl => {
+        const lv = chipEl.querySelector('.lv'); lv.setAttribute('data-lv', li.level); lv.style.setProperty('--p', Math.round(li.into / li.need * 100));
+        chipEl.classList.toggle('has', P.chestReady()); chipEl.querySelector('.txt').textContent = open ? 'Goals' : 'All done';
+      });
     }
     /* the progress sheet */
     let sheet = null, lastFocus = null;

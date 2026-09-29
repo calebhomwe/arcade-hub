@@ -129,11 +129,14 @@
   const PER_WORLD = 8, LEVELS = WORLDS.length * PER_WORLD;
   const TYPES = ['lines', 'gems', 'score', 'gems', 'lines', 'gems', 'score', 'gems'];
   function levelDef(i) {
-    const w = (i / PER_WORLD) | 0, n = i % PER_WORLD, rnd = mulberry(9100 + i * 131), type = TYPES[n];
-    const pre = 4 + w * 6 + Math.floor(n * 1.3);                       // filled squares at the start
-    const moves = 20 - w * 2 - Math.floor(n / 2) + (type === 'score' ? 1 : 0);
+    const w = (i / PER_WORLD) | 0, n = i % PER_WORLD, type = TYPES[n];
+    const pre = 4 + w * 5 + Math.floor(n * 1.2);                       // filled squares at the start
+    const moves = 20 - Math.floor(n / 2) - w;                          // blocks you may place
+    const f = 0.7 + 0.03 * n + 0.05 * w + (n === PER_WORLD - 1 ? 0.03 : 0);   // how much of what a careful player manages we ask for
     const g = { type, w, n, i, pre, moves };
-    g.goal = type === 'lines' ? 5 + w * 2 + n : type === 'score' ? 220 + w * 90 + n * 45 : 3 + w * 2 + Math.floor(n / 2);
+    g.goal = type === 'lines' ? Math.max(3, Math.round((0.33 * moves + 0.06 * pre + 0.3) * f))
+      : type === 'score' ? Math.round((8.2 * moves + pre) * f / 5) * 5
+      : Math.max(3, Math.min(9, Math.round(2.6 + w * 1.4 + n * 0.45)));
     g.seed = 500 + i * 17; g.name = WORLDS[w].name + ' ' + (n + 1);
     g.boss = n === PER_WORLD - 1;
     return g;
@@ -158,7 +161,7 @@
     }
     return { grid, gems };
   }
-  function starsFor(def, movesLeft) { const f = movesLeft / def.moves; return f >= 0.5 ? 3 : f >= 0.25 ? 2 : 1; }
+  function starsFor(def, movesLeft) { const f = movesLeft / def.moves; return f >= 0.35 ? 3 : f >= 0.15 ? 2 : 1; }
 
   const api = { N, SHAPES, mulberry, canPlace, anyFit, place, settle, bombArea, trayPlayable, pickShape, genTray, scoreClear, evalGrid, bestMove, WORLDS, PER_WORLD, LEVELS, levelDef, levelStart, starsFor, cellsOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BBCore = api;

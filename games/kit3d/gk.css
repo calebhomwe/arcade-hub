@@ -195,3 +195,26 @@
   .gk-sheet,.gk-sheet .pan{animation:none}
 }
 @keyframes gk-toast-rm{0%{opacity:0}8%{opacity:1}88%{opacity:1}100%{opacity:0}}
+
+/* goals list on the level card / title, top bar of a title screen */
+.gk-goals{width:min(100%,340px);display:flex;flex-direction:column;gap:6px;text-align:left}
+.gk-goals .g{display:flex;align-items:center;gap:10px;padding:5px 12px 5px 8px;border-radius:14px;background:rgba(33,20,71,.55);border:2px solid rgba(33,20,71,.8);font:500 15px/1.15 var(--gk-body);color:#fff}
+.gk-goals .g svg{width:24px;height:24px;flex:none}
+.gk-goals .g.done{background:rgba(32,185,95,.55)}
+.gk-goals .g .n{margin-left:auto;font:400 14px/1 var(--gk-disp);color:var(--gk-gold);white-space:nowrap}
+.gk-goals.card .g{background:#fff;border:3px solid #e6dcc6;color:var(--gk-txt)}
+.gk-goals.card .g.done{background:#e9fff0;border-color:#8fe3ad}
+.gk-goals.card .g .n{color:var(--gk-mut)}
+.gk-tb{position:fixed;left:0;right:0;top:0;z-index:45;display:flex;align-items:center;gap:8px;padding:calc(10px + var(--gk-st)) calc(12px + var(--gk-sr)) 0 calc(12px + var(--gk-sl));pointer-events:none}
+.gk-tb>*{pointer-events:auto}
+.gk-tb .sp{flex:1}
+.gk-seg{display:inline-flex;padding:4px;border-radius:999px;background:rgba(33,20,71,.7);border:3px solid var(--gk-ink);gap:4px}
+.gk-seg button{border:0;border-radius:999px;min-height:38px;padding:0 16px;background:transparent;color:#cfc6f5;font:400 16px/1 var(--gk-disp);letter-spacing:.05em;cursor:pointer}
+.gk-seg button.on{background:linear-gradient(var(--gk-a),var(--gk-a2));color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3);box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.gk-screen .gk-logo{margin-bottom:auto}
+.gk-flash{position:fixed;inset:0;z-index:33;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0) 30%,rgba(255,60,80,.55) 100%)}
+.gk-combo{position:fixed;left:50%;top:26%;z-index:34;pointer-events:none;transform:translate(-50%,-50%);font:400 clamp(38px,12vw,60px)/1 var(--gk-disp);opacity:0;white-space:nowrap}
+.gk-score{position:fixed;left:0;right:0;top:calc(96px + var(--gk-st));z-index:31;text-align:center;pointer-events:none;font:400 clamp(44px,14vw,64px)/1 var(--gk-disp)}
+.gk-score.bump{animation:gk-pulse .3s ease}
+
+@media (max-height:760px){ #weekHost{display:none} .gk-goals .g{padding:3px 10px 3px 6px} }

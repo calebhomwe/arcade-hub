@@ -5,70 +5,73 @@
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/jsm/"}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4f7cff">
 <title>Helix Smash</title>
+<link rel="stylesheet" href="./kit3d/gk.css">
 <style>
+  :root { --gk-a:#6cc4ff; --gk-a2:#2e83ee; --gk-a3:#1a4fb3; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#070a16; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  body { position:fixed; inset:0; overscroll-behavior:none; }
-  canvas { position:fixed; inset:0; display:block; touch-action:none; }
-  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:10; text-align:center; padding:24px; background:radial-gradient(120% 120% at 50% 20%, rgba(12,20,44,.92), rgba(7,10,22,.97)); }
-  .hidden { display:none !important; }
-  h1 { font-size:clamp(34px,8vw,64px); font-weight:900; letter-spacing:1px; background:linear-gradient(180deg,#fff,#7dd3fc); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 18px rgba(56,189,248,.55)); }
-  .sub { color:#9aa3c7; font-size:clamp(14px,3.4vw,18px); max-width:440px; line-height:1.5; }
-  .sub b { color:#7dd3fc; }
-  button { font-size:clamp(22px,5vw,30px); font-weight:800; padding:16px 44px; border:none; border-radius:18px; cursor:pointer; color:#051018; background:linear-gradient(180deg,#7dd3fc,#0284c7); box-shadow:0 0 26px rgba(56,189,248,.6), inset 0 2px 0 rgba(255,255,255,.35); transition:transform .08s; }
-  button:active { transform:scale(.94); }
-  .score-big { font-size:clamp(40px,10vw,72px); font-weight:900; color:#fff; text-shadow:0 0 24px rgba(56,189,248,.9); }
-  .best { color:#fbbf24; font-size:clamp(16px,4vw,22px); font-weight:700; }
-  .hud { position:fixed; top:64px; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
-  .pill { background:rgba(10,12,26,.65); border:1px solid rgba(56,189,248,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#e0f2fe; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(56,189,248,.3); }
-  .pill small { display:block; font-size:12px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
-  .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
-  .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(56,189,248,.4); background:rgba(10,12,26,.65); color:#e0f2fe; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(56,189,248,.3); }
-  #hub { position:fixed; top:14px; left:16px; z-index:20; color:#bae6fd; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(56,189,248,.35); }
-  @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
-  #tut { position:fixed; left:0; right:0; bottom:9vh; z-index:9; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; text-align:center; padding:0 16px; }
-  #tut .tap { font-size:54px; animation:tapHint 1s ease-in-out infinite; }
-  #tut .card { background:rgba(10,12,26,.8); border:1px solid rgba(125,211,252,.45); border-radius:18px; padding:12px 18px; max-width:340px; color:#e0f2fe; font-weight:800; font-size:17px; }
-  #tut .card small { display:block; color:#9aa3c7; font-weight:600; font-size:14px; margin-top:4px; line-height:1.4; }
-  @keyframes tapHint { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(10px) scale(.9); } }
-  @media (prefers-reduced-motion:reduce) { #tut .tap { animation:none; } button:active { transform:none; } }
-  .overlay { background:radial-gradient(120% 120% at 50% 20%, rgba(12,14,40,.45), rgba(7,10,22,.80)); }
-  .gfx { font-size:15px; padding:10px 18px; min-height:44px; color:#fff; background:rgba(10,12,26,.7); border:1px solid rgba(255,255,255,.35); box-shadow:none; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#4f7cff; font-family:var(--gk-body); }
+  body { position:fixed; inset:0; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
+  canvas#c { position:fixed; inset:0; display:block; touch-action:none; }
   #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
-  #fx .pop { position:absolute; left:0; top:0; font-weight:900; font-size:22px; white-space:nowrap; text-shadow:0 2px 0 rgba(0,0,0,.55), 0 0 12px rgba(0,0,0,.45); will-change:transform,opacity; }
+  .gk-logo .l2 { color:#ffe37a; }
+  #hud .stars3 { display:flex; gap:4px; justify-content:center; pointer-events:none; }
+  #hud .stars3 svg { width:26px; height:26px; transition:transform .2s; }
+  #hud .stars3 svg.lit { animation:gk-starpop .5s cubic-bezier(.2,1.6,.4,1) both; }
+  #hud .stars3 svg.fail { opacity:.45; filter:grayscale(1); }
+  #endlessHud { display:flex; gap:8px; justify-content:center; }
+  .sw.ball { position:relative; }
 </style>
 </head>
-<body>
+<body class="gk">
 <canvas id="c"></canvas>
 <div id="fx"></div>
-<div class="hud hidden" id="hud">
-  <div class="pill"><small>Score</small><span id="score">0</span></div>
-  <div class="pill"><small>Combo</small><span id="combo">&mdash;</span></div>
-  <div class="pill"><small>Gems</small><span id="gems">0</span></div>
-  <div class="pill"><small>Best</small><span id="best">0</span></div>
+<div class="gk-flash" id="flash"></div>
+<div class="gk-combo gk-out" id="comboBig"></div>
+
+<div class="gk-hud gk-hidden" id="hud">
+  <div class="gk-row">
+    <div id="lvlbar" style="flex:1;min-width:0"></div>
+    <button class="gk-ib" id="mute" type="button" aria-label="Sound"></button>
+  </div>
+  <div class="gk-row" style="justify-content:flex-start">
+    <span class="gk-chip" id="gemChip"></span>
+    <span class="gk-chip dim" id="shieldChip" style="display:none"></span>
+    <span class="gk-chip dim" id="parChip" style="display:none"></span>
+  </div>
+  <div class="stars3" id="stars3"></div>
 </div>
-<div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
-<a id="hub" href="../index.html">← Hub</a>
-<div id="tut" class="hidden"><div class="tap" aria-hidden="true">👆</div><div class="card">Tap to smash through the platform<small id="tutMore">Blue and purple break, green bounces you down for a combo, and red or orange ends the run. Tap when a safe colour is at the front.</small></div></div>
-<div class="overlay" id="start">
-  <h1>HELIX SMASH</h1>
-  <div class="sub">Tap to <b>smash</b> through the platform below. <b style="color:#60a5fa">Blue/purple</b> break &rarr; <b style="color:#4ade80">green</b> bounces (combo!) &middot; <b style="color:#f87171">red/orange</b> = game over. Grab 💎 gems &amp; 💍 golden rings. 🧲 magnets vacuum gems toward you!</div>
-  <div class="best" id="ringInfo">💍 Golden Rings Ever: 0</div>
-  <div class="best" id="gemEverInfo">💎 Gems Ever: 0</div>
-  <button id="playBtn">▶ PLAY</button>
-  <button class="gfx" id="gfxBtn" aria-label="Graphics quality">GRAPHICS: HIGH</button>
+<div class="gk-score gk-out gk-hidden" id="scoreBig">0</div>
+
+<div class="gk-screen" id="start">
+  <div class="gk-tb"><a class="gk-ib" id="hub" href="../index.html" aria-label="Back to the hub"></a><span class="sp"></span><span class="gk-chip" id="coinChip"></span><button class="gk-ib" id="mute2" type="button" aria-label="Sound"></button></div>
+  <h1 class="gk-logo">Helix<span class="l2">Smash</span></h1>
+  <div class="gk-seg" id="modeSeg" role="tablist"><button type="button" data-m="level" class="on">LEVELS</button><button type="button" data-m="endless">ENDLESS</button></div>
+  <div id="picker"></div>
+  <div id="endlessInfo" class="gk-goals gk-hidden"></div>
+  <div class="gk-goals" id="goals"></div>
+  <button class="gk-btn green wide throb" id="playBtn" type="button"></button>
+  <div class="gk-menu"><button class="gk-btn sm dark" id="skinBtn" type="button"></button><button class="gk-btn sm dark" id="gfxBtn" type="button" aria-label="Graphics quality">GRAPHICS: HIGH</button></div>
+  <div id="dailyHost"></div>
+  <div id="weekHost"></div>
 </div>
-<div class="overlay hidden" id="gameover">
-  <h1>SHATTERED!</h1>
-  <div class="score-big" id="finalScore">0</div>
-  <div class="best" id="finalBest">Best: 0</div>
-  <div class="best" id="comboInfo">Best Combo: ×0</div>
-  <div class="best" id="gemInfo">💎 Best Gem Run: 0</div>
-  <button id="restartBtn">↻ PLAY AGAIN</button>
+
+<div class="gk-screen dim center gk-hidden" id="gameover">
+  <div class="gk-card">
+    <div class="gk-head" id="ovHead"><h2 id="ovTitle">LEVEL 1</h2></div>
+    <div class="gk-stars" id="ovStars"></div>
+    <div><div class="gk-big gk-out" id="finalScore">0</div><div class="gk-cap">Score <span class="gk-newbest gk-hidden" id="newBest">NEW BEST</span></div></div>
+    <div class="gk-stat" id="ovStat"></div>
+    <div class="gk-goals card" id="ovGoals"></div>
+    <div id="ovNote" class="gk-note"></div>
+    <button class="gk-btn green wide" id="restartBtn" type="button"></button>
+    <div class="gk-menu"><button class="gk-btn sm dark" id="againBtn" type="button"></button><button class="gk-btn sm dark" id="menuBtn" type="button"></button></div>
+  </div>
 </div>
 <script type="module">
-import { TowerWorld, REDUCED } from './kit3d/tower3d.js';
+import { TowerWorld, REDUCED, skinTexture } from './kit3d/tower3d.js';
+import { GK } from './kit3d/gk.js';
 
 const KEY = 'helix-smash-best';
 const canvas = document.getElementById('c');
@@ -78,6 +81,7 @@ let GFX = 'high';
 try { const g = localStorage.getItem(KEY + '-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
 const T = new TowerWorld(canvas, { quality: GFX, style: 'helix', colors: { blue:'#3b82f6', purple:'#8b5cf6', green:'#22c55e', red:'#ef4444', orange:'#f97316' }, skyTop: '#4f7cff', skyLow: '#ffc6e3' });
 GFX = T.quality;   // 'auto' starts on Low when WebGL runs on the CPU
+canvas.addEventListener('webglcontextlost', e => e.preventDefault());
 function resize() {
   W = window.innerWidth; H = window.innerHeight;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
@@ -93,26 +97,59 @@ function ensureAudio() {
   if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
-function beep(freq, dur, type, vol, slideTo) {
-  if (muted || !audioCtx) return;
-  const t = audioCtx.currentTime;
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = type || 'sine';
-  o.frequency.setValueAtTime(freq, t);
-  if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + dur);
-  g.gain.setValueAtTime(vol || 0.2, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(t); o.stop(t + dur);
-}
-function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+const buzz = ms => GK.haptic(ms);
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+GK.hooks.sfx = sfx;
 
-const TAU = Math.PI * 2, SEGS = 8;
-const COLORS = { red:'#ef4444', orange:'#f97316', blue:'#3b82f6', purple:'#8b5cf6', green:'#22c55e' };
+/* ---------- progression: levels, worlds, stars, skins, daily goal ---------- */
+const SKINS = [
+  { id:'sunny',  name:'Sunny',    css:'radial-gradient(circle at 35% 28%,#fff7c2,#fbbf24 45%,#c98500)', color:'#fbbf24', cost:0 },
+  { id:'bubble', name:'Bubblegum',css:'repeating-linear-gradient(90deg,#ff9fd0 0 10px,#fff 10px 20px)', color:'#ffffff', tex:['stripes','#ffffff','#ff8cc6'], cost:{ stars:3 } },
+  { id:'beach',  name:'Beach ball',css:'repeating-linear-gradient(90deg,#ff5a6e 0 11px,#fff 11px 22px,#3fa8ff 22px 33px,#fff 33px 44px)', color:'#ffffff', tex:['stripes','#ffffff','#ff5a6e'], cost:{ coins:60 } },
+  { id:'soccer', name:'Soccer',   css:'radial-gradient(circle at 35% 30%,#fff,#e8e8e8 50%,#222 52%,#222 60%,#fff 62%)', color:'#ffffff', tex:['checker','#ffffff','#2a2a3a'], cost:{ coins:90 } },
+  { id:'chrome', name:'Chrome',   css:'linear-gradient(160deg,#fff,#aeb9d6 40%,#586084 60%,#dfe6f7)', color:'#dfe6f2', rough:0.08, metal:1, glow:0.02, cost:{ coins:140 } },
+  { id:'lava',   name:'Lava',     css:'radial-gradient(circle at 40% 35%,#ffd36b,#ff6a00 45%,#7a1300)', color:'#ff5a00', emissive:'#ff3d00', glow:0.65, rough:0.5, trail:'#ff7a1a', cost:{ level:8 } },
+  { id:'cosmic', name:'Cosmic',   css:'radial-gradient(circle at 30% 30%,#c9a7ff,#5b2fd0 45%,#140a3a)', color:'#ffffff', tex:['galaxy','#3a1c8f','#0f0a33'], glow:0.25, emissive:'#5b2fd0', cost:{ stars:12 } },
+  { id:'rainbow',name:'Rainbow',  css:'conic-gradient(#ff5a6e,#ffd23f,#5cec8c,#3fa8ff,#b48bff,#ff5a6e)', color:'#ffffff', tex:['swirl','#ff7ad0','#7ad0ff'], cost:{ streak:3 } },
+  { id:'crown',  name:'Star king',css:'radial-gradient(circle at 35% 28%,#fff,#ffd23f 40%,#ff8a1c 75%,#b95a00)', color:'#ffd23f', metal:0.85, rough:0.15, glow:0.3, emissive:'#ff9d00', trail:'#ffe37a', cost:{ stars:30 } },
+];
+const WORLDS = [
+  { name:'Candy Sky',  sky:['#4f7cff','#ffc6e3'], colors:{ blue:'#3b82f6', purple:'#8b5cf6' }, pole:'#ffffff', hemi:['#ffffff','#8a86b8'], decor:'#ffffff' },
+  { name:'Sunset Bay', sky:['#ff7a59','#ffe0a8'], colors:{ blue:'#f472b6', purple:'#c084fc' }, pole:'#fff1e6', hemi:['#fff3e0','#b07a8a'], decor:'#ffe9d6' },
+  { name:'Ice Peaks',  sky:['#39b6ff','#eafcff'], colors:{ blue:'#5aa9ff', purple:'#8f9bff' }, pole:'#f2fbff', hemi:['#f0fbff','#7f9fc8'], decor:'#ffffff' },
+  { name:'Midnight',   sky:['#1a0f4d','#6a48c9'], colors:{ blue:'#38bdf8', purple:'#a78bfa' }, pole:'#d5cdff', hemi:['#b9a8ff','#2b1d63'], decor:'#9d8cff' },
+  { name:'Coral Reef', sky:['#00a5d8','#c9f3ff'], colors:{ blue:'#0ea5e9', purple:'#e879f9' }, pole:'#fff7f0', hemi:['#f0ffff','#4f8fa8'], decor:'#d9fbff' },
+];
+const P = GK.progress('helix-smash', {
+  perWorld: 10, worlds: WORLDS, skins: SKINS, dailyReward: 60,
+  daily: [
+    { id:'gems',  icon:'gem',  text:n => 'Collect ' + n + ' gems',        targets:[15, 25, 40] },
+    { id:'smash', icon:'bolt', text:n => 'Smash ' + n + ' platforms',      targets:[40, 70, 110] },
+    { id:'wins',  icon:'flag', text:n => 'Clear ' + n + ' levels',         targets:[2, 3, 4] },
+  ],
+});
+let MODE = P.d.mode === 'endless' ? 'endless' : 'level';
+let LEVEL = Math.min(P.d.level, P.d.pick || P.d.level);   // the level chosen on the title
+let SPEC = null;          // the level being played (level mode), null in endless
+let RNG = Math.random;
+const mulberry = a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+function levelSpec(L) {
+  const len = Math.min(70, 12 + L * 2);
+  return { L, len, maxDead: Math.min(4, 1 + Math.floor(L / 5)), spin: Math.min(1.7, 1 + (L - 1) * 0.03), comboGoal: Math.min(6, 2 + Math.floor(L / 4)), par: Math.round(len * 0.85 + 6), seed: L * 7919 + 13 };
+}
+function applySkin() {
+  const s = P.current(); if (!s) return;
+  T.skin({ color: s.color, emissive: s.emissive, glow: s.glow, rough: s.rough, metal: s.metal, trail: s.trail || s.color, map: s.tex ? skinTexture(s.tex[0], s.tex[1], s.tex[2]) : null });
+  BALLCOL = s.tex ? s.tex[2] : (s.trail || s.color);
+}
+function applyWorld(L) {
+  const w = P.world(L);
+  T.setTheme({ sky: w.sky, colors: w.colors, pole: w.pole, hemi: w.hemi, decor: w.decor });
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', w.sky[0]);
+}
+
 let GAP, rx, ry, ringHalf, ballR, cx, desired;
-let ballSpr = null, gemSpr = null, shieldSpr = null, ringSpr = null, magSpr = null;
 function layout() {
   GAP = Math.min(W, H) * 0.20;
   rx = Math.min(W, H) * 0.42;
@@ -120,14 +157,15 @@ function layout() {
   ringHalf = ry * 0.7;
   ballR = Math.min(W, H) * 0.075 * (codes.BIGBALL ? 1.6 : 1);
   cx = W / 2;
-  desired = H * 0.32;
+  desired = H * 0.34;
   T.metrics(GAP, ry + ringHalf, ballR);
 }
+const TAU = Math.PI * 2, SEGS = 8;
 
-let platforms = [], gems = [], powerups = [], goldPus = [], mags = [], particles = [], floaters = [], trail = [], visBuf = [], rings = [];
+let platforms = [], gems = [], powerups = [], goldPus = [], mags = [], trail = [], rings = [];
 let cur = 0, combo = 0, score = 0, best = 0, camY = 0, shield = 0, fever = 0, ringGot = 0, ringBest = 0, magnet = 0;
 let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
-let squash = 0, shake = 0, tGlobal = 0;
+let squash = 0, shake = 0, tGlobal = 0, hitStop = 0, runT = 0, bumpT = 0, lastSec = -1, BALLCOL = '#fbbf24';
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 const SDK = window.ArcadeSDK || null;
@@ -135,37 +173,36 @@ const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)'
 function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
 function cheated() { return !!(SDK && SDK.cheated); }
 const codes = {};
-let tutSeen = false, waiting = false;
+let tutSeen = false, waiting = false, coach = null;
 try { tutSeen = localStorage.getItem(KEY + '-tut') === '1'; } catch (e) {}
 try { ringBest = parseInt(localStorage.getItem(KEY + '-rings') || '0', 10) || 0; } catch (e) {}
 let comboRec = 0, runComboBest = 0, recCeleb = false;
 try { comboRec = parseInt(localStorage.getItem(KEY + '-combo') || '0', 10) || 0; } catch (e) {}
-let gemsRun = 0, gemMilestone = 0, gemsBestRun = 0, gemEverTotal = 0;
+let gemsRun = 0, gemMilestone = 0, gemsBestRun = 0, gemEverTotal = 0, smashed = 0, star2 = false, star3ok = true, attempts = 0;
 try { gemsBestRun = parseInt(localStorage.getItem(KEY + '-gemsbest') || '0', 10) || 0; } catch (e) {}
 try { gemEverTotal = parseInt(localStorage.getItem(KEY + '-gemsever') || '0', 10) || 0; } catch (e) {}
 
-function rand(a, b) { return a + Math.random() * (b - a); }
-function py(i) { return i * GAP - camY; }
+const rand = (a, b) => a + RNG() * (b - a);
 function ballRestY(i) { return i * GAP - ry - ringHalf - ballR; }
-const BALLCOL = '#fbbf24';
-function burst(x, y, color, n, speed) { T.burstBall(color, T.quality === 'high' ? n : Math.ceil(n / 3)); }
-const fxEl = $('fx'), pops = [];
+function burst(x, y, color, n) { T.burstBall(color, T.quality === 'high' ? n : Math.ceil(n / 3)); }
+
+/* floating numbers: kit pops placed at the ball's screen position */
+let popN = 0;
 function addFloater(text, x, y, color) {
-  if (pops.length > 12) { const o = pops.shift(); o.el.remove(); }
-  const el = document.createElement('div'); el.className = 'pop'; el.textContent = text; el.style.color = color;
-  fxEl.appendChild(el); pops.push({ el, dy: y - (by - camY), dx: x - cx, t: 0 });
+  if (popN > 8) return;
+  const b = T.ballScreen(), sx = Math.max(70, Math.min(W - 70, b.x + (x - cx) * 0.5)), sy = Math.max(120, b.y + (y - (by - camY)) * 0.7);
+  popN++; GK.pop(sx, sy, text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim(), { color, size: /NEW|STREAK|MASTER|RECORD|COLLECTOR/.test(text) ? 26 : 30 });
+  setTimeout(() => { popN--; }, 800);
 }
-function stepPops(dt) {
-  const b = T.ballScreen();
-  for (let i = pops.length - 1; i >= 0; i--) {
-    const o = pops[i]; o.t += dt;
-    if (o.t > 0.9) { o.el.remove(); pops.splice(i, 1); continue; }
-    const x = Math.max(80, Math.min(W - 80, b.x + o.dx * 0.5)), y = Math.max(90, b.y + o.dy * 0.7 - o.t * 60);
-    o.el.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + (RM ? 1 : 0.85 + Math.min(0.25, o.t * 2)) + ')';
-    o.el.style.opacity = String(1 - Math.pow(o.t / 0.9, 2));
-  }
+function bigCombo(text, color) {
+  const e = $('comboBig'); e.textContent = text; e.style.color = color || '#fff';
+  if (!e.animate || RM) { e.style.opacity = '1'; setTimeout(() => { e.style.opacity = '0'; }, 500); return; }
+  e.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1.15)', offset: .25 }, { opacity: 1, transform: 'translate(-50%,-60%) scale(1)', offset: .7 }, { opacity: 0, transform: 'translate(-50%,-110%) scale(1)' }], { duration: 760, easing: 'ease-out' });
 }
-function addRing(x, y, color) { T.ring(color); }
+function flashPar() { const c = $('parChip'); c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse'); sfx('buzz'); }
+function flash() { const f = $('flash'); if (f.animate && !RM) f.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' }); }
+
+/* ---------- world generation ---------- */
 function platAt(i) { return platforms.length ? platforms[i - platforms[0].i] : undefined; }
 function trimWorld() {
   while (platforms.length && platforms[0].i < cur - 24) platforms.shift();
@@ -174,19 +211,43 @@ function trimWorld() {
   while (goldPus.length && goldPus[0].i < cur - 24) goldPus.shift();
   while (mags.length && mags[0].i < cur - 24) mags.shift();
 }
-
 function makeSegs(i) {
   const seg = [];
   let deadly = 0, greens = 0;
-  if (i >= 3) deadly = Math.min(4, 1 + Math.floor((i - 3) / 2));
-  if (i >= 2 && Math.random() < 0.5) greens = 1;
-  for (let k = 0; k < SEGS; k++) seg.push(Math.random() < 0.5 ? 'blue' : 'purple');
-  for (let n = 0; n < deadly; n++) { const k = (Math.random() * SEGS) | 0; seg[k] = Math.random() < 0.5 ? 'red' : 'orange'; }
-  for (let n = 0; n < greens; n++) { const k = (Math.random() * SEGS) | 0; if (seg[k] !== 'red' && seg[k] !== 'orange') seg[k] = 'green'; }
+  const cap = SPEC ? SPEC.maxDead : 4;
+  if (i >= 3) deadly = Math.min(cap, 1 + Math.floor((i - 3) / 2));
+  if (i >= 2 && RNG() < 0.5) greens = 1;
+  for (let k = 0; k < SEGS; k++) seg.push(RNG() < 0.5 ? 'blue' : 'purple');
+  for (let n = 0; n < deadly; n++) { const k = (RNG() * SEGS) | 0; seg[k] = RNG() < 0.5 ? 'red' : 'orange'; }
+  for (let n = 0; n < greens; n++) { const k = (RNG() * SEGS) | 0; if (seg[k] !== 'red' && seg[k] !== 'orange') seg[k] = 'green'; }
   return seg;
 }
 function makePlatform(i) {
-  return { i, rot: Math.random() * TAU + i * 0.55, rs: rand(0.35, 0.8) * (Math.random() < 0.5 ? -1 : 1), broken: false, segs: makeSegs(i) };
+  if (SPEC && i >= SPEC.len) return { i, rot: 0, rs: 0.6, broken: false, finish: true, segs: new Array(SEGS).fill('fin1') };
+  return { i, rot: RNG() * TAU + i * 0.55, rs: rand(0.35, 0.8) * (SPEC ? SPEC.spin : 1) * (RNG() < 0.5 ? -1 : 1), broken: false, segs: makeSegs(i) };
+}
+function addExtras(i) {
+  if (SPEC && i >= SPEC.len) return;
+  if (i < 1) return;
+  if (RNG() < 0.35) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+  if (RNG() < 0.05) powerups.push({ i, off: 0, collected: false });
+  if (RNG() < 0.04 && !powerups.some(u => u.i === i)) goldPus.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+  if (RNG() < 0.025 && !powerups.some(u => u.i === i) && !goldPus.some(u => u.i === i)) mags.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+}
+function initWorld() {
+  RNG = SPEC ? mulberry(SPEC.seed) : Math.random;
+  platforms = []; gems = []; powerups = []; goldPus = []; mags = [];
+  const n = SPEC ? SPEC.len + 1 : 90;
+  for (let i = 0; i < n; i++) platforms.push(makePlatform(i));
+  for (let i = 1; i < n; i++) addExtras(i);
+  T.setFloor(SPEC ? SPEC.len : null);
+}
+function ensureWorld(n) {
+  if (SPEC) return;
+  while (platforms.length && platforms[platforms.length - 1].i <= n) {
+    const i = platforms[platforms.length - 1].i + 1;
+    platforms.push(makePlatform(i)); addExtras(i);
+  }
 }
 function topColor(p) {
   const seg = TAU / SEGS;
@@ -194,50 +255,93 @@ function topColor(p) {
   return p.segs[Math.floor(a / seg) % SEGS];
 }
 
-function initWorld() {
-  platforms = []; gems = []; powerups = []; goldPus = []; mags = []; particles = []; floaters = [];
-  for (let i = 0; i < 90; i++) platforms.push(makePlatform(i));
-  for (let i = 1; i < 90; i++) {
-    if (Math.random() < 0.35) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-    if (Math.random() < 0.05) powerups.push({ i, off: 0, collected: false });
-    if (Math.random() < 0.04 && !powerups.some(u => u.i === i)) goldPus.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-    if (Math.random() < 0.025 && !powerups.some(u => u.i === i) && !goldPus.some(u => u.i === i)) mags.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-  }
+/* ---------- HUD and screens ---------- */
+const ic = (n, px) => GK.icon(n, px);
+const bar = GK.levelBar($('lvlbar'));
+function paintChrome() {
+  $('hub').innerHTML = ic('home');
+  ['mute', 'mute2'].forEach(id => { $(id).innerHTML = ic(muted ? 'sndOff' : 'snd'); });
+  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b>';
+  $('gemChip').innerHTML = ic('gem') + '<b id="gems">0</b>';
+  $('skinBtn').innerHTML = ic('bag') + 'SKINS' + (P.newSkins.length ? '<span class="gk-badge">' + P.newSkins.length + '</span>' : '');
+  paintPlay();
 }
-function ensureWorld(n) {
-  while (platforms.length && platforms[platforms.length - 1].i <= n) {
-    const i = platforms[platforms.length - 1].i + 1;
-    platforms.push(makePlatform(i));
-    if (Math.random() < 0.35) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-    if (Math.random() < 0.05) powerups.push({ i, off: 0, collected: false });
-    if (Math.random() < 0.04 && !powerups.some(u => u.i === i)) goldPus.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-    if (Math.random() < 0.025 && !powerups.some(u => u.i === i) && !goldPus.some(u => u.i === i)) mags.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-  }
+function paintPlay() { $('playBtn').innerHTML = ic('play') + (MODE === 'level' ? 'PLAY LEVEL ' + LEVEL : 'PLAY'); }
+function goalsFor(spec) {
+  const st = P.starsFor(spec.L);
+  return [
+    { s:1, t:'Reach the finish', ok: st >= 1 },
+    { s:2, t:'Bounce combo x' + spec.comboGoal, ok: st >= 2 },
+    { s:3, t:'Finish in ' + spec.par + ' seconds', ok: st >= 3 },
+  ];
 }
+function goalsHTML(list, res) {
+  return list.map(g => '<div class="g' + ((res ? res[g.s - 1] : g.ok) ? ' done' : '') + '">' + ic((res ? res[g.s - 1] : g.ok) ? 'star' : 'starOff') + '<span>' + g.t + '</span></div>').join('');
+}
+function paintTitle() {
+  const lv = MODE === 'level';
+  $('picker').classList.toggle('gk-hidden', !lv); $('goals').classList.toggle('gk-hidden', !lv);
+  $('endlessInfo').classList.toggle('gk-hidden', lv);
+  $('modeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === MODE));
+  if (lv) {
+    const sp = levelSpec(LEVEL);
+    $('goals').innerHTML = goalsHTML(goalsFor(sp));
+    applyWorld(LEVEL);
+  } else {
+    applyWorld(1);
+    $('endlessInfo').innerHTML = '<div class="g">' + ic('trophy') + '<span>Best score</span><span class="n">' + best + '</span></div><div class="g">' + ic('gem') + '<span>Gems ever</span><span class="n">' + gemEverTotal + '</span></div><div class="g">' + ic('crown') + '<span>Golden rings (best run)</span><span class="n">' + ringBest + '</span></div>';
+  }
+  paintPlay();
+  $('dailyHost').replaceChildren(GK.dailyStrip(P));
+  $('weekHost').replaceChildren(GK.weekRow(P));
+}
+const picker = GK.levelPicker($('picker'), P, { start: LEVEL, onChange: l => { LEVEL = l; P.d.pick = l; P.save(); paintTitle(); } });
+
+function updateHUD() {
+  $('scoreBig').textContent = score;
+  const g = $('gems'); if (g) g.textContent = gemsRun;
+  if (SPEC) bar.set(cur / SPEC.len);
+  const sc = $('shieldChip'); sc.style.display = shield > 0 ? '' : 'none'; if (shield > 0) sc.innerHTML = ic('shield') + '<b>x' + shield + '</b>';
+}
+function bump(id) { const e = $(id); if (!e) return; e.classList.remove('pulse'); void e.offsetWidth; e.classList.add('pulse'); }
+function paintStars3() {
+  const s = $('stars3'); s.innerHTML = '';
+  if (!SPEC) return;
+  s.innerHTML = ic('starOff') + ic(star2 ? 'star' : 'starOff') + ic(star3ok ? 'star' : 'starOff');
+  const k = s.querySelectorAll('svg'); if (!star3ok) k[2].classList.add('fail');
+  const pc = $('parChip'); pc.style.display = '';
+  const left = Math.max(0, Math.ceil(SPEC.par - runT));
+  pc.innerHTML = ic('clock') + '<b>' + (star3ok ? left + 's' : 'late') + '</b>';
+}
+
 function startGame() {
+  SPEC = MODE === 'level' ? levelSpec(LEVEL) : null;
+  applyWorld(SPEC ? LEVEL : 1);
   initWorld();
   trail = []; rings = [];
-  cur = 0; combo = 0; score = 0; squash = 0; shake = 0; vy = 0; shield = 0; fever = 0; ringGot = 0; runComboBest = 0;   recCeleb = false; magnet = 0; gemsRun = 0; gemMilestone = 0;
+  cur = 0; combo = 0; score = 0; squash = 0; shake = 0; vy = 0; shield = 0; fever = 0; ringGot = 0; runComboBest = 0; recCeleb = false; magnet = 0; gemsRun = 0; gemMilestone = 0; smashed = 0; runT = 0; hitStop = 0; star2 = false; star3ok = true;
   by = ballRestY(0); camY = by - desired;
   phase = 'resting';
-  updateHUD();
-  $('hud').classList.remove('hidden');
-  $('topbtns').classList.remove('hidden');
-  $('start').classList.add('hidden');
-  $('gameover').classList.add('hidden');
-  waiting = true;
-  $('tutMore').classList.toggle('hidden', tutSeen);
-  $('tut').classList.remove('hidden');
   if (codes.SHIELDUP) shield = 3;
-  scene('play');
+  $('hud').classList.remove('gk-hidden'); $('scoreBig').classList.remove('gk-hidden');
+  $('lvlbar').style.display = SPEC ? '' : 'none';
+  if (SPEC) { bar.levels(SPEC.L, SPEC.L + 1); bar.set(0); bar.done(false); }
+  $('start').classList.add('gk-hidden'); $('gameover').classList.add('gk-hidden');
+  paintChrome(); updateHUD(); paintStars3();
+  waiting = true;
+  if (coach) coach.remove();
+  coach = GK.coach(tutSeen ? 'Tap to smash' : 'Tap to smash down<small>Blue and purple break. Green bounces for a combo. Red and orange end the run.</small>');
+  scene('play', SPEC ? { level: SPEC.L } : undefined);
 }
 function toTitle() {
-  phase = 'ready'; waiting = false; particles = []; floaters = []; trail = []; rings = [];
-  ['gameover', 'tut', 'hud', 'topbtns'].forEach(id => $(id).classList.add('hidden'));
+  phase = 'ready'; waiting = false; trail = []; rings = [];
+  if (coach) { coach.remove(); coach = null; }
+  ['gameover', 'hud', 'scoreBig'].forEach(id => $(id).classList.add('gk-hidden'));
+  SPEC = null; RNG = Math.random;
   initWorld(); by = ballRestY(0); camY = by - desired;
-  $('ringInfo').textContent = '💍 Golden Rings Ever: ' + ringBest;
-  $('gemEverInfo').textContent = '💎 Gems Ever: ' + gemEverTotal;
-  $('start').classList.remove('hidden');
+  LEVEL = Math.min(LEVEL, P.d.level); picker.set(LEVEL);
+  paintChrome(); paintTitle();
+  $('start').classList.remove('gk-hidden');
   scene('title');
 }
 function sdkHint() {
@@ -245,6 +349,7 @@ function sdkHint() {
   if (phase === 'falling') return 'Falling! Tap again as soon as you land.';
   const p = platAt(cur + 1);
   if (!p) return 'Tap to smash through the platform.';
+  if (p.finish) return 'The finish star is next: smash to land on it!';
   const save = p.rot; p.rot += p.rs * 0.2; const c = topColor(p); p.rot = save;
   if ((c === 'red' || c === 'orange') && !shield) return 'Wait: ' + c + ' is coming round on the next platform. Tap when a blue, purple or green part is at the front.';
   if (c === 'green') return 'Green below: smash now to bounce through for a combo!';
@@ -257,48 +362,94 @@ function code(c) {
   else return { ok: false };
   return { ok: true, message: { IRONBALL: 'Iron ball: red and orange break like the rest', SHIELDUP: 'Shield up: every run starts with 3 shields', BIGBALL: 'Big ball: a giant ball that grabs gems from further away' }[c] + '. Codes on: this run will not set a best.' };
 }
-function updateHUD() {
-  $('score').textContent = score;
-  $('combo').textContent = combo > 0 ? 'x' + combo : '\u2014';
-  $('best').textContent = best;
-  $('gems').textContent = gemsRun;
-}
-function endGame() {
+
+/* ---------- end of a run ---------- */
+function stat(iconName, val, label) { return '<div><b>' + ic(iconName) + '<span>' + val + '</span></b><span>' + label + '</span></div>'; }
+function showResult(win) {
   const cht = cheated();
-  const nb = score > best && !cht;
-  if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
-  $('finalScore').textContent = score;
-  $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
+  let nb = false, bestShow = best;
+  if (SPEC) {
+    P.d.scores = P.d.scores || {};
+    const pb = P.d.scores[SPEC.L] | 0;
+    nb = win && !cht && score > pb;
+    if (nb) P.d.scores[SPEC.L] = score;
+    bestShow = Math.max(pb, nb ? score : 0);
+  } else {
+    nb = score > best && !cht;
+    if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
+    bestShow = best;
+  }
   const nr = !cht && runComboBest >= 2 && runComboBest > comboRec;
-  if (nr) {
-    comboRec = runComboBest;
-    try { localStorage.setItem(KEY + '-combo', String(comboRec)); } catch (e) {}
-    sfx('win');
-  }
-  $('comboInfo').textContent = 'Best Combo: ×' + comboRec + (nr ? '  🏆 NEW!' : '');
+  if (nr) { comboRec = runComboBest; try { localStorage.setItem(KEY + '-combo', String(comboRec)); } catch (e) {} }
   const ngr = !cht && gemsRun > gemsBestRun;
-  if (ngr) {
-    gemsBestRun = gemsRun;
-    try { localStorage.setItem(KEY + '-gemsbest', String(gemsBestRun)); } catch (e) {}
-  }
+  if (ngr) { gemsBestRun = gemsRun; try { localStorage.setItem(KEY + '-gemsbest', String(gemsBestRun)); } catch (e) {} }
   try { if (!cht) localStorage.setItem(KEY + '-gemsever', String(gemEverTotal)); } catch (e) {}
-  $('gemInfo').textContent = '💎 Best Gem Run: ' + gemsBestRun + ' (' + gemMilestone + ' bonuses) · Ever: ' + gemEverTotal + (ngr ? '  🏆 NEW!' : '');
-  $('gameover').classList.remove('hidden');
-  scene('over', { score });
+
+  const head = $('ovHead'), starsEl = $('ovStars'), note = $('ovNote');
+  let coins = 0, res = [false, false, false], ns = 0, fx = null;
+  if (SPEC) {
+    if (win) {
+      res = [true, runComboBest >= SPEC.comboGoal, runT <= SPEC.par]; ns = res.filter(Boolean).length;
+      coins = gemsRun + ringGot * 3 + ns * 10 + SPEC.L;
+      fx = P.finishLevel(SPEC.L, ns, coins);
+      P.addDaily('wins', 1);
+      scene('over', { score, level: SPEC.L, stars: ns });
+    } else { scene('over', { score, level: SPEC.L }); coins = Math.floor(gemsRun / 2); P.addCoins(coins); }
+    head.className = 'gk-head ' + (win ? 'win' : 'lose');
+    $('ovTitle').textContent = win ? 'Level ' + SPEC.L + ' clear!' : 'Oh no!';
+    starsEl.style.display = ''; GK.stars(starsEl, ns, { animate: win, onStar: (i) => { if (win) T.confetti(8); } });
+    $('ovGoals').innerHTML = goalsHTML(goalsFor(SPEC), win ? res : [false, false, false]);
+    $('ovGoals').classList.remove('gk-hidden');
+    note.textContent = win ? (fx.gained > 0 ? 'New stars: +' + fx.gained : 'Replay for more stars') : 'You got ' + Math.round(cur / SPEC.len * 100) + '% of the way down. Try again!';
+  } else {
+    coins = gemsRun; P.addCoins(coins);
+    scene('over', { score });
+    head.className = 'gk-head lose'; $('ovTitle').textContent = 'Shattered!';
+    starsEl.style.display = 'none'; $('ovGoals').classList.add('gk-hidden');
+    note.textContent = 'Best combo x' + comboRec + '  ·  Gems ever ' + gemEverTotal;
+  }
+  $('finalScore').textContent = '0'; GK.countUp($('finalScore'), score, 700);
+  $('newBest').classList.toggle('gk-hidden', !nb);
+  $('ovStat').innerHTML = stat('coin', '+' + coins, 'Coins') + stat('gem', gemsRun, 'Gems') + stat('trophy', bestShow, 'Best');
+  // buttons
+  const nextBtn = $('restartBtn');
+  if (SPEC && win) nextBtn.innerHTML = ic('play') + 'NEXT LEVEL'; else nextBtn.innerHTML = ic('replay') + 'TRY AGAIN';
+  nextBtn.dataset.mode = SPEC && win ? 'next' : 'again';
+  $('againBtn').innerHTML = ic('replay') + 'REPLAY'; $('againBtn').style.display = SPEC && win ? '' : 'none';
+  $('menuBtn').innerHTML = ic('home') + 'MENU';
+  $('hud').classList.add('gk-hidden'); $('scoreBig').classList.add('gk-hidden');
+  $('gameover').classList.remove('gk-hidden');
+  P.bump('runs'); paintChrome();
+  if (coins) setTimeout(() => GK.fly({ x: W / 2, y: H * 0.45 }, $('ovStat').firstElementChild, Math.min(8, 2 + Math.floor(coins / 6)), 'coin'), 600);
+  // things worth a toast
+  const unlocked = P.takeNewSkins();
+  unlocked.forEach((s, k) => setTimeout(() => GK.toast('New ball: ' + s.name + '<small>Open Skins to use it</small>', { icon: 'gift' }), 1600 + k * 900));
+  if (!cht && P.dailyInfo() && P.dailyInfo().done && P.d.daily.done && !P.d.daily.toasted) { P.d.daily.toasted = true; P.save(); setTimeout(() => { GK.toast('Daily goal done! +' + P.dailyInfo().reward + ' coins<small>Come back tomorrow for a new one</small>', { icon: 'check' }); GK.confetti(W / 2, H * 0.4, 50); }, 1200); }
+  if (win) setTimeout(() => GK.confetti(W / 2, H * 0.35, 70), 350);
 }
 function die() {
   if (phase === 'dying') return;
   phase = 'dying';
   const sy = by - camY;
-  burst(cx, sy, '#fca5a5', 26, 380);
-  burst(cx, sy, '#fbbf24', 18, 260);
-  shake = 16;
+  burst(cx, sy, '#fca5a5', 26);
+  burst(cx, sy, '#fbbf24', 18);
+  shake = 16; hitStop = 0.09; flash();
   buzz(60);
   sfx('lose');
-  setTimeout(endGame, 520);
+  setTimeout(() => showResult(false), 620);
+}
+function win() {
+  if (phase === 'won') return;
+  phase = 'won';
+  sfx('win'); buzz([20, 40, 30]); shake = 6;
+  T.confetti(70); T.ring('#ffd23f');
+  bigCombo('FINISH!', '#ffe37a');
+  if (coach) { coach.remove(); coach = null; }
+  bar.set(1); bar.done(true);
+  setTimeout(() => showResult(true), 1050);
 }
 function shatter(i) {
-  const p = platAt(i); if (!p || p.broken) return;
+  const p = platAt(i); if (!p || p.broken || p.finish) return;
   p.broken = true;
   T.shatter(p);
   shake = Math.max(shake, 4);
@@ -306,13 +457,13 @@ function shatter(i) {
 function resolveLanding() {
   ensureWorld(fallTarget + 20);
   const p = platAt(fallTarget);
+  if (p.finish) { cur = fallTarget; phase = 'resting'; vy = 0; squash = 1; trail = []; updateHUD(); win(); return; }
   const c = topColor(p);
   if ((c === 'red' || c === 'orange') && !codes.IRONBALL) {
     if (shield > 0) {
       shield--;
-      addFloater('🛡 BLOCKED!', cx, by - camY - 34, '#22d3ee');
-      sfx('hit');
-      buzz(18);
+      addFloater('BLOCKED!', cx, by - camY - 34, '#22d3ee');
+      sfx('hit'); buzz(18); hitStop = 0.05;
       shatter(fallTarget);
       fallTarget++;
       vy = -GAP * 5;
@@ -322,31 +473,31 @@ function resolveLanding() {
     }
     die(); return;
   }
+  smashed++; P.addDaily('smash', 1) && dailyDone();
   if (c === 'green') {
     combo++;
     score += combo;
     fever = 0;
     if (combo > runComboBest) runComboBest = combo;
-    if (combo >= 2 && combo > comboRec && !recCeleb) {
+    if (SPEC && !star2 && runComboBest >= SPEC.comboGoal) { star2 = true; paintStars3(); $('stars3').children[1].classList.add('lit'); sfx('levelup'); bigCombo('STAR!', '#ffe37a'); }
+    if (combo >= 2 && combo > comboRec && !recCeleb && MODE === 'endless') {
       recCeleb = true;
-      addFloater('🏆 NEW COMBO RECORD ×' + combo, cx, by - camY - 80, '#fde68a');
-      sfx('levelup');
-      buzz(20);
+      addFloater('NEW COMBO RECORD x' + combo, cx, by - camY - 80, '#fde68a');
+      sfx('levelup'); buzz(20);
     }
     addFloater('+' + combo + ' COMBO', cx, by - camY - 34, '#4ade80');
-    sfx('jump');
-    buzz(18);
+    if (combo >= 2) bigCombo('COMBO x' + combo, '#7dffa8');
+    sfx('jump'); buzz(combo >= 3 ? 22 : 14);
     shatter(fallTarget);
     fallTarget++;
     vy = -GAP * 5;
-    updateHUD();
+    updateHUD(); bumpT = 1; $('scoreBig').classList.remove('bump'); void $('scoreBig').offsetWidth; $('scoreBig').classList.add('bump');
   } else {
     fever = Math.min(9, fever + 1);
     const fb = fever >= 3 ? fever * 2 : 0;
     score += 1 + combo + fb;
-    addFloater(fb > 0 ? '+' + (1 + combo + fb) + ' 🔥' : '+' + (1 + combo), cx, by - camY - 34, fb > 0 ? '#fbbf24' : '#93c5fd');
-    sfx('hit');
-    buzz(12);
+    addFloater(fb > 0 ? '+' + (1 + combo + fb) : '+' + (1 + combo), cx, by - camY - 34, fb > 0 ? '#fbbf24' : '#ffffff');
+    sfx('hit'); buzz(12);
     cur = fallTarget;
     combo = 0;
     phase = 'resting';
@@ -354,29 +505,42 @@ function resolveLanding() {
     squash = 1;
     trail = [];
     T.splat(p, BALLCOL);
-    burst(cx, by - camY + ballR, '#7dd3fc', 8, 160);
-    addRing(cx, by - camY + ballR, '#7dd3fc');
+    burst(cx, by - camY + ballR, '#ffffff', 8);
+    T.ring('#ffffff');
     shake = Math.max(shake, 2);
     updateHUD();
   }
+  if (SPEC) bar.set(cur / SPEC.len);
+}
+function dailyDone() {
+  GK.toast('Daily goal done! +' + (P.cfg.dailyReward || 60) + ' coins', { icon: 'check' });
+  P.d.daily.toasted = true; P.save(); GK.confetti(W / 2, H * 0.3, 40);
 }
 
-function update(dt) {
-  tGlobal += dt;
+function update(rdt) {
+  let dt = rdt;
+  if (hitStop > 0) { hitStop -= rdt; dt = 0; }
+  tGlobal += rdt;
   if (RM) shake = 0;
-  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+  if (shake > 0) shake = Math.max(0, shake - 60 * rdt);
   if (squash > 0) squash = Math.max(0, squash - 6 * dt);
   if (magnet > 0) magnet = Math.max(0, magnet - dt);
+  if (phase === 'resting' || phase === 'falling') { if (!waiting) runT += dt; }
+  if (SPEC && !waiting && phase !== 'won' && phase !== 'dying') {
+    const sec = Math.ceil(SPEC.par - runT);
+    if (star3ok && runT > SPEC.par) { star3ok = false; paintStars3(); flashPar(); }
+    else if (star3ok && sec !== lastSec) { lastSec = sec; const b = $('parChip').querySelector('b'); if (b) b.textContent = sec + 's'; }
+  }
   for (const p of platforms) { if (!p.broken) p.rot += p.rs * dt; }
 
-  if (phase === 'resting') {
+  if (phase === 'resting' || phase === 'won') {
     trimWorld();
     by = ballRestY(cur);
-    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+    camY += (by - desired - camY) * Math.min(1, 10 * rdt);
   } else if (phase === 'falling') {
     vy += GAP * 36 * dt;
     by += vy * dt;
-    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+    camY += (by - desired - camY) * Math.min(1, 10 * rdt);
     trail.push(by);
     if (trail.length > 12) trail.shift();
     if (by + ballR >= fallTarget * GAP - ry - ringHalf) {
@@ -393,18 +557,17 @@ function update(dt) {
         gm.collected = true;
         score += 5;
         const gx = cx + gm.off, gsy = gwy - camY;
-        addFloater('+5 💎', gx, gsy, '#67e8f9');
-        sfx('coin');
-        buzz(14);
-        burst(gx, gsy, '#67e8f9', 10, 180);
-        addRing(gx, gsy, '#67e8f9');
-        gemsRun++; gemEverTotal++;
+        addFloater('+5', gx, gsy, '#67e8f9');
+        sfx('coin'); buzz(14);
+        burst(gx, gsy, '#67e8f9', 10);
+        T.ring('#67e8f9');
+        gemsRun++; gemEverTotal++; bump('gemChip');
+        if (P.addDaily('gems', 1)) dailyDone();
         if (gemsRun % 10 === 0) {
           gemMilestone++;
           score += 2 * gemsRun;
-          addFloater('💎 GEM MASTER ×' + gemsRun + ' +' + (2 * gemsRun), gx, gsy - 30, '#f0abfc');
-          sfx('levelup');
-          buzz(16);
+          addFloater('GEM MASTER x' + gemsRun + ' +' + (2 * gemsRun), gx, gsy - 30, '#f0abfc');
+          sfx('levelup'); buzz(16);
         }
         updateHUD();
       }
@@ -416,10 +579,10 @@ function update(dt) {
         pu.collected = true;
         shield = Math.min(3, shield + 1);
         const px = cx + pu.off, psy = pwy - camY;
-        addFloater('🛡 +1 SHIELD', px, psy, '#67e8f9');
-        sfx('levelup');
-        buzz(14);
-        burst(px, psy, '#22d3ee', 10, 180);
+        addFloater('+1 SHIELD', px, psy, '#67e8f9');
+        sfx('levelup'); buzz(14);
+        burst(px, psy, '#22d3ee', 10);
+        updateHUD();
       }
     }
     for (const gp of goldPus) {
@@ -430,15 +593,14 @@ function update(dt) {
         ringGot++;
         score += 10;
         const px = cx + gp.off, psy = pwy - camY;
-        addFloater('+10 💍', px, psy, '#fde68a');
-        sfx('coin');
-        buzz(16);
-        burst(px, psy, '#fbbf24', 12, 190);
-        addRing(px, psy, '#fde68a');
+        addFloater('+10', px, psy, '#fde68a');
+        sfx('coin'); buzz(16);
+        burst(px, psy, '#fbbf24', 12);
+        T.ring('#fde68a');
         const nc = ringGot > ringBest;
         if (nc && !cheated()) { ringBest = ringGot; try { localStorage.setItem(KEY + '-rings', String(ringBest)); } catch (e) {} }
-        if (nc) { addFloater('🏆 NEW RING RECORD!', cx, psy - 84, '#fde68a'); sfx('levelup'); }
-        else if (ringGot % 5 === 0) { addFloater('💍 RING COLLECTOR ×' + ringGot, cx, psy - 84, '#fde68a'); sfx('levelup'); }
+        if (nc && MODE === 'endless') { addFloater('NEW RING RECORD!', cx, psy - 84, '#fde68a'); sfx('levelup'); }
+        else if (ringGot % 5 === 0) { addFloater('RING COLLECTOR x' + ringGot, cx, psy - 84, '#fde68a'); sfx('levelup'); }
         updateHUD();
       }
     }
@@ -449,11 +611,10 @@ function update(dt) {
         mg.collected = true;
         magnet = Math.min(12, magnet + 6);
         const px = cx + mg.off, psy = pwy - camY;
-        addFloater('🧲 MAGNET +6s', px, psy, '#f9a8d4');
-        sfx('levelup');
-        buzz(14);
-        burst(px, psy, '#f472b6', 12, 190);
-        addRing(px, psy, '#f9a8d4');
+        addFloater('MAGNET +6s', px, psy, '#f9a8d4');
+        sfx('levelup'); buzz(14);
+        burst(px, psy, '#f472b6', 12);
+        T.ring('#f9a8d4');
       }
     }
     if (magnet > 0) {
@@ -462,14 +623,10 @@ function update(dt) {
         if (gm.collected) continue;
         const gwy = gm.i * GAP - ry - ringHalf - ballR;
         const dx = (cx + gm.off) - cx, dy = gwy - by;
-        if (Math.hypot(dx, dy) < pullR) {
-          gm.off -= dx * Math.min(1, 8 * dt);
-        }
+        if (Math.hypot(dx, dy) < pullR) gm.off -= dx * Math.min(1, 8 * dt);
       }
     }
   }
-
-  stepPops(dt);
 }
 
 // ---------- 3D drawing ----------
@@ -481,7 +638,7 @@ function draw(dt) {
   for (const gp of goldPus) if (!gp.collected) T.item('ring', gp.i * GAP - ry - ringHalf - ballR, gp.off, tGlobal);
   for (const mg of mags) if (!mg.collected) T.item('magnet', mg.i * GAP - ry - ringHalf - ballR, mg.off, tGlobal);
   const stretch = phase === 'falling' ? Math.min(0.22, Math.max(0, vy) / (GAP * 16)) : 0;
-  T.ball(by, squash, stretch, { resting: phase === 'resting' || phase === 'ready', t: tGlobal, shield: shield > 0, magnet: magnet > 0, hidden: phase === 'dying', trail: phase === 'falling' ? trail : [] });
+  T.ball(by, squash, stretch, { resting: phase === 'resting' || phase === 'ready' || phase === 'won', t: tGlobal, shield: shield > 0, magnet: magnet > 0, hidden: phase === 'dying', trail: phase === 'falling' ? trail : [] });
   T.end();
   if (RM) shake = 0;
   T.view(camY + desired, shake * 0.03);
@@ -510,10 +667,9 @@ function tap(e) {
   ensureAudio();
   if (phase !== 'resting') return;
   if (SDK && SDK.paused) return;
-  if (waiting) { waiting = false; $('tut').classList.add('hidden'); if (!tutSeen) { tutSeen = true; try { localStorage.setItem(KEY + '-tut', '1'); } catch (e) {} } }
+  if (waiting) { waiting = false; if (coach) { coach.remove(); coach = null; } if (!tutSeen) { tutSeen = true; try { localStorage.setItem(KEY + '-tut', '1'); } catch (e) {} } }
   shatter(cur);
-  sfx('hit');
-  buzz(8);
+  sfx('hit'); buzz(8);
   fallTarget = cur + 1;
   ensureWorld(fallTarget + 24);
   vy = 0;
@@ -523,18 +679,39 @@ canvas.addEventListener('touchstart', tap, { passive: false });
 canvas.addEventListener('mousedown', tap);
 window.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'ArrowDown') { if (phase === 'resting') tap(e); else e.preventDefault(); } });
 
-$('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
-$('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
-$('mute').addEventListener('click', () => { ensureAudio(); muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} });
+function begin() { ensureAudio(); startGame(); }
+$('playBtn').addEventListener('click', () => { sfx('tap'); begin(); });
+$('restartBtn').addEventListener('click', () => {
+  sfx('tap');
+  if ($('restartBtn').dataset.mode === 'next') { LEVEL = Math.min(P.d.level, LEVEL + 1); P.d.pick = LEVEL; P.save(); picker.set(LEVEL); }
+  begin();
+});
+$('againBtn').addEventListener('click', () => { sfx('tap'); begin(); });
+$('menuBtn').addEventListener('click', () => { sfx('tap'); toTitle(); });
+$('modeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  MODE = b.dataset.m; P.d.mode = MODE; P.save(); sfx('tap'); paintTitle();
+});
+$('skinBtn').addEventListener('click', () => {
+  sfx('tap'); P.takeNewSkins();
+  GK.shop({ prog: P, title: 'Ball skins', onEquip: () => { applySkin(); paintChrome(); }, onClose: () => { paintChrome(); } });
+});
+function toggleMute() { ensureAudio(); muted = !muted; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} paintChrome(); }
+$('mute').addEventListener('click', toggleMute); $('mute2').addEventListener('click', toggleMute);
 
+// ?bot plays by itself (used by the health and progression tests): it taps when the part under the next platform is safe
+if (/[?&]bot\b/.test(location.search)) setInterval(() => {
+  if (phase !== 'resting') return;
+  if (waiting) { tap({ preventDefault() {} }); return; }
+  const p = platAt(cur + 1); if (!p) return;
+  const save = p.rot; p.rot += p.rs * 0.22; const c = topColor(p); p.rot = save;
+  if (p.finish || (c !== 'red' && c !== 'orange') || shield > 0) tap({ preventDefault() {} });
+}, 40);
 resize();
+applySkin();
 initWorld();
 by = ballRestY(0); camY = by - desired;
-$('mute').textContent = muted ? '🔇' : '🔊';
-$('ringInfo').textContent = '💍 Golden Rings Ever: ' + ringBest;
-$('gemEverInfo').textContent = '💎 Gems Ever: ' + gemEverTotal;
-$('comboInfo').textContent = 'Best Combo: ×' + comboRec;
-updateHUD();
+paintChrome(); paintTitle();
 requestAnimationFrame(loop);
 scene('title');
 if (SDK) SDK.init({

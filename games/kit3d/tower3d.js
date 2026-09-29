@@ -102,7 +102,9 @@ export class TowerWorld {
     this.step = this.style === 'stack' ? 1.25 : 3.1;
     this.wedge = wedgeGeometry(TAU / SEGS - (this.style === 'helix' ? 0.035 : 0.006), this.style === 'stack', this.style === 'stack' ? 0.62 : THICK);
     for (const [k, v] of Object.entries(opts.colors || {})) this._colorMat(k, v);
-    this._pole(); this._ball(); this._pickups(); this._fx();
+    this._colorMat('fin1', '#ffd23f'); this._colorMat('fin2', '#fff3d6');
+    this._pole(); this._ball(); this._pickups(); this._fx(); this._decor(); this._prize();
+    this.floorI = null;
     this.GAP = 100; this.top0 = 0; this.ballR = 30;
     this.debris = []; this.parts = []; this.rings = []; this.splats = [];
     this.setQuality(this.quality); this.resize();
@@ -124,6 +126,65 @@ export class TowerWorld {
     for (const [x, y, z] of [[4, 6, 3], [-5, 3, -2]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: '#ffffff' })); p.material.color.multiplyScalar(4); p.position.set(x, y, z); p.lookAt(0, 0, 0); es.add(p); }
     this.scene.environment = pm.fromScene(es, 0.02).texture; this.scene.environmentIntensity = 0.55;
     pm.dispose();
+  }
+
+  /** soft clouds/bubbles drifting around the tower: they scroll up as the ball falls, which sells the drop */
+  _decor() {
+    const n = 26, geo = new THREE.IcosahedronGeometry(1, 1);
+    this.decorMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false, fog: true });
+    const im = this.decor = new THREE.InstancedMesh(geo, this.decorMat, n);
+    im.frustumCulled = false; im.renderOrder = -1;
+    this.decorData = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * TAU, r = 9 + Math.random() * 16;
+      this.decorData.push({ x: Math.cos(a) * r, z: Math.sin(a) * r - 4, y: Math.random(), s: 0.9 + Math.random() * 2.6, sq: 0.55 + Math.random() * 0.3 });
+    }
+    this.scene.add(im);
+  }
+  _decorStep(fy) {
+    const H = this.step * 26;
+    for (let i = 0; i < this.decorData.length; i++) {
+      const d = this.decorData[i];
+      let y = fy + (((d.y * H - fy) % H) + H) % H - H * 0.55;
+      _p.set(d.x, y, d.z); _q.identity(); _s.set(d.s * 1.5, d.s * d.sq, d.s * 1.1);
+      _m.compose(_p, _q, _s); this.decor.setMatrixAt(i, _m);
+    }
+    this.decor.instanceMatrix.needsUpdate = true;
+  }
+  /** the gold star that waits at the bottom of a level */
+  _prize() {
+    const g = new THREE.ExtrudeGeometry((() => { const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.55 : 1.25; const x = Math.cos(a) * r, y = Math.sin(a) * r; if (i) sh.lineTo(x, y); else sh.moveTo(x, y); } sh.closePath(); return sh; })(), { depth: 0.35, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.12, bevelSegments: 3 });
+    g.center();
+    this.prize = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: '#ffd23f', roughness: 0.22, metalness: 0.7, emissive: '#ff9d00', emissiveIntensity: 0.35 }));
+    this.prize.castShadow = true; this.prize.visible = false; this.scene.add(this.prize);
+  }
+  /** end the tower at platform i (level mode): the pole stops there and the prize star hovers on it. null = endless */
+  setFloor(i) { this.floorI = i; this.prize.visible = i != null; }
+  /** a world look: { sky:[top,low], pole, hemi:[sky,ground], decor, colors:{name:hex}, bands:[[a,b],...] } */
+  setTheme(t) {
+    if (t.sky) this.setSky(t.sky[0], t.sky[1]);
+    if (t.pole) this.pole.material.color.set(t.pole);
+    if (t.hemi) { this.hemi.color.set(t.hemi[0]); this.hemi.groundColor.set(t.hemi[1]); }
+    if (t.decor) this.decorMat.color.set(t.decor);
+    if (t.colors) for (const k in t.colors) { this.colors[k] = t.colors[k]; if (this.mats[k]) this.mats[k].color.set(t.colors[k]); }
+    if (t.bands) this.bands = t.bands;
+    if (t.bands) for (const b of t.bands) for (const c of b) if (!this.inst[c]) this._colorMat(c, c);
+  }
+  /** the ball's look: { color, emissive, rough, metal, map: CanvasTexture|null, trail } */
+  skin(s) {
+    const m = this.ballMat;
+    m.color.set(s.color || '#ffffff'); m.emissive.set(s.emissive || s.color || '#000000'); m.emissiveIntensity = s.glow != null ? s.glow : 0.12;
+    m.roughness = s.rough != null ? s.rough : 0.18; m.metalness = s.metal != null ? s.metal : 0.05;
+    m.map = s.map || null; m.needsUpdate = true;
+    this.trail.material.color.set(s.trail || s.color || '#ffffff');
+  }
+  /** confetti from the ball: several colours at once */
+  confetti(n = 40) {
+    const cols = ['#ffd23f', '#ff5a6e', '#5cec8c', '#6cc4ff', '#b48bff', '#ff8a1c'];
+    for (let i = 0; i < n && this.parts.length < this.maxParts + 60; i++) {
+      const a = Math.random() * TAU, s = 3 + Math.random() * 6;
+      this.parts.push({ x: 0, y: (this.ballY || 0) + 0.3, z: R_TRACK, vx: Math.cos(a) * s, vy: 5 + Math.random() * 6, vz: Math.sin(a) * s, t: 0, life: 0.9 + Math.random() * 0.7, s: 0.12 + Math.random() * 0.14, c: new THREE.Color(cols[i % cols.length]), r: Math.random() * 6 });
+    }
   }
   setSky(top, low) { this.top.set(top); this.low.set(low); this.scene.fog.color.set(low); }
   _colorMat(name, hex) {
@@ -264,6 +325,7 @@ export class TowerWorld {
   /** what colour a platform part is drawn in (Stack Ball: one band colour per 10 platforms, deadly parts keep theirs) */
   tint(p, k) {
     const c = p.segs[k];
+    if (p.finish) return k % 2 ? 'fin2' : 'fin1';
     if (this.style !== 'stack' || !this.bands || c === this.deadly) return c;
     const b = this.bands[Math.floor(p.i / 10) % this.bands.length];
     return b[k % 2];
@@ -383,7 +445,12 @@ export class TowerWorld {
     c.far = 320; c.updateProjectionMatrix();
     this.scene.fog.near = dist + this.step * 2; this.scene.fog.far = dist + this.step * (this.below + 2);
     this.sky.position.copy(c.position);
-    this.pole.position.y = fy - this.step * 20;
+    if (this.floorI != null) {   // level mode: the pole ends at the finish platform
+      const bottom = -this.floorI * this.step - 0.5, top = fy + this.step * 24, hgt = top - bottom, full = this.step * 60;
+      this.pole.scale.y = hgt / full; this.pole.position.y = (top + bottom) / 2;
+      this.prize.position.set(0, -this.floorI * this.step + 1.55 + Math.sin(performance.now() / 420) * 0.12, 0); this.prize.rotation.y = performance.now() / 700;
+    } else { this.pole.scale.y = 1; this.pole.position.y = fy - this.step * 20; }
+    this._decorStep(fy);
     this.sun.position.set(3, fy + 14, 9); this.sun.target.position.set(0, fy - 3, 0);
     const sh = this.sun.shadow.camera; sh.left = -7; sh.right = 7; sh.top = 7; sh.bottom = -7; sh.near = 1; sh.far = 40; sh.updateProjectionMatrix();
   }
@@ -413,4 +480,19 @@ export class TowerWorld {
     this.renderer.render(this.scene, this.camera);
     this.splatMesh.count = 0;
   }
+}
+
+/** canvas textures for ball skins (wrapped round the sphere): stripes | dots | checker | galaxy | swirl */
+export function skinTexture(kind, c1 = '#ffffff', c2 = '#ff5a6e') {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = c1; g.fillRect(0, 0, 256, 128);
+  if (kind === 'stripes') { g.fillStyle = c2; for (let x = 0; x < 256; x += 64) g.fillRect(x, 0, 32, 128); }
+  else if (kind === 'dots') { g.fillStyle = c2; for (let y = 16; y < 128; y += 32) for (let x = (y / 32) % 2 ? 16 : 0; x < 256; x += 32) { g.beginPath(); g.arc(x + 8, y, 9, 0, TAU); g.fill(); } }
+  else if (kind === 'checker') { g.fillStyle = c2; for (let y = 0; y < 128; y += 32) for (let x = 0; x < 256; x += 32) if (((x + y) / 32) % 2 === 0) g.fillRect(x, y, 32, 32); }
+  else if (kind === 'galaxy') {
+    const gr = g.createLinearGradient(0, 0, 256, 128); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, 256, 128);
+    g.fillStyle = '#fff'; for (let i = 0; i < 70; i++) { g.globalAlpha = 0.4 + Math.random() * 0.6; g.beginPath(); g.arc(Math.random() * 256, Math.random() * 128, Math.random() * 2 + 0.6, 0, TAU); g.fill(); } g.globalAlpha = 1;
+  } else if (kind === 'swirl') { g.strokeStyle = c2; g.lineWidth = 22; g.lineCap = 'round'; for (let i = -1; i < 4; i++) { g.beginPath(); g.moveTo(-20 + i * 90, 140); g.bezierCurveTo(i * 90 + 40, 90, i * 90 - 30, 40, i * 90 + 60, -10); g.stroke(); } }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.anisotropy = 2;
+  return t;
 }
