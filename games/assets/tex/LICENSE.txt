@@ -1,0 +1,11 @@
+Seamless material textures from ambientCG (https://ambientcg.com), released under CC0 1.0 (public domain).
+Downsized to 512 px JPEG for the puzzle games (Block Blast, 2048, Tic Tac Toe, Connect Four, Minesweeper).
+
+  walnut.jpg       Wood066
+  oak.jpg          Wood058
+  pine.jpg         Wood092
+  leather.jpg      Leather026
+  marble.jpg       Marble012
+  paper.jpg        Paper002
+  linen.jpg        Carpet016
+  onyx.jpg         Onyx015

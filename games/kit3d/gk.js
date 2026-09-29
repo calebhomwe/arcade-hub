@@ -12,7 +12,6 @@
  *   GK.stars(el, n, {animate})  GK.countUp(el, to)  GK.pop(x,y,'+5',{color})  GK.confetti(x,y,n)  GK.fly(from,toEl,n)  GK.toast(html)
  *   GK.shop({prog, preview, onEquip})            skins sheet;  GK.levelPicker(el, prog, opts);  GK.dailyStrip(prog);  GK.levelBar(el)
  * Saves live under one key per game: '<id>-prog-v1' (declare it in the game's meta "saves"). */
-const INK = '#211447';
 const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const hooks = { sfx: () => {} };
 const p2 = n => (n < 10 ? '0' : '') + n;
@@ -21,45 +20,60 @@ const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new D
 const dayDiff = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-/* ---------- icons: cartoon SVG, 24x24, ink outline ---------- */
+/* ---------- icons: glossy SVG, 24x24. Gradients live in one hidden sprite (gk-*), objects have a thin dark edge and a highlight ---------- */
 function starPts(cx, cy, R, r) {
   let d = '';
-  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(2) + ' ' + (cy + Math.sin(a) * rr).toFixed(2); }
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(2) + ' ' + (cx === 12 && cy === 12 ? (cy + Math.sin(a) * rr) : (cy + Math.sin(a) * rr)).toFixed(2); }
   return d + 'Z';
 }
-const S = 'stroke="' + INK + '" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"';
+const DEFS = '<svg width="0" height="0" style="position:absolute;left:-9px" aria-hidden="true" focusable="false"><defs>' +
+  '<linearGradient id="gk-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4b0"/><stop offset=".45" stop-color="#f7c243"/><stop offset="1" stop-color="#c47a10"/></linearGradient>' +
+  '<radialGradient id="gk-coin" cx=".35" cy=".28" r=".85"><stop offset="0" stop-color="#fffbd0"/><stop offset=".45" stop-color="#f9c93d"/><stop offset="1" stop-color="#b76f0c"/></radialGradient>' +
+  '<linearGradient id="gk-green" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b7f07f"/><stop offset="1" stop-color="#3ea52a"/></linearGradient>' +
+  '<linearGradient id="gk-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a86"/><stop offset="1" stop-color="#c22d1b"/></linearGradient>' +
+  '<linearGradient id="gk-blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ad4ff"/><stop offset="1" stop-color="#2a6fce"/></linearGradient>' +
+  '<linearGradient id="gk-steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f8ff"/><stop offset="1" stop-color="#8b9cc0"/></linearGradient>' +
+  '<linearGradient id="gk-fire" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset=".55" stop-color="#ff9a1f"/><stop offset="1" stop-color="#e2451a"/></linearGradient>' +
+  '<linearGradient id="gk-brown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d59a5b"/><stop offset="1" stop-color="#8a5122"/></linearGradient>' +
+  '</defs></svg>';
+const ES = 'stroke="#6b3f06" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"';   // edge of a gold object
 const STAR = starPts(12, 12.8, 10, 4.5);
+const W1 = 'fill="#fff"';
 const ICONS = {
-  star: '<path d="' + STAR + '" fill="#ffd23f" ' + S + '/><path d="M8.3 9.2l1.6-3" stroke="#fff8c9" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
-  starOff: '<path d="' + STAR + '" fill="#8a7bc0" ' + S + '/>',
-  coin: '<circle cx="12" cy="12" r="10" fill="#ffd23f" ' + S + '/><circle cx="12" cy="12" r="6.4" fill="#ffb31f" stroke="#c77600" stroke-width="1.2"/><path d="' + starPts(12, 12.2, 3.9, 1.7) + '" fill="#fff2a8"/><path d="M5.6 8.4a7.6 7.6 0 013.2-3.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>',
-  gem: '<path d="M12 22L2.4 9.6 6.4 3h11.2l4 6.6z" fill="#3fdcff" ' + S + '/><path d="M2.4 9.6h19.2M9.2 3L7.6 9.6 12 22M14.8 3l1.6 6.6L12 22" stroke="#bff6ff" stroke-width="1.2" fill="none" stroke-linejoin="round"/><path d="M6.2 9.6L9.2 3" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
-  lock: '<path d="M7.6 10.5V7.6a4.4 4.4 0 018.8 0v2.9" fill="none" stroke="' + INK + '" stroke-width="4.4" stroke-linecap="round"/><path d="M7.6 10.5V7.6a4.4 4.4 0 018.8 0v2.9" fill="none" stroke="#dcd4f5" stroke-width="2" stroke-linecap="round"/><rect x="4.6" y="10.2" width="14.8" height="11.2" rx="3" fill="#ffc12e" ' + S + '/><circle cx="12" cy="15" r="1.8" fill="' + INK + '"/><rect x="11.2" y="15.5" width="1.6" height="3.2" rx=".8" fill="' + INK + '"/>',
-  pause: '<rect x="5.2" y="4.2" width="5" height="15.6" rx="1.8" fill="#fff" ' + S + '/><rect x="13.8" y="4.2" width="5" height="15.6" rx="1.8" fill="#fff" ' + S + '/>',
-  play: '<path d="M7 3.8v16.4a1 1 0 001.5.9l13-8.2a1 1 0 000-1.7l-13-8.2A1 1 0 007 3.8z" fill="#fff" ' + S + '/>',
-  replay: '<path d="M19.5 12a7.5 7.5 0 11-2.4-5.5" fill="none" stroke="' + INK + '" stroke-width="5" stroke-linecap="round"/><path d="M19.5 12a7.5 7.5 0 11-2.4-5.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M20.6 2.6v6.6h-6.6z" fill="#fff" ' + S + '/>',
-  home: '<path d="M3.2 12L12 3.6 20.8 12" fill="none" stroke="' + INK + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.4 11.2V20a1 1 0 001 1h3.9v-6h3.4v6h3.9a1 1 0 001-1v-8.8L12 5z" fill="#fff" ' + S + '/><path d="M3.2 12L12 3.6 20.8 12" fill="none" stroke="#ff6b6b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
-  snd: '<path d="M3.5 9.4h3.6L12 5v14l-4.9-4.4H3.5z" fill="#fff" ' + S + '/><path d="M15.4 8.6a4.8 4.8 0 010 6.8M18 5.8a8.6 8.6 0 010 12.4" fill="none" stroke="' + INK + '" stroke-width="4.6" stroke-linecap="round"/><path d="M15.4 8.6a4.8 4.8 0 010 6.8M18 5.8a8.6 8.6 0 010 12.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>',
-  sndOff: '<path d="M3.5 9.4h3.6L12 5v14l-4.9-4.4H3.5z" fill="#fff" ' + S + '/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="' + INK + '" stroke-width="4.6" stroke-linecap="round"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round"/>',
-  trophy: '<path d="M7 4h10v6.2a5 5 0 01-10 0z" fill="#ffd23f" ' + S + '/><path d="M7 6H3.6c0 3.2 1.4 5 3.9 5.4M17 6h3.4c0 3.2-1.4 5-3.9 5.4" fill="none" ' + S + '/><rect x="10.4" y="14.8" width="3.2" height="3.4" fill="#ffb31f" ' + S + '/><rect x="7" y="18.2" width="10" height="3.2" rx="1.4" fill="#ffc12e" ' + S + '/><path d="M9.4 6.2v3.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>',
-  crown: '<path d="M3 8l4.6 4.4L12 5l4.4 7.4L21 8l-1.8 11H4.8z" fill="#ffd23f" ' + S + '/><circle cx="3" cy="7.6" r="1.5" fill="#ff6b6b" ' + S + '/><circle cx="12" cy="4.6" r="1.5" fill="#6cc4ff" ' + S + '/><circle cx="21" cy="7.6" r="1.5" fill="#5cec8c" ' + S + '/>',
-  flame: '<path d="M12 2.4c.6 3.4 4.8 5.4 4.8 10.4A4.8 4.8 0 0112 17.6a4.8 4.8 0 01-4.8-4.8c0-1.8.8-3 1.6-4 .2 1.6 1 2.2 1.8 2.4C10.2 8 11 5 12 2.4z" fill="#ff8a1c" ' + S + '/><path d="M12 22c-3.4 0-5.6-2.2-5.6-5 0-1.4.8-2.6 1.6-3.4.2 1.6 1.4 2.4 2.4 2.6-.4-1.4.2-3 1.6-4.4 0 2 2.2 3.2 3.6 5 .2 2.8-1.8 5.2-3.6 5.2z" fill="#ffd23f" ' + S + '/>',
-  shield: '<path d="M12 2.6l8 2.8v6.2c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V5.4z" fill="#3fdcff" ' + S + '/><path d="M12 5.4v14.4c3-1.2 5.4-3.6 5.4-8.2V7.2z" fill="#1aa6cf" opacity=".5"/><path d="M7.4 7.4l2.6-1" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>',
-  magnet: '<path d="M4.4 20.6V11a7.6 7.6 0 0115.2 0v9.6h-4.8V11a2.8 2.8 0 00-5.6 0v9.6z" fill="#ff5a6e" ' + S + '/><rect x="4.4" y="16.4" width="4.8" height="4.2" fill="#e8f0ff" ' + S + '/><rect x="14.8" y="16.4" width="4.8" height="4.2" fill="#e8f0ff" ' + S + '/>',
-  check: '<path d="M4.6 12.8l4.8 4.8 10-11" fill="none" stroke="' + INK + '" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.6 12.8l4.8 4.8 10-11" fill="none" stroke="#5cec8c" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  chevL: '<path d="M15 4.6L7.4 12 15 19.4" fill="none" stroke="' + INK + '" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 4.6L7.4 12 15 19.4" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  chevR: '<path d="M9 4.6l7.6 7.4L9 19.4" fill="none" stroke="' + INK + '" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 4.6l7.6 7.4L9 19.4" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  clock: '<circle cx="12" cy="12.6" r="9" fill="#fff" ' + S + '/><path d="M12 7v6l3.8 2.2" fill="none" stroke="' + INK + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="1.6" width="4" height="2.4" rx="1" fill="#ff6b6b" ' + S + '/>',
-  bolt: '<path d="M13.6 2L4.6 13.4h6L9.4 22l9-11.6h-6z" fill="#ffd23f" ' + S + '/>',
-  gift: '<rect x="3.4" y="9.4" width="17.2" height="11.6" rx="2" fill="#ff6b6b" ' + S + '/><rect x="2.4" y="6.4" width="19.2" height="4.6" rx="1.6" fill="#ff8f8f" ' + S + '/><path d="M12 6.4V21" stroke="' + INK + '" stroke-width="1.7"/><rect x="10.6" y="6.4" width="2.8" height="14.6" fill="#ffd23f"/><path d="M12 6.4C9.4 6.4 7 5 7.6 3.4 8.6 1.6 11.2 3.4 12 6.4zM12 6.4c2.6 0 5-1.4 4.4-3-1-1.8-3.6 0-4.4 3z" fill="#ffd23f" ' + S + '/>',
-  flag: '<path d="M5.4 21.6V3.2" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/><path d="M5.4 21.6V3.2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M6.4 4.2h13l-3.2 4 3.2 4h-13z" fill="#ff5a6e" ' + S + '/>',
-  cog: '<path d="M10.2 2.6h3.6l.6 2.6 1.9.8 2.3-1.4 2.5 2.5-1.4 2.3.8 1.9 2.6.6v3.6l-2.6.6-.8 1.9 1.4 2.3-2.5 2.5-2.3-1.4-1.9.8-.6 2.6h-3.6l-.6-2.6-1.9-.8-2.3 1.4-2.5-2.5 1.4-2.3-.8-1.9-2.6-.6v-3.6l2.6-.6.8-1.9-1.4-2.3 2.5-2.5 2.3 1.4 1.9-.8z" fill="#c9bdf3" ' + S + ' transform="translate(0 -.4) scale(.98)"/><circle cx="12" cy="12.2" r="3.4" fill="#5c4ea3" ' + S + '/>',
-  bag: '<path d="M6.6 8.6h10.8l1.6 12.4a1 1 0 01-1 1.1H6a1 1 0 01-1-1.1z" fill="#ff8a1c" ' + S + '/><path d="M8.8 10.4V7.2a3.2 3.2 0 016.4 0v3.2" fill="none" ' + S + '/><path d="M8 12.4l.4 6" stroke="#ffd9a0" stroke-width="1.8" stroke-linecap="round"/>',
-  heart: '<path d="M12 21C5 15.6 2.6 12 2.6 8.4A4.8 4.8 0 0112 6.4a4.8 4.8 0 019.4 2c0 3.6-2.4 7.2-9.4 12.6z" fill="#ff5a6e" ' + S + '/><path d="M6 8.4a3 3 0 012.4-2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>',
-  hand: '<path d="M9.2 12.6V4.6a1.9 1.9 0 013.8 0v6.2l5.4 1.2a2.2 2.2 0 011.7 2.6l-.9 5.2A3.4 3.4 0 0116 22.4H12a3.6 3.6 0 01-2.9-1.5L5.6 16a1.7 1.7 0 012.6-2.1z" fill="#fff" ' + S + '/><path d="M13 10.8v2.6M15.6 11.6v2M18.2 12.4v1.4" stroke="' + INK + '" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".55"/>',
-  ball: '<circle cx="12" cy="12" r="9.6" fill="#ffc12e" ' + S + '/><path d="M6.2 8.4a6.8 6.8 0 013.4-3" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>',
+  star: '<path d="' + STAR + '" fill="url(#gk-gold)" ' + ES + '/><path d="M8.6 9.3l1.5-2.8" stroke="#fffbe0" stroke-width="1.4" stroke-linecap="round" fill="none" opacity=".95"/>',
+  starOff: '<path d="' + STAR + '" fill="#2f4168" stroke="#16223d" stroke-width="1.1" stroke-linejoin="round"/><path d="M8.6 9.3l1.5-2.8" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity=".22"/>',
+  coin: '<circle cx="12" cy="12" r="10.2" fill="url(#gk-coin)" ' + ES + '/><circle cx="12" cy="12" r="7.4" fill="none" stroke="#b9780f" stroke-width="1"/><path d="' + starPts(12, 12.2, 4.6, 2) + '" fill="#f2b02a" stroke="#a8690f" stroke-width=".5"/><path d="M5.2 8.6a7.4 7.4 0 013.6-3.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".85"/>',
+  gem: '<path d="M12 22L2.6 9.6 6.6 3h10.8l4 6.6z" fill="#2fb4e6" stroke="#0b4a70" stroke-width="1.1" stroke-linejoin="round"/><path d="M6.6 3h10.8l-2.6 6.6H9.2z" fill="#a9f0ff"/><path d="M2.6 9.6h6.6L12 22z" fill="#38c5f0"/><path d="M21.4 9.6h-6.6L12 22z" fill="#1a8ac2"/><path d="M2.6 9.6h18.8M9.2 9.6L6.6 3M14.8 9.6L17.4 3" stroke="#0b4a70" stroke-width=".7" fill="none" opacity=".7"/><path d="M8 5.4l-1 1.6" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".9"/>',
+  lock: '<path d="M7.6 10.6V7.8a4.4 4.4 0 018.8 0v2.8" fill="none" stroke="#3b2a12" stroke-width="3.8" stroke-linecap="round"/><path d="M7.6 10.6V7.8a4.4 4.4 0 018.8 0v2.8" fill="none" stroke="url(#gk-steel)" stroke-width="2" stroke-linecap="round"/><rect x="4.6" y="10.3" width="14.8" height="11.2" rx="3" fill="url(#gk-gold)" ' + ES + '/><circle cx="12" cy="15" r="1.7" fill="#5a3606"/><rect x="11.2" y="15.4" width="1.6" height="3.4" rx=".8" fill="#5a3606"/>',
+  pause: '<rect x="5.4" y="4.4" width="4.6" height="15.2" rx="1.6" ' + W1 + '/><rect x="14" y="4.4" width="4.6" height="15.2" rx="1.6" ' + W1 + '/>',
+  play: '<path d="M7 4.2v15.6a1 1 0 001.5.9l12.4-7.8a1 1 0 000-1.7L8.5 3.3A1 1 0 007 4.2z" ' + W1 + '/>',
+  replay: '<path d="M19.4 12a7.4 7.4 0 11-2.3-5.3" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/><path d="M20.8 2.8v6.4h-6.4z" ' + W1 + ' stroke="#fff" stroke-width="1" stroke-linejoin="round"/>',
+  home: '<path d="M2.8 11.6L12 3.2l9.2 8.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.2 11v9.2a1 1 0 001 1h3.9v-6h3.8v6h3.9a1 1 0 001-1V11L12 4.6z" ' + W1 + '/>',
+  snd: '<path d="M3.4 9.4h3.6L12 5v14l-5-4.4H3.4z" ' + W1 + '/><path d="M15.6 8.8a4.6 4.6 0 010 6.4M18.4 5.8a8.6 8.6 0 010 12.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>',
+  sndOff: '<path d="M3.4 9.4h3.6L12 5v14l-5-4.4H3.4z" ' + W1 + '/><path d="M15.8 9.6l5 4.8M20.8 9.6l-5 4.8" fill="none" stroke="#ff7a68" stroke-width="2.2" stroke-linecap="round"/>',
+  trophy: '<path d="M7 3.6h10v6.6a5 5 0 01-10 0z" fill="url(#gk-gold)" ' + ES + '/><path d="M7 5.4H3.4c0 3.2 1.4 5 3.9 5.4M17 5.4h3.6c0 3.2-1.4 5-3.9 5.4" fill="none" ' + ES + '/><rect x="10.4" y="14.6" width="3.2" height="3.6" fill="#e0a22c" ' + ES + '/><rect x="7" y="18.2" width="10" height="3.2" rx="1.4" fill="url(#gk-gold)" ' + ES + '/><path d="M9.4 5.6v3.8" stroke="#fffbe0" stroke-width="1.5" stroke-linecap="round" opacity=".9"/>',
+  crown: '<path d="M3 8.2l4.6 4.4L12 5l4.4 7.6L21 8.2 19.2 19.4H4.8z" fill="url(#gk-gold)" ' + ES + '/><circle cx="3" cy="7.8" r="1.5" fill="#ff7a68" ' + ES + '/><circle cx="12" cy="4.6" r="1.5" fill="#86c6ff" ' + ES + '/><circle cx="21" cy="7.8" r="1.5" fill="#a4ea6c" ' + ES + '/><path d="M7 15.6h10" stroke="#fffbe0" stroke-width="1.2" opacity=".7"/>',
+  flame: '<path d="M12 2.2c.7 3.6 5 5.6 5 10.6A5 5 0 0112 18a5 5 0 01-5-5.2c0-1.8.8-3 1.7-4.1.2 1.6 1 2.2 1.8 2.4C10.2 8 11 5 12 2.2z" fill="url(#gk-fire)" stroke="#a83a10" stroke-width="1" stroke-linejoin="round"/><path d="M12 21.8c-3.4 0-5.6-2.2-5.6-5 0-1.4.8-2.6 1.6-3.4.2 1.6 1.4 2.4 2.4 2.6-.4-1.4.2-3 1.6-4.4 0 2 2.2 3.2 3.6 5 .2 2.8-1.8 5.2-3.6 5.2z" fill="#ffe066" stroke="#c9631a" stroke-width=".9" stroke-linejoin="round"/>',
+  shield: '<path d="M12 2.4l8 2.8v6.2c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V5.2z" fill="url(#gk-blue)" stroke="#123c7a" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 5.2v14.6c3-1.2 5.4-3.6 5.4-8.2V7z" fill="#1e5cb0" opacity=".45"/><path d="M7.4 7.2l2.8-1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>',
+  magnet: '<path d="M4.4 20.6V11a7.6 7.6 0 0115.2 0v9.6h-4.8V11a2.8 2.8 0 00-5.6 0v9.6z" fill="url(#gk-red)" stroke="#7a1a10" stroke-width="1.1" stroke-linejoin="round"/><rect x="4.4" y="16.2" width="4.8" height="4.4" fill="url(#gk-steel)" stroke="#4a5878" stroke-width="1"/><rect x="14.8" y="16.2" width="4.8" height="4.4" fill="url(#gk-steel)" stroke="#4a5878" stroke-width="1"/>',
+  check: '<circle cx="12" cy="12" r="10" fill="url(#gk-green)" stroke="#1f6b18" stroke-width="1.2"/><path d="M6.8 12.4l3.6 3.6 6.8-7.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  chevL: '<path d="M15 4.6L7.4 12 15 19.4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  chevR: '<path d="M9 4.6l7.6 7.4L9 19.4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>',
+  plus: '<path d="M12 5v14M5 12h14" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>',
+  clock: '<circle cx="12" cy="12.8" r="9" fill="url(#gk-steel)" stroke="#3a4a6e" stroke-width="1.2"/><circle cx="12" cy="12.8" r="6.8" fill="#fff" stroke="#c4cee2" stroke-width=".8"/><path d="M12 8v5.2l3.6 2" fill="none" stroke="#22314f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="1.6" width="4" height="2.6" rx="1" fill="url(#gk-red)" stroke="#7a1a10" stroke-width=".9"/>',
+  bolt: '<path d="M13.6 2L4.6 13.4h6L9.4 22l9-11.6h-6z" fill="url(#gk-gold)" ' + ES + '/><path d="M12.6 4.6L8 11" stroke="#fffbe0" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>',
+  gift: '<rect x="3.4" y="9.6" width="17.2" height="11.4" rx="2" fill="url(#gk-red)" stroke="#7a1a10" stroke-width="1.1"/><rect x="2.4" y="6.6" width="19.2" height="4.6" rx="1.6" fill="#ff8a76" stroke="#7a1a10" stroke-width="1.1"/><rect x="10.6" y="6.6" width="2.8" height="14.4" fill="url(#gk-gold)"/><path d="M12 6.6C9.4 6.6 7 5.2 7.6 3.6 8.6 1.8 11.2 3.6 12 6.6zM12 6.6c2.6 0 5-1.4 4.4-3-1-1.8-3.6 0-4.4 3z" fill="url(#gk-gold)" ' + ES + '/>',
+  flag: '<path d="M5.4 21.6V3.2" stroke="#e8eef8" stroke-width="2.2" stroke-linecap="round"/><path d="M6.4 4h13.2l-3.4 4.2 3.4 4.2H6.4z" fill="url(#gk-red)" stroke="#7a1a10" stroke-width="1.1" stroke-linejoin="round"/>',
+  cog: '<path d="M10.2 2.6h3.6l.6 2.6 1.9.8 2.3-1.4 2.5 2.5-1.4 2.3.8 1.9 2.6.6v3.6l-2.6.6-.8 1.9 1.4 2.3-2.5 2.5-2.3-1.4-1.9.8-.6 2.6h-3.6l-.6-2.6-1.9-.8-2.3 1.4-2.5-2.5 1.4-2.3-.8-1.9-2.6-.6v-3.6l2.6-.6.8-1.9-1.4-2.3 2.5-2.5 2.3 1.4 1.9-.8z" fill="url(#gk-steel)" stroke="#3a4a6e" stroke-width="1" stroke-linejoin="round"/><circle cx="12" cy="12.2" r="3.4" fill="#5a6a8e" stroke="#3a4a6e" stroke-width="1"/>',
+  bag: '<path d="M6.6 8.6h10.8l1.6 12.4a1 1 0 01-1 1.1H6a1 1 0 01-1-1.1z" fill="url(#gk-brown)" stroke="#4d2c10" stroke-width="1.1" stroke-linejoin="round"/><path d="M8.8 10.4V7.2a3.2 3.2 0 016.4 0v3.2" fill="none" stroke="#4d2c10" stroke-width="1.6" stroke-linecap="round"/><path d="M8 12.6l.4 6" stroke="#ffd9a0" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><circle cx="12" cy="15.4" r="2" fill="url(#gk-gold)" stroke="#6b3f06" stroke-width=".8"/>',
+  heart: '<path d="M12 21C5 15.6 2.6 12 2.6 8.4A4.8 4.8 0 0112 6.4a4.8 4.8 0 019.4 2c0 3.6-2.4 7.2-9.4 12.6z" fill="url(#gk-red)" stroke="#7a1a10" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 8.4a3 3 0 012.4-2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".8"/>',
+  hand: '<path d="M9.2 12.6V4.6a1.9 1.9 0 013.8 0v6.2l5.4 1.2a2.2 2.2 0 011.7 2.6l-.9 5.2A3.4 3.4 0 0116 22.4H12a3.6 3.6 0 01-2.9-1.5L5.6 16a1.7 1.7 0 012.6-2.1z" fill="#fff" stroke="#22314f" stroke-width="1.2" stroke-linejoin="round"/><path d="M13 10.8v2.6M15.6 11.6v2M18.2 12.4v1.4" stroke="#22314f" stroke-width="1" stroke-linecap="round" fill="none" opacity=".4"/>',
+  ball: '<circle cx="12" cy="12" r="9.6" fill="url(#gk-coin)" ' + ES + '/>',
 };
+let defsIn = false;
 function icon(name, px) {
+  if (!defsIn && document.body) { defsIn = true; document.body.insertAdjacentHTML('afterbegin', DEFS); }
   const b = ICONS[name] || ICONS.star;
   const s = px ? ' width="' + px + '" height="' + px + '"' : '';
   return '<svg viewBox="0 0 24 24"' + s + ' aria-hidden="true" focusable="false">' + b + '</svg>';
@@ -358,7 +372,7 @@ function shop(o) {
   sheet.appendChild(pan);
   pan.innerHTML = '<div class="top"><h3>' + (o.title || 'Skins') + '</h3><div style="display:flex;gap:8px;align-items:center"><span class="gk-chip"></span><button type="button" class="gk-ib" aria-label="Close">' + icon('chevR').replace('chevR', 'x') + '</button></div></div><div class="grid"></div>';
   const grid = pan.querySelector('.grid'), chip = pan.querySelector('.gk-chip'), close = pan.querySelector('button.gk-ib');
-  close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="' + INK + '" stroke-width="5.4" stroke-linecap="round"/><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  close.innerHTML = icon('x');
   function paint() {
     chip.innerHTML = icon('coin') + '<b>' + P.d.coins + '</b>';
     grid.innerHTML = '';
