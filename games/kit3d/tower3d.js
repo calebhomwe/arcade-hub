@@ -204,7 +204,7 @@ export class TowerWorld {
     g.fillStyle = 'rgba(120,110,190,.10)'; for (let x = 0; x < 256; x += 32) g.fillRect(x, 0, 6, 64);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 30);
     const pole = this.pole = new THREE.Mesh(new THREE.CylinderGeometry(R_IN * 0.92, R_IN * 0.92, this.step * 60, 32, 1, true),
-      new THREE.MeshPhongMaterial({ map: t, shininess: 40, specular: '#222222', color: this.style === 'stack' ? '#d9d4ff' : '#ffffff' }));
+      new THREE.MeshPhongMaterial({ map: t, shininess: 40, specular: '#222222', color: this.style === 'stack' ? '#d9d4ff' : '#ffffff', emissive: '#ffffff', emissiveIntensity: 0.22 }));
     pole.receiveShadow = true; pole.castShadow = false; this.scene.add(pole);
     // a collar where each platform meets the pole
     this.collar = new THREE.InstancedMesh(new THREE.TorusGeometry(R_IN * 0.95, 0.12, 8, 32).rotateX(Math.PI / 2),

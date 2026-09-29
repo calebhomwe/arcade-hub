@@ -75,7 +75,7 @@
 @keyframes gk-throb{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 
 /* ---------- screens and cards ---------- */
-.gk-screen{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;padding:calc(64px + var(--gk-st)) calc(16px + var(--gk-sr)) calc(20px + var(--gk-sb)) calc(16px + var(--gk-sl));text-align:center;overflow:hidden auto;overscroll-behavior:contain;
+.gk-screen{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;padding:calc(72px + var(--gk-st)) calc(16px + var(--gk-sr)) calc(20px + var(--gk-sb)) calc(16px + var(--gk-sl));text-align:center;overflow:hidden auto;overscroll-behavior:contain;
   background:linear-gradient(to bottom,rgba(20,10,60,.0) 0%,rgba(20,10,60,.10) 35%,rgba(20,10,60,.55) 100%)}
 .gk-screen.center{justify-content:center}
 .gk-screen.dim{background:rgba(16,8,48,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
@@ -214,7 +214,12 @@
 .gk-screen .gk-logo{margin-bottom:auto}
 .gk-flash{position:fixed;inset:0;z-index:33;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,255,255,0) 30%,rgba(255,60,80,.55) 100%)}
 .gk-combo{position:fixed;left:50%;top:26%;z-index:34;pointer-events:none;transform:translate(-50%,-50%);font:400 clamp(38px,12vw,60px)/1 var(--gk-disp);opacity:0;white-space:nowrap}
-.gk-score{position:fixed;left:0;right:0;top:calc(96px + var(--gk-st));z-index:31;text-align:center;pointer-events:none;font:400 clamp(44px,14vw,64px)/1 var(--gk-disp)}
+.gk-score{position:static;text-align:center;pointer-events:none;font:400 clamp(44px,14vw,64px)/1 var(--gk-disp);margin-top:2px}
 .gk-score.bump{animation:gk-pulse .3s ease}
 
-@media (max-height:760px){ #weekHost{display:none} .gk-goals .g{padding:3px 10px 3px 6px} }
+@media (max-height:780px){ .gk-week{display:none} }
+
+.gk-goals.row{flex-direction:row;width:min(100%,360px);gap:6px}
+.gk-goals.row .g{flex:1;flex-direction:column;gap:3px;padding:6px 4px 7px;text-align:center;font-size:13px;line-height:1.1;justify-content:center;min-width:0}
+.gk-goals.row .g .gk-stars.mini svg{width:20px;height:20px}
+.gk-btn.xs{min-height:38px;padding:6px 16px;font-size:15px;border-radius:14px;box-shadow:0 4px 0 var(--gk-ink),0 4px 0 3px var(--e),inset 0 2px 0 rgba(255,255,255,.4)}

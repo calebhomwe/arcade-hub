@@ -16,8 +16,8 @@
   canvas#c { position:fixed; inset:0; display:block; touch-action:none; }
   #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
   .gk-logo .l2 { color:#ffe37a; }
-  #hud .stars3 { display:flex; gap:4px; justify-content:center; pointer-events:none; }
-  #hud .stars3 svg { width:26px; height:26px; transition:transform .2s; }
+  #hud .stars3 { display:flex; gap:3px; justify-content:flex-end; pointer-events:none; }
+  #hud .stars3 svg { width:30px; height:30px; transition:transform .2s; }
   #hud .stars3 svg.lit { animation:gk-starpop .5s cubic-bezier(.2,1.6,.4,1) both; }
   #hud .stars3 svg.fail { opacity:.45; filter:grayscale(1); }
   #endlessHud { display:flex; gap:8px; justify-content:center; }
@@ -35,14 +35,16 @@
     <div id="lvlbar" style="flex:1;min-width:0"></div>
     <button class="gk-ib" id="mute" type="button" aria-label="Sound"></button>
   </div>
-  <div class="gk-row" style="justify-content:flex-start">
-    <span class="gk-chip" id="gemChip"></span>
-    <span class="gk-chip dim" id="shieldChip" style="display:none"></span>
-    <span class="gk-chip dim" id="parChip" style="display:none"></span>
+  <div class="gk-row">
+    <div style="display:flex;gap:8px;min-width:0">
+      <span class="gk-chip" id="gemChip"></span>
+      <span class="gk-chip dim" id="parChip" style="display:none"></span>
+      <span class="gk-chip dim" id="shieldChip" style="display:none"></span>
+    </div>
+    <div class="stars3" id="stars3"></div>
   </div>
-  <div class="stars3" id="stars3"></div>
+  <div class="gk-score gk-out" id="scoreBig">0</div>
 </div>
-<div class="gk-score gk-out gk-hidden" id="scoreBig">0</div>
 
 <div class="gk-screen" id="start">
   <div class="gk-tb"><a class="gk-ib" id="hub" href="../index.html" aria-label="Back to the hub"></a><span class="sp"></span><span class="gk-chip" id="coinChip"></span><button class="gk-ib" id="mute2" type="button" aria-label="Sound"></button></div>
@@ -50,11 +52,12 @@
   <div class="gk-seg" id="modeSeg" role="tablist"><button type="button" data-m="level" class="on">LEVELS</button><button type="button" data-m="endless">ENDLESS</button></div>
   <div id="picker"></div>
   <div id="endlessInfo" class="gk-goals gk-hidden"></div>
-  <div class="gk-goals" id="goals"></div>
+  <div class="gk-goals row" id="goals"></div>
   <button class="gk-btn green wide throb" id="playBtn" type="button"></button>
-  <div class="gk-menu"><button class="gk-btn sm dark" id="skinBtn" type="button"></button><button class="gk-btn sm dark" id="gfxBtn" type="button" aria-label="Graphics quality">GRAPHICS: HIGH</button></div>
+  <div class="gk-menu"><button class="gk-btn sm dark" id="skinBtn" type="button"></button></div>
   <div id="dailyHost"></div>
   <div id="weekHost"></div>
+  <button class="gk-btn xs dark" id="gfxBtn" type="button" aria-label="Graphics quality">GRAPHICS: HIGH</button>
 </div>
 
 <div class="gk-screen dim center gk-hidden" id="gameover">
@@ -271,12 +274,16 @@ function goalsFor(spec) {
   const st = P.starsFor(spec.L);
   return [
     { s:1, t:'Reach the finish', ok: st >= 1 },
-    { s:2, t:'Bounce combo x' + spec.comboGoal, ok: st >= 2 },
-    { s:3, t:'Finish in ' + spec.par + ' seconds', ok: st >= 3 },
+    { s:2, t:'Combo x' + spec.comboGoal, ok: st >= 2 },
+    { s:3, t:'Finish in ' + spec.par + 's', ok: st >= 3 },
   ];
 }
-function goalsHTML(list, res) {
-  return list.map(g => '<div class="g' + ((res ? res[g.s - 1] : g.ok) ? ' done' : '') + '">' + ic((res ? res[g.s - 1] : g.ok) ? 'star' : 'starOff') + '<span>' + g.t + '</span></div>').join('');
+function goalsHTML(list, res, row) {
+  return list.map(g => {
+    const ok = res ? res[g.s - 1] : g.ok;
+    if (row) return '<div class="g' + (ok ? ' done' : '') + '"><span class="gk-stars mini">' + ic(ok ? 'star' : 'starOff').repeat(g.s) + '</span><span>' + g.t + '</span></div>';
+    return '<div class="g' + (ok ? ' done' : '') + '">' + ic(ok ? 'star' : 'starOff') + '<span>' + g.t + '</span></div>';
+  }).join('');
 }
 function paintTitle() {
   const lv = MODE === 'level';
@@ -285,7 +292,7 @@ function paintTitle() {
   $('modeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === MODE));
   if (lv) {
     const sp = levelSpec(LEVEL);
-    $('goals').innerHTML = goalsHTML(goalsFor(sp));
+    $('goals').innerHTML = goalsHTML(goalsFor(sp), null, true);
     applyWorld(LEVEL);
   } else {
     applyWorld(1);
@@ -323,7 +330,7 @@ function startGame() {
   by = ballRestY(0); camY = by - desired;
   phase = 'resting';
   if (codes.SHIELDUP) shield = 3;
-  $('hud').classList.remove('gk-hidden'); $('scoreBig').classList.remove('gk-hidden');
+  $('hud').classList.remove('gk-hidden');
   $('lvlbar').style.display = SPEC ? '' : 'none';
   if (SPEC) { bar.levels(SPEC.L, SPEC.L + 1); bar.set(0); bar.done(false); }
   $('start').classList.add('gk-hidden'); $('gameover').classList.add('gk-hidden');
@@ -336,7 +343,7 @@ function startGame() {
 function toTitle() {
   phase = 'ready'; waiting = false; trail = []; rings = [];
   if (coach) { coach.remove(); coach = null; }
-  ['gameover', 'hud', 'scoreBig'].forEach(id => $(id).classList.add('gk-hidden'));
+  ['gameover', 'hud'].forEach(id => $(id).classList.add('gk-hidden'));
   SPEC = null; RNG = Math.random;
   initWorld(); by = ballRestY(0); camY = by - desired;
   LEVEL = Math.min(LEVEL, P.d.level); picker.set(LEVEL);
@@ -417,7 +424,7 @@ function showResult(win) {
   nextBtn.dataset.mode = SPEC && win ? 'next' : 'again';
   $('againBtn').innerHTML = ic('replay') + 'REPLAY'; $('againBtn').style.display = SPEC && win ? '' : 'none';
   $('menuBtn').innerHTML = ic('home') + 'MENU';
-  $('hud').classList.add('gk-hidden'); $('scoreBig').classList.add('gk-hidden');
+  $('hud').classList.add('gk-hidden');
   $('gameover').classList.remove('gk-hidden');
   P.bump('runs'); paintChrome();
   if (coins) setTimeout(() => GK.fly({ x: W / 2, y: H * 0.45 }, $('ovStat').firstElementChild, Math.min(8, 2 + Math.floor(coins / 6)), 'coin'), 600);
