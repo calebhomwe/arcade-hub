@@ -270,8 +270,8 @@
   // opts: {title, tagline, hero:[names], onPlay, playLabel, onMap, onAlbum, onHelp, profile, extra, dot}
   function title(root, o) {
     var P = o.profile;
-    var hero = h('div', { class: 'kk-hero' });
-    (o.hero || []).forEach(function (n, i, a) {
+    var hero = o.heroEl || h('div', { class: 'kk-hero' });
+    if (!o.heroEl) (o.hero || []).forEach(function (n, i, a) {
       var im = img(n), off = (i - (a.length - 1) / 2), r = (off * 9);
       im.style.marginLeft = (-59 + off * 92) + 'px'; im.style.marginTop = (-59 + Math.abs(off) * 20) + 'px'; im.style.setProperty('--r', r + 'deg');
       im.style.animationDelay = (i * 0.35) + 's'; if (i === Math.floor(a.length / 2)) { im.style.width = im.style.height = '148px'; im.style.marginLeft = '-74px'; im.style.marginTop = '-80px'; }
@@ -370,6 +370,14 @@
     panel.appendChild(b);
     var sc = overlay(panel, { onClose: o.onClose, dismiss: true }); return sc;
   }
+  // a speech bubble that teaches by doing: coach(text, {skip: fn, y: '18%'}) -> element with .close()
+  function coach(text, o) {
+    o = o || {}; var old = D.querySelector('.kk-coach'); if (old) old.remove();
+    var e = h('div', { class: 'kk-coach', role: 'status', style: { top: o.top || 'calc(var(--kk-top) + 64px)' } }, [img(o.pic || 'pointer-down'), h('span', { class: 'kk-ct', text: text })]);
+    if (o.skip) { var sk = h('button', { class: 'kk-skip', type: 'button', text: o.skipLabel || 'Skip' }); press(sk, function () { e.close(); o.skip(); }); e.appendChild(sk); }
+    e.close = function () { if (e.parentNode) e.parentNode.removeChild(e); };
+    D.body.appendChild(e); return e;
+  }
   function confetti() { var w = W.innerWidth; for (var i = 0; i < 3; i++) burst(w * (0.2 + i * 0.3), W.innerHeight * 0.75, 'confetti', 22); }
 
   /* an ArcadeSDK-aware sound button: one place to mute */
@@ -397,6 +405,6 @@
   W.KK = { h: h, img: img, imgUrl: imgUrl, press: press, RM: RM, inFrame: inFrame, clamp: clamp, rand: rand, pick: pick, shuffle: shuffle, today: today,
     profile: profile, audio: { unlock: unlock, ctx: function () { return A.ctx; } }, sfx: sfx, note: note, say: say, setVoice: setVoice, voiceOn: function () { return voiceOn; }, muted: muted,
     fx: { burst: burst }, float: floatText, shake: shake, haptic: haptic, confetti: confetti,
-    ui: { title: title, map: map, album: album, result: result, help: help, toast: toast, banner: banner, stars: starsRow, overlay: overlay, topbar: topbar, chip: chip, week: weekRow, daily: dailyChip, mute: muteButton },
+    ui: { coach: coach, title: title, map: map, album: album, result: result, help: help, toast: toast, banner: banner, stars: starsRow, overlay: overlay, topbar: topbar, chip: chip, week: weekRow, daily: dailyChip, mute: muteButton },
     preload: preload, sprite: sprite };
 })();

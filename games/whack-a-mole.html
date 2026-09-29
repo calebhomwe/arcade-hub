@@ -1,382 +1,544 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#7fd3ff">
 <title>Whack-a-Mole</title>
+<link rel="stylesheet" href="kit/kidskit.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:radial-gradient(900px 600px at 50% -20%,#a16207,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
-h1{font-size:26px;font-weight:900;letter-spacing:-1px}
-.hud{display:flex;gap:8px;font-weight:800;font-size:15px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw}
-.hud span{background:#1e293b;padding:8px 14px;border-radius:12px}
-#comboChip{transition:transform .13s ease,opacity .2s;opacity:.55}
-.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:0 12px;min-width:44px;min-height:44px;border-radius:12px;cursor:pointer;line-height:1}
-#metaBar{font-size:12px;color:#94a3b8;font-weight:800}
-#timebar{width:min(90vw,380px);height:10px;background:#1e293b;border-radius:999px;overflow:hidden}
-#timefill{height:100%;width:100%;background:linear-gradient(90deg,#4ade80,#facc15);border-radius:999px;transition:width .2s linear}
-#grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:min(90vw,380px,calc(100dvh - 170px));touch-action:manipulation}
-.hole{position:relative;aspect-ratio:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;cursor:pointer}
-.ground{position:absolute;bottom:0;left:8%;right:8%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,#3f2a12 0%,#241708 70%,#120c04 100%);box-shadow:inset 0 10px 18px rgba(0,0,0,.7)}
-.mole{position:absolute;bottom:8%;font-size:clamp(34px,11vw,52px);transform:translateY(110%);transition:transform .14s cubic-bezier(.34,1.56,.64,1);z-index:2;line-height:1}
-.mole.up{transform:translateY(0)}
-.mole.hit{animation:hit .25s ease}
-.mole.gold{filter:drop-shadow(0 0 12px #facc15)}
-.mole.boss{font-size:clamp(48px,15vw,72px);filter:drop-shadow(0 0 16px #f97316)}
-.mole.fuse{transform:translateY(58%);animation:fuseShake .15s linear infinite;filter:drop-shadow(0 0 10px #ef4444)}
-@keyframes fuseShake{0%,100%{translate:-2px 0}50%{translate:2px 0}}
-@keyframes hit{0%{scale:1 1}40%{scale:1.3 .6;translate:0 30%}100%{scale:1 1}}
-#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
-.popup{position:fixed;font-weight:900;font-size:22px;pointer-events:none;z-index:30;animation:popup .7s ease forwards;text-shadow:0 2px 6px rgba(0,0,0,.6)}
-@keyframes popup{0%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -46px}}
-#score.pp{animation:ppop .18s ease}
-@keyframes ppop{0%{scale:1}40%{scale:1.35}100%{scale:1}}
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
-.ov h1{font-size:40px}
-.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#facc15,#fb923c);color:#1c1917;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(250,204,21,.35)}
-.btn:active{transform:scale(.94)}
-.best{color:#4ade80;font-weight:800}
-#newBest{color:#facc15;font-weight:900;font-size:17px;text-shadow:0 0 14px rgba(250,204,21,.7);animation:pulse 1s ease infinite}
-@keyframes pulse{50%{scale:1.12}}
-.hidden{display:none}
-.btn:focus-visible,.mute:focus-visible,.back:focus-visible,.hole:focus-visible{outline:3px solid #facc15;outline-offset:2px;border-radius:14px}
-.hole.hinted .ground{box-shadow:0 0 0 3px #facc15,inset 0 10px 18px rgba(0,0,0,.7)}
-.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
-#tut{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:15;background:rgba(15,23,42,.94);border:2px solid #facc15;border-radius:16px;padding:10px 16px;max-width:min(92vw,380px);text-align:center;pointer-events:none;color:#e2e8f0;font-size:14px;font-weight:700;line-height:1.45}
-#tut.hidden{display:none}
-#tut .tap{font-size:30px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
-@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(6px) scale(.9)}}
-@media (prefers-reduced-motion:reduce){#tut .tap,#newBest,#score.pp,.popup{animation:none}.mole{transition:none}}
+body.kk{background:#7fd3ff}
+/* ---------- the meadow: three worlds, all built from the same layers ---------- */
+#scene{position:fixed;inset:0;--sky1:#6ecbff;--sky2:#d9f5ff;--hill1:#8be05d;--hill2:#62c649;--g1:#74d94f;--g2:#4cb43c;--tuft:#3f9f34;--dirt1:#a9744a;--dirt2:#6e4527;--hole1:#1d0f06;--hole2:#3b2210;overflow:hidden;background:linear-gradient(180deg,var(--sky1),var(--sky2) 30%,var(--sky2) 34%)}
+#scene.w1{--sky1:#ff9a6b;--sky2:#ffe1b0;--hill1:#c3d95a;--hill2:#a1c443;--g1:#b0cf47;--g2:#86aa35;--tuft:#6f9428;--dirt1:#b07845;--dirt2:#71462a}
+#scene.w2{--sky1:#1b1f5e;--sky2:#5a56b3;--hill1:#3d7f86;--hill2:#2c6570;--g1:#2f8a72;--g2:#1c5d55;--tuft:#3fae8a;--dirt1:#7f5a52;--dirt2:#4a2f33;--hole1:#0b0510;--hole2:#22112a}
+#scene .ground{position:absolute;left:0;right:0;top:27%;bottom:0;background:linear-gradient(180deg,var(--g1),var(--g2))}
+#scene .ground::before{content:'';position:absolute;inset:0;opacity:.35;background:radial-gradient(circle at 20% 30%,var(--tuft) 0 3px,transparent 4px) 0 0/46px 40px,radial-gradient(circle at 70% 70%,var(--tuft) 0 2.5px,transparent 3.5px) 0 0/58px 44px}
+#scene .hills{position:absolute;left:0;right:0;top:15%;height:20%;width:100%}
+#scene .sun{position:absolute;right:8%;top:calc(var(--kk-top) + 64px);width:96px;height:96px;opacity:.95}
+#scene .moon{position:absolute;right:10%;top:calc(var(--kk-top) + 60px);width:84px;height:84px;display:none}
+#scene.w2 .sun{display:none}#scene.w2 .moon{display:block}
+#scene .cloud{position:absolute;width:120px;height:120px;opacity:.95;left:-140px;animation:drift 70s linear infinite}
+#scene.w2 .cloud{filter:brightness(.55) saturate(.8)}
+.c1{top:calc(var(--kk-top) + 96px)}.c2{top:calc(var(--kk-top) + 160px);animation-duration:110s!important;animation-delay:-40s!important;width:90px!important;height:90px!important}.c3{top:calc(var(--kk-top) + 40px);animation-duration:90s!important;animation-delay:-70s!important;width:100px!important;height:100px!important}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 300px))}}
+#scene .stars{position:absolute;left:0;right:0;top:0;height:30%;display:none;animation:twinkle 3s ease-in-out infinite;background:radial-gradient(circle at 12% 20%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 34% 8%,#fff 0 2px,transparent 3px),radial-gradient(circle at 58% 24%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 81% 12%,#fff 0 2px,transparent 3px),radial-gradient(circle at 92% 30%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 46% 16%,#ffe9a8 0 2px,transparent 3px)}
+#scene.w2 .stars{display:block}
+@keyframes twinkle{0%,100%{opacity:.6}50%{opacity:1}}
+.fly{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff6a8;box-shadow:0 0 12px 5px rgba(255,240,140,.7);display:none;animation:fly 5s ease-in-out infinite}
+#scene.w2 .fly{display:block}
+@keyframes fly{0%,100%{transform:translate(0,0);opacity:.2}50%{transform:translate(24px,-30px);opacity:1}}
+#decor{position:absolute;inset:0;pointer-events:none}
+#decor img{position:absolute;transform:translate(-50%,-100%)}
+#decor .fl{animation:sway 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes sway{0%,100%{transform:translate(-50%,-100%) rotate(-4deg)}50%{transform:translate(-50%,-100%) rotate(4deg)}}
+#decor .bf{animation:flutter 7s ease-in-out infinite}
+@keyframes flutter{0%,100%{transform:translate(-50%,-100%)}25%{transform:translate(-20%,-140%) rotate(8deg)}50%{transform:translate(-80%,-120%) rotate(-6deg)}75%{transform:translate(-40%,-160%)}}
+
+/* ---------- top bar and goal ---------- */
+#hud{position:fixed;left:var(--kk-l);right:var(--kk-r);top:calc(var(--kk-top) + 56px);z-index:25;display:none;flex-direction:column;gap:8px;pointer-events:none}
+#hud.on{display:flex}
+#hud .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+#goal{position:relative;height:30px;border-radius:15px;background:rgba(255,255,255,.55);box-shadow:inset 0 3px 5px rgba(60,30,120,.25),0 3px 0 rgba(60,30,120,.14)}
+#goal i{position:absolute;left:0;top:0;bottom:0;border-radius:15px;width:0;background:linear-gradient(180deg,#ffe36b,#ffa800);box-shadow:inset 0 3px 0 rgba(255,255,255,.5);transition:width .18s ease-out}
+#goal img{position:absolute;top:-5px;width:38px;height:38px;margin-left:-19px;filter:grayscale(1) brightness(1.3) opacity(.55);transition:transform .3s}
+#goal img.got{filter:none;animation:kkBump .5s}
+#time{min-width:96px}
+#time.low{background:#ffe0e0;color:#c02020}#time.low b{animation:kkBump .5s infinite}
+#combo{display:none}#combo.on{display:inline-flex}
+#codes{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--kk-bot) + 4px);z-index:30;background:#ffd23f;color:#6b3b00;font-weight:700;font-size:14px;padding:3px 12px;border-radius:12px;letter-spacing:1px;display:none}
+
+/* ---------- the field of holes ---------- */
+#field{position:fixed;left:0;right:0;z-index:10;display:none;justify-content:center;align-items:center}
+#field.on{display:flex}
+#grid{display:grid;--cw:118px;grid-template-columns:repeat(var(--cols,3),var(--cw));gap:calc(var(--cw)*.02) calc(var(--cw)*.04);justify-content:center}
+.hole{position:relative;width:var(--cw);height:calc(var(--cw)*.8333);touch-action:manipulation}
+.hole svg.hb,.hole svg.hf{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.hole .clip{position:absolute;left:0;right:0;top:-70%;height:154%;overflow:hidden}
+.mole{position:absolute;left:50%;bottom:-5%;width:calc(var(--cw)*.74);height:calc(var(--cw)*.82);transform:translate(-50%,108%);transition:transform .2s cubic-bezier(.4,0,.6,1);will-change:transform}
+.hole[data-s=rise] .mole,.hole[data-s=up] .mole{transform:translate(-50%,0);transition:transform .15s cubic-bezier(.3,1.7,.5,1)}
+.hole[data-s=hit] .mole{transform:translate(-50%,14%) scale(1.06,.78);transition:transform .09s ease-out}
+.hole[data-s=hit] .dz{display:block}
+.mole .body{position:absolute;inset:0}
+.mole svg,.mole img.pic{width:100%;height:100%;overflow:visible;display:block}
+.mole .dz{display:none;position:absolute;left:50%;top:-8%;width:52%;height:auto;margin-left:-26%;animation:spin .5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hole[data-s=up] .mole .body{animation:wob 1.1s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+.hole[data-k=friend] .mole .body{animation:hop .6s ease-in-out infinite}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
+.mole .hat{transform-origin:50% 100%}
+.hole.dent .hat{transform:translate(14px,-46px) rotate(38deg);opacity:0;transition:transform .35s ease-out,opacity .35s}
+.face-hit{display:none}
+.hole[data-s=hit] .face-ok{display:none}.hole[data-s=hit] .face-hit{display:inline}
+.fur{fill:url(#furG)}.gold .fur{fill:url(#furGold)}
+.hole.ping .clip{animation:ping .18s ease-out}
+@keyframes ping{50%{transform:scale(1.08,.94)}}
+.hole .puff{position:absolute;left:50%;bottom:8%;width:60%;margin-left:-30%;pointer-events:none;opacity:0}
+.hole.miss .puff{animation:puff .4s ease-out}
+@keyframes puff{0%{opacity:.9;transform:scale(.4)}100%{opacity:0;transform:scale(1.4) translateY(-8px)}}
+#hammer{position:fixed;left:0;top:0;width:112px;height:112px;z-index:40;pointer-events:none;opacity:0;transform-origin:88% 90%;will-change:transform,opacity}
+
+/* ---------- ready banner ---------- */
+#ready{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;pointer-events:none}
+#ready.on{display:flex}
+#ready .card{background:#fff;border-radius:30px;padding:16px 26px;text-align:center;box-shadow:0 8px 0 rgba(90,50,160,.3),0 20px 30px rgba(0,0,0,.3);animation:kkPanel .4s cubic-bezier(.2,1.4,.4,1)}
+#ready h2{margin:0;font-size:36px;color:var(--kk-ink)}
+#ready .g{display:flex;align-items:center;justify-content:center;gap:8px;font-size:32px;font-weight:700;color:#e0651a}
+#ready .g img{width:56px;height:56px}
+#ready .w{font-size:18px;font-weight:600;color:var(--kk-ink2);margin-top:2px}
+#titleHero{position:relative;width:min(80vw,300px);height:210px;margin:6px 0}
+#titleHero .hole{position:absolute;left:50%;bottom:0;--cw:210px;margin-left:-105px}
+#titleHero .hole .mole{transform:translate(-50%,0);animation:peek 2.6s ease-in-out infinite}
+@keyframes peek{0%,100%{transform:translate(-50%,10%)}45%,60%{transform:translate(-50%,-6%)}}
+#titleHero .tools{position:absolute;right:-6px;top:-4px;width:100px;height:100px;transform:rotate(14deg);animation:kkBob 2.6s ease-in-out infinite}
+#titleHero .st{position:absolute;width:44px;height:44px;animation:kkBob 2.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){#scene .cloud,#scene .stars,.fly,#decor .fl,#decor .bf,.hole[data-s=up] .mole .body,.hole[data-k=friend] .mole .body,#titleHero .hole .mole,#titleHero .tools,#titleHero .st{animation:none}}
 </style>
 </head>
-<body>
-<a class="back" href="../index.html">← Hub</a>
-<h1>🔨 Whack-a-Mole</h1>
-<div class="hud"><span>Score: <b id="score">0</b></span><span>⏱ <b id="timeLeft">30</b>s</span><span id="comboChip">🔥×1</span><span>🏆 <b id="bestHud">0</b></span><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
-<div id="timebar"><div id="timefill"></div></div>
-<div id="metaBar">🎯 0 · ⭐ 0 · 👑 0 · 🎃 0 · 💣 0 · ⚪ Rookie</div>
-<div id="grid"></div>
-<canvas id="fx"></canvas>
-<div class="codes hidden" id="codesOn">CODES ON</div>
-<div id="tut" class="hidden"><span class="tap" aria-hidden="true">👆</span><div>Tap each <b>🐹 mole</b> as it pops up!</div><div id="tutMore">⭐ +5 · 👑 +10 · 🎃 boss: 3 taps · don't hit the rumbling 💣 (−3)</div></div>
-<div class="ov" id="start">
-  <h1>🔨 Whack-a-Mole</h1>
-  <div style="color:#cbd5e1;font-size:15px;line-height:1.6">Whack moles for points!<br>⭐ Golden = +5 · 💣 Bomb = -3 (rumbles first!) · 👑 Crown = +10 (rare!)<br>Chain hits without escapes for 🔥 ×2 ×3<br>⚡ Whack within 350ms of popping up = +1<br>🎃 BOSS every 100 pts: 3 hits to take down = +25!</div>
-  <button class="btn" id="playBtn">▶ Play (30s)</button>
-</div>
-<div class="ov hidden" id="over">
-  <h1>Time's Up!</h1>
-  <div id="newBest" class="hidden">🏆 NEW BEST!</div>
-  <div style="font-size:18px">Score: <b id="finScore">0</b></div>
-  <div style="font-size:16px">Best: <b class="best" id="finBest">0</b></div>
-  <div style="font-size:16px">Rank: <b class="best" id="finRank">⚪ Rookie</b></div>
-  <button class="btn" id="againBtn">Play Again</button>
-</div>
-<script>
+<body class="kk">
+<!-- shared gradients for the mole drawings -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="furG" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="#b98460"/><stop offset=".55" stop-color="#7d5238"/><stop offset="1" stop-color="#4f3121"/></radialGradient>
+  <radialGradient id="furGold" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="#fff0a3"/><stop offset=".55" stop-color="#f6c53a"/><stop offset="1" stop-color="#c98a0b"/></radialGradient>
+  <linearGradient id="hatG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#f5a800"/></linearGradient>
+  <radialGradient id="snoutG" cx="50%" cy="30%" r="80%"><stop offset="0" stop-color="#e4b99a"/><stop offset="1" stop-color="#c08e6c"/></radialGradient>
+  <linearGradient id="dirtG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--dirt1,#a9744a)"/><stop offset="1" stop-color="var(--dirt2,#6e4527)"/></linearGradient>
+  <linearGradient id="rimF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c4915f"/><stop offset=".5" stop-color="#a06c40"/><stop offset="1" stop-color="#6b4226"/></linearGradient>
+  <radialGradient id="holeG" cx="50%" cy="35%" r="70%"><stop offset="0" stop-color="#3b2210"/><stop offset="1" stop-color="#150a03"/></radialGradient>
+</defs></svg>
 
-let ROUND_TIME=30;
-const SDK=window.ArcadeSDK||null;
-const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
-function cheated(){return !!(SDK&&SDK.cheated);}
-let bigHammer=false,noBombs=false;
-const $=id=>document.getElementById(id);
-let score=0,best=+localStorage.getItem('whackBest')||0,timeLeft=ROUND_TIME,state='ready',spawnTimer=null,roundTimer=null,combo=0,shake=0,flashT=0;
-let bossActive=false,bossTarget=100;
-let tWhacks=+localStorage.getItem('whackTWhacks')||0,tGold=+localStorage.getItem('whackTGold')||0,tCrown=+localStorage.getItem('whackTCrown')||0,tBoss=+localStorage.getItem('whackTBoss')||0,tBomb=+localStorage.getItem('whackTBomb')||0;
-let muted=localStorage.getItem('gamesMuted')==='1';
-function refreshMute(){$('muteBtn').textContent=muted?'🔇':'🔊';}
-$('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();});
-refreshMute();
-const grid=$('grid'),holes=[];
-for(let i=0;i<9;i++){
-const h=document.createElement('div');h.className='hole';h._i=i;
-h.innerHTML='<div class="ground"></div><div class="mole" data-state="down"></div>';
-h.addEventListener('pointerdown',()=>whack(h));
-grid.appendChild(h);holes.push(h);
+<div id="scene" class="w0">
+  <div class="stars"></div>
+  <img class="sun" src="assets/kids/fx/sun.webp" alt="">
+  <img class="moon" src="assets/kids/fx/full-moon.webp" alt="">
+  <img class="cloud c1" src="assets/kids/fx/cloud.webp" alt="">
+  <img class="cloud c2" src="assets/kids/fx/cloud.webp" alt="">
+  <img class="cloud c3" src="assets/kids/fx/cloud.webp" alt="">
+  <svg class="hills" viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 C60 20 120 20 190 55 C250 85 320 25 400 45 L400 100 L0 100Z" fill="var(--hill2)"/><path d="M0 75 C70 40 150 50 220 70 C290 90 350 55 400 68 L400 100 L0 100Z" fill="var(--hill1)"/></svg>
+  <div class="ground"></div>
+  <div class="fly" style="left:14%;top:46%"></div><div class="fly" style="left:78%;top:38%;animation-delay:-2s"></div><div class="fly" style="left:52%;top:62%;animation-delay:-3.4s"></div><div class="fly" style="left:30%;top:80%;animation-delay:-1s"></div>
+  <div id="decor"></div>
+</div>
+
+<div id="hud">
+  <div class="row"><div id="lvchip" class="kk-chip"></div><div id="time" class="kk-chip"></div><div id="combo" class="kk-chip"></div></div>
+  <div id="goal"><i></i></div>
+</div>
+<div id="field"><div id="grid"></div></div>
+<img id="hammer" src="assets/kids/fx/hammer.webp" alt="">
+<div id="ready"><div class="card"><h2 id="rdT"></h2><div class="g"><img id="rdI" src="assets/kids/fx/hammer.webp" alt=""><span id="rdN"></span></div><div class="w" id="rdW"></div></div></div>
+<div id="codes">CODES ON</div>
+
+<script src="kit/kidskit.js"></script>
+<script>
+(function () {
+'use strict';
+var KKs = window.KK, SDK = window.ArcadeSDK || null, h = KKs.h, img = KKs.img;
+var $ = function (id) { return document.getElementById(id); };
+var IMG = function (n) { return KKs.imgUrl(n); };
+
+/* ======================= what you can collect ======================= */
+var HAMMERS = [
+  { id: 'hammer', img: 'hammer', name: 'Wooden mallet', need: 0 }, { id: 'carrot', img: 'carrot', name: 'Carrot', need: 4 },
+  { id: 'banana', img: 'banana', name: 'Banana', need: 9 }, { id: 'magic-wand', img: 'magic-wand', name: 'Magic wand', need: 15 },
+  { id: 'teddy-bear', img: 'teddy-bear', name: 'Squeaky bear', need: 22 }, { id: 'baguette-bread', img: 'baguette-bread', name: 'Baguette', need: 30 }];
+var PALS = [
+  { id: 'seedling', img: 'seedling', name: 'Seedling', need: 1, x: 8, y: 97 }, { id: 'tulip', img: 'tulip', name: 'Tulip', need: 3, x: 92, y: 96 },
+  { id: 'sunflower', img: 'sunflower', name: 'Sunflower', need: 5, x: 20, y: 99 }, { id: 'butterfly', img: 'butterfly', name: 'Butterfly', need: 7, x: 74, y: 40, bf: 1 },
+  { id: 'lady-beetle', img: 'lady-beetle', name: 'Ladybird', need: 10, x: 84, y: 90 }, { id: 'honeybee', img: 'honeybee', name: 'Honey bee', need: 12, x: 30, y: 44, bf: 1 },
+  { id: 'snail', img: 'snail', name: 'Snail', need: 14, x: 60, y: 99 }, { id: 'hibiscus', img: 'hibiscus', name: 'Flower', need: 17, x: 4, y: 90 },
+  { id: 'mushroom', img: 'mushroom', name: 'Mushroom', need: 20, x: 46, y: 98 }, { id: 'hedgehog', img: 'hedgehog', name: 'Hedgehog', need: 24, x: 96, y: 99 },
+  { id: 'rainbow', img: 'rainbow', name: 'Rainbow', need: 28, x: 50, y: 32, rb: 1 }, { id: 'four-leaf-clover', img: 'four-leaf-clover', name: 'Lucky clover', need: 33, x: 34, y: 96 }];
+var ALBUM = HAMMERS.concat(PALS);
+var P = KKs.profile('whack_kk', { album: ALBUM, dailyGoal: 3, dailyBonus: 3 });
+var WORLDS = ['Sunny Garden', 'Sunset Farm', 'Moonlight Meadow'];
+var NLEV = 15;
+
+/* ======================= levels: pure numbers, tested offline ======================= */
+//<sched>
+function levelCfg(n) {
+  var world = n <= 5 ? 0 : n <= 10 ? 1 : 2, boss = n % 5 === 0;
+  return {
+    n: n, world: world, boss: boss,
+    holes: n <= 2 ? 4 : n <= 6 ? 6 : 9, cols: n <= 2 ? 2 : 3,
+    time: n <= 2 ? 25 : 30,
+    stay: Math.max(760, Math.round(1560 - n * 52)),      // ms a mole stays up
+    gap: Math.max(380, Math.round(860 - n * 30)),        // ms between pop-ups
+    maxUp: n <= 2 ? 1 : n <= 6 ? 2 : 3,
+    friend: n < 3 ? 0 : Math.min(0.2, 0.07 + (n - 3) * 0.011),
+    helmet: n < 4 ? 0 : Math.min(0.28, 0.1 + (n - 4) * 0.018),
+    gold: n >= 2, kingHp: boss ? 2 + n / 5 : 0
+  };
 }
-let holeC=[];
-function cacheHoles(){holeC=holes.map(h=>{const r=h.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,y2:r.top+r.height*.65};});}
-const moleOf=h=>h.querySelector('.mole');
-const mult=()=>Math.min(3,1+Math.floor(combo/5));
-const chip=$('comboChip');
-function updateCombo(){
-const mul=mult();
-chip.textContent='🔥×'+mul+(mul<3?' '+(combo%5)+'/5':' MAX');
-chip.style.opacity=mul>1?1:.55;
-if(mul>1){chip.style.transform='scale(1.3)';setTimeout(()=>chip.style.transform='scale(1)',130);}
+function Sched(cfg, rnd) {
+  this.c = cfg; this.rnd = rnd || Math.random; this.t = 0; this.next = 500; this.moles = []; this.spawned = 0; this.goldAt = cfg.gold ? (0.3 + this.rnd() * 0.4) * cfg.time * 1000 : -1; this.kingAt = cfg.boss ? cfg.time * 1000 * 0.3 : -1; this.last = -1; this.events = [];
 }
-let AC;
-function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
-function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
-const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function snd(n){if(n==='hit')sfx('hit');
-else if(n==='gold')sfx('coin');
-else if(n==='crown')sfx('win');
-else if(n==='bomb')sfx('boom');
-else if(n==='miss')sfx('buzz');
-else if(n==='combo')sfx('levelup');
-else if(n==='end')sfx('win');}
-const fx=$('fx'),fctx=fx.getContext('2d');
-let FW=0,FH=0;
-const parts=[],MAXP=200;
-function resizeFx(){
-const d=Math.min(window.devicePixelRatio||1,2);
-FW=window.innerWidth;FH=window.innerHeight;
-fx.width=Math.max(1,Math.round(FW*d));fx.height=Math.max(1,Math.round(FH*d));
-fctx.setTransform(d,0,0,d,0,0);
+Sched.prototype.free = function () {
+  var used = {}, i, out = []; this.moles.forEach(function (m) { used[m.h] = 1; });
+  for (i = 0; i < this.c.holes; i++) if (!used[i] && i !== this.last) out.push(i);
+  return out;
+};
+Sched.prototype.active = function () { return this.moles.filter(function (m) { return m.st === 'rise' || m.st === 'up'; }).length; };
+Sched.prototype.spawn = function (kind, forceHole, stay) {
+  var f = this.free(); if (forceHole != null) f = [forceHole]; if (!f.length) return null;
+  var hIdx = f[Math.floor(this.rnd() * f.length)], c = this.c;
+  var m = { h: hIdx, k: kind, st: 'rise', age: 0, stay: stay || c.stay * (0.85 + this.rnd() * 0.3), hp: kind === 'helmet' ? 2 : kind === 'king' ? c.kingHp : 1 };
+  if (kind === 'gold') m.stay = c.stay * 1.25;
+  if (kind === 'king') m.stay = Math.max(2600, c.stay * 2.6);
+  this.moles.push(m); this.last = hIdx; if (kind !== 'friend') this.spawned++; this.events.push({ e: 'spawn', m: m }); return m;
+};
+Sched.prototype.update = function (dtMs, hold) {
+  var c = this.c, self = this;
+  this.t += dtMs;
+  this.moles.forEach(function (m) {
+    m.age += dtMs;
+    if (m.st === 'rise' && m.age >= 160) { m.st = 'up'; m.age = 0; }
+    else if (m.st === 'up' && m.age >= m.stay && !m.hold) { m.st = 'sink'; m.age = 0; self.events.push({ e: 'escape', m: m }); }
+    else if (m.st === 'hit' && m.age >= 340) { m.st = 'sink'; m.age = 0; }
+    else if (m.st === 'sink' && m.age >= 240) { m.st = 'gone'; self.events.push({ e: 'gone', m: m }); }
+  });
+  this.moles = this.moles.filter(function (m) { return m.st !== 'gone'; });
+  if (hold) return;
+  if (this.goldAt >= 0 && this.t >= this.goldAt && this.free().length) { if (this.spawn('gold')) this.goldAt = -1; }
+  if (this.kingAt >= 0 && this.t >= this.kingAt && this.free().length) { var f = this.free(), ctr = Math.floor(c.holes / 2), hx = f.indexOf(ctr) >= 0 ? ctr : f[0]; if (this.spawn('king', hx)) this.kingAt = this.kingAt + c.time * 1000 * 0.4; }
+  this.next -= dtMs;
+  if (this.next <= 0 && this.active() < c.maxUp) {
+    var r = this.rnd(), kind = r < c.friend ? 'friend' : r < c.friend + c.helmet ? 'helmet' : 'mole';
+    if (this.spawn(kind)) this.next = c.gap * (0.7 + this.rnd() * 0.6);
+    else this.next = 120;
+  } else if (this.next <= 0) this.next = 60;
+};
+// goals: what fraction of the moles that pop up a player must whack (35 / 55 / 75 %), from a run with nobody playing
+function goalsFor(cfg) {
+  var tot = 0, RUNS = 24, seed = 12345;
+  function rng() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  for (var r = 0; r < RUNS; r++) { var s = new Sched(cfg, rng); for (var t = 0; t < cfg.time * 1000; t += 16) { s.update(16, false); s.events.length = 0; } tot += s.spawned; }
+  var e = tot / RUNS, g1 = Math.max(3, Math.round(e * 0.32)), g2 = Math.max(g1 + 1, Math.round(e * 0.5)), g3 = Math.max(g2 + 1, Math.round(e * 0.68));
+  return [g1, g2, g3];
 }
-addEventListener('resize',()=>{resizeFx();cacheHoles();});resizeFx();cacheHoles();
-function burst(x,y,color,n,pow){
-for(let i=0;i<n;i++){
-let p=null;
-for(let j=0;j<parts.length;j++){if(parts[j].life<=0){p=parts[j];break;}}
-if(!p){if(parts.length>=MAXP)break;p={};parts.push(p);}
-const a=Math.random()*Math.PI*2,s=(60+Math.random()*240)*(pow||1);
-p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s-120;p.life=1;p.r=2+Math.random()*4;p.color=color;
+//</sched>
+var LV = [];
+for (var i = 1; i <= NLEV; i++) { var lc = levelCfg(i); lc.goals = goalsFor(lc); LV.push(lc); }
+
+/* ======================= drawing ======================= */
+function moleSVG(kind) {
+  var hat = kind === 'helmet' ? '<g class="hat"><path d="M14 40 Q14 8 50 8 Q86 8 86 40Z" fill="url(#hatG)" stroke="#c98500" stroke-width="1.6"/><rect x="8" y="37" width="84" height="8" rx="4" fill="#f5a800" stroke="#c98500" stroke-width="1.4"/><rect x="43" y="3" width="14" height="12" rx="4" fill="#ffd54a" stroke="#c98500" stroke-width="1.4"/><path d="M26 30 Q30 16 44 13" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".7"/></g>' : '';
+  var nose = ''; for (var i = 0; i < 8; i++) nose += '<ellipse cx="50" cy="45" rx="2.7" ry="5.2" transform="rotate(' + (i * 45) + ' 50 52)" fill="#ff9dbb"/>';
+  return '<svg viewBox="0 0 100 110" aria-hidden="true">' +
+    '<path class="fur" d="M12 112 C10 80 26 62 50 62 C74 62 90 80 88 112Z"/>' +
+    '<ellipse cx="50" cy="100" rx="21" ry="17" fill="#e9c9ae" opacity=".55"/>' +
+    '<circle cx="17" cy="35" r="7" class="fur"/><circle cx="83" cy="35" r="7" class="fur"/><circle cx="17" cy="35" r="3.2" fill="#e58aa0"/><circle cx="83" cy="35" r="3.2" fill="#e58aa0"/>' +
+    '<ellipse cx="50" cy="47" rx="37" ry="34" class="fur"/>' +
+    '<ellipse cx="50" cy="60" rx="21" ry="15" fill="url(#snoutG)"/>' +
+    nose + '<circle cx="50" cy="52" r="6.5" fill="#ff86ab" stroke="#e05a8a" stroke-width="1.2"/><circle cx="48" cy="50" r="2" fill="#fff" opacity=".7"/>' +
+    '<circle cx="27" cy="55" r="5.5" fill="#ff8fa0" opacity=".55"/><circle cx="73" cy="55" r="5.5" fill="#ff8fa0" opacity=".55"/>' +
+    '<g class="face-ok"><ellipse cx="35" cy="40" rx="4.6" ry="5.6" fill="#1d1020"/><ellipse cx="65" cy="40" rx="4.6" ry="5.6" fill="#1d1020"/><circle cx="36.6" cy="37.8" r="1.8" fill="#fff"/><circle cx="66.6" cy="37.8" r="1.8" fill="#fff"/>' +
+    '<path d="M42 66 Q50 73 58 66" stroke="#3a1a10" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="46.5" y="67" width="7" height="6" rx="2" fill="#fff" stroke="#d9c9b8" stroke-width=".8"/></g>' +
+    '<g class="face-hit"><path d="M29 34 L41 46 M41 34 L29 46 M59 34 L71 46 M71 34 L59 46" stroke="#1d1020" stroke-width="3.2" stroke-linecap="round"/><ellipse cx="50" cy="70" rx="5" ry="6" fill="#3a1a10"/><ellipse cx="50" cy="73" rx="3" ry="2.6" fill="#ff7b95"/></g>' +
+    '<ellipse cx="19" cy="94" rx="10" ry="8" fill="#e8a0b0"/><ellipse cx="81" cy="94" rx="10" ry="8" fill="#e8a0b0"/>' +
+    '<g fill="#fff4e6" stroke="#caa" stroke-width=".6"><ellipse cx="13" cy="88" rx="2" ry="3.2"/><ellipse cx="19" cy="86" rx="2" ry="3.4"/><ellipse cx="25" cy="88" rx="2" ry="3.2"/><ellipse cx="75" cy="88" rx="2" ry="3.2"/><ellipse cx="81" cy="86" rx="2" ry="3.4"/><ellipse cx="87" cy="88" rx="2" ry="3.2"/></g>' + hat + '</svg>';
 }
+function backSVG() { return '<svg class="hb" viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="60" cy="72" rx="58" ry="27" fill="#000" opacity=".16"/><ellipse cx="60" cy="70" rx="57" ry="26" fill="url(#dirtG)"/><ellipse cx="60" cy="68" rx="46" ry="19" fill="url(#holeG)"/></svg>'; }
+function frontSVG() {
+  return '<svg class="hf" viewBox="0 0 120 100" preserveAspectRatio="none" aria-hidden="true"><path d="M3 70 A57 26 0 0 0 117 70 L106 68 A46 19 0 0 1 14 68 Z" fill="url(#rimF)"/><path d="M14 68 A46 19 0 0 0 106 68" fill="none" stroke="#d9a878" stroke-width="1.6" opacity=".85"/>' +
+    '<path d="M16 84 q1.6 -8 3.6 0 q2 -8 3.6 0" stroke="var(--tuft,#3f9f34)" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M92 90 q1.6 -8 3.6 0 q2 -8 3.6 0" stroke="var(--tuft,#3f9f34)" stroke-width="2.2" fill="none" stroke-linecap="round"/><ellipse cx="60" cy="90" rx="9" ry="2" fill="#fff" opacity=".18"/></svg>';
 }
-function partsAlive(){for(let i=0;i<parts.length;i++)if(parts[i].life>0)return true;return false;}
-let lastT=0,fxIdle=false;
-function loop(ts){
-requestAnimationFrame(loop);
-let dt=(ts-lastT)/1000;lastT=ts;
-if(!(dt>0)||dt>.05)dt=.016;
-if(document.hidden)return;
-if(RM){shake=0;flashT=0;grid.style.transform='';}
-if(!partsAlive()&&shake<=0&&flashT<=0){if(!fxIdle){fxIdle=true;fctx.clearRect(0,0,FW,FH);}return;}
-fxIdle=false;
-flashT=Math.max(0,flashT-dt*2.8);
-fctx.clearRect(0,0,FW,FH);
-if(flashT>0){fctx.fillStyle='rgba(248,113,113,'+(flashT*.26)+')';fctx.fillRect(0,0,FW,FH);}
-for(let i=0;i<parts.length;i++){
-const p=parts[i];
-if(p.life<=0)continue;
-p.life-=dt*1.8;
-if(p.life<=0)continue;
-p.vy+=800*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
-fctx.globalAlpha=Math.max(0,p.life);fctx.fillStyle=p.color;
-fctx.beginPath();fctx.arc(p.x,p.y,p.r*p.life+1,0,7);fctx.fill();
+function moleHTML(kind) {
+  if (kind === 'friend') return '<div class="body"><img class="pic" src="' + IMG(FRIEND[FI++ % 2 === 0 ? 0 : 1]) + '" alt=""></div>';
+  var body = '<div class="body' + (kind === 'gold' ? ' gold' : '') + '">' + moleSVG(kind === 'king' ? 'mole' : kind) + '</div>';
+  var crown = kind === 'king' ? '<img class="pic" style="position:absolute;left:14%;top:-26%;width:72%;height:auto" src="' + IMG('crown') + '" alt="">' : '';
+  return body + crown + '<img class="dz" src="' + IMG('dizzy') + '" alt="">';
 }
-fctx.globalAlpha=1;
-if(shake>0){
-shake=Math.max(0,shake-dt*2.5);
-grid.style.transform=shake>0?'translate('+((Math.random()-.5)*shake*16)+'px,'+((Math.random()-.5)*shake*12)+'px)':'';
+var FRIEND = ['rabbit-face', 'front-facing-baby-chick'], FI = 0;
+
+/* ======================= state ======================= */
+var scene = $('scene'), grid = $('grid'), field = $('field'), hud = $('hud'), hammerEl = $('hammer');
+var state = 'title', cur = 1, cfg = null, S = null, cells = [], rects = [];
+var whacks = 0, points = 0, timeLeft = 0, combo = 0, bestCombo = 0, hitstop = 0, goalStars = 0, raf = 0, lastTs = 0, goldGot = 0, tickSec = -1, friendHits = 0, escapes = 0;
+var cheats = { big: false, extra: false, slow: false }, cheated = false;
+var tut = null, hintTxt = 'Tap each mole before it hides. Gold moles are worth three!';
+var chLv = KKs.ui.chip('sparkles', ''), chTime = KKs.ui.chip('alarm-clock', 0), chCombo = KKs.ui.chip('fire', 0);
+$('lvchip').replaceWith(chLv.el); chLv.el.id = 'lvchip'; $('time').replaceWith(chTime.el); chTime.el.id = 'time'; $('combo').replaceWith(chCombo.el); chCombo.el.id = 'combo';
+var bestScore = 0; try { bestScore = +localStorage.getItem('whackBest') || 0; } catch (e) {}
+
+function gs(sc, extra) { try { SDK && SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function hammerImg() { return P.eqp('hammer', 'hammer'); }
+function setWorld(w) { scene.className = 'w' + w; document.querySelector('meta[name=theme-color]').content = ['#7fd3ff', '#ff9a6b', '#1b1f5e'][w]; document.body.style.background = ['#7fd3ff', '#ff9a6b', '#1b1f5e'][w]; }
+function buildDecor() {
+  var d = $('decor'), t = P.total(); d.innerHTML = '';
+  PALS.forEach(function (p) {
+    if (t < p.need) return;
+    var e = h('img', { src: IMG(p.img), alt: '', class: p.bf ? 'bf' : p.rb ? '' : 'fl' });
+    var size = p.rb ? 150 : p.bf ? 44 : 50;
+    e.style.cssText = 'left:' + p.x + '%;top:' + p.y + '%;width:' + size + 'px;height:' + size + 'px;' + (p.rb ? 'opacity:.9;' : '') + (p.bf ? 'animation-delay:' + (-p.need % 5) + 's;' : '');
+    d.appendChild(e);
+  });
 }
+
+/* ======================= screens ======================= */
+function clearUI() { document.querySelectorAll('.kk-title,.kk-map,.kk-album,.kk-scrim,.kk-coach,.kk-finger').forEach(function (e) { e.remove(); }); }
+function heroEl() {
+  var wrap = h('div', { id: 'titleHero' });
+  var hole = h('div', { class: 'hole', 'data-s': 'up' }); hole.innerHTML = backSVG() + '<div class="clip"><div class="mole">' + moleHTML('mole') + '</div></div>' + frontSVG();
+  wrap.appendChild(hole);
+  var tool = img(hammerImg(), 'tools'); wrap.appendChild(tool);
+  var s1 = img('star', 'st'); s1.style.cssText = 'left:2%;top:14%'; var s2 = img('sparkles', 'st'); s2.style.cssText = 'left:8%;top:56%;animation-delay:-1s'; var s3 = img('glowing-star', 'st'); s3.style.cssText = 'right:6%;top:52%;animation-delay:-.6s';
+  wrap.appendChild(s1); wrap.appendChild(s2); wrap.appendChild(s3);
+  return wrap;
 }
-requestAnimationFrame(loop);
-function popScore(){
-const s=$('score');s.classList.remove('pp');void s.offsetWidth;s.classList.add('pp');
+function showTitle() {
+  stopLoop(); clearUI(); state = 'title'; setWorld(P.cleared() >= 10 ? 2 : P.cleared() >= 5 ? 1 : 0); buildDecor();
+  field.classList.remove('on'); hud.classList.remove('on'); $('ready').classList.remove('on'); $('codes').style.display = 'none'; hammerEl.style.opacity = 0;
+  var nxt = P.next(NLEV), fresh = P.cleared() === 0;
+  var tl = KKs.ui.title(document.body, {
+    title: 'Whack-a-Mole', tagline: fresh ? 'Tap the moles!' : 'Level ' + nxt + ' is waiting', heroEl: heroEl(), profile: P,
+    playLabel: fresh ? 'Play' : 'Level ' + nxt, onPlay: function () { startLevel(nxt); },
+    onMap: showMap, onAlbum: showAlbum, albumLabel: 'Prizes', albumPic: 'wrapped-gift', onHelp: showHelp, dot: albumDot()
+  });
+  tl.style.setProperty('--kk-logo-edge', ['#2f8f2f', '#c2410c', '#4a3fb0'][cur > 10 ? 2 : cur > 5 ? 1 : 0]);
+  gs('title', { score: bestScore });
 }
-function popup(txt,x,y,color){
-const p=document.createElement('div');p.className='popup';p.textContent=txt;
-p.style.left=(x-16)+'px';p.style.top=(y-34)+'px';p.style.color=color;
-document.body.appendChild(p);setTimeout(()=>p.remove(),700);
+function albumDot() { var seen = P.d.seen.albumN || 0, now = P.unlockedIds().length; return now > seen ? String(now - seen) : ''; }
+function showMap() {
+  var levels = LV.map(function (l) { return { n: l.n, boss: l.boss, banner: (l.n - 1) % 5 === 0 ? WORLDS[l.world] : null }; });
+  KKs.ui.map(document.body, { profile: P, levels: levels, title: 'Levels', onPick: function (n) { startLevel(n); } });
 }
-function spawnBoss(){
-if(state!=='play'||bossActive)return;
-const free=holes.filter(h=>moleOf(h).dataset.state==='down');
-if(!free.length)return;
-bossActive=true;
-const h=free[(Math.random()*free.length)|0],m=moleOf(h),hc=holeC[h._i];
-clearTimeout(m._despawn);clearTimeout(m._clean);clearTimeout(m._fuse);
-m._gen=(m._gen||0)+1;const gen=m._gen;
-m.dataset.state='boss';m.dataset.type='';
-m.textContent='🎃';m.classList.add('up','boss');
-m._bossHp=3;
-m._bossTimer=setTimeout(()=>{
-if(gen!==m._gen||state!=='play'||m.dataset.state!=='boss')return;
-m.dataset.state='down';m.classList.remove('up','boss');m.dataset.type='';
-bossActive=false;
-combo=0;updateCombo();
-if(hc)burst(hc.x,hc.y2,'#94a3b8',7,.45);
-},5200);
-snd('boom');shake=.6;flashT=.4;
-if(hc)popup('🎃 BOSS!',hc.x,hc.y-10,'#f97316');
+function showAlbum() {
+  P.d.seen.albumN = P.unlockedIds().length; P.save();
+  var wrap = document.body;
+  KKs.ui.album(wrap, { profile: P, title: 'Prizes', sections: [{ title: 'Hammers', slot: 'hammer', def: 'hammer', items: HAMMERS }, { title: 'Meadow friends', items: PALS }], onEquip: function () {}, onClose: function () { buildDecor(); if (state === 'title') showTitle(); } });
+  var t = document.querySelector('.kk-title'); if (t) t.remove();
 }
-function checkBossTarget(){
-if(state!=='play')return;
-if(score>=bossTarget){bossTarget=Math.max(bossTarget+100,Math.ceil(score/100)*100);spawnBoss();}
+function showHelp() {
+  KKs.ui.help({ steps: [{ pic: 'pointer', text: 'Tap a mole to whack it!' }, { pic: 'rabbit-face', text: "Don't whack the friends!" }, { pic: 'star', text: 'Whack lots to win stars.' }] });
 }
-function whack(h,chain){
-if(state!=='play'||(SDK&&SDK.paused))return;
-initAudio();
-if(!chain){hideTut();if(bigHammer){const i=h._i,r=(i/3)|0,c=i%3;[[0,-1],[0,1],[-1,0],[1,0]].forEach(([dr,dc])=>{const rr=r+dr,cc=c+dc;if(rr>=0&&rr<3&&cc>=0&&cc<3){const n=holes[rr*3+cc],mm=moleOf(n);if(mm.dataset.state==='up'&&mm.dataset.type!=='bomb')whack(n,true);}});}}
-const m=moleOf(h),hc=holeC[h._i],cx=hc.x,cy=hc.y;
-if(!hc)return;
-if(m.dataset.state==='boss'){
-m._bossHp=(m._bossHp||1)-1;
-m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');
-tWhacks++;
-snd('hit');
-burst(cx,cy,'#f97316',12,1);
-if(m._bossHp>0){
-popup('💥 '+m._bossHp+' HP',cx,cy-52,'#fbbf24');
-}else{
-clearTimeout(m._bossTimer);
-m._gen=(m._gen||0)+1;
-m.dataset.state='down';m.classList.remove('up','boss');
-bossActive=false;
-combo++;
-score+=25;
-tBoss++;
-snd('win');
-burst(cx,cy,'#facc15',24,1.4);burst(cx,cy,'#f97316',16,1.2);
-popup('🎃 +25',cx,cy-16,'#f97316');
+
+/* ======================= playing ======================= */
+function layout() {
+  if (!cfg) return;
+  var vw = window.innerWidth, vh = window.innerHeight, top = 150, bot = 30, cols = cfg.cols, rows = Math.ceil(cfg.holes / cols);
+  var availW = vw - 24, availH = vh - top - bot - 20;
+  var cw = Math.min(availW / cols / 1.04, (availH / rows) * 1.2 / 1.06, 150);
+  grid.style.setProperty('--cw', Math.floor(cw) + 'px'); grid.style.setProperty('--cols', cols);
+  field.style.top = (top + 20) + 'px'; field.style.bottom = bot + 'px';
+  rects = cells.map(function (c) { var r = c.getBoundingClientRect(); return { x: r.left, y: r.top - r.height * 0.55, w: r.width, h: r.height * 1.55 }; });
 }
-updateCombo();
-$('score').textContent=score;
-popScore();
-checkBossTarget();
-return;
+window.addEventListener('resize', function () { clearTimeout(layout.t); layout.t = setTimeout(layout, 120); });
+window.addEventListener('orientationchange', function () { setTimeout(layout, 300); });
+
+function startLevel(n, opts) {
+  clearUI(); cur = clampN(n); cfg = LV[cur - 1]; S = new Sched(cfg); state = 'ready';
+  whacks = 0; points = 0; combo = 0; bestCombo = 0; hitstop = 0; goldGot = 0; friendHits = 0; escapes = 0; tickSec = -1;
+  cheated = !!(SDK && SDK.cheated) || cheats.big || cheats.extra || cheats.slow;
+  timeLeft = cfg.time + (cheats.extra ? 15 : 0);
+  setWorld(cfg.world); buildDecor();
+  grid.innerHTML = ''; cells = [];
+  for (var i = 0; i < cfg.holes; i++) {
+    var c = h('div', { class: 'hole', 'data-s': 'idle', 'data-i': i, 'aria-label': 'Hole ' + (i + 1) });
+    c.innerHTML = backSVG() + '<div class="clip"><div class="mole"></div></div>' + frontSVG() + '<svg class="puff" viewBox="0 0 60 30"><ellipse cx="30" cy="16" rx="24" ry="10" fill="#e6cfa8"/></svg>';
+    grid.appendChild(c); cells.push(c);
+  }
+  layout(); field.classList.add('on'); hud.classList.add('on');
+  chLv.set('Level ' + cfg.n); chLv.el.querySelector('img').src = IMG(cfg.boss ? 'crown' : 'sparkles'); chTime.set(Math.ceil(timeLeft)); chCombo.set(0); $('combo').classList.remove('on');
+  var g = $('goal'); g.querySelectorAll('img').forEach(function (e) { e.remove(); });
+  cfg.goals.forEach(function (v, k) { var s = img('star'); s.style.left = (v / cfg.goals[2] * 84 + 8) + '%'; g.appendChild(s); });
+  setGoalBar(); $('codes').style.display = cheated ? 'block' : 'none'; hammerEl.src = IMG(hammerImg());
+  // ready card
+  $('rdT').textContent = cfg.boss ? 'Boss level!' : 'Level ' + cfg.n; $('rdN').textContent = cfg.goals[0]; $('rdI').src = IMG(hammerImg()); $('rdW').textContent = WORLDS[cfg.world];
+  $('ready').classList.add('on'); KKs.sfx('level');
+  gs('play', { score: 0, level: cur });
+  P.touchDay();
+  var wait = opts && opts.quick ? 700 : 1500;
+  setTimeout(function () {
+    if (state !== 'ready') return;
+    $('ready').classList.remove('on'); state = 'play'; KKs.banner('Go!'); lastTs = 0; startLoop();
+    if (!P.flag('tutMole') && cfg.n === 1) startTutorial();
+  }, wait);
 }
-if(m.dataset.state!=='up'){if(chain)return;snd('miss');burst(cx,cy+16,'#94a3b8',5,.5);return;}
-clearTimeout(m._despawn);clearTimeout(m._clean);clearTimeout(m._fuse);
-m._gen=(m._gen||0)+1;const gen=m._gen;
-m.dataset.state='down';m.classList.remove('up');
-const type=m.dataset.type;m.dataset.type='';
-m.classList.add('hit');
-tWhacks++;
-m._clean=setTimeout(()=>{if(gen===m._gen)m.classList.remove('hit');},260);
-if(type==='bomb'){
-tBomb++;
-combo=Math.floor(combo/2);score=Math.max(0,score-3);snd('bomb');shake=1;flashT=1;
-burst(cx,cy,'#f87171',22,1.1);burst(cx,cy,'#fb923c',14,1.1);
-popup('-3',cx,cy,'#f87171');
-}else if(type==='crown'){
-tCrown++;
-combo++;const mul=mult(),pts=10*mul;
-score+=pts;snd('crown');
-burst(cx,cy,'#facc15',24,1.5);burst(cx,cy,'#fde047',14,1);
-popup('👑 +'+pts+(mul>1?' ×'+mul:''),cx,cy,'#facc15');
-}else{
-combo++;
-const mul=mult(),pts=(type==='gold'?5:1)*mul;
-score+=pts;
-if(type==='gold')tGold++;
-snd(type==='gold'?'gold':combo%5===0?'combo':'hit');
-burst(cx,cy,type==='gold'?'#facc15':'#4ade80',type==='gold'?18:10,.8);
-popup('+'+pts+(mul>1?' ×'+mul:''),cx,cy,type==='gold'?'#facc15':'#4ade80');
+function clampN(n) { return Math.max(1, Math.min(NLEV, n | 0)); }
+function setGoalBar() {
+  var pct = Math.min(1, whacks / cfg.goals[2]) * 92; $('goal').firstChild.style.width = (pct + 4) + '%';
+  var imgs = $('goal').querySelectorAll('img'), before = goalStars;
+  goalStars = 0; cfg.goals.forEach(function (v, k) { var got = whacks >= v; if (got) goalStars++; if (imgs[k]) { var was = imgs[k].classList.contains('got'); imgs[k].classList.toggle('got', got); if (got && !was && state === 'play') { KKs.sfx('star'); KKs.fx.burst(imgs[k].getBoundingClientRect().left + 19, imgs[k].getBoundingClientRect().top + 19, 'star', 10); } } });
 }
-if(type!=='bomb'&&m._born&&performance.now()-m._born<350){score+=1;popup('⚡ +1',cx,cy-40,'#fde047');}
-updateCombo();
-$('score').textContent=score;
-popScore();
-checkBossTarget();
+function startLoop() { if (!raf) raf = requestAnimationFrame(frame); }
+function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+function frame(ts) {
+  raf = 0; if (state !== 'play') return;
+  var dt = lastTs ? Math.min(ts - lastTs, 50) : 16; lastTs = ts;
+  if (hitstop > 0) { hitstop -= dt; dt = 0; }
+  var hold = !!(tut && tut.hold);
+  if (!hold) { timeLeft -= dt / 1000; }
+  S.update(cheats.slow ? dt / 1.6 : dt, hold);
+  S.events.forEach(onEvent); S.events.length = 0;
+  var sec = Math.max(0, Math.ceil(timeLeft));
+  if (sec !== tickSec) { tickSec = sec; chTime.set(sec); $('time').classList.toggle('low', sec <= 5); if (sec <= 5 && sec > 0) KKs.sfx('tick'); }
+  if (timeLeft <= 0) { endLevel(); return; }
+  raf = requestAnimationFrame(frame);
 }
-function spawn(){
-if(state!=='play')return;
-if(document.hidden){spawnTimer=setTimeout(spawn,400);return;}
-const free=holes.filter(h=>moleOf(h).dataset.state==='down');
-if(!free.length){spawnTimer=setTimeout(spawn,180);return;}
-const h=free[(Math.random()*free.length)|0],m=moleOf(h);
-clearTimeout(m._despawn);clearTimeout(m._clean);
-m._gen=(m._gen||0)+1;const gen=m._gen;
-const r=Math.random();
-m.dataset.type=r<.12?(noBombs?'normal':'bomb'):r<.26?'gold':'normal';
-if(m.dataset.type==='normal'&&Math.random()<.08)m.dataset.type='crown';
-m.textContent=m.dataset.type==='bomb'?'💣':m.dataset.type==='gold'?'⭐':'🐹';
-if(m.dataset.type==='crown'){m.textContent='👑';m.classList.add('gold');}
-m.classList.toggle('gold',m.dataset.type==='gold');
-m.classList.remove('hit','fuse');
-clearTimeout(m._fuse);
-const prog=1-timeLeft/ROUND_TIME;
-const life=(520+Math.random()*480)*(1-prog*.5);
-const arm=()=>{m._despawn=setTimeout(()=>{
-if(gen!==m._gen||state!=='play'||m.dataset.state!=='up')return;
-m.dataset.state='down';m.classList.remove('up');
-if(m.dataset.type!=='bomb'){combo=0;updateCombo();const hc=holeC[h._i];burst(hc.x,hc.y2,'#94a3b8',7,.45);}
-m.dataset.type='';
-},life);};
-if(m.dataset.type==='bomb'){
-m.dataset.state='fuse';m.classList.add('fuse');
-m._fuse=setTimeout(()=>{
-if(gen!==m._gen||state!=='play'||m.dataset.state!=='fuse')return;
-m.classList.remove('fuse');m.dataset.state='up';m.classList.add('up');arm();
-},320);
-}else{
-m.dataset.state='up';m.classList.add('up');arm();
-m._born=performance.now();
+function paint(m) {
+  var c = cells[m.h]; if (!c) return;
+  c.setAttribute('data-s', m.st === 'gone' ? 'idle' : m.st === 'sink' ? 'sink' : m.st); c.setAttribute('data-k', m.k);
 }
-spawnTimer=setTimeout(spawn,Math.max(230,620*(1-prog*.55)));
+function onEvent(ev) {
+  var m = ev.m, c = cells[m.h]; if (!c) return;
+  if (ev.e === 'spawn') {
+    c.classList.remove('dent'); c.querySelector('.mole').innerHTML = moleHTML(m.k);
+    c.setAttribute('data-k', m.k); c.setAttribute('data-s', 'idle'); void c.offsetWidth; requestAnimationFrame(function () { if (m.st !== 'gone') paint(m); });
+    if (m.k === 'gold') { var r = c.getBoundingClientRect(); KKs.fx.burst(r.left + r.width / 2, r.top, 'star', 6); KKs.sfx('star'); }
+    else KKs.sfx('bloop');
+  } else if (ev.e === 'escape') {
+    paint(m); if (m.k !== 'friend') { combo = 0; chCombo.set(0); $('combo').classList.remove('on'); escapes++; }
+  } else if (ev.e === 'gone') { c.setAttribute('data-s', 'idle'); }
 }
-function resetMoles(){
-holes.forEach(h=>{const m=moleOf(h);clearTimeout(m._despawn);clearTimeout(m._clean);clearTimeout(m._fuse);clearTimeout(m._bossTimer);m._gen=(m._gen||0)+1;m.dataset.state='down';m.dataset.type='';m.classList.remove('up','hit','fuse','boss');});
+// paint state changes that the scheduler makes silently (rise -> up, hit -> sink)
+setInterval(function () { if (state === 'play' && S) S.moles.forEach(paint); }, 60);
+
+function holeAt(x, y) {
+  var best = -1, bd = 1e9;
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i]; if (x < r.x - 6 || x > r.x + r.w + 6 || y < r.y - 6 || y > r.y + r.h + 6) continue;
+    var cx = r.x + r.w / 2, cy = r.y + r.h * 0.62, d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
 }
-function rankStr(){return best>=200?'💎 Diamond':best>=140?'🥇 Gold':best>=90?'🥈 Silver':best>=45?'🥉 Bronze':'⚪ Rookie';}
-function updMeta(){
-$('metaBar').textContent='🎯 '+tWhacks+' \u2022 ⭐ '+tGold+' \u2022 👑 '+tCrown+' \u2022 🎃 '+tBoss+' \u2022 💣 '+tBomb+' \u2022 '+rankStr();
+function swing(idx) {
+  var r = cells[idx].getBoundingClientRect(), s = r.width * 0.95;
+  hammerEl.style.width = hammerEl.style.height = s + 'px';
+  var x = r.left + r.width * 0.5 - s * 0.16, y = r.top + r.height * 0.05 - s * 0.14;
+  hammerEl.style.opacity = 1; hammerEl.style.left = x + 'px'; hammerEl.style.top = y + 'px';
+  if (hammerEl.animate && !KKs.RM) hammerEl.animate([{ transform: 'rotate(52deg) scale(1)', opacity: 1 }, { transform: 'rotate(-6deg) scale(1.08)', opacity: 1, offset: .38 }, { transform: 'rotate(-6deg) scale(1)', opacity: 1, offset: .7 }, { transform: 'rotate(-6deg) scale(1)', opacity: 0 }], { duration: 380, easing: 'ease-out' });
+  else { hammerEl.style.transform = 'rotate(-6deg)'; setTimeout(function () { hammerEl.style.opacity = 0; }, 260); }
 }
-function startGame(){
-initAudio();
-score=0;combo=0;timeLeft=ROUND_TIME;state='play';bossActive=false;bossTarget=100;
-$('score').textContent=0;$('timeLeft').textContent=timeLeft;$('timefill').style.width='100%';
-$('start').classList.add('hidden');$('over').classList.add('hidden');
-updateCombo();resetMoles();updMeta();$('bestHud').textContent=best;
-clearTimeout(spawnTimer);clearInterval(roundTimer);scene('play');
-spawnTimer=setTimeout(spawn,500);
-roundTimer=setInterval(()=>{
-if(document.hidden)return;
-timeLeft--;
-$('timeLeft').textContent=Math.max(0,timeLeft);
-$('timefill').style.width=(Math.max(0,timeLeft)/ROUND_TIME*100)+'%';
-if(timeLeft<=0)endGame();
-},1000);
+function tapHole(idx, x, y) {
+  var hit = false, list = [idx];
+  if (cheats.big) { var c0 = idx % cfg.cols, r0 = (idx / cfg.cols) | 0; for (var k = 0; k < cfg.holes; k++) if (k !== idx && Math.abs((k % cfg.cols) - c0) <= 1 && Math.abs(((k / cfg.cols) | 0) - r0) <= 1) list.push(k); }
+  swing(idx);
+  list.forEach(function (hi) {
+    var m = S.moles.filter(function (q) { return q.h === hi && (q.st === 'up' || q.st === 'rise' || (q.st === 'sink' && q.age < 90)); })[0];
+    if (m) { hit = true; whack(m, hi); }
+  });
+  if (!hit) { var c = cells[idx]; c.classList.remove('miss'); void c.offsetWidth; c.classList.add('miss'); KKs.sfx('whoosh'); var r = c.getBoundingClientRect(); KKs.fx.burst(r.left + r.width / 2, r.top + r.height * 0.7, 'dust', 5); }
 }
-function endGame(){
-state='over';clearTimeout(spawnTimer);clearInterval(roundTimer);
-resetMoles();snd('end');
-const clean=!cheated(),nb=score>best&&clean;
-if(nb){best=score;localStorage.setItem('whackBest',best);}
-if(clean){localStorage.setItem('whackTWhacks',tWhacks);localStorage.setItem('whackTGold',tGold);
-localStorage.setItem('whackTCrown',tCrown);localStorage.setItem('whackTBoss',tBoss);
-localStorage.setItem('whackTBomb',tBomb);}
-scene('over',{score:score});hideTut();$('bestHud').textContent=best;
-$('finScore').textContent=score;$('finBest').textContent=best;
-$('finRank').textContent=rankStr();
-updMeta();
-$('newBest').classList.toggle('hidden',!nb);
-setTimeout(()=>$('over').classList.remove('hidden'),450);
+function whack(m, hi) {
+  var c = cells[hi], r = c.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * 0.3;
+  if (m.k === 'friend') {
+    m.st = 'hit'; m.age = 0; m.hold = false; paint(m); combo = 0; chCombo.set(0); $('combo').classList.remove('on'); friendHits++;
+    whacks = Math.max(0, whacks - 1); setGoalBar(); KKs.sfx('oops'); KKs.float(cx, cy, 'Oops!', '#d6407f'); KKs.shake(field, 3);
+    if (tut && tut.stage === 'friend') { tut.hold = false; endTut(); KKs.ui.toast("That's a friend! Don't whack them.", 'rabbit-face'); }
+    return;
+  }
+  if (m.k === 'helmet' && m.hp > 1) { m.hp--; c.classList.add('dent'); KKs.sfx('whack'); KKs.float(cx, cy, 'Clang!', '#e0a800'); KKs.fx.burst(cx, cy, 'star', 4); KKs.shake(field, 4); KKs.haptic(15); hitstop = 40; return; }
+  if (m.k === 'king' && m.hp > 1) { m.hp--; KKs.sfx('whack'); KKs.float(cx, cy, m.hp + ' left', '#6c3fd8'); KKs.fx.burst(cx, cy, 'star', 5); KKs.shake(field, 5); KKs.haptic(20); hitstop = 50; var mo = c.querySelector('.mole'); mo.style.transition = 'none'; mo.style.transform = 'translate(-50%,10%) scale(1.08,.88)'; requestAnimationFrame(function () { mo.style.transition = ''; mo.style.transform = ''; }); return; }
+  m.st = 'hit'; m.age = 0; m.hold = false; paint(m);
+  var gain = m.k === 'gold' ? 3 : m.k === 'king' ? 8 : 1;
+  combo++; bestCombo = Math.max(bestCombo, combo); whacks += gain; points += gain * 10 + Math.min(combo, 10);
+  if (m.k === 'gold') { timeLeft += 2; goldGot++; KKs.float(cx, cy - 20, '+2 sec', '#2d9f3d'); }
+  KKs.sfx('whack'); KKs.sfx('ding', Math.min(combo - 1, 8)); KKs.haptic(m.k === 'mole' ? 10 : 25);
+  KKs.float(cx, cy, '+' + gain, m.k === 'gold' ? '#c98a0b' : '#e0651a');
+  KKs.fx.burst(cx, r.top + r.height * 0.6, 'dust', 6); KKs.fx.burst(cx, cy, 'star', m.k === 'mole' ? 4 : 10);
+  if (m.k === 'gold' || m.k === 'king') { KKs.shake(field, 6); KKs.fx.burst(cx, cy, 'ring', 1); }
+  hitstop = m.k === 'mole' ? 35 : 60;
+  chCombo.set(combo); $('combo').classList.toggle('on', combo >= 3);
+  if (combo === 5) KKs.banner('Great!'); else if (combo === 10) KKs.banner('Awesome!'); else if (combo === 20) KKs.banner('Amazing!');
+  var prev = goalStars; setGoalBar();
+  if (tut && tut.stage === 'mole') { tut.hold = false; endTut(); KKs.ui.toast('Nice whack! Keep going!', 'party-popper'); P.flag('tutMole', true); }
+  try { SDK && SDK.state({ scene: 'play', score: points, level: cur }); } catch (e) {}
 }
-function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
-let tutSeen=false;try{tutSeen=localStorage.getItem('whackTut')==='1';}catch(e){}
-function hideTut(){if($('tut').classList.contains('hidden'))return;$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('whackTut','1');}catch(e){}}}
-function begin(showTut){startGame();if(showTut||!tutSeen){$('tut').classList.remove('hidden');}}
-function toTitle(){state='ready';clearTimeout(spawnTimer);clearInterval(roundTimer);resetMoles();hideTut();$('over').classList.add('hidden');$('start').classList.remove('hidden');scene('title');}
-press($('playBtn'),()=>begin(false));
-press($('againBtn'),()=>begin(false));
-$('muteBtn').addEventListener('click',e=>{if(e.detail===0){muted=!muted;localStorage.setItem('gamesMuted',muted?'1':'0');refreshMute();}});
-// Keyboard: the number pad layout, 7 8 9 / 4 5 6 / 1 2 3, whacks the matching hole.
-const KEYMAP={'7':0,'8':1,'9':2,'4':3,'5':4,'6':5,'1':6,'2':7,'3':8};
-window.addEventListener('keydown',e=>{if(SDK&&SDK.paused)return;if(KEYMAP[e.key]!==undefined&&state==='play'){whack(holes[KEYMAP[e.key]]);}
-if(e.key===' '&&!(e.target&&e.target.tagName==='BUTTON')){e.preventDefault();if(state!=='play')begin(false);}});
-// Codes: just for fun; a round with codes on never replaces the best.
-const CODES={BIGHAMMER:'Big hammer: a whack also hits the moles next door',NOBOMBS:'No bombs: only moles pop up',EXTRATIME:'Extra time: rounds last 45 seconds'};
-function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
-if(c==='BIGHAMMER')bigHammer=true;if(c==='NOBOMBS')noBombs=true;if(c==='EXTRATIME'){ROUND_TIME=45;if(state==='play'){timeLeft+=15;$('timeLeft').textContent=timeLeft;}}return{ok:true,message:CODES[c]};}
-const SPOT=['top left','top middle','top right','middle left','centre','middle right','bottom left','bottom middle','bottom right'];
-function hint(){if(state!=='play')return 'Press Play: tap every mole before it ducks, and leave the bombs alone.';
-const up=holes.filter(h=>['up','boss'].includes(moleOf(h).dataset.state));
-const boss=up.find(h=>moleOf(h).dataset.state==='boss');
-if(boss)return 'The 🎃 boss is in the '+SPOT[boss._i]+' hole: three quick taps for +25.';
-const best2=up.filter(h=>moleOf(h).dataset.type!=='bomb').sort((a,b)=>({crown:3,gold:2,normal:1}[moleOf(b).dataset.type]||0)-({crown:3,gold:2,normal:1}[moleOf(a).dataset.type]||0))[0];
-const bomb=up.find(h=>moleOf(h).dataset.type==='bomb')||holes.find(h=>moleOf(h).dataset.state==='fuse');
-if(best2){const hh=best2;hh.classList.add('hinted');setTimeout(()=>hh.classList.remove('hinted'),900);}
-return (best2?'Hit the '+(moleOf(best2).textContent)+' in the '+SPOT[best2._i]+' hole.':'Wait for the next mole: they pop up faster as the clock runs down.')+(bomb?' Leave the 💣 in the '+SPOT[bomb._i]+' alone.':'')+(combo%5>=3?' Two more hits without a miss raises your multiplier.':'');}
-if(SDK)SDK.init({
-pauseButton:'tr',pauseKeys:'p+esc',
-onRestart:()=>begin(false),
-onExit:toTitle,
-onTutorial:()=>begin(true),
-onHint:hint,
-onCheat:code,
+function onPointer(e) {
+  if (state !== 'play' || (SDK && SDK.paused)) return;
+  var t = e.target; if (t.closest && t.closest('.kk-top,.kk-coach,#arcade-sdk-btn,.kk-scrim')) return;
+  var i = holeAt(e.clientX, e.clientY); if (i >= 0) tapHole(i, e.clientX, e.clientY);
+}
+document.addEventListener('pointerdown', onPointer, { passive: true });
+document.addEventListener('keydown', function (e) {
+  if (state === 'title' && (e.key === ' ' || e.key === 'Enter') && !e.target.closest('button')) { e.preventDefault(); $('playBtn') && $('playBtn').click(); return; }
+  if (state !== 'play') return;
+  var k = e.key; if (!/^[1-9]$/.test(k)) return; var d = +k, idx;
+  if (cfg.cols === 3) { var row = 3 - Math.ceil(d / 3), col = (d - 1) % 3; var rows = Math.ceil(cfg.holes / 3); idx = (row - (3 - rows)) * 3 + col; if (row < 3 - rows) return; } else idx = d - 1;
+  if (idx >= 0 && idx < cfg.holes) tapHole(idx);
 });
-$('bestHud').textContent=best;
-scene('title');
+
+/* ---------- the first-time coach: teach by doing, skip any time ---------- */
+function startTutorial() {
+  if (!S) return;
+  var m = S.spawn('mole', 0, 1e9); if (!m) return; m.hold = true; tut = { stage: 'mole', hold: true };
+  var r = cells[0].getBoundingClientRect();
+  var co = KKs.ui.coach('Tap the mole!', { pic: 'pointer-down', top: (r.top - 120) + 'px', skip: function () { if (m) m.hold = false; endTut(); P.flag('tutMole', true); } });
+  var fg = h('img', { class: 'kk-finger', src: IMG('pointer'), alt: '', style: { left: (r.left + r.width / 2) + 'px', top: (r.top + r.height * 0.25) + 'px' } }); document.body.appendChild(fg);
+  tut.co = co; tut.fg = fg; tut.mole = m;
+}
+function startFriendCoach() {
+  if (!S || P.flag('tutFriend') || cfg.n < 3) return;
+  var m = S.spawn('friend', undefined, 2600); if (!m) return; tut = { stage: 'friend', hold: false, mole: m };
+  var r = cells[m.h].getBoundingClientRect();
+  tut.co = KKs.ui.coach("Don't tap friends!", { pic: 'rabbit-face', top: Math.max(70, r.top - 110) + 'px', skip: function () { endTut(); } }); P.flag('tutFriend', true);
+  setTimeout(function () { if (tut && tut.stage === 'friend') endTut(); }, 3200);
+}
+function endTut() { if (!tut) return; if (tut.co) tut.co.close && tut.co.close(); if (tut.fg) tut.fg.remove(); tut = null; }
+document.addEventListener('visibilitychange', function () { });
+
+function endLevel() {
+  state = 'over'; stopLoop(); endTut(); S.moles.forEach(function (m) { if (m.st !== 'hit') m.st = 'sink'; paint(m); });
+  var stars = 0; cfg.goals.forEach(function (g) { if (whacks >= g) stars++; });
+  var res = { gained: 0, first: false, newBest: false, unlocked: [], total: P.total() }, daily = null;
+  if (!cheated) {
+    res = P.finish(cur, stars, points);
+    if (points > bestScore) { bestScore = points; try { localStorage.setItem('whackBest', String(bestScore)); } catch (e) {} }
+    P.stat('whacks', whacks);
+    if (stars > 0) daily = P.dailyWin();
+    try {
+      if (SDK && SDK.profile) {
+        if (stars > 0) SDK.profile.award({ xp: 5 + stars * 3, reason: 'Level ' + cur });
+        if (P.stat('whacks', 0) > 0) SDK.profile.achievement('first-whack', { title: 'First whack', desc: 'Whack a mole', tier: 'bronze' });
+        if (stars === 3) SDK.profile.achievement('three-stars', { title: 'Triple star', desc: 'Earn three stars on a level', tier: 'silver' });
+        if (stars > 0 && cfg.boss) SDK.profile.achievement('boss-' + cur, { title: 'Boss whacked', desc: 'Beat a boss level', tier: 'gold' });
+        SDK.profile.quest('whack-stars', Math.min(1, P.total() / 45), { title: 'Collect 45 stars' });
+      }
+    } catch (e) {}
+  }
+  gs('over', { score: points, level: cur, stars: stars });
+  KKs.sfx(stars > 0 ? 'win' : 'oops'); if (stars > 0) KKs.confetti();
+  setTimeout(function () { showResult(stars, res, daily); }, 750);
+}
+function showResult(stars, res, daily) {
+  var lines = ['Whacked ' + whacks + '   Goal ' + cfg.goals[0]];
+  if (cheated) lines.push('Codes are on, so this level does not count.');
+  else if (res.newBest && points > 0 && !res.first) lines.push('New best score!');
+  if (daily && daily.just) lines.push('Daily goal done! +3 stars');
+  var btn = [];
+  var nextN = Math.min(NLEV, cur + 1), more = stars > 0 && cur < NLEV;
+  if (more) btn.push({ label: 'Next level', cls: 'kk-go kk-big', pic: 'star', fn: function () { startLevel(nextN, { quick: true }); } });
+  btn.push({ label: stars > 0 ? 'Play again' : 'Try again', cls: stars > 0 ? 'kk-blue' : 'kk-go kk-big', fn: function () { startLevel(cur, { quick: true }); } });
+  btn.push({ label: 'Levels', cls: 'kk-purple', fn: showMap });
+  if (stars > 0 && cur === NLEV) lines.push('You beat all 15 levels!');
+  KKs.ui.result({ title: stars === 3 ? 'Perfect!' : stars > 0 ? 'Great job!' : 'So close!', ribbon: cfg.boss && stars > 0 ? 'Boss beaten!' : null, stars: stars, lines: lines, newItems: res.unlocked, buttons: btn });
+  if (res.unlocked && res.unlocked.length) { P.d.seen.albumN = P.d.seen.albumN || 0; }
+  if (stars > 0) KKs.sfx('star');
+}
+
+/* ======================= arcade hooks ======================= */
+var CODES = { BIGHAMMER: 'Big hammer: a whack also hits the moles next door', EXTRATIME: 'Extra time: rounds last 15 seconds longer', SLOWMOLES: 'Slow moles: they stay up much longer' };
+function code(c) {
+  c = String(c || '').toUpperCase(); if (!CODES[c]) return { ok: false };
+  if (c === 'BIGHAMMER') cheats.big = true; if (c === 'EXTRATIME') { cheats.extra = true; if (state === 'play') timeLeft += 15; } if (c === 'SLOWMOLES') cheats.slow = true;
+  cheated = true; $('codes').style.display = 'block'; return { ok: true, message: CODES[c] };
+}
+function restartAll() { startLevel(cur, { quick: true }); }
+if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: restartAll, onExit: showTitle, onTutorial: function () { P.flag('tutMole', false); startLevel(1, { quick: true }); }, onHint: function () { return hintTxt; }, onCheat: code, cheats: [{ code: 'BIGHAMMER', effect: CODES.BIGHAMMER }, { code: 'EXTRATIME', effect: CODES.EXTRATIME }, { code: 'SLOWMOLES', effect: CODES.SLOWMOLES }] });
+KKs.ui.topbar({ back: true });
+KKs.preload(['star', 'hammer', 'rabbit-face', 'front-facing-baby-chick', 'crown', 'dizzy']);
+// a friend teaches itself on the first level that has friends
+var _spawn = Sched.prototype.spawn;
+document.addEventListener('DOMContentLoaded', function () {});
+setInterval(function () { if (state === 'play' && cfg && cfg.friend > 0 && !P.flag('tutFriend') && !tut && S && S.active() === 0) startFriendCoach(); }, 700);
+// test hooks for the QA scripts
+window.__whack = { get state() { return state; }, get cfg() { return cfg; }, get whacks() { return whacks; }, get S() { return S; }, LV: LV, P: P, start: startLevel, tap: tapHole, get timeLeft() { return timeLeft; } };
+showTitle();
+})();
 </script>
 </body>
 </html>

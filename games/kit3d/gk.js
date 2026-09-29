@@ -187,16 +187,28 @@ function stars(node, n, o = {}) {
   }
 }
 
-/* level bar: [n] ====== [n+1] */
-function levelBar(host) {
-  host.innerHTML = '<div class="gk-lvl"><div class="bub cur"></div><div class="trk"><div class="fil"></div></div><div class="bub nx"></div></div>';
-  const q = s => host.querySelector(s), cur = q('.cur'), nx = q('.nx'), fil = q('.fil'), trk = q('.trk');
-  return {
-    set(f) { fil.style.width = (clamp(f, 0, 1) * 100).toFixed(1) + '%'; },
+/* level bar: [n] ====== [n+1]; marks([f1,f2,1]) puts stars on the track that light up as the bar passes them */
+function levelBar(host, o = {}) {
+  host.innerHTML = '<div class="gk-lvl"><div class="bub cur"></div><div class="trkw"><div class="trk"><div class="fil"></div></div><div class="mk"></div></div><div class="bub nx"></div></div>';
+  const q = s => host.querySelector(s), cur = q('.cur'), nx = q('.nx'), fil = q('.fil'), trk = q('.trk'), mk = q('.mk');
+  let last = 0;
+  const api = {
+    set(f) {
+      f = clamp(f, 0, 1); fil.style.width = (f * 100).toFixed(1) + '%';
+      for (const i of mk.children) {
+        const on = f >= +i.dataset.f - 1e-6;
+        if (on !== i.classList.contains('on')) { i.classList.toggle('on', on); i.innerHTML = icon(on ? 'star' : 'starOff'); if (on && f >= last) { i.classList.add('pop'); if (api.onMark) api.onMark(+i.dataset.f); } }
+      }
+      last = f;
+    },
     levels(a, b) { cur.textContent = a; nx.textContent = b == null ? a + 1 : b; },
+    end(html) { nx.innerHTML = html; },
+    marks(fr) { mk.innerHTML = ''; last = 0; for (const f of fr) { const i = el('i', 'm', icon('starOff')); i.style.left = (f * 100) + '%'; i.dataset.f = f; mk.appendChild(i); } },
     ticks(fr) { trk.querySelectorAll('.tick').forEach(t => t.remove()); for (const f of fr) { const t = el('i', 'tick'); t.style.left = (f * 100) + '%'; trk.appendChild(t); } },
     done(v) { cur.classList.toggle('done', !!v); },
+    onMark: null,
   };
+  return api;
 }
 
 /* ---------- progression ---------- */

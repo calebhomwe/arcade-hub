@@ -148,6 +148,16 @@ body.kk{font-family:var(--kk-font);color:var(--kk-ink);overflow:hidden;position:
 .kk-toast img{width:40px;height:40px}
 .kk-banner-big{position:fixed;left:50%;top:38%;z-index:85;transform:translate(-50%,-50%);font-size:clamp(44px,15vw,72px);font-weight:700;color:#fff;text-shadow:0 5px 0 #d6407f,4px 0 0 #d6407f,-4px 0 0 #d6407f,0 -4px 0 #d6407f,0 14px 22px rgba(0,0,0,.3);pointer-events:none;animation:kkBanner 1.3s cubic-bezier(.2,1.4,.4,1) forwards;white-space:nowrap}
 
+/* ---- coach bubble ---- */
+.kk-coach{position:fixed;left:50%;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;max-width:min(92vw,380px);padding:10px 14px 10px 10px;border-radius:26px;background:#fff;color:var(--kk-ink);
+  box-shadow:0 6px 0 rgba(90,50,160,.3),0 16px 24px rgba(0,0,0,.3);animation:kkPanel .35s cubic-bezier(.2,1.4,.4,1)}
+.kk-coach img{width:54px;height:54px;flex:none;animation:kkNudge 1s ease-in-out infinite}
+.kk-coach .kk-ct{font-size:21px;font-weight:700;line-height:1.15}
+.kk-skip{appearance:none;border:0;background:rgba(90,50,160,.12);color:var(--kk-ink2);font-family:inherit;font-weight:700;font-size:16px;min-height:44px;min-width:56px;border-radius:14px;padding:0 12px;margin-left:4px}
+.kk-finger{position:fixed;z-index:65;width:72px;height:72px;margin:-10px 0 0 -36px;pointer-events:none;animation:kkTapHint 1s ease-in-out infinite}
+@keyframes kkNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@keyframes kkTapHint{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(.92)}}
+
 /* ---- motion ---- */
 @keyframes kkFade{from{opacity:0}to{opacity:1}}
 @keyframes kkPanel{from{transform:scale(.7) translateY(30px);opacity:0}to{transform:none;opacity:1}}
@@ -161,7 +171,7 @@ body.kk{font-family:var(--kk-font);color:var(--kk-ink);overflow:hidden;position:
 @keyframes kkShake{0%,100%{transform:translate(0,0)}20%{transform:translate(calc(var(--a,6px)*-1),calc(var(--a,6px)*.4))}40%{transform:translate(var(--a,6px),calc(var(--a,6px)*-.5))}60%{transform:translate(calc(var(--a,6px)*-.6),0)}80%{transform:translate(calc(var(--a,6px)*.4),calc(var(--a,6px)*.3))}}
 .kk-shake{animation:kkShake .32s linear}
 @media (prefers-reduced-motion:reduce){
-  .kk-hero img,.kk-node.cur,.kk-dot{animation:none}
+  .kk-hero img,.kk-node.cur,.kk-dot,.kk-coach img,.kk-finger{animation:none}
   .kk-panel,.kk-scrim,.kk-new,.kk-stars .kk-pl{animation-duration:.01s}
   .kk-shake{animation:none}
   .kk-banner-big,.kk-float{animation-duration:.6s}

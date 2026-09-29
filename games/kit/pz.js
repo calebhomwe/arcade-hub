@@ -96,7 +96,44 @@
 .pz-sw.lock .sw{filter:grayscale(.7)}
 .pz-sw .lk{position:absolute;top:14px;left:0;right:0;font:700 15px/1 var(--pz-display);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 .pz-extra{margin-top:4px}
-@media (prefers-reduced-motion:reduce){.pz-float,.pz-toast,.pz-card,.pz-sheet,.pz-card-wrap,.pz-sheet-wrap,.pz-shake{animation-duration:.01s!important}.pz-bar>i{transition:none}}
+
+/* ---- shared screens: overlay, level map, result card ---- */
+.pz-ov{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:max(16px,env(safe-area-inset-top)) 18px max(16px,env(safe-area-inset-bottom));text-align:center;background:radial-gradient(120% 80% at 50% 0,var(--pz-ov1,#3b2a7a),var(--pz-ov2,#120c33));color:var(--pz-ovink,#fff);overflow:auto;-webkit-overflow-scrolling:touch}
+.pz-ov.on{display:flex}
+.pz-ov.dim{background:rgba(10,8,30,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pz-ov h2{font:700 30px/1.05 var(--pz-display)}
+.pz-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pz-tab{appearance:none;border:0;min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;cursor:pointer;background:rgba(255,255,255,.14);color:inherit;font:700 15px/1 var(--pz-display);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.22);touch-action:manipulation}
+.pz-tab.on{background:#fff;color:#2b1a63}
+.pz-tab.lock{opacity:.6}
+.pz-world{width:min(360px,100%);border-radius:26px;padding:16px 14px 22px;background:linear-gradient(160deg,var(--w1,#ffd6a5),var(--w2,#ffb37a));box-shadow:0 12px 30px rgba(0,0,0,.3);color:#33210f}
+.pz-world h3{font:700 22px/1 var(--pz-display)}
+.pz-world p{font:800 14px/1.3 var(--pz-text);opacity:.7;margin:3px 0 14px}
+.pz-nodes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px}
+.pz-node{appearance:none;border:0;cursor:pointer;aspect-ratio:1;min-height:56px;border-radius:50%;background:#fff;color:#33210f;font:700 24px/1 var(--pz-display);position:relative;box-shadow:0 5px 0 rgba(0,0,0,.22);touch-action:manipulation}
+.pz-node:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.22)}
+.pz-node.lock{background:rgba(255,255,255,.4);color:rgba(51,33,15,.5);box-shadow:none;cursor:default}
+.pz-node.cur{animation:pzPulse 1.1s ease-in-out infinite;box-shadow:0 0 0 4px #ffd23f,0 5px 0 rgba(0,0,0,.22)}
+.pz-node.boss{background:linear-gradient(180deg,#ffd6e0,#ff8fab)}
+.pz-node .st{position:absolute;left:-6px;right:-6px;bottom:-17px;font:700 14px/1 var(--pz-display);letter-spacing:1px;color:#f5a100;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.pz-node .st.z{color:rgba(0,0,0,.28)}
+@keyframes pzPulse{50%{transform:scale(1.07)}}
+.pz-stars{display:flex;gap:6px;justify-content:center;margin:2px 0 8px}
+.pz-stars svg{width:60px;height:60px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.22))}
+.pz-stars svg.pop{animation:pzStar .6s cubic-bezier(.2,1.7,.3,1) backwards}
+@keyframes pzStar{from{transform:scale(0) rotate(-90deg);opacity:0}}
+.pz-res{width:min(340px,100%);border-radius:28px;padding:22px 20px 20px;background:var(--pz-sheet);color:var(--pz-ink);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 3px var(--pz-accent2);text-align:center;font-family:var(--pz-text);animation:pzPop .45s cubic-bezier(.2,1.5,.35,1)}
+.pz-res h2{font:700 32px/1.05 var(--pz-display);color:var(--pz-accent)}
+.pz-res .big{font:700 50px/1.05 var(--pz-display);font-variant-numeric:tabular-nums;margin:2px 0}
+.pz-res p{font:800 15px/1.4 var(--pz-text);color:var(--pz-mute);margin:6px 0}
+.pz-res .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.pz-res .stats div{background:var(--pz-sheet2);border-radius:14px;padding:8px 4px}
+.pz-res .stats b{display:block;font:700 22px/1 var(--pz-display)}
+.pz-res .stats small{font:800 12px/1.2 var(--pz-text);color:var(--pz-mute)}
+.pz-res .xp{font:700 16px/1 var(--pz-display);color:var(--pz-accent);margin:4px 0 12px}
+.pz-res .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.pz-badge{display:inline-block;padding:4px 12px;border-radius:999px;background:#ff4d6d;color:#fff;font:700 14px/1 var(--pz-display);animation:pzPulse .9s ease-in-out infinite;margin:2px 0 4px}
+@media (prefers-reduced-motion:reduce){.pz-node.cur,.pz-badge,.pz-stars svg.pop,.pz-res{animation:none!important}.pz-float,.pz-toast,.pz-card,.pz-sheet,.pz-card-wrap,.pz-sheet-wrap,.pz-shake{animation-duration:.01s!important}.pz-bar>i{transition:none}}
 `;
   function injectCss() {
     if (D.getElementById('pzCss')) return;
@@ -289,6 +326,40 @@
     if (o.confetti) fx.confetti(o.confetti);
   }
 
+
+  /* ------------------------------------------------------------------ shared screens */
+  const STAR = on => '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3l4.8 10.2L36 14.6l-8.2 7.6L30 33 20 27.6 10 33l2.2-10.8L4 14.6l11.2-1.4z" fill="' + (on ? '#ffd23f' : 'rgba(0,0,0,.16)') + '" stroke="' + (on ? '#b07800' : 'rgba(0,0,0,.28)') + '" stroke-width="2.4" stroke-linejoin="round"/>' + (on ? '<path d="M14 12l3-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".85"/>' : '') + '</svg>';
+  const ui = {
+    star: STAR,
+    /* an overlay screen you fill yourself; toggle with .on */
+    overlay(id, dim) { injectCss(); let e = D.getElementById(id); if (!e) { e = D.createElement('div'); e.id = id; e.className = 'pz-ov' + (dim ? ' dim' : ''); D.body.appendChild(e); } return e; },
+    /* Pack tabs + a grid of numbered level nodes with stars.  o: { el, packs:[{name,sub,sky:[a,b]}], per, stars:[n...], open(pack)->bool, playable(i)->bool, cur (index), onPick(i), onLocked(pack) } */
+    worldMap(o, pack) {
+      const el = o.el; if (pack == null) pack = o.startPack || 0; injectCss();
+      const tabs = o.packs.map((p, k) => '<button class="pz-tab' + (k === pack ? ' on' : '') + (o.open(k) ? '' : ' lock') + '" data-pk="' + k + '" role="tab" aria-selected="' + (k === pack) + '" aria-label="' + esc(p.name) + (o.open(k) ? '' : ', locked') + '">' + (o.open(k) ? '' : '🔒 ') + (k + 1) + '</button>').join('');
+      const P = o.packs[pack]; let nodes = '';
+      for (let n = 0; n < o.per; n++) {
+        const i = pack * o.per + n, ok = o.open(pack) && o.playable(i), st = o.stars[i] || 0, cur = ok && i === o.cur;
+        nodes += '<button class="pz-node' + (ok ? '' : ' lock') + (cur ? ' cur' : '') + (n === o.per - 1 ? ' boss' : '') + '" data-i="' + i + '" aria-label="Level ' + (n + 1) + (ok ? (st ? ', ' + st + ' stars' : ', new') : ', locked') + '">' + (ok ? (n + 1) : '🔒') + (ok ? '<span class="st' + (st ? '' : ' z') + '">' + (st ? '★'.repeat(st) : '☆☆☆') + '</span>' : '') + '</button>';
+      }
+      el.innerHTML = '<div class="pz-tabs" role="tablist">' + tabs + '</div><div class="pz-world" style="--w1:' + P.sky[0] + ';--w2:' + P.sky[1] + '"><h3>' + esc(P.name) + '</h3><p>' + esc(P.sub || '') + '</p><div class="pz-nodes">' + nodes + '</div></div>';
+      el.querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.pk; snd.play(o.open(k) ? 'tap' : 'error'); if (o.open(k)) ui.worldMap(o, k); else o.onLocked && o.onLocked(k); }));
+      el.querySelectorAll('.pz-node').forEach(b => b.addEventListener('click', () => { if (b.classList.contains('lock')) { snd.play('error'); return; } snd.play('tap'); o.onPick(+b.dataset.i); }));
+    },
+    /* result card. o: { title, big, sub, stars (0-3 or undefined), stats:[{v,l}], xp, newBest, buttons:[{id,label,primary}] } */
+    result(el, o, cb) {
+      injectCss();
+      el.innerHTML = '<div class="pz-res"><h2>' + esc(o.title) + '</h2>' + (o.newBest ? '<div class="pz-badge">NEW BEST</div>' : '') + (o.stars != null ? '<div class="pz-stars">' + [0, 1, 2].map(k => '<span data-k="' + k + '">' + STAR(k < o.stars) + '</span>').join('') + '</div>' : '') +
+        (o.big != null ? '<div class="big">' + o.big + '</div>' : '') + (o.sub ? '<p>' + o.sub + '</p>' : '') +
+        (o.stats ? '<div class="stats">' + o.stats.map(x => '<div><b>' + x.v + '</b><small>' + esc(x.l) + '</small></div>').join('') + '</div>' : '') +
+        (o.xp ? '<div class="xp">+' + o.xp + ' XP</div>' : '') + '<div class="btns">' + o.buttons.map(b => '<button class="pz-btn' + (b.primary ? '' : ' ghost') + '" data-a="' + b.id + '">' + esc(b.label) + '</button>').join('') + '</div></div>';
+      el.classList.add('on', 'dim'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+      if (o.stars) el.querySelectorAll('.pz-stars [data-k]').forEach((sp, k) => { if (k < o.stars) { const sv = sp.firstChild; sv.classList.add('pop'); sv.style.animationDelay = (0.25 + k * 0.28) + 's'; setTimeout(() => snd.play('merge', 4 + k * 2), 250 + k * 280); } });
+      el.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => { snd.play('tap'); cb(b.dataset.a); }));
+      const f = el.querySelector('.pz-btn:not(.ghost)'); if (f) try { f.focus({ preventScroll: true }); } catch (e) {}
+    },
+  };
+
   /* ------------------------------------------------------------------ profile */
   /* opts: id, name, xp:{base,p}, themes:[{id,name,level,colors:[c,c,c]}], quests:[{id,key,text,goal,xp,kind}],
    *       accent, onTheme(theme), onLevel(level), extra(el) to add a game-specific section to the sheet */
@@ -404,5 +475,5 @@
     return P;
   }
 
-  G.PZ = { store, snd, fx, daily, toast, card, profile, cfg, iso, clamp, esc, hashStr, mulberry, RM, injectCss };
+  G.PZ = { store, snd, fx, daily, toast, card, profile, ui, cfg, iso, clamp, esc, hashStr, mulberry, RM, injectCss };
 })(window);
