@@ -40,14 +40,14 @@
 
   // ---- weathered copper pipe: cylinder light across x, verdigris blotches by noise, drip streaks, rivet bands
   function pipe(w, h, o) {
-    o = o || {}; const dpr = o.dpr || 1, m = make(w, h, 1), W = Math.round(w * dpr), H = Math.round(h * dpr);
+    o = o || {}; const dpr = o.dpr || 1, W = Math.round(w * dpr), H = Math.round(h * dpr);
     const c = D.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), img = x.createImageData(W, H), d = img.data;
     const n = noise(o.seed || 7), n2 = noise((o.seed || 7) + 99);
     const copper = hex(o.copper || '#a8622f'), dark = hex(o.dark || '#4a2a16'), patina = hex(o.patina || '#4f9a86'), patinaDk = hex(o.patinaDark || '#2f6558'), hi = hex(o.hi || '#ffd9a0');
     const bands = o.bands || [0.18, 0.5, 0.82];
     for (let py = 0; py < H; py++) {
       for (let px = 0; px < W; px++) {
-        const u = px / (W - 1);
+        let u = px / (W - 1); if (o.flip !== false) u = 1 - u;       // the low sun is on the right, so the lit side of every pipe faces right
         // cylinder: dark edge -> lit left-centre (sun on the left of the pipe) -> mid -> shadowed right
         let lit = 0.18 + 0.82 * Math.pow(Math.sin(clamp((u * 1.1 - 0.02), 0, 1) * Math.PI), 0.7);
         lit *= 1 - 0.55 * Math.pow(clamp((u - 0.55) / 0.45, 0, 1), 1.6);
@@ -73,7 +73,7 @@
       for (let k = 0; k < 4; k++) { const rx = 8 + k * ((w - 16) / 3); x.fillStyle = 'rgba(40,20,8,.55)'; x.beginPath(); x.arc(rx + 0.8, by + 5.2, 2.1, 0, 6.283); x.fill(); const rg = x.createRadialGradient(rx - 0.6, by + 3.6, 0.2, rx, by + 4.5, 2.2); rg.addColorStop(0, '#ffe7be'); rg.addColorStop(1, '#8a5324'); x.fillStyle = rg; x.beginPath(); x.arc(rx, by + 4.4, 1.8, 0, 6.283); x.fill(); }
     });
     // edge darkening so the pipe sits in the scene
-    const eg = x.createLinearGradient(0, 0, w, 0); eg.addColorStop(0, 'rgba(0,0,0,.28)'); eg.addColorStop(0.08, 'rgba(0,0,0,0)'); eg.addColorStop(0.9, 'rgba(0,0,0,0)'); eg.addColorStop(1, 'rgba(0,0,0,.4)'); x.fillStyle = eg; x.fillRect(0, 0, w, h);
+    const eg = x.createLinearGradient(0, 0, w, 0); eg.addColorStop(0, 'rgba(0,0,0,.42)'); eg.addColorStop(0.1, 'rgba(0,0,0,0)'); eg.addColorStop(0.92, 'rgba(0,0,0,0)'); eg.addColorStop(1, 'rgba(0,0,0,.22)'); x.fillStyle = eg; x.fillRect(0, 0, w, h);
     x.restore();
     return c;
   }
@@ -105,8 +105,8 @@
     x.save(); x.clip();
     for (let i = 1; i < pts.length; i++) {
       const dy = pts[i][1] - pts[i - 1][1];
-      if (dy > 0.2) continue;                                       // rising towards the right = faces the sun
-      const k = clamp(-dy / 3.2, 0, 1);
+      if (dy < 0.2) continue;                                       // sloping down towards the right = faces the sun
+      const k = clamp(dy / 3.2, 0, 1);
       x.fillStyle = 'rgba(' + lit.map(Math.round) + ',' + (0.10 + 0.35 * k) + ')';
       x.beginPath(); x.moveTo(pts[i - 1][0], pts[i - 1][1]); x.lineTo(pts[i][0], pts[i][1]); x.lineTo(pts[i][0] - 9, pts[i][1] + 26 + 40 * rr()); x.lineTo(pts[i - 1][0] - 9, pts[i - 1][1] + 26 + 40 * rr()); x.closePath(); x.fill();
     }

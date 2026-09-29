@@ -5,13 +5,13 @@
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/jsm/"}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#4f7cff">
+<meta name="theme-color" content="#2b5384">
 <title>Helix Smash</title>
 <link rel="stylesheet" href="./kit3d/gk.css">
 <style>
   :root { --gk-a:#6cc4ff; --gk-a2:#2e83ee; --gk-a3:#1a4fb3; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#4f7cff; font-family:var(--gk-body); }
+  html,body { width:100%; height:100%; overflow:hidden; background:#2b5384; font-family:var(--gk-body); }
   body { position:fixed; inset:0; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
   canvas#c { position:fixed; inset:0; display:block; touch-action:none; }
   #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
@@ -82,7 +82,7 @@ const $ = id => document.getElementById(id);
 let W = 0, H = 0;
 let GFX = 'high';
 try { const g = localStorage.getItem(KEY + '-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
-const T = new TowerWorld(canvas, { quality: GFX, style: 'helix', colors: { blue:'#3b82f6', purple:'#8b5cf6', green:'#22c55e', red:'#ef4444', orange:'#f97316' }, skyTop: '#4f7cff', skyLow: '#ffc6e3' });
+const T = new TowerWorld(canvas, { quality: GFX, style: 'helix', colors: { blue:'#5a78a8', purple:'#85608f', green:'#37ae62', red:'#c93a2c', orange:'#e0802a' }, skyTop: '#2b5384', skyLow: '#f5bd85' });
 GFX = T.quality;   // 'auto' starts on Low when WebGL runs on the CPU
 canvas.addEventListener('webglcontextlost', e => e.preventDefault());
 function resize() {
@@ -107,7 +107,7 @@ GK.hooks.sfx = sfx;
 
 /* ---------- progression: levels, worlds, stars, skins, daily goal ---------- */
 const SKINS = [
-  { id:'sunny',  name:'Sunny',    css:'radial-gradient(circle at 35% 28%,#fff7c2,#fbbf24 45%,#c98500)', color:'#fbbf24', cost:0 },
+  { id:'sunny',  name:'Amber',    css:'radial-gradient(circle at 35% 28%,#fff1c0,#f2b544 45%,#a86a12)', color:'#f2b544', cost:0 },
   { id:'bubble', name:'Bubblegum',css:'repeating-linear-gradient(90deg,#ff9fd0 0 10px,#fff 10px 20px)', color:'#ffffff', tex:['stripes','#ffffff','#ff8cc6'], cost:{ stars:3 } },
   { id:'beach',  name:'Beach ball',css:'repeating-linear-gradient(90deg,#ff5a6e 0 11px,#fff 11px 22px,#3fa8ff 22px 33px,#fff 33px 44px)', color:'#ffffff', tex:['stripes','#ffffff','#ff5a6e'], cost:{ coins:60 } },
   { id:'soccer', name:'Soccer',   css:'radial-gradient(circle at 35% 30%,#fff,#e8e8e8 50%,#222 52%,#222 60%,#fff 62%)', color:'#ffffff', tex:['checker','#ffffff','#2a2a3a'], cost:{ coins:90 } },
@@ -118,11 +118,11 @@ const SKINS = [
   { id:'crown',  name:'Star king',css:'radial-gradient(circle at 35% 28%,#fff,#ffd23f 40%,#ff8a1c 75%,#b95a00)', color:'#ffd23f', metal:0.85, rough:0.15, glow:0.3, emissive:'#ff9d00', trail:'#ffe37a', cost:{ stars:30 } },
 ];
 const WORLDS = [
-  { name:'Candy Sky',  sky:['#4f7cff','#ffc6e3'], colors:{ blue:'#3b82f6', purple:'#8b5cf6' }, pole:'#ffffff', hemi:['#ffffff','#8a86b8'], decor:'#ffffff' },
-  { name:'Sunset Bay', sky:['#ff7a59','#ffe0a8'], colors:{ blue:'#f472b6', purple:'#c084fc' }, pole:'#fff1e6', hemi:['#fff3e0','#b07a8a'], decor:'#ffe9d6' },
-  { name:'Ice Peaks',  sky:['#39b6ff','#eafcff'], colors:{ blue:'#5aa9ff', purple:'#8f9bff' }, pole:'#f2fbff', hemi:['#f0fbff','#7f9fc8'], decor:'#ffffff' },
-  { name:'Midnight',   sky:['#1a0f4d','#6a48c9'], colors:{ blue:'#38bdf8', purple:'#a78bfa' }, pole:'#d5cdff', hemi:['#b9a8ff','#2b1d63'], decor:'#9d8cff' },
-  { name:'Coral Reef', sky:['#00a5d8','#c9f3ff'], colors:{ blue:'#0ea5e9', purple:'#e879f9' }, pole:'#fff7f0', hemi:['#f0ffff','#4f8fa8'], decor:'#d9fbff' },
+  { name:'Golden Hour',  sky:['#2b5384','#f5bd85'], glow:'#ffb464', sun:'#ffc78a', colors:{ blue:'#5a78a8', purple:'#85608f' }, pole:'#ffffff', hemi:['#9db9de','#8c5d3f'], decor:'#ffe2c0' },
+  { name:'Lavender Dusk',sky:['#3a3378','#f0a6a0'], glow:'#ffa07a', sun:'#ffb890', colors:{ blue:'#7f8fd6', purple:'#a678c9' }, pole:'#fff0e6', hemi:['#b3a6e0','#8a5a6a'], decor:'#ffd6d0' },
+  { name:'Ocean Morning',sky:['#1f6a9a','#d3eef0'], glow:'#fff0b8', sun:'#fff1d6', colors:{ blue:'#3f8fb5', purple:'#5a7fc0' }, pole:'#f4fbff', hemi:['#bfe4ff','#5b7f8f'], decor:'#ffffff' },
+  { name:'Ember Night',  sky:['#150f36','#c8583a'], glow:'#ff9a5a', sun:'#ffa868', colors:{ blue:'#4b7fb8', purple:'#7a55a8' }, pole:'#f2d8c0', hemi:['#8f7fd0','#5a2f2a'], decor:'#ff9a78' },
+  { name:'Sand and Sea', sky:['#2a7fa0','#f2deb0'], glow:'#ffe3a0', sun:'#ffd7a0', colors:{ blue:'#4f86a6', purple:'#8a6aa8' }, pole:'#fff6e6', hemi:['#b8e0f0','#8a6a4a'], decor:'#fff0d0' },
 ];
 const P = GK.progress('helix-smash', {
   perWorld: 10, worlds: WORLDS, skins: SKINS, dailyReward: 60,
@@ -148,7 +148,7 @@ function applySkin() {
 }
 function applyWorld(L) {
   const w = P.world(L);
-  T.setTheme({ sky: w.sky, colors: w.colors, pole: w.pole, hemi: w.hemi, decor: w.decor });
+  T.setTheme({ sky: w.sky, glow: w.glow, sun: w.sun, colors: w.colors, pole: w.pole, hemi: w.hemi, decor: w.decor });
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', w.sky[0]);
 }
 
@@ -168,7 +168,7 @@ const TAU = Math.PI * 2, SEGS = 8;
 let platforms = [], gems = [], powerups = [], goldPus = [], mags = [], trail = [], rings = [];
 let cur = 0, combo = 0, score = 0, best = 0, camY = 0, shield = 0, fever = 0, ringGot = 0, ringBest = 0, magnet = 0;
 let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
-let squash = 0, shake = 0, tGlobal = 0, hitStop = 0, runT = 0, bumpT = 0, lastSec = -1, BALLCOL = '#fbbf24';
+let squash = 0, shake = 0, tGlobal = 0, hitStop = 0, runT = 0, bumpT = 0, lastSec = -1, BALLCOL = '#f2b544';
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 const SDK = window.ArcadeSDK || null;
@@ -264,7 +264,7 @@ const bar = GK.levelBar($('lvlbar'));
 function paintChrome() {
   $('hub').innerHTML = ic('home');
   ['mute', 'mute2'].forEach(id => { $(id).innerHTML = ic(muted ? 'sndOff' : 'snd'); });
-  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b>';
+  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b><i class="plus"></i>';
   $('gemChip').innerHTML = ic('gem') + '<b id="gems">0</b>';
   $('skinBtn').innerHTML = ic('bag') + 'SKINS' + (P.newSkins.length ? '<span class="gk-badge">' + P.newSkins.length + '</span>' : '');
   paintPlay();
@@ -699,10 +699,11 @@ $('modeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODE = b.dataset.m; P.d.mode = MODE; P.save(); sfx('tap'); paintTitle();
 });
-$('skinBtn').addEventListener('click', () => {
+function openSkins() {
   sfx('tap'); P.takeNewSkins();
   GK.shop({ prog: P, title: 'Ball skins', onEquip: () => { applySkin(); paintChrome(); }, onClose: () => { paintChrome(); } });
-});
+}
+$('skinBtn').addEventListener('click', openSkins); $('coinChip').addEventListener('click', openSkins);
 function toggleMute() { ensureAudio(); muted = !muted; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} paintChrome(); }
 $('mute').addEventListener('click', toggleMute); $('mute2').addEventListener('click', toggleMute);
 

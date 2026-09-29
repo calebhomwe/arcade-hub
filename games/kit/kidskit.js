@@ -284,7 +284,9 @@
     if (o.onMap) menu.appendChild(ic('kk-blue', 'world-map', 'Levels', o.onMap, ''));
     if (o.onAlbum) menu.appendChild(ic('kk-pink', o.albumPic || 'sparkles', o.albumLabel || 'Stickers', o.onAlbum, o.dot));
     if (o.onHelp) menu.appendChild(ic('kk-purple', 'thinking-face', 'Help', o.onHelp, ''));
-    var el = h('div', { class: 'kk-title', id: 'kkTitle' }, [h('h1', { class: 'kk-logo', text: o.title }), o.tagline ? h('p', { class: 'kk-tag', text: o.tagline }) : null, hero, play, h('div', { style: { height: '28px' } }), menu, P ? weekRow(P) : null, P ? dailyChip(P) : null, o.extra || null]);
+    var leafA = img('herb'), leafB = img('herb'); leafA.style.cssText = 'position:absolute;width:52px;height:52px;left:-16px;bottom:-14px;transform:rotate(-24deg)'; leafB.style.cssText = 'position:absolute;width:52px;height:52px;right:-16px;bottom:-14px;transform:scaleX(-1) rotate(-24deg)';
+    var sign = h('div', { class: 'kk-sign' }, [h('h1', { class: 'kk-logo', text: o.title }), leafA, leafB]);
+    var el = h('div', { class: 'kk-title', id: 'kkTitle' }, [sign, o.tagline ? h('p', { class: 'kk-tag', text: o.tagline }) : null, hero, play, h('div', { style: { height: '28px' } }), menu, P ? weekRow(P) : null, P ? dailyChip(P) : null, o.extra || null]);
     root.appendChild(el); return el;
   }
   // levels: [{n, name?, boss?, banner?}] ; banner text is drawn above the node that has it

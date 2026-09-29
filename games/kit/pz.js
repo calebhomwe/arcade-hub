@@ -346,7 +346,7 @@
         const i = pack * o.per + n, ok = o.open(pack) && o.playable(i), st = o.stars[i] || 0, cur = ok && i === o.cur;
         nodes += '<button class="pz-node' + (ok ? '' : ' lock') + (cur ? ' cur' : '') + (n === o.per - 1 ? ' boss' : '') + '" data-i="' + i + '" aria-label="Level ' + (n + 1) + (ok ? (st ? ', ' + st + ' stars' : ', new') : ', locked') + '">' + (ok ? (n + 1) : '🔒') + (ok ? '<span class="st' + (st ? '' : ' z') + '">' + (st ? '★'.repeat(st) : '☆☆☆') + '</span>' : '') + '</button>';
       }
-      el.innerHTML = '<div class="pz-tabs" role="tablist">' + tabs + '</div><div class="pz-world" style="--w1:' + P.sky[0] + ';--w2:' + P.sky[1] + '"><h3>' + esc(P.name) + '</h3><p>' + esc(P.sub || '') + '</p><div class="pz-nodes">' + nodes + '</div></div>';
+      el.innerHTML = '<div class="pz-tabs" role="tablist">' + tabs + '</div><div class="pz-world" style="--w1:' + P.sky[0] + ';--w2:' + P.sky[1] + '"><h3>' + esc(P.name) + '</h3><p>' + esc(P.sub || '') + '</p><div class="pz-nodes" style="grid-template-columns:repeat(' + (o.cols || 3) + ',1fr)">' + nodes + '</div></div>';
       el.querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => { const k = +b.dataset.pk; snd.play(o.open(k) ? 'tap' : 'error'); if (o.open(k)) ui.worldMap(o, k); else o.onLocked && o.onLocked(k); }));
       el.querySelectorAll('.pz-node').forEach(b => b.addEventListener('click', () => { if (b.classList.contains('lock')) { snd.play('error'); return; } snd.play('tap'); o.onPick(+b.dataset.i); }));
     },

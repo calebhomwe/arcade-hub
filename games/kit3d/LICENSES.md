@@ -9,3 +9,10 @@
 
 Models used by these games live in `../models/` (see `../models/LICENSES.md`). Icons are drawn in code (gk.js).
 Wood and paper grain in the UI are SVG turbulence filters generated in gk.css, not image files.
+
+## Textures (CC0 1.0, ambientCG, https://ambientcg.com; downscaled to 512 px)
+
+| File | Source asset | Used for |
+| --- | --- | --- |
+| `tex/plaster_c.jpg`, `tex/plaster_n.jpg` | Plaster001 (colour, normal GL) | Tower platforms (Helix Smash, Stack Ball), tinted per segment |
+| `tex/wood_c.jpg` | Wood066 (colour) | The pole in the middle of the tower |

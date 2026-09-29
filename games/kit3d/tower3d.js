@@ -87,18 +87,20 @@ export class TowerWorld {
     this.autoQ = opts.quality === 'auto';
     if (this.autoQ && softwareGL()) this.quality = 'low';
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.quality === 'high' && (window.devicePixelRatio || 1) < 2, powerPreference: 'high-performance' });
-    r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NeutralToneMapping; r.toneMappingExposure = 1.0;
+    r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.12;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     this.dyn = 1; this.ema = 16; this.lastT = 0; this.slowFor = 0; this.fastFor = 0;
     const s = this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(46, 1, 0.3, 400);
-    this.top = new THREE.Color(opts.skyTop || '#5b8cff'); this.low = new THREE.Color(opts.skyLow || '#ffd1e8');
-    s.fog = new THREE.Fog(this.low.clone(), 18, 60);
-    this.hemi = new THREE.HemisphereLight('#ffffff', '#8a86b8', 1.0); s.add(this.hemi);
-    const sun = this.sun = new THREE.DirectionalLight('#fff6e8', 2.1);
+    // golden hour: a low warm sun, cool sky fill, warm ground bounce, and a haze that matches the bottom of the sky
+    this.top = new THREE.Color(opts.skyTop || '#274c7d'); this.low = new THREE.Color(opts.skyLow || '#f3b880'); this.mid = new THREE.Color(opts.skyMid || '#c98c86');
+    this.sunGlow = new THREE.Color('#ffb060'); this.resVec = new THREE.Vector2(1, 1);
+    s.fog = new THREE.Fog(this.low.clone().convertLinearToSRGB(), 18, 60);
+    this.hemi = new THREE.HemisphereLight('#9db9de', '#8c5d3f', 0.8); s.add(this.hemi);
+    const sun = this.sun = new THREE.DirectionalLight('#ffc78a', 3.1);
     sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; s.add(sun, sun.target);
-    this._sky(); this._env();
-    this.colors = {}; this.mats = {}; this.inst = {};
+    this._loadTex(); this._sky(); this._env();
+    this.colors = {}; this.mats = {}; this.matsLo = {}; this.inst = {};
     this.step = this.style === 'stack' ? 1.25 : 3.1;
     this.wedge = wedgeGeometry(TAU / SEGS - (this.style === 'helix' ? 0.035 : 0.006), this.style === 'stack', this.style === 'stack' ? 0.62 : THICK);
     for (const [k, v] of Object.entries(opts.colors || {})) this._colorMat(k, v);
@@ -110,20 +112,44 @@ export class TowerWorld {
     this.setQuality(this.quality); this.resize();
   }
   _sky() {
+    // gradient in screen space (top of the screen deep blue, bottom warm haze) with a soft low sun; output is sRGB, so hex colours read as authored
     const m = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { top: { value: this.top }, low: { value: this.low } },
-      vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: 'uniform vec3 top; uniform vec3 low; varying vec3 vP; void main(){ float h = clamp(vP.y*0.9+0.5,0.0,1.0); gl_FragColor = vec4(mix(low, top, smoothstep(0.0,1.0,h)),1.0); }' });
-    this.sky = new THREE.Mesh(new THREE.SphereGeometry(150, 24, 12), m); this.sky.frustumCulled = false; this.scene.add(this.sky);
+      uniforms: { top: { value: this.top }, mid: { value: this.mid }, low: { value: this.low }, sunCol: { value: this.sunGlow }, uRes: { value: this.resVec }, sunPos: { value: new THREE.Vector2(0.24, 0.3) } },
+      vertexShader: 'void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunCol; uniform vec2 uRes; uniform vec2 sunPos;\n' +
+        'void main(){ vec2 uv = gl_FragCoord.xy / uRes; float t = uv.y;\n' +
+        ' vec3 c = mix(low, mid, smoothstep(0.0, 0.45, t)); c = mix(c, top, smoothstep(0.4, 1.0, t));\n' +
+        ' float d = length((uv - sunPos) * vec2(uRes.x / uRes.y, 1.0));\n' +
+        ' c += sunCol * (exp(-d * 4.5) * 0.4 + exp(-d * 20.0) * 0.85);\n' +
+        ' gl_FragColor = vec4(pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)), 1.0); }' });
+    this.sky = new THREE.Mesh(new THREE.SphereGeometry(150, 24, 12), m); this.sky.frustumCulled = false; this.sky.renderOrder = -10; this.scene.add(this.sky);
+  }
+  /** CC0 plaster and wood (ambientCG), 512 px; assigned to the materials as they arrive */
+  _loadTex() {
+    const L = new THREE.TextureLoader(), base = new URL('./tex/', import.meta.url).href;
+    const mk = (f, srgb) => { const t = L.load(base + f, () => this._texReady()); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };
+    this.tex = { c: mk('plaster_c.jpg', true), n: mk('plaster_n.jpg', false), wood: mk('wood_c.jpg', true), ready: false };
+    this.tex.c.repeat.set(0.24, 0.24); this.tex.n.repeat.set(0.24, 0.24);
+  }
+  _texReady() {
+    const t = this.tex; if (!t.c.image || !t.n.image || !t.wood.image) return;
+    t.ready = true;
+    for (const k in this.mats) { this._applyTex(this.mats[k], this.matsLo[k]); }
+    if (this.pole) { this.pole.material.map = t.wood; this.pole.material.needsUpdate = true; }
+  }
+  _applyTex(hi, lo) {
+    const t = this.tex; if (!t || !t.ready) return;
+    hi.map = t.c; hi.normalMap = t.n; hi.normalScale.set(0.8, 0.8); hi.needsUpdate = true;
+    lo.map = t.c; lo.needsUpdate = true;
   }
   _env() {
     // a soft studio environment for the glossy ball and jewels: sky gradient plus two light panels
     const pm = new THREE.PMREMGenerator(this.renderer), es = new THREE.Scene();
     const g = new THREE.Mesh(new THREE.SphereGeometry(10, 16, 8), new THREE.ShaderMaterial({ side: THREE.BackSide,
       vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-      fragmentShader: 'varying vec3 vP; void main(){ float h=vP.y*0.5+0.5; gl_FragColor=vec4(mix(vec3(0.25,0.22,0.35),vec3(0.9,0.95,1.0),h),1.0);}' }));
+      fragmentShader: 'varying vec3 vP; void main(){ float h=vP.y*0.5+0.5; gl_FragColor=vec4(mix(vec3(0.34,0.22,0.16),vec3(0.62,0.72,0.9),h),1.0);}' }));
     es.add(g);
-    for (const [x, y, z] of [[4, 6, 3], [-5, 3, -2]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: '#ffffff' })); p.material.color.multiplyScalar(4); p.position.set(x, y, z); p.lookAt(0, 0, 0); es.add(p); }
+    for (const [x, y, z] of [[4, 6, 3], [-5, 3, -2]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: '#ffffff' })); p.material.color.set(x > 0 ? '#ffd9a8' : '#bcd4ff').multiplyScalar(4); p.position.set(x, y, z); p.lookAt(0, 0, 0); es.add(p); }
     this.scene.environment = pm.fromScene(es, 0.02).texture; this.scene.environmentIntensity = 0.55;
     pm.dispose();
   }
@@ -162,11 +188,13 @@ export class TowerWorld {
   setFloor(i) { this.floorI = i; this.prize.visible = i != null; }
   /** a world look: { sky:[top,low], pole, hemi:[sky,ground], decor, colors:{name:hex}, bands:[[a,b],...] } */
   setTheme(t) {
-    if (t.sky) this.setSky(t.sky[0], t.sky[1]);
+    if (t.sky) this.setSky(t.sky[0], t.sky[1], t.sky[2]);
+    if (t.sun) this.sun.color.set(t.sun);
+    if (t.glow) this.sunGlow.set(t.glow);
     if (t.pole) this.pole.material.color.set(t.pole);
     if (t.hemi) { this.hemi.color.set(t.hemi[0]); this.hemi.groundColor.set(t.hemi[1]); }
     if (t.decor) this.decorMat.color.set(t.decor);
-    if (t.colors) for (const k in t.colors) { this.colors[k] = t.colors[k]; if (this.mats[k]) this.mats[k].color.set(t.colors[k]); }
+    if (t.colors) for (const k in t.colors) { this.colors[k] = t.colors[k]; if (this.mats[k]) { this.mats[k].color.set(t.colors[k]); this.matsLo[k].color.set(t.colors[k]); } }
     if (t.bands) this.bands = t.bands;
     if (t.bands) for (const b of t.bands) for (const c of b) if (!this.inst[c]) this._colorMat(c, c);
   }
@@ -186,29 +214,30 @@ export class TowerWorld {
       this.parts.push({ x: 0, y: (this.ballY || 0) + 0.3, z: R_TRACK, vx: Math.cos(a) * s, vy: 5 + Math.random() * 6, vz: Math.sin(a) * s, t: 0, life: 0.9 + Math.random() * 0.7, s: 0.12 + Math.random() * 0.14, c: new THREE.Color(cols[i % cols.length]), r: Math.random() * 6 });
     }
   }
-  setSky(top, low) { this.top.set(top); this.low.set(low); this.scene.fog.color.set(low); }
+  setSky(top, low, mid) {
+    this.top.set(top); this.low.set(low); (mid ? this.mid.set(mid) : this.mid.copy(this.top).lerp(this.low, 0.55));
+    this.scene.fog.color.copy(this.low).convertLinearToSRGB();
+  }
   _colorMat(name, hex) {
     this.colors[name] = hex;
-    // Phong keeps the candy gloss at a fraction of the per-pixel cost of the PBR material (platforms fill the screen)
-    const m = new THREE.MeshPhongMaterial({ color: hex, shininess: 70, specular: '#3a3a3a' });
-    this.mats[name] = m;
-    const im = new THREE.InstancedMesh(this.wedge, m, 8 * 40);
+    // high: PBR plaster with a normal map. low: Phong with the colour map only (platforms fill the screen, so keep them cheap)
+    const gold = name === 'fin1';
+    const hi = new THREE.MeshStandardMaterial({ color: hex, roughness: gold ? 0.28 : 0.55, metalness: gold ? 0.7 : 0.0, envMapIntensity: gold ? 1.0 : 0.5 });
+    const lo = new THREE.MeshPhongMaterial({ color: hex, shininess: gold ? 90 : 35, specular: gold ? '#7a6a3a' : '#2a2622' });
+    this.mats[name] = hi; this.matsLo[name] = lo; this._applyTex(hi, lo);
+    const im = new THREE.InstancedMesh(this.wedge, this.quality === 'high' ? hi : lo, 8 * 40);
     im.count = 0; im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.scene.add(im); this.inst[name] = { im, n: 0 };
   }
   _pole() {
-    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
-    const gr = g.createLinearGradient(0, 0, 256, 0);
-    gr.addColorStop(0, '#f4f1ff'); gr.addColorStop(0.5, '#ffffff'); gr.addColorStop(1, '#e7e2fb');
-    g.fillStyle = gr; g.fillRect(0, 0, 256, 64);
-    g.fillStyle = 'rgba(120,110,190,.10)'; for (let x = 0; x < 256; x += 32) g.fillRect(x, 0, 6, 64);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 30);
     const pole = this.pole = new THREE.Mesh(new THREE.CylinderGeometry(R_IN * 0.92, R_IN * 0.92, this.step * 60, 32, 1, true),
-      new THREE.MeshPhongMaterial({ map: t, shininess: 40, specular: '#222222', color: this.style === 'stack' ? '#d9d4ff' : '#ffffff', emissive: '#ffffff', emissiveIntensity: 0.22 }));
+      new THREE.MeshStandardMaterial({ color: this.style === 'stack' ? '#e6d2bc' : '#ffffff', roughness: 0.6, metalness: 0, map: this.tex.ready ? this.tex.wood : null }));
+    pole.material.map && (pole.material.map.repeat.set(1.5, 30));
+    this.tex.wood.repeat.set(1.5, 30);
     pole.receiveShadow = true; pole.castShadow = false; this.scene.add(pole);
     // a collar where each platform meets the pole
     this.collar = new THREE.InstancedMesh(new THREE.TorusGeometry(R_IN * 0.95, 0.12, 8, 32).rotateX(Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.3 }), 40);
+      new THREE.MeshStandardMaterial({ color: '#f2c14e', roughness: 0.28, metalness: 0.85, envMapIntensity: 1.1 }), 40);
     this.collar.frustumCulled = false; this.collar.count = 0; this.scene.add(this.collar);
   }
   _ball() {
@@ -272,6 +301,7 @@ export class TowerWorld {
     this.renderer.shadowMap.enabled = hi; this.sun.castShadow = hi;
     const ms = hi ? 1024 : 256;
     if (this.sun.shadow.mapSize.x !== ms) { this.sun.shadow.mapSize.set(ms, ms); if (this.sun.shadow.map) { this.sun.shadow.map.dispose(); this.sun.shadow.map = null; } }
+    for (const k in this.inst) this.inst[k].im.material = hi ? this.mats[k] : this.matsLo[k];
     this.below = hi ? 11 : 6;          // platforms drawn under the ball (draw distance)
     this.maxParts = hi ? 300 : 90;
     this.shadowBlob.visible = !hi;
@@ -283,6 +313,7 @@ export class TowerWorld {
     const w = this.canvas.clientWidth || innerWidth, h = this.canvas.clientHeight || innerHeight;
     this.renderer.setPixelRatio(this.pixelRatio()); this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h); this.camera.updateProjectionMatrix(); this.W = w; this.H = h;
+    this.renderer.getDrawingBufferSize(this.resVec);
   }
   metrics(GAP, top0, ballR) { this.GAP = GAP; this.top0 = top0; this.ballR = ballR; this.ballScale = ballR / Math.max(1, Math.min(this.W, this.H) * 0.075); }
 
@@ -451,8 +482,8 @@ export class TowerWorld {
       this.prize.position.set(0, -this.floorI * this.step + 1.55 + Math.sin(performance.now() / 420) * 0.12, 0); this.prize.rotation.y = performance.now() / 700;
     } else { this.pole.scale.y = 1; this.pole.position.y = fy - this.step * 20; }
     this._decorStep(fy);
-    this.sun.position.set(3, fy + 14, 9); this.sun.target.position.set(0, fy - 3, 0);
-    const sh = this.sun.shadow.camera; sh.left = -7; sh.right = 7; sh.top = 7; sh.bottom = -7; sh.near = 1; sh.far = 40; sh.updateProjectionMatrix();
+    this.sun.position.set(-10, fy + 9, 7); this.sun.target.position.set(0, fy - 3, 0);
+    const sh = this.sun.shadow.camera; sh.left = -8; sh.right = 8; sh.top = 8; sh.bottom = -8; sh.near = 1; sh.far = 46; sh.updateProjectionMatrix();
   }
   project(x, y, z) {
     _v.set(x, y, z).project(this.camera);

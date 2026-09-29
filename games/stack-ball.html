@@ -5,13 +5,13 @@
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/jsm/"}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#ff9a5a">
+<meta name="theme-color" content="#2b5384">
 <title>Stack Ball</title>
 <link rel="stylesheet" href="./kit3d/gk.css">
 <style>
   :root { --gk-a:#ffc12e; --gk-a2:#ff8a1c; --gk-a3:#b95a00; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#ff9a5a; font-family:var(--gk-body); }
+  html,body { width:100%; height:100%; overflow:hidden; background:#2b5384; font-family:var(--gk-body); }
   body { position:fixed; inset:0; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
   canvas#c { position:fixed; inset:0; display:block; touch-action:none; }
   #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
@@ -80,10 +80,10 @@ const $ = id => document.getElementById(id);
 let W = 0, H = 0;
 let GFX = 'high';
 try { const g = localStorage.getItem(KEY + '-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
-const T = new TowerWorld(canvas, { quality: GFX, style: 'stack', colors: {}, skyTop: '#ff9a5a', skyLow: '#ffe7b0' });
+const T = new TowerWorld(canvas, { quality: GFX, style: 'stack', colors: {}, skyTop: '#2b5384', skyLow: '#f5bd85' });
 GFX = T.quality;   // 'auto' starts on Low when WebGL runs on the CPU
-T.deadly = '#0e1017';
-T.bands = [['#22c3ee', '#1aa6cf'], ['#f472b6', '#e2559c'], ['#facc15', '#eab308'], ['#34d399', '#10b981'], ['#a855f7', '#9333ea'], ['#fb923c', '#f97316']];
+T.deadly = '#16181f';
+T.bands = [['#c8643c', '#b0532f'], ['#2f9a9a', '#268080'], ['#e0b040', '#c69a2c'], ['#7aa872', '#628f5c'], ['#8a5a92', '#734a7c'], ['#d9834a', '#c36f38']];
 canvas.addEventListener('webglcontextlost', e => e.preventDefault());
 function resize() {
   W = window.innerWidth; H = window.innerHeight;
@@ -107,7 +107,7 @@ GK.hooks.sfx = sfx;
 
 /* ---------- progression: levels, worlds, stars, skins, daily goal ---------- */
 const SKINS = [
-  { id:'sky',    name:'Sky',       css:'radial-gradient(circle at 35% 28%,#e8fbff,#38bdf8 45%,#0a6f9c)', color:'#38bdf8', cost:0 },
+  { id:'sky',    name:'Azure',     css:'radial-gradient(circle at 35% 28%,#e8fbff,#4aa8d8 45%,#0f5f8a)', color:'#4aa8d8', cost:0 },
   { id:'bubble', name:'Bubblegum', css:'repeating-linear-gradient(90deg,#ff9fd0 0 10px,#fff 10px 20px)', color:'#ffffff', tex:['stripes','#ffffff','#ff8cc6'], cost:{ stars:3 } },
   { id:'tiger',  name:'Tiger',     css:'repeating-linear-gradient(90deg,#ffb020 0 12px,#ff7a1a 12px 24px)', color:'#ffffff', tex:['stripes','#ffc23a','#ff7a1a'], cost:{ coins:60 } },
   { id:'soccer', name:'Soccer',    css:'radial-gradient(circle at 35% 30%,#fff,#e8e8e8 50%,#5b5b7a 52%,#5b5b7a 60%,#fff 62%)', color:'#ffffff', tex:['checker','#ffffff','#5b5b7a'], cost:{ coins:90 } },
@@ -118,11 +118,11 @@ const SKINS = [
   { id:'gold',   name:'Gold',      css:'radial-gradient(circle at 35% 28%,#fff,#ffd23f 40%,#ff8a1c 75%,#b95a00)', color:'#ffd23f', metal:0.85, rough:0.15, glow:0.3, emissive:'#ff9d00', trail:'#ffe37a', cost:{ stars:30 } },
 ];
 const WORLDS = [
-  { name:'Sunset Tower', sky:['#ff9a5a','#ffe7b0'], pole:'#d9d4ff', hemi:['#fff5e0','#8a86b8'], decor:'#fff1d6', bands:[['#22c3ee','#1aa6cf'],['#f472b6','#e2559c'],['#facc15','#eab308'],['#34d399','#10b981'],['#a855f7','#9333ea'],['#fb923c','#f97316']] },
-  { name:'Bubble Pop',   sky:['#ff6fc2','#ffe3f3'], pole:'#ffe9f6', hemi:['#fff0fa','#a56b9a'], decor:'#ffffff', bands:[['#ff7ac8','#e45ab0'],['#b58cff','#9160e8'],['#5fe0d4','#33c2b6'],['#ffd23f','#f0b400'],['#7ab8ff','#4a90ee']] },
-  { name:'Deep Sea',     sky:['#0d6ea8','#9be7ff'], pole:'#dff6ff', hemi:['#d8f6ff','#2b6f96'], decor:'#bfefff', bands:[['#3fe0c0','#1fbf9f'],['#ffd166','#f0b000'],['#ff7a90','#e2506b'],['#8fa8ff','#6079e8'],['#c7f2ff','#8fd6ee']] },
-  { name:'Neon Night',   sky:['#160b3f','#5a2fbf'], pole:'#cfc6ff', hemi:['#b9a8ff','#2b1d63'], decor:'#9d8cff', bands:[['#00e5ff','#00b8d4'],['#ff2e93','#d1146f'],['#b6ff3b','#8fd611'],['#ffb300','#e59500'],['#a86bff','#7c3aed']] },
-  { name:'Meadow',       sky:['#4fc978','#f4ffd0'], pole:'#f6fff0', hemi:['#f0ffe6','#5a8f5a'], decor:'#ffffff', bands:[['#ff8fa3','#ec6580'],['#ffd23f','#f0b400'],['#6cc4ff','#3d9be8'],['#c58bff','#a061ee'],['#ff9f5a','#ec7a2a']] },
+  { name:'Terracotta Tower', sky:['#2b5384','#f5bd85'], glow:'#ffb464', sun:'#ffc78a', pole:'#f0dcc4', hemi:['#9db9de','#8c5d3f'], decor:'#ffe2c0', bands:[['#c8643c','#b0532f'],['#2f9a9a','#268080'],['#e0b040','#c69a2c'],['#7aa872','#628f5c'],['#8a5a92','#734a7c'],['#d9834a','#c36f38']] },
+  { name:'Rose Garden',      sky:['#4a3a7c','#f4b3a6'], glow:'#ffa88a', sun:'#ffbe98', pole:'#fff0e8', hemi:['#c4b0e8','#8a5a6a'], decor:'#ffd8d0', bands:[['#d97a8c','#c4607a'],['#e8b04a','#d19a34'],['#6fa8a0','#5a908a'],['#9a7ac0','#8464a8'],['#e8946a','#d47c54']] },
+  { name:'Deep Sea',         sky:['#0d5f8c','#bfe8ea'], glow:'#fff0b8', sun:'#fff1d6', pole:'#f2fbff', hemi:['#bfe4ff','#4b7a8a'], decor:'#ffffff', bands:[['#3aa898','#2a8f80'],['#e8b45a','#d09a3c'],['#d8687a','#c0506a'],['#6c8ad0','#5673b8'],['#b9dfe6','#9cc8d2']] },
+  { name:'Ember Night',      sky:['#150f36','#c8583a'], glow:'#ff9a5a', sun:'#ffa868', pole:'#f2d8c0', hemi:['#8f7fd0','#5a2f2a'], decor:'#ff9a78', bands:[['#3fa0c8','#2e88ae'],['#d9466e','#c0345a'],['#9ac83c','#82ae2c'],['#f0a030','#d88a20'],['#8a5ad0','#7448b8']] },
+  { name:'Sandy Cove',       sky:['#2a7fa0','#f2deb0'], glow:'#ffe3a0', sun:'#ffd7a0', pole:'#fff6e6', hemi:['#b8e0f0','#8a6a4a'], decor:'#fff0d0', bands:[['#e8945a','#d47c44'],['#4aa0b8','#388aa0'],['#e8c860','#d2b048'],['#c8687c','#b25268'],['#7ab08a','#639a74']] },
 ];
 const P = GK.progress('stack-ball', {
   perWorld: 10, worlds: WORLDS, skins: SKINS, dailyReward: 60,
@@ -142,7 +142,7 @@ function levelSpec(L) {
   const len = Math.min(70, 12 + L * 2);
   return { L, len, maxDead: Math.min(5, 2 + Math.floor(L / 6)), spin: Math.min(1.7, 1 + (L - 1) * 0.03), slamGoal: Math.min(8, 2 + Math.floor(L / 4)), par: Math.round(len * 0.7 + 6), seed: L * 6151 + 29 };
 }
-let BALLCOL = '#38bdf8';
+let BALLCOL = '#4aa8d8';
 function applySkin() {
   const s = P.current(); if (!s) return;
   T.skin({ color: s.color, emissive: s.emissive, glow: s.glow, rough: s.rough, metal: s.metal, trail: s.trail || s.color, map: s.tex ? skinTexture(s.tex[0], s.tex[1], s.tex[2]) : null });
@@ -150,12 +150,12 @@ function applySkin() {
 }
 function applyWorld(L) {
   const w = P.world(L);
-  T.setTheme({ sky: w.sky, pole: w.pole, hemi: w.hemi, decor: w.decor, bands: w.bands });
+  T.setTheme({ sky: w.sky, glow: w.glow, sun: w.sun, pole: w.pole, hemi: w.hemi, decor: w.decor, bands: w.bands });
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', w.sky[0]);
 }
 
 const TAU = Math.PI * 2, SEGS = 8;
-const BLACK = '#0e1017';
+const BLACK = '#16181f';
 const SAFE = ['#22d3ee', '#a855f7', '#f472b6', '#facc15', '#34d399', '#38bdf8'];
 let GAP, rx, ry, ballR, cx, desired;
 function layout() {
@@ -274,7 +274,7 @@ const bar = GK.levelBar($('lvlbar'));
 function paintChrome() {
   $('hub').innerHTML = ic('home');
   ['mute', 'mute2'].forEach(id => { $(id).innerHTML = ic(muted ? 'sndOff' : 'snd'); });
-  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b>';
+  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b><i class="plus"></i>';
   $('gemChip').innerHTML = ic('gem') + '<b id="gems">' + gemsRun + '</b>';
   $('skinBtn').innerHTML = ic('bag') + 'SKINS' + (P.newSkins.length ? '<span class="gk-badge">' + P.newSkins.length + '</span>' : '');
   paintPlay();
@@ -654,10 +654,11 @@ $('modeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   MODE = b.dataset.m; P.d.mode = MODE; P.save(); sfx('tap'); paintTitle();
 });
-$('skinBtn').addEventListener('click', () => {
+function openSkins() {
   sfx('tap'); P.takeNewSkins();
   GK.shop({ prog: P, title: 'Ball skins', onEquip: () => { applySkin(); paintChrome(); }, onClose: () => { paintChrome(); } });
-});
+}
+$('skinBtn').addEventListener('click', openSkins); $('coinChip').addEventListener('click', openSkins);
 function toggleMute() { ensureAudio(); muted = !muted; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} paintChrome(); }
 $('mute').addEventListener('click', toggleMute); $('mute2').addEventListener('click', toggleMute);
 

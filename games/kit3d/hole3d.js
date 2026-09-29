@@ -24,28 +24,29 @@ function ramp() {
 }
 const RAMP = ramp();
 
-/** Toon material with a soft rim light (the stylised look every prop shares). */
+/** Prop material (the export name is legacy): a warm, slightly rough standard material with baked vertex-colour AO;
+ *  m.userData.lo is the cheap Lambert twin that the Low tier draws. Kenney's untextured kits store their palette as sRGB numbers in a linear slot. */
 export function toon(src, rim = 0.35) {
-  const m = new THREE.MeshToonMaterial({
-    color: src.color ? src.color.clone() : new THREE.Color(1, 1, 1),
-    map: src.map || null, gradientMap: RAMP,
-    transparent: !!src.transparent, opacity: src.opacity == null ? 1 : src.opacity,
-  });
+  const col = src.color ? src.color.clone() : new THREE.Color(1, 1, 1);
+  const tr = !!src.transparent, op = src.opacity == null ? 1 : src.opacity;
+  const m = new THREE.MeshStandardMaterial({ color: col, map: src.map || null, roughness: 0.66, metalness: 0.0, envMapIntensity: 0.5, vertexColors: true, transparent: tr, opacity: op });
   if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.anisotropy = 4; }
   else if (!src.userData || !src.userData.linear) {
-    // Kenney's untextured kits store their palette as sRGB numbers in a linear slot: read them as sRGB
     m.color.convertSRGBToLinear();
-    if (/^leaf/i.test(src.name || '')) m.color.setStyle('#4fae45');   // city green rather than the kit's mint
+    if (/^leaf/i.test(src.name || '')) m.color.setStyle('#4d9a3c');   // a natural leaf green rather than the kit's mint
   }
-  m.userData.rim = { value: rim };
-  m.onBeforeCompile = sh => {
-    sh.uniforms.rimK = m.userData.rim;
-    sh.fragmentShader = 'uniform float rimK;\n' + sh.fragmentShader.replace('#include <opaque_fragment>',
-      'float rimF = 1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0);\n' +
-      'outgoingLight += vec3(1.0, 0.97, 0.9) * pow(rimF, 3.0) * rimK;\n#include <opaque_fragment>');
-  };
-  m.customProgramCacheKey = () => 'toonrim';
+  m.userData.lo = new THREE.MeshLambertMaterial({ color: m.color.clone(), map: m.map, vertexColors: true, transparent: tr, opacity: op });
   return m;
+}
+/** bake ambient occlusion into vertex colours: dark at the foot of a prop, light at the top, a little darker on the sides */
+function bakeAO(g, box) {
+  const pos = g.attributes.position, n = pos.count, col = new Float32Array(n * 3), h = Math.max(1e-3, box.max.y - box.min.y);
+  for (let i = 0; i < n; i++) {
+    const t = Math.min(1, Math.max(0, (pos.getY(i) - box.min.y) / h));
+    const e = t * t * (3 - 2 * t), ao = 0.6 + 0.4 * e;
+    col[i * 3] = ao * 1.0; col[i * 3 + 1] = ao * 0.97; col[i * 3 + 2] = ao * 0.94;   // AO leans warm
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
 }
 
 /** quantized (KHR_mesh_quantization) attributes back to plain floats, so geometry can be baked and merged */
@@ -85,18 +86,18 @@ export class HoleWorld {
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: this.quality === 'high' && (window.devicePixelRatio || 1) < 2, stencil: true, powerPreference: 'high-performance' });
     this.dyn = 1; this.ema = 16; this.lastT = 0; this.slowFor = 0; this.fastFor = 0;
     r.outputColorSpace = THREE.SRGBColorSpace;
-    r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0;
+    r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.12;
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     const s = this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(this.fov = 34, 1, 0.5, 2000);
     this.skyTop = new THREE.Color(opts.skyTop || '#6fb6ff'); this.skyLow = new THREE.Color(opts.skyLow || '#dff1ff');
-    s.fog = new THREE.Fog(this.skyLow.clone(), 120, 400);
-    this.hemi = new THREE.HemisphereLight('#dfefff', '#6d7b5a', 1.25); s.add(this.hemi);
-    const sun = this.sun = new THREE.DirectionalLight('#fff3dc', 2.4);
+    s.fog = new THREE.Fog(this.skyLow.clone().convertLinearToSRGB(), 120, 400);
+    this.hemi = new THREE.HemisphereLight('#a9c3e6', '#8a6a46', 0.95); s.add(this.hemi);
+    const sun = this.sun = new THREE.DirectionalLight('#ffc98c', 3.0);
     sun.castShadow = true; sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
     s.add(sun); s.add(sun.target);
-    this.sunDir = new THREE.Vector3(-0.45, 0.8, 0.38).normalize();
-    this._sky();
+    this.sunDir = new THREE.Vector3(-0.6, 0.46, 0.5).normalize();   // golden hour: low, so shadows run long
+    this._sky(); this._env();
     this.kinds = new Map(); this.batches = new Map(); this.statics = [];
     this.holes = []; this.parts = []; this.focus = new THREE.Vector3(); this.dist = 40;
     this._particles();
@@ -110,14 +111,25 @@ export class HoleWorld {
       side: THREE.BackSide, depthWrite: false, fog: false,
       uniforms: { top: { value: this.skyTop }, low: { value: this.skyLow } },
       vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: 'uniform vec3 top; uniform vec3 low; varying vec3 vP; void main(){ float h = clamp(vP.y*1.6+0.05,0.0,1.0); gl_FragColor = vec4(mix(low, top, pow(h,0.8)),1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 low; varying vec3 vP; void main(){ float h = clamp(vP.y*1.6+0.05,0.0,1.0); vec3 c = mix(low, top, pow(h,0.8)); gl_FragColor = vec4(pow(c, vec3(1.0/2.2)),1.0); }',
     });
     this.sky = new THREE.Mesh(g, m); this.sky.renderOrder = -10; this.sky.frustumCulled = false;
     this.scene.add(this.sky);
   }
 
+  /** a warm studio-sky environment for the reflections on standard materials */
+  _env() {
+    const pm = new THREE.PMREMGenerator(this.renderer), es = new THREE.Scene();
+    es.add(new THREE.Mesh(new THREE.SphereGeometry(10, 16, 8), new THREE.ShaderMaterial({ side: THREE.BackSide,
+      vertexShader: 'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader: 'varying vec3 vP; void main(){ float h=vP.y*0.5+0.5; gl_FragColor=vec4(mix(vec3(0.36,0.25,0.17),vec3(0.62,0.72,0.9),h),1.0);}' })));
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.MeshBasicMaterial({ color: '#ffd9a8' })); p.material.color.multiplyScalar(4); p.position.set(-5, 5, 4); p.lookAt(0, 0, 0); es.add(p);
+    this.scene.environment = pm.fromScene(es, 0.02).texture; this.scene.environmentIntensity = 0.5;
+    pm.dispose();
+  }
+
   setSky(top, low) {
-    this.skyTop.set(top); this.skyLow.set(low); this.scene.fog.color.set(low);
+    this.skyTop.set(top); this.skyLow.set(low); this.scene.fog.color.copy(this.skyLow).convertLinearToSRGB();
   }
 
   setQuality(q) {
@@ -133,7 +145,8 @@ export class HoleWorld {
     }
     this.drawK = hi ? 1.0 : 0.72;       // draw distance, as a share of the camera's view
     this.maxParts = hi ? 420 : 140;
-    for (const st of this.statics) st.visible = hi || !st.userData.detail;
+    for (const st of this.statics) { st.visible = hi || !st.userData.detail; if (st.userData.pm) st.material = hi ? st.userData.pm : st.userData.pm.userData.lo; }
+    for (const b of this.batches.values()) for (const im of b.meshes) if (im.userData.pm) im.material = hi ? im.userData.pm : im.userData.pm.userData.lo;
     this.scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
     this.resize();
   }
@@ -163,6 +176,7 @@ export class HoleWorld {
         parts.push({ g, m });
       });
       if (!parts.length) continue;
+      for (const pt of parts) bakeAO(pt.g, box);
       const size = box.getSize(new THREE.Vector3());
       // footprint radius: half the longer side of the base; height from the ground up
       this.kinds.set(node.name, { parts, fr: Math.max(size.x, size.z) / 2, h: box.max.y, minY: box.min.y, cx: (box.min.x + box.max.x) / 2, cz: (box.min.z + box.max.z) / 2 });
@@ -188,7 +202,8 @@ export class HoleWorld {
   _grow(b, cap) {
     for (const m of b.meshes) { this.scene.remove(m); m.dispose(); }
     b.meshes = b.k.parts.map(p => {
-      const im = new THREE.InstancedMesh(p.g, p.m, cap);
+      const im = new THREE.InstancedMesh(p.g, this.quality === 'high' ? p.m : p.m.userData.lo, cap);
+      im.userData.pm = p.m;
       im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false;
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3);
@@ -238,7 +253,8 @@ export class HoleWorld {
   addStatic(id, list, detail) {
     const k = this.kinds.get(id); if (!k || !list.length) return;
     for (const p of k.parts) {
-      const im = new THREE.InstancedMesh(p.g, p.m, list.length);
+      const im = new THREE.InstancedMesh(p.g, this.quality === 'high' ? p.m : p.m.userData.lo, list.length);
+      im.userData.pm = p.m;
       im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false;
       list.forEach((t, i) => {
         _q.setFromAxisAngle(_up, t.yaw || 0); _s.setScalar(t.s);
@@ -292,17 +308,17 @@ export class HoleWorld {
     wg.translate(0, -0.5, 0);
     const well = new THREE.Mesh(wg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false }));
     const rimMat = new THREE.MeshBasicMaterial({ color: '#7fb2ff', transparent: true, opacity: 0.95, depthWrite: false, fog: false });
-    const rim = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.075, 72).rotateX(-Math.PI / 2), rimMat);
+    const rim = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.1, 72).rotateX(-Math.PI / 2), rimMat);
     rim.position.y = 0.03; rim.renderOrder = 2;
-    const lip = new THREE.Mesh(new THREE.RingGeometry(1.075, 1.2, 72).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.22, depthWrite: false }));
+    const lip = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.26, 72).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: '#1a0e05', transparent: true, opacity: 0.3, depthWrite: false }));
     lip.position.y = 0.02; lip.renderOrder = 1;
     const pulseMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, fog: false });
     const pulse = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.05, 72).rotateX(-Math.PI / 2), pulseMat);
     pulse.position.y = 0.035; pulse.renderOrder = 3;
     // soft glow ring round the rim so the hole reads at any size (hole.io's halo)
     const haloMat = new THREE.MeshBasicMaterial({ color: '#7fb2ff', transparent: true, opacity: 0.28, depthWrite: false, fog: false });
-    const halo = new THREE.Mesh(new THREE.RingGeometry(1.075, 1.32, 72).rotateX(-Math.PI / 2), haloMat);
+    const halo = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.4, 72).rotateX(-Math.PI / 2), haloMat);
     halo.position.y = 0.025; halo.renderOrder = 2;
     group.add(disc, well, rim, lip, pulse, halo);
     this.scene.add(group);
