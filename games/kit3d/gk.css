@@ -191,5 +191,7 @@
 @media (prefers-reduced-motion:reduce){
   .gk-btn.throb,.gk-newbest,.gk-coach .hand{animation:none}
   .gk-stars svg.pop{animation:none}
-  .gk-toast{animation-duration:.01s;animation-delay:0s}
+  .gk-toast{animation-name:gk-toast-rm}
+  .gk-sheet,.gk-sheet .pan{animation:none}
 }
+@keyframes gk-toast-rm{0%{opacity:0}8%{opacity:1}88%{opacity:1}100%{opacity:0}}
