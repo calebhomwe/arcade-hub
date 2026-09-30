@@ -194,6 +194,7 @@ function medHTML(o, extra) { const c = critFor(o), col = CR.color(c); return '<d
 
 /* ------------------------------------------------------------ state */
 const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+let mousePtr = false; addEventListener('pointerdown', e => { mousePtr = e.pointerType === 'mouse'; if (!mousePtr) { hover = -1; } }, true); addEventListener('pointermove', e => { if (e.pointerType === 'mouse') mousePtr = true; }, true);
 let board = Array(9).fill(0), turn = 1, first = 1, roundOver = true, locked = false, playing = false, hist = [], cpuNaps = 0, xray = false, hover = -1, hintCell = -1, timer = 0;
 let match = null;      // { kind:'ladder'|'pvp', idx, opp, wins:[a,b], draws, roundNo, lostRounds }
 let ladder = LS.get('ttt_ladder', null); if (!ladder || !Array.isArray(ladder.stars)) ladder = { stars: new Array(OPPS.length).fill(0) }; while (ladder.stars.length < OPPS.length) ladder.stars.push(0);
@@ -246,7 +247,7 @@ function layout() {
     b.style.left = ((FR + q * CW) / S * 100) + '%'; b.style.top = ((FR + r0 * CW) / S * 100) + '%'; b.style.width = (CW / S * 100) + '%'; b.style.height = (CW / S * 100) + '%';
     b.addEventListener('pointerdown', e => { e.preventDefault(); humanMove(i); });
     b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); humanMove(i); } else { const mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 }[e.key]; if (mv !== undefined) { e.preventDefault(); const n = i + mv; if (n >= 0 && n < 9 && Math.abs(n % 3 - i % 3) < 2) cells.children[n].focus(); } } });
-    b.addEventListener('mouseenter', () => { if (!matchMedia('(hover: hover)').matches) return; hover = i; kick(); }); b.addEventListener('mouseleave', () => { if (hover === i) hover = -1; kick(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) { hover = i; kick(); } }); b.addEventListener('blur', () => { if (hover === i) hover = -1; kick(); });
+    b.addEventListener('mouseenter', () => { if (!mousePtr) return; hover = i; kick(); }); b.addEventListener('mouseleave', () => { if (hover === i) hover = -1; kick(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) { hover = i; kick(); } }); b.addEventListener('blur', () => { if (hover === i) hover = -1; kick(); });
     cells.appendChild(b);
   }
   syncCells(); kick();
