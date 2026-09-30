@@ -434,11 +434,14 @@ function undo() {
 }
 $('btnUndo').addEventListener('click', undo);
 function hintText() {
+  try { return hintText2(); } catch (e) { return 'Try the middle column.'; }
+}
+function hintText2() {
   if (!playing || roundOver) return 'Start a round first.'; if (match.kind === 'ladder' && turn !== 1) return 'Wait for your turn.';
   if (hints <= 0) return 'No hints left this match.';
   const b = board.slice(), me = turn, legal = ORDER.filter(c => lowest(b, c) >= 0); let col, why;
   const win = legal.find(c => winAfter(b, c, me)), block = legal.find(c => winAfter(b, c, 3 - me));
-  if (win !== undefined) { col = win; why = 'it wins the round!'; } else if (block !== undefined) { col = block; why = 'it stops a four.'; } else { col = searchMove(b, me, 6, 250).col; why = 'it builds your best chance.'; }
+  if (win !== undefined) { col = win; why = 'it wins the round!'; } else if (block !== undefined) { col = block; why = 'it stops a four.'; } else { try { col = searchMove(b, me, 6, 250).col; } catch (e) { col = undefined; } if (col === undefined || lowest(b, col) < 0) col = legal[0]; why = 'it builds your best chance.'; }
   hints--; $('nHint').textContent = hints; hintCol = col; kick(); setTimeout(() => { if (hintCol === col) hintCol = -1; }, 5000); PZ.snd.play('pick'); return 'Try column ' + (col + 1) + ': ' + why;
 }
 $('btnHint').addEventListener('click', () => { const t = hintText(); bubble(t); say(t); });
