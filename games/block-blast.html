@@ -220,7 +220,8 @@ function applyTheme(t) {
 
 /* ------------------------------------------------------------ textures */
 const TEX = {};
-['walnut', 'oak', 'pine', 'leather', 'marble', 'linen', 'onyx'].forEach(n => { const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; spriteCache.clear(); bgCanvas = null; if (ready) { renderTray(); kick(); } }; im.src = 'assets/tex/' + n + '.jpg'; });
+let texPend = 0;
+['walnut', 'oak', 'pine', 'leather', 'marble', 'linen', 'onyx'].forEach(n => { const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; if (!texPend) texPend = setTimeout(() => { texPend = 0; spriteCache.clear(); bgCanvas = null; if (ready) { renderTray(); kick(); } }, 150); }; im.src = 'assets/tex/' + n + '.jpg'; });
 /* draw a crop of a texture into a box (seed picks where in the texture, frac how much of it) */
 function texBox(c, name, x, y, w, h, seed, frac) {
   const im = TEX[name]; if (!im) return false; const sw = im.width * (frac || 0.4), sh = sw * (h / w);

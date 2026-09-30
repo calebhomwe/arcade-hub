@@ -171,7 +171,8 @@ function applySet(t) {
 
 /* ------------------------------------------------------------ textures */
 const TEX = {};
-['walnut', 'oak', 'pine', 'leather', 'marble', 'linen', 'onyx'].forEach(n => { const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; bgCanvas = null; if (ready) { kick(); paintYou(); drawLogoPieces(); } }; im.src = 'assets/tex/' + n + '.jpg'; });
+let texPend = 0;
+['walnut', 'oak', 'pine', 'leather', 'marble', 'linen', 'onyx'].forEach(n => { const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; bgCanvas = null; if (!texPend) texPend = setTimeout(() => { texPend = 0; if (ready) { kick(); paintYou(); drawLogoPieces(); } }, 150); }; im.src = 'assets/tex/' + n + '.jpg'; });
 function texBox(c, name, x, y, w, h, seed, frac) {
   const im = TEX[name]; if (!im) return false; const sw = im.width * (frac || 0.4), sh = sw * (h / w);
   c.drawImage(im, ((seed * 97) % (im.width - sw)) | 0, ((seed * 57) % Math.max(1, im.height - sh)) | 0, sw, sh, x, y, w, h); return true;
