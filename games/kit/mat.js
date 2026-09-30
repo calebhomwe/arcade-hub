@@ -7,7 +7,8 @@
 (function (G) {
   'use strict';
   const TEX = {}; let base = 'assets/tex/';
-  function load(names, onLoad) { names.forEach(n => { if (TEX[n] !== undefined) return; TEX[n] = null; const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; onLoad && onLoad(n); }; im.src = base + n + '.jpg'; }); }
+  /* onLoad is coalesced: several textures arriving together trigger ONE redraw, not one heavy redraw each */
+  function load(names, onLoad) { let pend = 0; names.forEach(n => { if (TEX[n] !== undefined) return; TEX[n] = null; const im = new Image(); im.decoding = 'async'; im.onload = () => { TEX[n] = im; if (onLoad && !pend) pend = setTimeout(() => { pend = 0; onLoad(n); }, 150); }; im.src = base + n + '.jpg'; }); }
   function texBox(c, name, x, y, w, h, seed, frac) {
     const im = TEX[name]; if (!im) return false; const sw = im.width * (frac || 0.4), sh = Math.min(im.height, sw * (h / w));
     c.drawImage(im, ((seed * 97) % Math.max(1, im.width - sw)) | 0, ((seed * 57) % Math.max(1, im.height - sh)) | 0, sw, sh, x, y, w, h); return true;
