@@ -7,14 +7,14 @@
 <meta name="theme-color" content="#2c5e2a">
 <title>Minesweeper</title>
 <style>
-:root{--bg1:#4f8f3a;--bg2:#153a16;--ink:#fff3d2;--muted:rgba(255,243,210,.72);--accent:#ffd979;--bgtex:url(assets/tex/linen.jpg);--bs:min(calc(100vw - 20px),calc(100vh - 320px),470px);--pz-ov1:#4f8f3a;--pz-ov2:#153a16;--pz-ovink:#fff3d2}
-@supports (height:100dvh){:root{--bs:min(calc(100vw - 20px),calc(100dvh - 320px),470px)}}
+:root{--bg1:#4f8f3a;--bg2:#153a16;--ink:#fff3d2;--muted:rgba(255,243,210,.72);--accent:#ffd979;--bgtex:url(assets/tex/linen.jpg);--bs:min(calc(100vw - 4px),calc(100vh - 320px),470px);--pz-ov1:#4f8f3a;--pz-ov2:#153a16;--pz-ovink:#fff3d2}
+@supports (height:100dvh){:root{--bs:min(calc(100vw - 4px),calc(100dvh - 320px),470px)}}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{font-family:var(--pz-text,system-ui,-apple-system,'Segoe UI',sans-serif);color:var(--ink);background-color:var(--bg2);background-image:radial-gradient(90% 46% at 50% -4%,rgba(255,226,150,.36),rgba(255,226,150,0) 70%),linear-gradient(180deg,var(--bg1),var(--bg2)),var(--bgtex);background-size:auto,auto,320px;background-blend-mode:normal,normal,soft-light;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;color:inherit;-webkit-appearance:none;appearance:none}
 .glass{background:var(--pz-navy,linear-gradient(180deg,#1c3460,#0a162e));box-shadow:inset 0 0 0 1.5px rgba(255,220,140,.42),inset 0 1px 0 rgba(255,255,255,.2),0 6px 14px rgba(0,0,0,.35);border-radius:16px;color:#fff3d2}
-#app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:max(6px,env(safe-area-inset-top)) 10px max(8px,env(safe-area-inset-bottom));gap:8px;touch-action:none}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:max(6px,env(safe-area-inset-top)) 3px max(8px,env(safe-area-inset-bottom));gap:8px;touch-action:none}
 #top{width:min(100%,480px);display:flex;align-items:center;gap:8px;min-height:48px;padding-right:52px}
 #back{display:inline-flex;align-items:center;min-height:44px;padding:0 12px 0 4px;color:var(--muted);text-decoration:none;font:700 15px/1 var(--pz-display,sans-serif);text-shadow:0 1px 0 rgba(0,0,0,.4)}
 #modeName{flex:1;text-align:center;font:600 16px/1.1 var(--pz-display,sans-serif);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 0 rgba(0,0,0,.4)}
@@ -122,7 +122,7 @@ const say = t => { const l = $('live'); l.textContent = ''; setTimeout(() => { l
 /* ------------------------------------------------------------ looks: every world is a different ground */
 const THEMES = [
   { id: 'meadow', name: 'Meadow', level: 1, colors: ['#6aae45', '#b98a5b', '#4f8f3a'], bg: ['#4f8f3a', '#153a16'], bgTex: 'linen', ink: '#fff3d2', muted: 'rgba(255,243,210,.75)', accent: '#ffd979', tint: '#2c5e2a', frame: { tex: 'walnut', tint: null },
-    cover: { tex: 'linen', tint: '#5fa640', hi: 'rgba(230,255,190,.5)' }, floor: { tex: 'walnut', tint: '#c79a68', dark: false }, nums: ['', '#2563c9', '#2f8f3c', '#d1352b', '#6b3aa0', '#b8560f', '#12808a', '#222', '#555'] },
+    cover: { tex: 'marble', tint: '#8fae7c', hi: 'rgba(230,255,190,.4)' }, floor: { tex: 'walnut', tint: '#c79a68', dark: false }, nums: ['', '#2563c9', '#2f8f3c', '#d1352b', '#6b3aa0', '#b8560f', '#12808a', '#222', '#555'] },
   { id: 'beach', name: 'Sandy Shore', level: 2, colors: ['#f0cf8a', '#f6e7bd', '#1a7ea0'], bg: ['#2aa0c4', '#0a4666'], bgTex: 'linen', ink: '#fff8e4', muted: 'rgba(255,248,228,.78)', accent: '#ffe08a', tint: '#1a7ea0', frame: { tex: 'oak', tint: '#d9a566' },
     cover: { tex: 'oak', tint: '#eccb86', hi: 'rgba(255,245,200,.6)' }, floor: { tex: 'paper', tint: '#f7e9c2', dark: false }, nums: ['', '#1f5fc2', '#2a8a38', '#d1352b', '#5f2f98', '#b0500a', '#0f7a86', '#222', '#555'] },
   { id: 'snow', name: 'Snowfield', level: 4, colors: ['#d6ecf8', '#f4f9ff', '#5b8fd0'], bg: ['#7fb4e0', '#26507a'], bgTex: 'linen', ink: '#f4fbff', muted: 'rgba(244,251,255,.8)', accent: '#bfe6ff', tint: '#5b8fd0', frame: { tex: 'marble', tint: '#cfdcec' },
@@ -186,9 +186,9 @@ const revT = {}, popT = {}; let shakeT = 0, flashT = 0, boomAt = null;
 function fitBoard() {
   const app = $('app'), cs = getComputedStyle(app), gap = parseFloat(cs.rowGap) || 8;
   const fixed = $('top').offsetHeight + $('hud').offsetHeight + $('tools').offsetHeight + $('hintline').offsetHeight + gap * 4 + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-  document.documentElement.style.setProperty('--bs', Math.max(160, Math.floor(Math.min(app.clientWidth - 20, app.clientHeight - fixed, 470))) + 'px');
+  document.documentElement.style.setProperty('--bs', Math.max(160, Math.floor(Math.min(app.clientWidth - 4, app.clientHeight - fixed, 470))) + 'px');
 }
-function layout() { fitBoard(); dpr = Math.min(window.devicePixelRatio || 1, 2); const r = $('stage').getBoundingClientRect(), css = Math.max(120, Math.floor(r.width)); S = Math.round(css * dpr); cv.width = S; cv.height = S; FR = Math.round(S * 0.032); CS = (S - 2 * FR) / N; spriteCache.clear(); bgCanvas = null; kick(); }
+function layout() { fitBoard(); dpr = Math.min(window.devicePixelRatio || 1, 2); const r = $('stage').getBoundingClientRect(), css = Math.max(120, Math.floor(r.width)); S = Math.round(css * dpr); cv.width = S; cv.height = S; FR = Math.round(S * 0.018); CS = (S - 2 * FR) / N; spriteCache.clear(); bgCanvas = null; kick(); }
 window.addEventListener('resize', () => { clearTimeout(layout.t); layout.t = setTimeout(layout, 80); });
 window.addEventListener('orientationchange', () => setTimeout(layout, 200));
 function kick() { if (!frameOn) frameOn = requestAnimationFrame(frame); }
@@ -196,11 +196,11 @@ function frame(now) { frameOn = 0; draw(now); const t = performance.now(); if (O
 let cursorVisible = false;
 function coverSprite(v, s) {
   s = Math.ceil(s); const key = theme.id + 'c' + v + '|' + s; let sp = spriteCache.get(key); if (sp) return sp; if (spriteCache.size > 80) spriteCache.clear();
-  const m = Math.round(s * 0.07), z = s + 2 * m; sp = document.createElement('canvas'); sp.width = sp.height = z; const c = sp.getContext('2d'), p = s * 0.045, x = m + p, y = m + p, w = s - 2 * p, r = w * 0.2, cv0 = theme.cover;
+  const m = Math.round(s * 0.07), z = s + 2 * m; sp = document.createElement('canvas'); sp.width = sp.height = z; const c = sp.getContext('2d'), p = s * 0.03, x = m + p, y = m + p, w = s - 2 * p, r = w * 0.1, cv0 = theme.cover;
   c.save(); c.shadowColor = 'rgba(0,0,0,.55)'; c.shadowBlur = s * 0.09; c.shadowOffsetY = s * 0.06; rr(c, x, y, w, w, r); c.fillStyle = shade(cv0.tint, -0.4); c.fill(); c.restore();
   c.save(); rr(c, x, y, w, w, r); c.clip();
   c.fillStyle = cv0.tint; c.fillRect(x, y, w, w); c.globalCompositeOperation = 'overlay'; c.globalAlpha = 0.9; Mat.texBox(c, cv0.tex, x, y, w, w, v * 31 + 5, 0.4); c.globalAlpha = 0.3; c.globalCompositeOperation = 'multiply'; Mat.texBox(c, cv0.tex, x, y, w, w, v * 31 + 9, 0.4); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
-  const g = c.createLinearGradient(x, y, x + w * 0.25, y + w); g.addColorStop(0, 'rgba(255,255,255,.34)'); g.addColorStop(0.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.36)'); c.fillStyle = g; c.fillRect(x, y, w, w);
+  const g = c.createLinearGradient(x, y, x + w * 0.25, y + w); g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(0.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.4)'); c.fillStyle = g; c.fillRect(x, y, w, w);
   const bv = c.createLinearGradient(x, y, x + w, y + w); bv.addColorStop(0, 'rgba(255,255,255,.7)'); bv.addColorStop(0.5, 'rgba(255,255,255,0)'); bv.addColorStop(1, 'rgba(0,0,0,.5)'); rr(c, x + s * 0.02, y + s * 0.02, w - s * 0.04, w - s * 0.04, r * 0.9); c.strokeStyle = bv; c.lineWidth = Math.max(1.5, s * 0.06); c.stroke();
   c.fillStyle = cv0.hi; c.beginPath(); c.ellipse(x + w * 0.4, y + w * 0.2, w * 0.3, w * 0.09, -0.15, 0, 6.283); c.fill();
   c.restore(); sp._m = m; spriteCache.set(key, sp); return sp;
@@ -284,7 +284,7 @@ cv.addEventListener('keydown', e => {
   if (mv !== undefined) { e.preventDefault(); const n = cursor + mv; if (n >= 0 && n < N * N && Math.abs(n % N - cursor % N) < 2) cursor = n; cursorVisible = true; kick(); }
   else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cursorVisible = true; act(cursor, flagMode ? 'flag' : 'dig'); } else if (e.key === 'f' || e.key === 'F') { cursorVisible = true; act(cursor, 'flag'); }
 });
-cv.addEventListener('focus', () => { if (playing) { cursorVisible = true; kick(); } }); cv.addEventListener('blur', () => { cursorVisible = false; kick(); });
+ cv.addEventListener('blur', () => { cursorVisible = false; kick(); });
 function act(i, what) { if (!playing || dead || won) return; hintCell = -1; if (what === 'flag') toggleFlag(i); else dig(i); }
 
 /* ------------------------------------------------------------ rules */
