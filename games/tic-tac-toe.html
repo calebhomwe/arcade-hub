@@ -246,7 +246,7 @@ function layout() {
     b.style.left = ((FR + q * CW) / S * 100) + '%'; b.style.top = ((FR + r0 * CW) / S * 100) + '%'; b.style.width = (CW / S * 100) + '%'; b.style.height = (CW / S * 100) + '%';
     b.addEventListener('pointerdown', e => { e.preventDefault(); humanMove(i); });
     b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); humanMove(i); } else { const mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 }[e.key]; if (mv !== undefined) { e.preventDefault(); const n = i + mv; if (n >= 0 && n < 9 && Math.abs(n % 3 - i % 3) < 2) cells.children[n].focus(); } } });
-    b.addEventListener('mouseenter', () => { hover = i; kick(); }); b.addEventListener('mouseleave', () => { if (hover === i) hover = -1; kick(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) { hover = i; kick(); } }); b.addEventListener('blur', () => { if (hover === i) hover = -1; kick(); });
+    b.addEventListener('mouseenter', () => { if (!matchMedia('(hover: hover)').matches) return; hover = i; kick(); }); b.addEventListener('mouseleave', () => { if (hover === i) hover = -1; kick(); }); b.addEventListener('focus', () => { if (b.matches(':focus-visible')) { hover = i; kick(); } }); b.addEventListener('blur', () => { if (hover === i) hover = -1; kick(); });
     cells.appendChild(b);
   }
   syncCells(); kick();
