@@ -30,6 +30,7 @@ body.kk{background:#3a6a3a}
 #scene .trees{position:absolute;left:0;width:100%;top:23%;height:22%}
 #scene .lawn{position:absolute;left:-30%;right:-30%;top:41%;bottom:-8%;transform-origin:50% 0;transform:perspective(520px) rotateX(46deg);background:url(assets/kids/tex/grass.jpg) 0 0/300px 300px}
 #scene .lawn::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--haze),.55) 0,rgba(var(--haze),0) 22%),radial-gradient(ellipse at 62% 20%,var(--lawn) 0,transparent 62%)}
+#scene .patch{position:absolute;left:4%;right:4%;top:44%;bottom:6%;background:url(assets/kids/tex/soil.jpg) center/260px;opacity:.55;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 72%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 30%,transparent 72%);mix-blend-mode:multiply}
 #scene .lawnshade{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,rgba(var(--shade),0),rgba(var(--shade),.5))}
 #scene.w1 .lawn{filter:sepia(.55) saturate(1.3) hue-rotate(-14deg) brightness(.92)}
 #scene.w2 .lawn{filter:brightness(.42) saturate(.9) hue-rotate(18deg)}
@@ -135,7 +136,7 @@ body.kk{background:#3a6a3a}
     <g fill="#000" opacity=".16"><circle cx="30" cy="84" r="16"/><circle cx="76" cy="86" r="18"/><circle cx="140" cy="84" r="20"/><circle cx="196" cy="86" r="18"/><circle cx="262" cy="84" r="20"/><circle cx="318" cy="86" r="18"/><circle cx="380" cy="84" r="17"/></g>
     <rect width="400" height="100" fill="url(#hz)"/>
   </svg>
-  <div class="lawn"></div><div class="lawnshade"></div>
+  <div class="lawn"></div><div class="patch"></div><div class="lawnshade"></div>
   <div class="fence"><b style="top:6px"></b><b style="top:20px"></b><i style="left:2%"></i><i style="left:14%"></i><i style="left:26%"></i><i style="left:38%"></i><i style="left:50%"></i><i style="left:62%"></i><i style="left:74%"></i><i style="left:86%"></i><i style="left:97%"></i></div>
   <div class="fly" style="left:14%;top:56%"></div><div class="fly" style="left:78%;top:48%;animation-delay:-2s"></div><div class="fly" style="left:52%;top:72%;animation-delay:-3.4s"></div><div class="fly" style="left:30%;top:88%;animation-delay:-1s"></div>
   <div id="decor"></div>
