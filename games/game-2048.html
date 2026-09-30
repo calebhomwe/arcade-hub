@@ -518,7 +518,8 @@ function code(c) {
   if (c === 'BIGTILE' && tiles) { const used = new Set(tiles.map(t => t.r * N + t.c)); const free = []; for (let i = 0; i < N * N; i++) if (!used.has(i)) free.push(i); if (free.length) { const k = free[(Math.random() * free.length) | 0]; addTile(256, (k / N) | 0, k % N, true); } }
   return { ok: true, message: CODES[c] };
 }
-if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'trial' && def) newRun('trial', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
+PZ.motes();
+if (SDK) SDK.init({ onPause: () => PZ.setPaused(true), onResume: () => PZ.setPaused(false), pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'trial' && def) newRun('trial', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
 
 /* ------------------------------------------------------------ boot */
 tiles = []; nextId = 1; score = 0; moves = 0; merges = 0; movesLeft = 99; history = []; undoLeft = 5; hammers = 0; mergeCount = 0; hammerMode = false; over = false; playing = false; won = false; runMaxTile = 0; runMerges = 0;

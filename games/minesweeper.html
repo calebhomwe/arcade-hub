@@ -97,7 +97,7 @@ button{font-family:inherit;color:inherit;-webkit-appearance:none;appearance:none
   <div class="tag">Dig safe. Numbers count the bombs next to them.</div>
   <div class="menu">
     <button class="mbtn" id="mTrials"><svg viewBox="0 0 40 40"><path d="M20 3l4.8 10.2L36 14.6l-8.2 7.6L30 33 20 27.6 10 33l2.2-10.8L4 14.6l11.2-1.4z" fill="url(#pzGold)" stroke="#8a5a0c" stroke-width="2.2" stroke-linejoin="round"/></svg><span><b>Expeditions</b><small id="sTrials">18 boards · 3 lives · win stars</small></span></button>
-    <button class="mbtn cls" id="mClassic"><svg viewBox="0 0 40 40"><rect x="4" y="4" width="14" height="14" rx="3" fill="#c9d1a8" stroke="#3a4a1a" stroke-width="2"/><rect x="22" y="4" width="14" height="14" rx="3" fill="#7fae52" stroke="#2a4a12" stroke-width="2"/><rect x="4" y="22" width="14" height="14" rx="3" fill="#7fae52" stroke="#2a4a12" stroke-width="2"/><rect x="22" y="22" width="14" height="14" rx="3" fill="#c9d1a8" stroke="#3a4a1a" stroke-width="2"/><text x="11" y="15" font-size="11" font-weight="700" text-anchor="middle" fill="#2a6fdb">1</text></svg><span><b>Classic</b><small id="sClassic">9×9 · one life</small></span></button>
+    <button class="mbtn cls" id="mClassic"><svg viewBox="0 0 40 40"><rect x="4" y="4" width="14" height="14" rx="3" fill="#c9d1a8" stroke="#3a4a1a" stroke-width="2"/><rect x="22" y="4" width="14" height="14" rx="3" fill="#7fae52" stroke="#2a4a12" stroke-width="2"/><rect x="4" y="22" width="14" height="14" rx="3" fill="#7fae52" stroke="#2a4a12" stroke-width="2"/><rect x="22" y="22" width="14" height="14" rx="3" fill="#c9d1a8" stroke="#3a4a1a" stroke-width="2"/></svg><span><b>Classic</b><small id="sClassic">9×9 · one life</small></span></button>
     <button class="mbtn day" id="mDaily"><svg viewBox="0 0 40 40"><rect x="5" y="7" width="30" height="28" rx="7" fill="#fff6dc" stroke="#143a78" stroke-width="2.4"/><path d="M5 16h30" stroke="#143a78" stroke-width="2.4"/><path d="M13 3v8M27 3v8" stroke="#143a78" stroke-width="2.8" stroke-linecap="round"/><circle cx="20" cy="26" r="4.5" fill="#2d6ccd"/></svg><span><b>Daily board</b><small id="sDaily">Same board for everyone today</small></span><span class="badge" id="dayBadge" hidden>NEW</span></button>
   </div>
   <div class="sizes" id="sizes" role="group" aria-label="Classic difficulty"><button data-lv="easy">Easy · 8</button><button data-lv="normal">Normal · 10</button><button data-lv="hard">Hard · 16</button></div>
@@ -472,7 +472,8 @@ function code(c) {
   if (c === 'SAFEPATH' && playing && !dead && !won) { if (firstClick) dig(cursor); for (let n = 0; n < 5 && !won; n++) { const k = grid.findIndex(x => !x.rev && !x.mine && !x.flag); if (k < 0) break; dig(k); } }
   kick(); return { ok: true, message: CODES[c] };
 }
-if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'exp' && def) newRun('exp', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => { tutSeen = false; newRun('classic'); }, onHint: () => hintText(false), onCheat: code });
+PZ.motes();
+if (SDK) SDK.init({ onPause: () => PZ.setPaused(true), onResume: () => PZ.setPaused(false), pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'exp' && def) newRun('exp', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => { tutSeen = false; newRun('classic'); }, onHint: () => hintText(false), onCheat: code });
 
 /* ------------------------------------------------------------ boot */
 buildGrid(); prof.chip($('top')); ready = true; applyTheme(prof.theme()); layout(); updateHud(); drawLogoArt(); toTitle();

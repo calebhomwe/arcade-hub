@@ -782,7 +782,8 @@ function code(c) {
   }
   return { ok: true, message: CODES[c] };
 }
-if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'adventure' && def) newRun('adventure', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
+PZ.motes();
+if (SDK) SDK.init({ onPause: () => PZ.setPaused(true), onResume: () => PZ.setPaused(false), pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'adventure' && def) newRun('adventure', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
 
 /* ------------------------------------------------------------ boot */
 buildLogo(); drift($('drift')); drift($('drift2'));

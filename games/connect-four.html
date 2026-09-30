@@ -498,7 +498,8 @@ function code(c) {
   if (c === 'XRAY' && match && match.kind === 'ladder') { xrayCol = searchMove(board.slice(), 2, 4, 120).col; kick(); }
   return { ok: true, message: CODES[c] };
 }
-if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (match) startMatch({ kind: match.kind, idx: match.idx }); else startMatch({ kind: 'ladder', idx: nextIdx() }); }, onExit: toTitle, onTutorial: () => { tutSeen = false; startMatch({ kind: 'ladder', idx: 0 }); }, onHint: () => hintText(), onCheat: code });
+PZ.motes();
+if (SDK) SDK.init({ onPause: () => PZ.setPaused(true), onResume: () => PZ.setPaused(false), pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (match) startMatch({ kind: match.kind, idx: match.idx }); else startMatch({ kind: 'ladder', idx: nextIdx() }); }, onExit: toTitle, onTutorial: () => { tutSeen = false; startMatch({ kind: 'ladder', idx: 0 }); }, onHint: () => hintText(), onCheat: code });
 
 /* ------------------------------------------------------------ icons + boot */
 $('icoUndo').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -3)"/></svg>';
