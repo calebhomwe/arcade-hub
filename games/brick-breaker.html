@@ -23,10 +23,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 #pow{display:flex;gap:6px;margin-top:6px;min-height:26px}
 #pow span{display:flex;align-items:center;gap:4px;height:26px;padding:0 9px 0 5px;border-radius:99px;background:rgba(10,22,34,.6);border:1px solid rgba(160,200,230,.3);font-size:13px;font-weight:900}
 #pow b{display:inline-flex;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;font-size:11px;color:#fff}
-#lives{position:absolute;left:max(12px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));display:flex;gap:5px;align-items:center;min-height:36px}
-#lives i{width:22px;height:22px;display:block;background:radial-gradient(circle at 35% 30%,#ffd0c0,#e0402c 55%,#8a1408);border-radius:50% 50% 50% 50%/55% 55% 45% 45%;transform:rotate(-45deg);position:relative;box-shadow:0 2px 4px rgba(0,0,0,.5)}
-#lives i::before,#lives i::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;background:inherit}
-#lives i::before{left:11px;top:0}#lives i::after{left:0;top:-11px}
+#lives{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 10px);display:flex;gap:4px;align-items:center;min-height:36px;pointer-events:none}
+#lives i{width:26px;height:26px;display:block;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><defs><radialGradient id='g' cx='.35' cy='.3' r='.8'><stop offset='0' stop-color='%23ffb0a0'/><stop offset='.55' stop-color='%23e0402c'/><stop offset='1' stop-color='%238a1408'/></radialGradient></defs><path d='M12 21S3 14.5 3 8.6C3 5.5 5.3 3.5 7.8 3.5c1.7 0 3.2 1 4.2 2.6 1-1.6 2.5-2.6 4.2-2.6 2.5 0 4.8 2 4.8 5.1C21 14.5 12 21 12 21z' fill='url(%23g)' stroke='%235a0c04' stroke-width='1'/></svg>") center/contain no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+
+
 #lives i.off{filter:grayscale(1) brightness(.4);opacity:.5}
 #mute{position:absolute;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));width:46px;height:46px;border-radius:14px;border:2px solid rgba(150,196,228,.34);background:linear-gradient(180deg,rgba(38,68,94,.92),rgba(15,30,44,.92));color:#fbf1d3;font-size:20px;box-shadow:0 3px 8px rgba(0,0,0,.4);z-index:5;cursor:pointer}
 #mute:active{transform:scale(.93)}

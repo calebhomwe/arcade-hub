@@ -47,6 +47,7 @@
 .hm-medal{display:flex;justify-content:center;margin:0}
 .hm-medal.has{margin:2px 0 2px;min-height:64px}
 .hm-medal svg{width:64px;height:64px;filter:drop-shadow(0 5px 6px rgba(0,0,0,.5));animation:hmPop .6s cubic-bezier(.2,1.5,.4,1) .2s both}
+body.hm-lay #arcade-sdk-btn{display:none!important}
 .hm-cta{position:sticky;bottom:-14px;margin:0 -14px -14px;padding:10px 14px 14px;background:linear-gradient(180deg,rgba(19,37,53,0),rgba(19,37,53,.97) 22%);border-radius:0 0 20px 20px}
 .hm-stars{display:flex;justify-content:center;gap:6px;margin:0 0 6px}
 .hm-star{width:56px;height:56px;filter:drop-shadow(0 4px 5px rgba(0,0,0,.45));animation:hmPop .5s cubic-bezier(.2,1.6,.4,1) both}
@@ -296,6 +297,7 @@
     function closeLayer() {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
       if (layer) { layer.remove(); layer = null; }
+      D.body.classList.remove('hm-lay');
       if (prevFocus && prevFocus.focus) { try { prevFocus.focus(); } catch (e) {} } prevFocus = null;
     }
     function openLayer(cardCls) {
@@ -304,7 +306,7 @@
       const card = el('div', 'hm-card ' + (cardCls || '')); back.appendChild(card);
       back.addEventListener('pointerdown', e => e.stopPropagation()); back.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
       back.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeLayer(); if (layerClose) layerClose(); } });
-      D.body.appendChild(back); layer = back; return card;
+      D.body.appendChild(back); D.body.classList.add('hm-lay'); layer = back; return card;
     }
     let layerClose = null;
     function press(node, fn) { node.addEventListener('click', e => { e.stopPropagation(); fn(e); }); return node; }

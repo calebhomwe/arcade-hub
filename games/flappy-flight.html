@@ -184,7 +184,7 @@ function drawBird(c, sk, x, y, s, ang, wing, sqx, sqy, time) {
   if (acc === 'halo') { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,230,120,.95)'; c.lineWidth = 3.2; c.beginPath(); c.ellipse(1, -19 + bp * 0.8, 10.5, 3.4, -0.08, 0, 6.283); c.stroke(); c.strokeStyle = 'rgba(255,200,60,.35)'; c.lineWidth = 7; c.stroke(); c.restore(); }
   c.restore();
 }
-function drawSkin(x, sk, cx, cy, size, tm) { drawBird(x, sk, cx, cy + Math.sin(tm * 3) * 1.5, size / 40, -0.08, Math.sin(tm * 9) * 0.5, 1, 1, tm); }
+function drawSkin(x, sk, cx, cy, size, tm) { drawBird(x, sk, cx - size * 0.03, cy + Math.sin(tm * 3) * 1.5, size * 0.78 / 40, -0.08, Math.sin(tm * 9) * 0.5, 1, 1, tm); }
 
 /* ---------------------------------------------------------------- progression (one small layer, see kit/metakit.js) */
 const meta = HubMeta.create({
