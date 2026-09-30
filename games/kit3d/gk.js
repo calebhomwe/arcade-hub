@@ -69,6 +69,7 @@ const ICONS = {
   bag: '<path d="M6.6 8.6h10.8l1.6 12.4a1 1 0 01-1 1.1H6a1 1 0 01-1-1.1z" fill="url(#gk-brown)" stroke="#4d2c10" stroke-width="1.1" stroke-linejoin="round"/><path d="M8.8 10.4V7.2a3.2 3.2 0 016.4 0v3.2" fill="none" stroke="#4d2c10" stroke-width="1.6" stroke-linecap="round"/><path d="M8 12.6l.4 6" stroke="#ffd9a0" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><circle cx="12" cy="15.4" r="2" fill="url(#gk-gold)" stroke="#6b3f06" stroke-width=".8"/>',
   heart: '<path d="M12 21C5 15.6 2.6 12 2.6 8.4A4.8 4.8 0 0112 6.4a4.8 4.8 0 019.4 2c0 3.6-2.4 7.2-9.4 12.6z" fill="url(#gk-red)" stroke="#7a1a10" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 8.4a3 3 0 012.4-2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".8"/>',
   hand: '<path d="M9.2 12.6V4.6a1.9 1.9 0 013.8 0v6.2l5.4 1.2a2.2 2.2 0 011.7 2.6l-.9 5.2A3.4 3.4 0 0116 22.4H12a3.6 3.6 0 01-2.9-1.5L5.6 16a1.7 1.7 0 012.6-2.1z" fill="#fff" stroke="#22314f" stroke-width="1.2" stroke-linejoin="round"/><path d="M13 10.8v2.6M15.6 11.6v2M18.2 12.4v1.4" stroke="#22314f" stroke-width="1" stroke-linecap="round" fill="none" opacity=".4"/>',
+  plank: '<rect x="2.6" y="14.4" width="18.8" height="5.4" rx="1.2" fill="url(#gk-brown)" stroke="#4d2c10" stroke-width="1"/><rect x="3.6" y="8.8" width="18.8" height="5.4" rx="1.2" fill="url(#gk-brown)" stroke="#4d2c10" stroke-width="1" transform="rotate(-3 12 11.5)"/><rect x="2.4" y="3.4" width="18.8" height="5.4" rx="1.2" fill="url(#gk-brown)" stroke="#4d2c10" stroke-width="1" transform="rotate(2 12 6)"/><path d="M5 16.6h6M8 11h7M6 5.6h5" stroke="#ffd9a0" stroke-width="1" stroke-linecap="round" opacity=".7"/>',
   ball: '<circle cx="12" cy="12" r="9.6" fill="url(#gk-coin)" ' + ES + '/>',
 };
 let defsIn = false;
@@ -357,7 +358,7 @@ function levelPicker(host, P, o = {}) {
   const S = { level: Math.min(P.d.level, o.start || P.d.level) };
   function paint() {
     S.level = clamp(S.level, 1, P.d.level);
-    lv.textContent = 'Level ' + S.level; stars(st, P.starsFor(S.level)); wn.textContent = 'World ' + P.world(S.level).num + ' · ' + P.world(S.level).name;
+    lv.textContent = (o.label || 'Level') + ' ' + S.level; stars(st, P.starsFor(S.level)); wn.textContent = 'World ' + P.world(S.level).num + ' · ' + P.world(S.level).name;
     pv.disabled = S.level <= 1; nx.disabled = S.level >= P.d.level;
     if (o.onChange) o.onChange(S.level);
   }
@@ -401,10 +402,21 @@ function shop(o) {
   paint(); document.body.appendChild(sheet);
   return { close: shut, paint };
 }
+/* a bottom sheet with a navy header: GK.sheet({title, chip: true}) -> {el, body, chip, close}; fill `body` yourself */
+function sheet(o = {}) {
+  const sh = el('div', 'gk-sheet gk'), pan = el('div', 'pan');
+  pan.innerHTML = '<div class="top"><h3>' + (o.title || '') + '</h3><div style="display:flex;gap:8px;align-items:center">' + (o.chip ? '<span class="gk-chip"></span>' : '') + '<button type="button" class="gk-ib" aria-label="Close">' + icon('x') + '</button></div></div><div class="body"></div>';
+  sh.appendChild(pan);
+  const api = { el: sh, body: pan.querySelector('.body'), chip: pan.querySelector('.gk-chip'), close() { sh.remove(); if (o.onClose) o.onClose(); } };
+  pan.querySelector('button.gk-ib').addEventListener('click', () => { hooks.sfx('tap'); api.close(); });
+  sh.addEventListener('click', e => { if (e.target === sh) api.close(); });
+  document.body.appendChild(sh);
+  return api;
+}
 function coach(html, o = {}) {
   const c = el('div', 'gk gk-coach' + (o.drag ? ' drag' : ''), '<div class="hand">' + icon('hand') + '</div><div class="tx">' + html + '</div>');
   document.body.appendChild(c); return { el: c, remove() { c.remove(); } };
 }
 
-export const GK = { icon, el, store, haptic, countUp, pop, confetti, fly, toast, stars, levelBar, levelPicker, dailyStrip, weekRow, shop, coach, hooks, iso, clamp, RM, ICONS, progress: (id, cfg) => new Progress(id, cfg) };
+export const GK = { icon, el, store, haptic, countUp, pop, confetti, fly, toast, stars, levelBar, levelPicker, dailyStrip, weekRow, shop, sheet, coach, hooks, iso, clamp, RM, ICONS, progress: (id, cfg) => new Progress(id, cfg) };
 if (typeof window !== 'undefined') window.GK = GK;

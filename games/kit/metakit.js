@@ -40,19 +40,28 @@
 .hm-btn:focus-visible,.hm-x:focus-visible,.hm-chip:focus-visible,.hm-sk:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .hm-row{display:flex;gap:8px;align-items:stretch}
 .hm-row>*{flex:1;min-width:0}
+.hm-row .hm-btn{padding:0 6px;font-size:17px;white-space:nowrap;min-height:50px}
 .hm-score{text-align:center;margin:0 0 4px}
 .hm-score .n{font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;font-size:66px;font-weight:900;line-height:1.05;display:inline-block;color:#ffe9a0;background:linear-gradient(180deg,#fff6cf 10%,#f2c14e 55%,#c98a1e);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 3px 0 rgba(60,30,0,.7)) drop-shadow(0 0 14px rgba(255,190,80,.35))}
 .hm-score .l{font-size:13px;letter-spacing:2px;color:#b9d0e2;font-weight:800;margin-top:-4px}
-.hm-medal{display:flex;justify-content:center;margin:2px 0 2px;min-height:64px}
+.hm-medal{display:flex;justify-content:center;margin:0}
+.hm-medal.has{margin:2px 0 2px;min-height:64px}
 .hm-medal svg{width:64px;height:64px;filter:drop-shadow(0 5px 6px rgba(0,0,0,.5));animation:hmPop .6s cubic-bezier(.2,1.5,.4,1) .2s both}
+.hm-cta{position:sticky;bottom:-14px;margin:0 -14px -14px;padding:10px 14px 14px;background:linear-gradient(180deg,rgba(19,37,53,0),rgba(19,37,53,.97) 22%);border-radius:0 0 20px 20px}
+.hm-stars{display:flex;justify-content:center;gap:6px;margin:0 0 6px}
+.hm-star{width:56px;height:56px;filter:drop-shadow(0 4px 5px rgba(0,0,0,.45));animation:hmPop .5s cubic-bezier(.2,1.6,.4,1) both}
+.hm-star:nth-child(2){margin-top:-8px}
 .hm-best{text-align:center;font-size:17px;font-weight:800;margin-bottom:8px;color:#dbe7f1}
 .hm-best b{color:var(--gold1)}
+.hm-top{display:flex;gap:8px;justify-content:center;align-items:center;font-size:15px;color:#b9d0e2;margin:-2px 0 8px;font-weight:800}
+.hm-top span{padding:1px 8px;border-radius:99px;background:rgba(0,0,0,.3)}
+.hm-top span.me{background:linear-gradient(180deg,#f7dc82,#d29b2c);color:#3a2408}
 .hm-new{display:inline-block;background:linear-gradient(180deg,#ff8a5c,#d9412c);color:#fff;font-weight:900;border-radius:999px;padding:3px 14px;font-size:15px;letter-spacing:1.5px;border:1px solid rgba(255,255,255,.4);text-shadow:0 1px 0 rgba(90,10,0,.7);box-shadow:0 3px 8px rgba(0,0,0,.4);animation:hmPulse 1s ease-in-out infinite}
 .hm-earn{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.22));border:1px solid var(--line);border-radius:14px;padding:8px 12px;margin-bottom:8px;font-size:22px;font-weight:900;box-shadow:inset 0 2px 6px rgba(0,0,0,.4)}
 .hm-earn .plus{color:var(--gold1);text-shadow:0 2px 0 rgba(0,0,0,.5)}
 .hm-earn small{font-size:14px;font-weight:700;color:#b9d0e2}
 .hm-list{display:grid;gap:6px;margin-bottom:10px}
-.hm-m{display:grid;grid-template-columns:1fr auto;gap:3px 8px;align-items:center;background:linear-gradient(180deg,var(--par1),var(--par2));border:1px solid #b79f6b;border-radius:12px;padding:7px 10px 8px;font-size:15px;line-height:1.2;color:var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.7)}
+.hm-m{display:grid;grid-template-columns:1fr auto;gap:3px 8px;align-items:center;background:linear-gradient(180deg,var(--par1),var(--par2));border:1px solid #b79f6b;border-radius:12px;padding:6px 10px 7px;font-size:15px;line-height:1.2;color:var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.7)}
 .hm-m .t{font-weight:800}
 .hm-m .r{font-weight:900;color:#8a5a06;font-size:15px;white-space:nowrap}
 .hm-m.done{background:linear-gradient(180deg,#e2f0c4,#c5dd93);border-color:#8fae55}
@@ -60,7 +69,7 @@
 .hm-m.done .r{color:#2f6a12}
 .hm-m.star{background:linear-gradient(180deg,#fff0bf,#f1d27c);border-color:#c8942b}
 .hm-m.fresh{animation:hmPulse .8s ease-in-out 2}
-.hm-bar{grid-column:1/-1;height:9px;border-radius:99px;background:rgba(40,25,5,.55);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+.hm-bar{grid-column:1/-1;height:8px;border-radius:99px;background:rgba(40,25,5,.55);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
 .hm-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(180deg,#b6ee7a,#4c9a29);box-shadow:inset 0 1px 0 rgba(255,255,255,.55);width:0;transition:width .7s cubic-bezier(.2,.9,.3,1)}
 .hm-next{display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,var(--par1),var(--par2));border:1px solid #b79f6b;border-radius:14px;padding:8px 10px;margin-bottom:12px;color:var(--ink);box-shadow:0 2px 0 rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.7)}
 .hm-next canvas{width:54px;height:54px;flex:none;border-radius:12px;background:radial-gradient(circle at 50% 40%,#fff8e4,#d9c592);box-shadow:inset 0 0 0 1px #b79f6b}
@@ -126,6 +135,9 @@
     return `<svg viewBox="0 0 64 64" aria-label="${txt(name)} medal"><defs><radialGradient id="${id}" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="${c[0]}"/><stop offset=".55" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></radialGradient></defs><path d="M18 2h11l4 20-9 3z" fill="#ef4444"/><path d="M46 2H35l-4 20 9 3z" fill="#3b82f6"/><circle cx="32" cy="40" r="20" fill="${c[2]}"/><circle cx="32" cy="39" r="18" fill="url(#${id})"/><circle cx="32" cy="39" r="12.5" fill="none" stroke="${c[2]}" stroke-opacity=".45" stroke-width="2"/><path d="M32 30l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6-4.5-4.1 6-.7z" fill="${c[0]}" stroke="${c[2]}" stroke-opacity=".5" stroke-width="1"/></svg>`;
   }
 
+  function starSVG(on, i) {
+    return '<svg viewBox="0 0 48 48" class="hm-star' + (on ? ' on' : '') + '" style="animation-delay:' + (0.25 + i * 0.18) + 's"><defs><linearGradient id="hs' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset=".55" stop-color="#f6bd2c"/><stop offset="1" stop-color="#b87208"/></linearGradient></defs><path d="M24 3l6.2 13.4 14.6 1.7-10.9 9.9 3 14.4L24 34.6 11.1 42.4l3-14.4L3.2 18.1l14.6-1.7z" fill="' + (on ? 'url(#hs' + i + ')' : 'rgba(0,0,0,.4)') + '" stroke="' + (on ? '#7a4a06' : 'rgba(255,255,255,.25)') + '" stroke-width="2" stroke-linejoin="round"/></svg>';
+  }
   function create(cfg) {
     css();
     const KEY = 'hm-' + cfg.id;
@@ -133,7 +145,7 @@
     const accent = cfg.accent || '#facc15';
     const skins = cfg.skins || [], byId = {}; skins.forEach(s => { byId[s.id] = s; });
     let mem = null;
-    function blank() { return { v: 1, coins: 0, life: 0, owned: {}, skin: skins.length ? skins[0].id : '', runs: 0, best: 0, stats: {}, days: [], wk: '', day: null, medals: {} }; }
+    function blank() { return { v: 1, coins: 0, life: 0, owned: {}, skin: skins.length ? skins[0].id : '', runs: 0, best: 0, stats: {}, days: [], wk: '', day: null, medals: {}, top: [] }; }
     function load() {
       let o = null;
       try { o = JSON.parse(G.localStorage.getItem(KEY) || 'null'); } catch (e) { o = null; }
@@ -230,6 +242,11 @@
     // ---------- end of a run
     function medalFor(score) { let m = null; (cfg.medals || []).forEach(x => { if (score >= x.at) m = x; }); return m; }
     function nextMedal(score) { const l = cfg.medals || []; for (let i = 0; i < l.length; i++) if (score < l[i].at) return l[i]; return null; }
+    function checkUnlocks() {
+      const out = []; skins.forEach(s => { if (!S.owned[s.id] && s.req && reqMet(s)) { S.owned[s.id] = 1; out.push(s); } });
+      if (out.length) { save(); out.forEach(s => toast('New skin: ' + s.name + '!')); sound('unlock'); FXconf(); }
+      return out;
+    }
     function finish(o) {
       o = o || {}; const today = ensureDay().d, score = o.score || 0, before = S.best;
       const res = { score, mode: o.mode || '', coins: 0, total: S.coins, isBest: false, best: S.best, medal: null, missions: [], unlocked: [], next: null, cheated: cheatedRun || isCheated(), week: null, prevBest: before };
@@ -237,12 +254,15 @@
       const track = o.trackBest !== false;
       S.runs++; if (track && score > S.best) { S.best = score; res.isBest = before > 0 || score > 0; }
       res.best = S.best;
-      const gain = Math.max(0, Math.floor(o.coins || 0));
+      if (track && score > 0) { const e = { s: score, m: o.mode || '', d: today }; S.top.push(e); S.top.sort((a, b) => b.s - a.s); S.top = S.top.slice(0, 5); res.topAt = S.top.indexOf(e); }
+      res.top = S.top.slice();
+      const firstToday = S.days.indexOf(today) < 0, gift = firstToday ? (cfg.dailyGift == null ? 5 : cfg.dailyGift) : 0, part = cfg.participation == null ? 1 : cfg.participation;
+      res.gift = gift;
+      const gain = Math.max(0, Math.floor(o.coins || 0)) + gift + part;
       S.coins += gain; S.life += gain; run.gain += gain; res.coins = run.gain; res.total = S.coins;
       res.medal = medalFor(score); if (res.medal) S.medals[res.medal.name] = (S.medals[res.medal.name] || 0) + 1;
       if (S.days.indexOf(today) < 0) { S.days.push(today); if (S.days.length > 90) S.days = S.days.slice(-90); }
-      skins.forEach(s => { if (!S.owned[s.id] && s.req && reqMet(s)) { S.owned[s.id] = 1; res.unlocked.push(s); } });
-      if (res.unlocked.length) { res.unlocked.forEach(s => toast('New skin: ' + s.name + '!')); sound('unlock'); }
+      res.unlocked = checkUnlocks();
       res.missions = missionRows().map(r => ({ text: r.def.text, p: r.st.p, target: r.def.target, done: !!r.st.done, fresh: run.doneNow.some(d => d.text === r.def.text), reward: r.reward, star: r.star }));
       res.next = nextGoal(); res.week = weekStamps(S.days, today);
       res.toBeat = track && !res.isBest && S.best > 0 ? S.best - score + 1 : 0;
@@ -298,7 +318,7 @@
       const list = [].slice.call(root.querySelectorAll('canvas[data-skin]')); if (!list.length) return;
       let last = 0; const rm = G.FX && G.FX.rm();
       (function f(now) {
-        raf = requestAnimationFrame(f); if (rm || now - last < 40) return; last = now;
+        raf = requestAnimationFrame(f); if (rm || now - last < 66) return; last = now;
         for (let i = 0; i < list.length; i++) list[i]._draw(now / 1000);
       })(0);
     }
@@ -312,17 +332,19 @@
       const h = el('div', 'hm-h', '<h2>' + txt(title) + '</h2>'); card.appendChild(h);
       if (o.subtitle) h.querySelector('h2').insertAdjacentHTML('afterend', '<span style="font-size:15px;opacity:.85;font-weight:500">' + txt(o.subtitle) + '</span>');
       const sc = el('div', 'hm-score'); sc.innerHTML = '<span class="n">0</span><div class="l">' + txt(o.scoreLabel || 'SCORE') + '</div>'; card.appendChild(sc);
-      const medal = el('div', 'hm-medal'); if (res.medal) medal.innerHTML = medalSVG(res.medal.name); card.appendChild(medal);
+      if (o.stars != null) { const st = el('div', 'hm-stars'); for (let i = 0; i < 3; i++) st.innerHTML += starSVG(i < o.stars, i); card.appendChild(st); }
+      const medal = el('div', 'hm-medal' + (res.medal && o.stars == null ? ' has' : '')); if (res.medal && o.stars == null) medal.innerHTML = medalSVG(res.medal.name); card.appendChild(medal);
       const best = el('div', 'hm-best');
       if (res.cheated) best.innerHTML = '<span style="opacity:.85">Codes on: this run does not count</span>';
       else if (res.isBest) best.innerHTML = '<span class="hm-new">NEW BEST!</span>';
       else if (res.toBeat > 0 && res.toBeat <= Math.max(6, res.best * 0.35)) best.innerHTML = '<b>' + res.toBeat + '</b> more to beat your best of ' + res.best;
       else best.innerHTML = 'Best <b>' + res.best + '</b>';
       card.appendChild(best);
+      if (res.top && res.top.length > 1) { const tp = el('div', 'hm-top'); tp.innerHTML = '🏆 ' + res.top.map((e, i) => '<span' + (i === res.topAt ? ' class="me"' : '') + '>' + e.s + '</span>').join(''); card.appendChild(tp); }
       if (!res.cheated) {
         const nm = res.medal ? null : nextMedal(res.score);
         if (nm && res.score > 0) best.insertAdjacentHTML('beforeend', '<div style="font-size:14px;opacity:.8;margin-top:2px">' + (nm.at - res.score) + ' to the ' + txt(nm.name) + ' medal</div>');
-        const earn = el('div', 'hm-earn'); earn.innerHTML = '<span class="hm-coin">' + coinIcon + '</span><span class="plus">+<span class="ec">0</span></span><small>' + txt(coinName) + '  ·  ' + fmt(res.total) + ' in total</small>'; card.appendChild(earn);
+        const earn = el('div', 'hm-earn'); earn.innerHTML = '<span class="hm-coin">' + coinIcon + '</span><span class="plus">+<span class="ec">0</span></span><small>' + txt(coinName) + '  ·  ' + fmt(res.total) + ' in total' + (res.gift ? '<br>includes +' + res.gift + ' first-game-of-the-day gift' : '') + '</small>'; card.appendChild(earn);
         if (res.missions && res.missions.length) {
           const list = el('div', 'hm-list');
           res.missions.forEach(m => {
@@ -340,17 +362,19 @@
         }
         if (res.unlocked && res.unlocked.length) { FXconf(); }
       }
-      const again = el('button', 'hm-btn big', txt(o.againLabel || 'PLAY AGAIN')); again.type = 'button'; press(again, () => { closeLayer(); if (o.onAgain) o.onAgain(); }); card.appendChild(again);
+      const cta = el('div', 'hm-cta'); card.appendChild(cta);
+      const again = el('button', 'hm-btn big', txt(o.againLabel || 'PLAY AGAIN')); again.type = 'button'; press(again, () => { closeLayer(); if (o.onAgain) o.onAgain(); }); cta.appendChild(again);
       const row = el('div', 'hm-row'); row.style.marginTop = '10px';
       const wkBtn = weeklyReady() ? '<span class="dot">!</span>' : '';
       const b1 = el('button', 'hm-btn sec', '🎨 Skins'); b1.type = 'button'; press(b1, () => openShop(() => showResult(o)));
       const b2 = el('button', 'hm-btn sec', '📋 Goals' + wkBtn); b2.type = 'button'; b2.style.position = 'relative'; press(b2, () => openMissions(() => showResult(o)));
       row.appendChild(b1); row.appendChild(b2);
-      if (o.onMenu) { const b3 = el('button', 'hm-btn sec', 'Menu'); b3.type = 'button'; press(b3, () => { closeLayer(); o.onMenu(); }); row.appendChild(b3); }
-      card.appendChild(row);
+      (o.extra || []).forEach(x => { const bx = el('button', 'hm-btn sec', txt(x.label)); bx.type = 'button'; press(bx, () => { closeLayer(); x.fn(); }); row.appendChild(bx); });
+      if (o.onMenu) { const b3 = el('button', 'hm-btn sec', o.menuLabel || 'Menu'); b3.type = 'button'; press(b3, () => { closeLayer(); o.onMenu(); }); row.appendChild(b3); }
+      cta.appendChild(row);
       // count-ups and bar fills, then focus the big button so Enter / Space runs it again
       const rm = G.FX && G.FX.rm(), nEl = sc.querySelector('.n'), eEl = card.querySelector('.ec');
-      const tgtS = res.score || 0, tgtC = res.coins || 0;
+      const tgtS = o.big != null ? o.big : (res.score || 0), tgtC = res.coins || 0;
       if (rm) { nEl.textContent = tgtS; if (eEl) eEl.textContent = tgtC; card.querySelectorAll('.hm-bar i').forEach(i => { i.style.width = i.dataset.w + '%'; }); }
       else {
         const t0 = performance.now();
@@ -430,7 +454,7 @@
 
     const api = {
       cfg, get state() { return S; }, get coins() { return S.coins; }, get skin() { return byId[S.skin] || skins[0]; }, get skinId() { return S.skin; },
-      begin, add, max, finish, showResult, closeLayer, openShop, openMissions, mountBar, toast, medalFor, nextMedal, nextGoal, buy, equip, weeklyReady, claimWeekly,
+      begin, add, max, finish, checkUnlocks, showResult, closeLayer, openShop, openMissions, mountBar, toast, medalFor, nextMedal, nextGoal, buy, equip, weeklyReady, claimWeekly,
       missionRows, ensureDay, medalSVG, skinCanvas, weekStamps: () => weekStamps(S.days, ensureDay().d), reset() { S = blank(); if (skins.length) S.owned[skins[0].id] = 1; save(); },
       grant(n) { S.coins += n; save(); },
     };
@@ -439,5 +463,5 @@
   }
 
   G.HubMeta = G.HubMeta || {};
-  G.HubMeta.create = create; G.HubMeta.medalSVG = medalSVG; G.HubMeta.util = { weekStamps, mondayOf, hashStr, rng, iso, parse, fmt };
+  G.HubMeta.create = create; G.HubMeta.medalSVG = medalSVG; G.HubMeta.starSVG = starSVG; G.HubMeta.util = { weekStamps, mondayOf, hashStr, rng, iso, parse, fmt };
 })(window);

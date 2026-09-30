@@ -1,299 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2b1a0c">
 <title>Memory Match</title>
+<link rel="stylesheet" href="kit/kidskit.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:radial-gradient(900px 600px at 50% -20%,#be185d,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
-.mute{position:fixed;top:10px;right:12px;z-index:10;width:44px;height:44px;border:none;border-radius:12px;background:#1e293b;font-size:20px;cursor:pointer;color:#fff}
-.mute:active{transform:scale(.92)}
-h1{font-size:30px;font-weight:900;letter-spacing:-1px}
-.hud{display:flex;gap:12px;font-weight:800;font-size:15px}
-.hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
-.peek{background:#1e293b;border:none;color:#fff;font-size:14px;font-weight:800;padding:0 12px;min-height:40px;border-radius:12px;cursor:pointer}
-.hud{flex-wrap:wrap;justify-content:center;align-items:center}
-.hud span{display:inline-flex;align-items:center;min-height:40px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(92vw,430px,calc(100vh - 170px));contain:layout}
-.card{aspect-ratio:1;position:relative;cursor:pointer;perspective:600px;animation:deal .45s cubic-bezier(.2,.8,.3,1.2) backwards}
-.inner{position:absolute;inset:0;transition:transform .45s;transform-style:preserve-3d;will-change:transform}
-.card.flip .inner{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;font-size:clamp(26px,8vw,44px)}
-.front{background:linear-gradient(145deg,#7c3aed,#4c1d95);box-shadow:inset 0 0 0 3px rgba(255,255,255,.12),0 6px 16px rgba(0,0,0,.4)}
-.front::after{content:'?';color:rgba(255,255,255,.5);font-weight:900}
-.backf{background:linear-gradient(160deg,#fef3c7,#fde68a);transform:rotateY(180deg);box-shadow:0 6px 16px rgba(0,0,0,.4)}
-.card.matched .inner{transform:rotateY(180deg)}
-.card.matched .backf{animation:pop .45s ease;background:linear-gradient(160deg,#bbf7d0,#4ade80);box-shadow:0 0 20px 3px rgba(74,222,128,.5),0 6px 16px rgba(0,0,0,.4)}
-.card.shake .inner{animation:shake .4s}
-.cf{position:fixed;top:-20px;z-index:45;pointer-events:none;animation:cfall 1.6s ease-in forwards}
-@keyframes cfall{to{transform:translateY(108vh) rotate(660deg)}}
-@keyframes pop{0%{scale:1}40%{scale:1.25}100%{scale:1}}
-@keyframes shake{0%,100%{transform:rotateY(180deg)}20%{transform:rotateY(180deg) translateX(-7px)}40%{transform:rotateY(180deg) translateX(7px)}60%{transform:rotateY(180deg) translateX(-5px)}80%{transform:rotateY(180deg) translateX(4px)}}
-@keyframes deal{from{opacity:0;transform:scale(.5) translateY(18px)}to{opacity:1;transform:none}}
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(7,7,15,.82);backdrop-filter:blur(5px);z-index:20;text-align:center}
-.ov h1{font-size:40px}
-.stars{font-size:52px}
-.btn{border:none;cursor:pointer;background:linear-gradient(90deg,#f472b6,#a78bfa);color:#1c1024;font-size:20px;font-weight:900;padding:14px 44px;border-radius:999px;box-shadow:0 8px 24px rgba(244,114,182,.35)}
-.btn:active{transform:scale(.94)}
-.nb{color:#4ade80;font-weight:900;letter-spacing:.06em;font-size:15px}
-.hidden{display:none}
-.card:focus-visible{outline:3px solid #facc15;outline-offset:3px;border-radius:14px}
-.btn:focus-visible,.peek:focus-visible,.back:focus-visible,.seg button:focus-visible{outline:3px solid #facc15;outline-offset:2px}
-.card.hinted .front{box-shadow:inset 0 0 0 3px #facc15,0 0 18px 4px rgba(250,204,21,.6)}
-.ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px;max-width:440px}
-.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px}
-.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
-.seg button.on{background:linear-gradient(90deg,#f472b6,#a78bfa);color:#1c1024}
-.coach{display:flex;align-items:center;gap:10px;background:#f472b6;color:#1c1024;font-weight:800;font-size:14px;border-radius:12px;padding:6px 8px 6px 14px;max-width:min(94vw,440px);animation:coachPulse 1.4s ease-in-out infinite}
-.coach.hidden{display:none}
-.coach button{border:none;border-radius:9px;background:rgba(0,0,0,.18);color:#1c1024;font-weight:900;font-size:13px;min-height:40px;min-width:52px;cursor:pointer}
-@keyframes coachPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,114,182,.55)}50%{box-shadow:0 0 0 8px rgba(244,114,182,0)}}
-.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
-@media (prefers-reduced-motion:reduce){.card,.card.matched .backf,.card.shake .inner,.coach{animation:none}.inner{transition-duration:.15s}.cf{display:none}}
+body.kk{background:#2b1a0c}
+/* ---------- a games table in warm lamplight: real oak, a felt mat in a wooden frame, cards with a lattice back ---------- */
+#table{position:fixed;inset:0;background:radial-gradient(ellipse 90% 60% at 72% 8%,rgba(255,214,140,.7) 0,rgba(255,190,100,.18) 45%,transparent 70%),linear-gradient(180deg,rgba(50,24,6,.15),rgba(24,10,2,.6)),url(assets/kids/tex/wood.jpg) center/420px}
+#table::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(100deg,rgba(0,0,0,.0) 0 140px,rgba(0,0,0,.08) 140px 142px)}
+#mat{position:fixed;left:50%;transform:translateX(-50%);z-index:5;display:none;border-radius:26px;border:12px solid transparent;
+  background:radial-gradient(ellipse at 70% 15%,rgba(255,240,180,.4),transparent 60%) padding-box,url(assets/kids/tex/cloth.jpg) center/180px padding-box,linear-gradient(180deg,var(--felt1,#2f7d4a),var(--felt2,#1c5a34)) padding-box,linear-gradient(180deg,rgba(255,220,150,.2),rgba(0,0,0,.3)) border-box,url(assets/kids/tex/wood-dark.jpg) center/300px border-box;
+  background-blend-mode:normal,overlay,normal,normal,normal;
+  box-shadow:0 0 0 2px #2a1707,0 26px 40px rgba(0,0,0,.6),inset 0 0 44px rgba(0,0,0,.6),inset 0 0 0 2px rgba(0,0,0,.4)}
+#mat.on{display:block}
+#cards{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--gap,8px);padding:var(--pad,10px)}
+.card{position:relative;width:var(--cw,70px);height:calc(var(--cw,70px)*1.2);perspective:700px;cursor:pointer;touch-action:manipulation;outline:none;animation:deal .5s cubic-bezier(.2,1.2,.4,1) backwards}
+@keyframes deal{from{opacity:0;transform:translateY(-40px) scale(.7) rotate(-8deg)}to{opacity:1;transform:none}}
+.card .inner{position:absolute;inset:0;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .42s cubic-bezier(.3,1.25,.5,1)}
+.card.up .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:calc(var(--cw,70px)*.13);-webkit-backface-visibility:hidden;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.face.back{background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.22),transparent 55%),repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px),repeating-linear-gradient(-45deg,rgba(255,255,255,.07) 0 2px,transparent 2px 9px),linear-gradient(160deg,var(--k1,#2c7a45),var(--k2,#124a2a));
+  box-shadow:-5px 9px 12px rgba(0,0,0,.5),inset 0 0 0 calc(var(--cw,70px)*.05) rgba(255,255,255,.0),inset 0 0 0 2px rgba(255,220,150,.35)}
+.face.back::before{content:'';position:absolute;inset:calc(var(--cw,70px)*.07);border-radius:calc(var(--cw,70px)*.08);border:2px solid rgba(240,196,90,.85);box-shadow:inset 0 0 6px rgba(0,0,0,.4)}
+.face.back img{width:52%;height:auto;opacity:.92;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)) sepia(.25) saturate(1.2) brightness(1.05)}
+.face.front{transform:rotateY(180deg);background:linear-gradient(180deg,rgba(255,250,232,.88),rgba(246,226,176,.8)),url(assets/kids/tex/paper.jpg) center/160px;box-shadow:-5px 9px 12px rgba(0,0,0,.5),inset 0 0 0 2px rgba(217,164,65,.9),inset 0 4px 10px rgba(140,90,20,.22)}
+.face.front img{width:74%;height:74%;object-fit:contain;filter:drop-shadow(0 5px 3px rgba(60,30,0,.4))}
+.card.done .face.front{box-shadow:-3px 6px 10px rgba(0,0,0,.4),inset 0 0 0 3px #ffd23f,0 0 16px 3px rgba(255,210,60,.75),inset 0 0 14px rgba(255,220,120,.6)}
+.card.done .inner{animation:happy .55s ease}
+@keyframes happy{0%{transform:rotateY(180deg) scale(1)}35%{transform:rotateY(180deg) scale(1.16) rotate(-3deg)}65%{transform:rotateY(180deg) scale(1.04) rotate(2deg)}100%{transform:rotateY(180deg) scale(1)}}
+.card.shake .inner{animation:wrong .4s ease}
+@keyframes wrong{0%,100%{transform:rotateY(180deg)}20%{transform:rotateY(180deg) translateX(-6px)}40%{transform:rotateY(180deg) translateX(6px)}60%{transform:rotateY(180deg) translateX(-4px)}80%{transform:rotateY(180deg) translateX(3px)}}
+.card.hint .face.back{box-shadow:-5px 9px 12px rgba(0,0,0,.5),0 0 0 3px #fff2a8,0 0 22px 6px rgba(255,230,120,.85)}
+.card.hint{animation:pulse .7s ease-in-out 3}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.card:focus-visible .face.back{box-shadow:-5px 9px 12px rgba(0,0,0,.5),0 0 0 3px #fff}
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:var(--kk-l);right:var(--kk-r);top:calc(var(--kk-top) + 56px);z-index:25;display:none;gap:8px;align-items:center;justify-content:space-between;pointer-events:none}
+#hud.on{display:flex}
+#hud>*{pointer-events:auto}
+#stc{padding:0 10px}
+#stc .kk-stars img{width:26px;height:26px}
+#stc .kk-stars{gap:0}
+#hint,#peek{appearance:none;border:2px solid var(--kk-goldline);cursor:pointer;height:48px;min-width:48px;padding:0 12px;border-radius:24px;display:inline-flex;align-items:center;gap:6px;font-family:var(--kk-font);font-weight:700;font-size:20px;color:var(--kk-cream);
+  background:radial-gradient(circle at 32% 24%,#3d6a8d 0,#1a3d59 46%,#0c1e30 100%);box-shadow:0 4px 0 #6b430c,0 8px 12px rgba(20,8,0,.45),inset 0 2px 0 rgba(255,255,255,.28);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+#hint img,#peek img{width:30px;height:30px}
+#peek:disabled{opacity:.5}
+#hint:active,#peek:active{transform:translateY(3px);box-shadow:0 1px 0 #6b430c}
+#prev{position:fixed;left:0;right:0;top:calc(var(--kk-top) + 110px);z-index:26;text-align:center;pointer-events:none;display:none}
+#prev.on{display:block}
+#prev span{display:inline-flex;align-items:center;gap:8px;padding:6px 20px;border-radius:20px;background:rgba(10,26,42,.9);border:1.5px solid rgba(233,181,68,.85);color:var(--kk-cream);font-weight:700;font-size:22px;box-shadow:0 6px 12px rgba(0,0,0,.4)}
+#prev img{width:32px;height:32px}
+#prev i{display:block;height:6px;margin:6px auto 0;border-radius:3px;background:linear-gradient(90deg,#ffeaa6,#e9b544);width:100%;transform-origin:0 50%}
+#codes{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--kk-bot) + 4px);z-index:30;background:#ffd23f;color:#6b3b00;font-weight:700;font-size:14px;padding:3px 12px;border-radius:12px;letter-spacing:1px;display:none}
+#titleHero{position:relative;width:min(84vw,320px);height:220px;margin:8px 0 4px}
+#titleHero .card{position:absolute;width:104px;height:125px;left:50%;top:50%;margin:-62px 0 0 -52px;animation:none;perspective:none}
+#titleHero .card .inner{transition:none}
+#titleHero .c0{transform:translate(-92px,16px) rotate(-14deg)}#titleHero .c1{transform:translate(0,-8px) rotate(2deg);z-index:2}#titleHero .c2{transform:translate(92px,16px) rotate(15deg)}
+#titleHero .card.up .inner{transform:rotateY(180deg)}
+#titleHero .card .inner{animation:none}
+#titleHero .bob{animation:kkBob 3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.card,.card.done .inner,.card.shake .inner,.card.hint,#titleHero .bob{animation:none}.card .inner{transition-duration:.01s}}
 </style>
 </head>
-<body>
-<a class="back" href="../index.html">← Hub</a>
-<button class="mute" id="muteBtn">🔊</button>
-<h1>Memory Match</h1>
-<div class="hud"><span>🃏 <b id="moves">0</b></span><span>⏱ <b id="time">0:00</b></span><span>🏆 <b id="best">–</b></span><button class="peek" id="hintBtn" aria-label="Hint">💡</button><button class="peek" id="peekBtn" aria-label="Peek">👁 ×0</button><button class="peek" id="shufBtn" aria-label="Shuffle mode">🔄 OFF</button></div>
-<div class="coach hidden" id="coach"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
-<div class="codes hidden" id="codesOn">CODES ON</div>
-<div class="grid" id="grid"></div>
-<div class="ov hidden" id="over">
-  <h1>You Win!</h1>
-  <div class="stars" id="stars">⭐⭐⭐</div>
-  <div style="color:#94a3b8;font-size:13px" id="starRule">3★ ≤ 16 moves · 2★ ≤ 24 moves</div>
-  <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
-  <div style="font-size:16px">Moves: <b id="finMoves">0</b> · Time: <b id="finTime">0:00</b></div>
-  <div style="color:#94a3b8;font-size:14px">⭐ Star bank: <b id="finBank">0</b> (lifetime)</div>
-  <div style="color:#facc15;font-size:14px" id="finFlawless"></div>
-  <button class="btn" id="againBtn">Play Again</button>
-</div>
-<div class="ov hidden" id="start">
-  <h1>Memory Match</h1>
-  <div class="sub">Flip two cards at a time. Find every matching pair in as few moves as you can.</div>
-  <div class="seg" role="group" aria-label="Level"><button data-lv="easy">Easy · 6 pairs</button><button data-lv="normal">Normal · 8</button><button data-lv="hard">Hard · 10</button></div>
-  <button class="btn" id="playBtn">▶ Play</button>
-  <div style="color:#94a3b8;font-size:14px" id="startBest"></div>
-</div>
+<body class="kk">
+<div id="table"></div>
+<div id="hud"><div id="lvchip" class="kk-chip"></div><div id="stc" class="kk-chip"></div><button id="hint" type="button" aria-label="Hint"></button><button id="peek" type="button" aria-label="Peek"></button></div>
+<div id="prev"><span><img src="assets/kids/fx/eye.webp" alt=""><b>Remember!</b></span><i></i></div>
+<div id="mat"><div id="cards"></div></div>
+<div id="codes">CODES ON</div>
+<script src="kit/kidskit.js"></script>
 <script>
+(function () {
+'use strict';
+var KKs = window.KK, SDK = window.ArcadeSDK || null, h = KKs.h, img = KKs.img;
+var $ = function (id) { return document.getElementById(id); };
+var IMG = function (n) { return KKs.imgUrl(n); };
 
-const ALL=['🍎','🍕','🚀','🎈','🐸','🌟','🍩','🐙','🦄','🍉'];
-const LEVELS={easy:{pairs:6,cols:4,s3:10,s2:15},normal:{pairs:8,cols:4,s3:16,s2:24},hard:{pairs:10,cols:5,s3:20,s2:30}};
-let level='normal';try{level=localStorage.getItem('memLevel')||'normal';}catch(e){}if(!LEVELS[level])level='normal';
-let EMOJIS=ALL.slice(0,LEVELS[level].pairs);
-const SDK=window.ArcadeSDK||null;
-const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
-function cheated(){return !!(SDK&&SDK.cheated);}
-function bestKey(){return level==='normal'?'memBest':'memBest_'+level;}
-let slowFlip=false,seen=new Map();
-const grid=document.getElementById('grid');
-let open=[],lock=false,moves=0,matched=0,seconds=0,timer=null,t0=0,started=false,best=+localStorage.getItem(bestKey())||0;
-let muted=localStorage.getItem('memMute')==='1';
-let fever=0,tokens=0,starBank=+localStorage.getItem('memStars')||0;
-let misses=0,chain=0,chainBest=+localStorage.getItem('memFlawless')||0;
-let shuffleMode=false;
-let AC;
-function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}if(AC&&AC.state==='suspended')AC.resume();}
-function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.16,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
-const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function snd(n){if(n==='flip')sfx('tap');else if(n==='match')sfx('pop');else if(n==='miss')sfx('buzz');else if(n==='win')sfx('win');}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-function startTimer(){if(started)return;started=true;t0=Date.now();tick();timer=setInterval(tick,250);}
-function tick(){seconds=Math.floor((Date.now()-t0)/1000);document.getElementById('time').textContent=fmt(seconds);}
-document.addEventListener('visibilitychange',()=>{
-if(document.hidden){clearInterval(timer);timer=null;}
-else if(started&&!timer&&matched<EMOJIS.length){timer=setInterval(tick,250);tick();}
-});
-function newGame(quiet){
-EMOJIS=ALL.slice(0,LEVELS[level].pairs);best=+localStorage.getItem(bestKey())||0;seen=new Map();
-grid.style.gridTemplateColumns='repeat('+LEVELS[level].cols+',1fr)';
-document.getElementById('start').classList.add('hidden');
-clearInterval(timer);timer=null;open=[];lock=false;moves=0;matched=0;seconds=0;started=false;fever=0;tokens=0;misses=0;updatePeekUI();
-document.getElementById('moves').textContent=0;document.getElementById('time').textContent='0:00';
-document.getElementById('best').textContent=best||'–';
-document.getElementById('over').classList.add('hidden');
-const nb=document.getElementById('newBest');if(nb)nb.classList.add('hidden');
-grid.innerHTML='';
-const deck=shuffle([...EMOJIS,...EMOJIS]);
-deck.forEach((emo,i)=>{
-const card=document.createElement('div');card.className='card';
-card.style.animationDelay=(i*35)+'ms';
-card.dataset.e=emo;card.dataset.i=i;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Card '+(i+1)+', face down');
-card.innerHTML=`<div class="inner"><div class="face front"></div><div class="face backf">${emo}</div></div>`;
-grid.appendChild(card);
-});
-if(quiet!==true)scene('play');
+/* ======================= worlds, pictures and rewards ======================= */
+function S(id, name) { return { id: id, img: id, name: name }; }
+var WORLDS = [
+  { name: 'Farm', pic: 'cow-face', felt: ['#3a8a4a', '#1f5f34'], set: [S('cow-face', 'Cow'), S('pig-face', 'Pig'), S('chicken', 'Chicken'), S('horse-face', 'Horse'), S('ewe', 'Sheep'), S('duck', 'Duck'), S('rabbit-face', 'Rabbit'), S('cat-face', 'Cat'), S('dog-face', 'Dog'), S('frog', 'Frog'), S('goat', 'Goat'), S('rooster', 'Rooster')] },
+  { name: 'Ocean', pic: 'spouting-whale', felt: ['#2a7f95', '#175668'], set: [S('tropical-fish', 'Fish'), S('blowfish', 'Puffer fish'), S('octopus', 'Octopus'), S('crab', 'Crab'), S('spouting-whale', 'Whale'), S('dolphin', 'Dolphin'), S('turtle', 'Turtle'), S('shark', 'Shark'), S('seal', 'Seal'), S('jellyfish', 'Jellyfish'), S('squid', 'Squid'), S('lobster', 'Lobster')] },
+  { name: 'Jungle', pic: 'lion', felt: ['#5a8a2f', '#35601c'], set: [S('lion', 'Lion'), S('tiger-face', 'Tiger'), S('elephant', 'Elephant'), S('giraffe', 'Giraffe'), S('zebra', 'Zebra'), S('monkey-face', 'Monkey'), S('bear', 'Bear'), S('panda', 'Panda'), S('koala', 'Koala'), S('fox', 'Fox'), S('hippopotamus', 'Hippo'), S('rhinoceros', 'Rhino')] },
+  { name: 'Sweets', pic: 'cupcake', felt: ['#a04a68', '#6d2a45'], set: [S('cupcake', 'Cupcake'), S('doughnut', 'Doughnut'), S('ice-cream', 'Ice cream'), S('cookie', 'Cookie'), S('lollipop', 'Lollipop'), S('candy', 'Candy'), S('birthday-cake', 'Cake'), S('pancakes', 'Pancakes'), S('chocolate-bar', 'Chocolate'), S('popcorn', 'Popcorn'), S('shortcake', 'Shortcake'), S('soft-ice-cream', 'Soft serve')] },
+  { name: 'Space', pic: 'rocket', felt: ['#3a3f9a', '#1e2266'], set: [S('rocket', 'Rocket'), S('ringed-planet', 'Planet'), S('crescent-moon', 'Moon'), S('star', 'Star'), S('glowing-star', 'Bright star'), S('comet', 'Comet'), S('flying-saucer', 'Saucer'), S('alien', 'Alien'), S('sun', 'Sun'), S('globe-showing-americas', 'Earth'), S('satellite', 'Satellite'), S('robot', 'Robot')] }
+];
+var BACKS = [
+  { id: 'clover', img: 'four-leaf-clover', name: 'Clover', need: 0, k: ['#2f8a4c', '#124a2a'] }, { id: 'heart', img: 'heart-suit', name: 'Heart', need: 6, k: ['#b0323a', '#5e1018'] },
+  { id: 'spade', img: 'spade-suit', name: 'Spade', need: 12, k: ['#2f5f9a', '#122a52'] }, { id: 'diamond', img: 'diamond-suit', name: 'Diamond', need: 19, k: ['#8a48b8', '#3e1a66'] },
+  { id: 'star', img: 'glowing-star', name: 'Star', need: 27, k: ['#333a4a', '#0c0f18'] }];
+var STARSTICK = [{ id: 'first', img: 'seedling', name: 'Sprout', need: 2 }, { id: 'a', img: 'rainbow', name: 'Rainbow', need: 10 }, { id: 'b', img: 'trophy', name: 'Trophy', need: 20 }, { id: 'c', img: 'crown', name: 'Crown', need: 35 }];
+var ALBUM = BACKS.concat(STARSTICK);
+var P = KKs.profile('memory_kk', { album: ALBUM, dailyGoal: 3, dailyBonus: 3 });
+if (!P.d.found) P.d.found = {};
+// 15 levels: pairs, and how long every card shows before the game starts (ms)
+var LV = [];
+(function () {
+  var pairs = [2, 3, 4, 5, 6, 6, 7, 8, 8, 9, 9, 10, 10, 10, 10], prev = [0, 0, 1700, 2000, 2200, 1900, 2400, 2600, 2300, 2800, 2600, 2900, 2600, 2300, 1900];
+  for (var i = 0; i < 15; i++) { var p = pairs[i]; LV.push({ n: i + 1, pairs: p, world: Math.floor(i / 3), preview: prev[i], s3: Math.ceil(p * 1.35) + (p >= 8 ? 2 : 1), s2: Math.ceil(p * 2.0) + 2, boss: (i + 1) % 5 === 0 }); }
+})();
+var NLEV = 15;
+
+/* ======================= state ======================= */
+var phase = 'title', cur = 1, cfg = null, cards = [], open = [], lock = false, moves = 0, matched = 0, streak = 0, bestStreak = 0, misses = 0, peeks = 0, seen = {}, idleT = 0;
+var cheats = { slow: false }, cheated = false, tut = null, newFound = [], hintUsed = 0;
+var chLv = KKs.ui.chip('sparkles', ''), stc = $('stc');
+$('lvchip').replaceWith(chLv.el); chLv.el.id = 'lvchip';
+function paintStars(n) { stc.innerHTML = ''; stc.appendChild(KKs.ui.stars(n, 3)); }
+function gs(sc, extra) { try { SDK && SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function backOf() { var id = P.eqp('back', 'clover'); return BACKS.filter(function (b) { return b.id === id; })[0] || BACKS[0]; }
+function starsFor(m) { return m <= cfg.s3 ? 3 : m <= cfg.s2 ? 2 : 1; }
+var hintBtn = $('hint'), peekBtn = $('peek');
+hintBtn.appendChild(img('magnifying-glass-tilted-left')); peekBtn.appendChild(img('eye')); peekBtn.appendChild(h('b', { text: '0', id: 'pk' }));
+
+/* ======================= screens ======================= */
+function clearUI() { document.querySelectorAll('.kk-title,.kk-map,.kk-album,.kk-scrim,.kk-coach,.kk-finger').forEach(function (e) { e.remove(); }); }
+function heroEl() {
+  var wrap = h('div', { id: 'titleHero' }), b = backOf(), pics = ['cow-face', 'rocket', 'cupcake'];
+  pics.forEach(function (p, i) {
+    var c = h('div', { class: 'card c' + i + (i === 1 ? ' up bob' : ''), style: { '--k1': b.k[0], '--k2': b.k[1] } });
+    c.innerHTML = '<div class="inner"><div class="face back"><img src="' + IMG(b.img) + '" alt=""></div><div class="face front"><img src="' + IMG(p) + '" alt=""></div></div>';
+    if (i !== 1) c.classList.remove('up'); wrap.appendChild(c);
+  });
+  return wrap;
 }
-function flip(card,emo){
-initAudio();
-if(lock||card.classList.contains('flip')||card.classList.contains('matched'))return;
-startTimer();
-card.classList.add('flip');snd('flip');card.setAttribute('aria-label',emo+' face up');seen.set(card,emo);
-open.push({card,emo});tutStep('flip',open.length);
-if(open.length===2){
-moves++;document.getElementById('moves').textContent=moves;
-if(open[0].emo===open[1].emo){
-open.forEach(o=>{o.card.classList.add('matched');o.card.setAttribute('aria-label',o.emo+' matched');});
-open=[];matched++;snd('match');tutStep('pair',true);
-fever++;if(fever%3===0&&tokens<3){tokens++;sfx('levelup');}
-updatePeekUI();
-if(matched===EMOJIS.length)win();
-}else{
-lock=true;snd('miss');fever=0;misses++;updatePeekUI();tutStep('pair',false);
-open.forEach(o=>o.card.classList.add('shake'));
-setTimeout(()=>{
-open.forEach(o=>{o.card.classList.remove('flip');o.card.classList.remove('shake');o.card.setAttribute('aria-label','Card '+(+o.card.dataset.i+1)+', face down');});
-open=[];lock=false;
-if(shuffleMode)shuffleUnmatched();
-},slowFlip?3000:820);
+function foundCount() { return Object.keys(P.d.found).length; }
+function showTitle() {
+  clearUI(); phase = 'title'; $('mat').classList.remove('on'); $('hud').classList.remove('on'); $('prev').classList.remove('on'); $('codes').style.display = 'none';
+  var nxt = P.next(NLEV), fresh = P.cleared() === 0, w = WORLDS[LV[nxt - 1].world];
+  setFelt(w);
+  KKs.ui.title(document.body, {
+    title: 'Memory Match', tagline: fresh ? 'Find the twins!' : w.name + ' - level ' + nxt, heroEl: heroEl(), profile: P,
+    playLabel: fresh ? 'Play' : 'Level ' + nxt, onPlay: function () { startLevel(nxt); },
+    onMap: showMap, onAlbum: showAlbum, albumLabel: 'Album', albumPic: 'books', onHelp: showHelp, dot: (P.d.seen.albumN || 0) < foundCount() + P.unlockedIds().length ? '!' : ''
+  });
+  gs('title', { score: P.d.hi || 0 });
 }
+function setFelt(w) { var m = $('mat'); m.style.setProperty('--felt1', w.felt[0]); m.style.setProperty('--felt2', w.felt[1]); }
+function showMap() {
+  var levels = LV.map(function (l) { return { n: l.n, boss: l.boss, banner: (l.n - 1) % 3 === 0 ? WORLDS[l.world].name : null }; });
+  KKs.ui.map(document.body, { profile: P, levels: levels, title: 'Levels', onPick: function (n) { startLevel(n); } });
 }
+function showAlbum() {
+  P.d.seen.albumN = foundCount() + P.unlockedIds().length; P.save();
+  var secs = WORLDS.map(function (w) { return { title: w.name + ' friends', items: w.set, isOpen: function (it) { return !!P.d.found[it.id]; }, lockHint: 'Match this one to find it!', caption: true }; });
+  secs.push({ title: 'Card backs', slot: 'back', def: 'clover', items: BACKS }); secs.push({ title: 'Prizes', items: STARSTICK });
+  KKs.ui.album(document.body, { profile: P, title: 'Album', sections: secs, onEquip: function (slot, id) { setBack(); }, onClose: function () { if (phase === 'title') showTitle(); } });
+  var t = document.querySelector('.kk-title'); if (t) t.remove();
 }
-function updatePeekUI(){document.getElementById('peekBtn').textContent='👁 ×'+tokens;}
-function shuffleUnmatched(){
-  const cards=[].slice.call(grid.children).filter(c=>!c.classList.contains('matched'));
-  if(cards.length<4)return;
-  const ems=cards.map(c=>c.dataset.e);
-  shuffle(ems);
-  for(let i=0;i<cards.length;i++){
-    cards[i].dataset.e=ems[i];seen.delete(cards[i]);
-    const bf=cards[i].querySelector('.backf');
-    if(bf)bf.textContent=ems[i];
+function showHelp() { KKs.ui.help({ steps: [{ pic: 'cow-face', text: 'Tap a card to flip it.' }, { pic: 'rabbit-face', text: 'Find its twin!' }, { pic: 'star', text: 'Fewer tries, more stars.' }] }); }
+function setBack() { var b = backOf(), c = $('cards'); c.style.setProperty('--k1', b.k[0]); c.style.setProperty('--k2', b.k[1]); c.querySelectorAll('.face.back img').forEach(function (i) { i.src = IMG(b.img); }); }
+
+/* ======================= playing ======================= */
+function fit(n) {
+  var vw = window.innerWidth, vh = window.innerHeight, availW = vw - 24 - 40, availH = vh - 176 - 30 - 40, gap = n > 12 ? 7 : 9, best = null;
+  for (var cols = 2; cols <= 5; cols++) {
+    var rows = Math.ceil(n / cols), w = Math.min((availW - (cols - 1) * gap) / cols, ((availH - (rows - 1) * gap) / rows) / 1.2, 128);
+    if (!best || w > best.w + 0.5) best = { cols: cols, rows: rows, w: Math.floor(w), gap: gap };
   }
-  sfx('whoosh');
+  return best;
 }
-function doPeek(){
-if(lock||tokens<=0||matched>=EMOJIS.length)return;
-tokens--;updatePeekUI();sfx('whoosh');open=[];
-lock=true;
-for(let i=0;i<grid.children.length;i++){
-const c=grid.children[i];
-if(!c.classList.contains('matched'))c.classList.add('flip');
+function layout() {
+  if (!cfg) return; var n = cfg.pairs * 2, f = fit(n), c = $('cards'), m = $('mat');
+  c.style.setProperty('--cw', f.w + 'px'); c.style.setProperty('--gap', f.gap + 'px'); c.style.width = (f.cols * f.w + (f.cols - 1) * f.gap + 20) + 'px';
+  var mh = f.rows * f.w * 1.2 + (f.rows - 1) * f.gap + 20; m.style.top = Math.max(170, Math.round(176 + (window.innerHeight - 176 - 30 - mh - 20) / 2)) + 'px';
 }
-setTimeout(()=>{
-for(let i=0;i<grid.children.length;i++){
-const c=grid.children[i];
-if(!c.classList.contains('matched'))c.classList.remove('flip');
+window.addEventListener('resize', function () { clearTimeout(layout.t); layout.t = setTimeout(layout, 120); });
+function startLevel(n, opts) {
+  clearUI(); cur = Math.max(1, Math.min(NLEV, n | 0)); cfg = LV[cur - 1]; var w = WORLDS[cfg.world]; phase = 'preview';
+  cheated = !!(SDK && SDK.cheated) || cheats.slow; setFelt(w);
+  moves = 0; matched = 0; streak = 0; bestStreak = 0; misses = 0; open = []; lock = false; seen = {}; newFound = []; hintUsed = 0; peeks = Math.min(peeks, 3);
+  var pool = KKs.shuffle(w.set).slice(0, cfg.pairs), deck = KKs.shuffle(pool.concat(pool));
+  var c = $('cards'); c.innerHTML = ''; cards = [];
+  deck.forEach(function (p, i) {
+    var el = h('div', { class: 'card', tabindex: '0', role: 'button', 'aria-label': 'Card ' + (i + 1) + ', face down', 'data-i': i, style: { animationDelay: (i * 45) + 'ms' } });
+    el.innerHTML = '<div class="inner"><div class="face back"><img alt=""></div><div class="face front"><img src="' + IMG(p.img) + '" alt=""></div></div>';
+    c.appendChild(el); cards.push({ el: el, id: p.id, name: p.name, up: false, done: false });
+  });
+  setBack(); $('mat').classList.add('on'); $('hud').classList.add('on'); layout();
+  chLv.set('Level ' + cur); chLv.el.querySelector('img').src = IMG(w.pic); paintStars(3); $('pk').textContent = peeks; peekBtn.disabled = peeks <= 0; $('codes').style.display = cheated ? 'block' : 'none';
+  gs('play', { score: 0, level: cur }); P.touchDay(); KKs.sfx('level');
+  var delay = 520 + cards.length * 45;
+  if (cfg.preview > 0) {
+    setTimeout(function () {
+      if (phase !== 'preview') return; showPreview(cfg.preview);
+    }, delay);
+  } else setTimeout(function () { if (phase === 'preview') beginPlay(); }, delay);
 }
-lock=false;
-},1200);
+function showPreview(ms) {
+  cards.forEach(function (c, i) { setTimeout(function () { if (phase !== 'preview') return; up(c, true); seen[cards.indexOf(c)] = c.id; }, i * 35); });
+  var pv = $('prev'); pv.classList.add('on'); var bar = pv.querySelector('i'); bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)'; void bar.offsetWidth; bar.style.transition = 'transform ' + ms + 'ms linear'; bar.style.transform = 'scaleX(0)';
+  setTimeout(function () {
+    if (phase !== 'preview') return; pv.classList.remove('on');
+    cards.forEach(function (c, i) { setTimeout(function () { up(c, false); }, i * 30); }); KKs.sfx('whoosh');
+    setTimeout(beginPlay, cards.length * 30 + 400);
+  }, cfg.preview + cards.length * 35);
 }
-function confetti(){if(RM)return;
-const cols=['#f472b6','#a78bfa','#4ade80','#facc15','#38bdf8','#fb923c'];
-for(let i=0;i<32;i++){
-const c=document.createElement('div');c.className='cf';
-c.style.left=(Math.random()*100)+'vw';
-c.style.width=(6+Math.random()*8)+'px';c.style.height=(10+Math.random()*8)+'px';
-c.style.background=cols[(Math.random()*cols.length)|0];
-c.style.borderRadius=Math.random()<.4?'50%':'2px';
-c.style.animationDelay=(Math.random()*.25)+'s';
-c.style.transform='rotate('+(Math.random()*360)+'deg)';
-document.body.appendChild(c);
-setTimeout(()=>{if(c.parentNode)c.parentNode.removeChild(c);},2300);
+function beginPlay() { if (phase !== 'preview') return; phase = 'play'; idleT = 0; if (cur === 1 && !P.flag('tutMem')) startTutorial(); }
+function up(c, on) { c.up = on; c.el.classList.toggle('up', on); c.el.setAttribute('aria-label', on ? c.name + ', face up' : 'Card ' + (+c.el.dataset.i + 1) + ', face down'); }
+function flip(c) {
+  if (phase !== 'play' || lock || c.up || c.done || (SDK && SDK.paused)) return;
+  idleT = 0; clearGlow(); up(c, true); KKs.sfx('flip'); KKs.haptic(8); seen[cards.indexOf(c)] = c.id; open.push(c); tutStep('flip', open.length);
+  if (open.length === 2) {
+    moves++; paintStars(starsFor(moves));
+    var a = open[0], b = open[1];
+    if (a.id === b.id) setTimeout(function () { onMatch(a, b); }, 330); else onMiss(a, b);
+    open = [];
+  }
 }
+function centre(c) { var r = c.el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+function onMatch(a, b) {
+  a.done = b.done = true; a.el.classList.add('done'); b.el.classList.add('done'); matched++; streak++; bestStreak = Math.max(bestStreak, streak);
+  var pa = centre(a), pb = centre(b); KKs.sfx('match'); KKs.sfx('ding', Math.min(streak, 8)); KKs.haptic(20);
+  KKs.fx.burst(pa.x, pa.y, 'star', 8); KKs.fx.burst(pb.x, pb.y, 'star', 8); KKs.float((pa.x + pb.x) / 2, (pa.y + pb.y) / 2 - 10, streak >= 2 ? 'x' + streak : 'Yes!', '#a86f16');
+  if (!cheated && !P.d.found[a.id]) { P.d.found[a.id] = 1; P.save(); newFound.push(a); setTimeout(function () { KKs.ui.toast('New friend: ' + a.name + '!', a.id); KKs.say(a.name); }, 500); }
+  else if (matched < cfg.pairs) KKs.say(a.name);
+  if (streak > 0 && streak % 3 === 0) { peeks = Math.min(3, peeks + 1); $('pk').textContent = peeks; peekBtn.disabled = false; KKs.ui.toast('You earned a peek!', 'eye'); }
+  tutStep('pair', true);
+  if (matched === cfg.pairs) setTimeout(win, 750);
 }
-function win(){
-clearInterval(timer);timer=null;snd('win');confetti();
-const L=LEVELS[level],clean=!cheated(),starCount=moves<=L.s3?3:moves<=L.s2?2:1;
-if(clean){starBank+=starCount;localStorage.setItem('memStars',starBank);}
-if(misses===0){chain++;if(chain>chainBest&&clean){chainBest=chain;localStorage.setItem('memFlawless',chainBest);}if(clean){starBank+=1;localStorage.setItem('memStars',starBank);}}
-else{chain=0;}
-document.getElementById('finBank').textContent=starBank;
-const fl=document.getElementById('finFlawless');
-if(fl)fl.textContent=misses===0?('🔥 Flawless win! +1 ⭐ · streak ×'+chain+' (best '+chainBest+')'):'';
-document.getElementById('stars').textContent='⭐'.repeat(starCount);
-document.getElementById('finMoves').textContent=moves;
-document.getElementById('finTime').textContent=fmt(seconds);
-const isBest=clean&&(!best||moves<best);
-if(isBest){best=moves;localStorage.setItem(bestKey(),best);}
-scene('over',{score:moves,stars:starCount});
-document.getElementById('starRule').textContent='3★ ≤ '+L.s3+' moves · 2★ ≤ '+L.s2+' moves';
-document.getElementById('best').textContent=best;
-const nb=document.getElementById('newBest');if(nb)nb.classList.toggle('hidden',!isBest);
-setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
+function onMiss(a, b) {
+  lock = true; streak = 0; misses++; KKs.sfx('bloop'); tutStep('pair', false);
+  setTimeout(function () { a.el.classList.add('shake'); b.el.classList.add('shake'); }, 420);
+  setTimeout(function () { a.el.classList.remove('shake'); b.el.classList.remove('shake'); up(a, false); up(b, false); lock = false; KKs.sfx('flip'); }, cheats.slow ? 3000 : 1050);
 }
-const $=id=>document.getElementById(id);
-// Buttons answer the pointer at once and the keyboard (Enter) through click.
-function press(el,fn){el.addEventListener('pointerdown',e=>{e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
-function busy(){return !$('start').classList.contains('hidden')||(SDK&&SDK.paused);}
-press($('againBtn'),()=>play(false));
-grid.addEventListener('pointerdown',e=>{
-const card=e.target.closest('.card');if(!card||busy())return;
-flip(card,card.dataset.e);
-},{passive:true});
-grid.addEventListener('keydown',e=>{const card=e.target.closest('.card');if(!card||busy())return;
-if(e.key==='Enter'||e.key===' '){e.preventDefault();flip(card,card.dataset.e);return;}
-const cols=LEVELS[level].cols,i=+card.dataset.i,mv={ArrowLeft:-1,ArrowRight:1,ArrowUp:-cols,ArrowDown:cols}[e.key];
-if(mv!==undefined){e.preventDefault();const n=grid.children[i+mv];if(n)n.focus();}});
-const muteBtn=$('muteBtn');
-function updMute(){muteBtn.textContent=muted?'🔇':'🔊';}
-press(muteBtn,()=>{muted=!muted;localStorage.setItem('memMute',muted?'1':'0');updMute();});
-press($('peekBtn'),()=>{if(!busy())doPeek();});
-const shufBtn=$('shufBtn');
-press(shufBtn,()=>{
-  shuffleMode=!shuffleMode;
-  shufBtn.textContent=shuffleMode?'🔄 ON':'🔄 OFF';
-  sfx('tap');
-  newGame();
+function win() {
+  phase = 'over'; var stars = starsFor(moves), clean = !cheated, score = Math.max(0, cfg.pairs * 100 - moves * 10) + (misses === 0 ? 100 : 0);
+  var res = { unlocked: [], first: false, newBest: false, gained: 0 }, daily = null;
+  if (clean) {
+    res = P.finish(cur, stars, score); if (misses === 0) P.stat('flawless', 1); daily = P.dailyWin();
+    try { localStorage.setItem('memBest', String(P.d.hi || score)); localStorage.setItem('memStars', String(P.total())); } catch (e) {}
+    try {
+      if (SDK && SDK.profile) {
+        SDK.profile.award({ xp: 5 + stars * 3, reason: 'Level ' + cur }); SDK.profile.achievement('first-pair', { title: 'Twin finder', desc: 'Match a pair', tier: 'bronze' });
+        if (misses === 0) SDK.profile.achievement('flawless', { title: 'No mistakes', desc: 'Finish a level without a miss', tier: 'silver' });
+        if (foundCount() >= 30) SDK.profile.achievement('collector', { title: 'Collector', desc: 'Find 30 friends', tier: 'gold' });
+        SDK.profile.quest('mem-album', Math.min(1, foundCount() / 60), { title: 'Find all 60 friends' });
+      }
+    } catch (e) {}
+  }
+  gs('over', { score: score, level: cur, stars: stars, lower: false });
+  KKs.sfx('win'); KKs.confetti(); cards.forEach(function (c, i) { setTimeout(function () { c.el.classList.remove('done'); void c.el.offsetWidth; c.el.classList.add('done'); }, i * 55); });
+  setTimeout(function () { showResult(stars, res, daily); }, 1000);
+}
+function showResult(stars, res, daily) {
+  var lines = ['Tries: ' + moves + (misses === 0 ? '   Perfect!' : '')];
+  if (newFound.length) lines.push(newFound.length + ' new friend' + (newFound.length > 1 ? 's' : '') + ' in your album!');
+  if (cheated) lines.push('Codes are on, so this level does not count.');
+  if (daily && daily.just) lines.push('Daily goal done! +3 stars');
+  if (cur === NLEV) lines.push('You finished every level!');
+  var more = cur < NLEV, btn = [];
+  if (more) btn.push({ label: 'Next level', cls: 'kk-go kk-big', pic: 'star', fn: function () { startLevel(cur + 1, { quick: true }); } });
+  btn.push({ label: 'Play again', cls: more ? 'kk-blue' : 'kk-go kk-big', fn: function () { startLevel(cur); } });
+  btn.push({ label: 'Levels', cls: 'kk-purple', fn: showMap });
+  KKs.ui.result({ title: stars === 3 ? 'Perfect memory!' : stars === 2 ? 'Well done!' : 'You did it!', stars: stars, lines: lines, newItems: res.unlocked, buttons: btn });
+  KKs.sfx('star');
+}
+
+/* ---------- hint (only uses what you have already seen), peek, idle help ---------- */
+function clearGlow() { cards.forEach(function (c) { c.el.classList.remove('hint'); }); }
+function glow(list) { clearGlow(); list.forEach(function (c) { c.el.classList.add('hint'); }); setTimeout(clearGlow, 2400); }
+function hint() {
+  if (phase !== 'play') return phase === 'title' ? 'Press Play, then tap a card.' : 'Wait for the cards to hide.';
+  var live = cards.filter(function (c) { return !c.done; }), down = live.filter(function (c) { return !c.up; });
+  if (open.length === 1) { var o = open[0], twin = down.filter(function (c) { return seen[cards.indexOf(c)] === o.id; })[0]; if (twin) { glow([twin]); return 'You have seen the twin of ' + o.name + '. It is glowing.'; } }
+  var by = {}; down.forEach(function (c) { var k = seen[cards.indexOf(c)]; if (k) (by[k] = by[k] || []).push(c); });
+  for (var k in by) if (by[k].length >= 2) { glow(by[k].slice(0, 2)); return 'You have seen both ' + by[k][0].name + ' cards. They are glowing.'; }
+  var fresh = down.filter(function (c) { return !seen[cards.indexOf(c)]; })[0]; if (fresh) { glow([fresh]); return 'Try this card. It is new.'; }
+  return 'Tap a card to start.';
+}
+function doHint() { if (phase !== 'play' || lock) return; hintUsed++; var t = hint(); KKs.sfx('good'); KKs.ui.toast(t, 'magnifying-glass-tilted-left'); }
+function doPeek() {
+  if (phase !== 'play' || lock || peeks <= 0) return; peeks--; $('pk').textContent = peeks; peekBtn.disabled = peeks <= 0; lock = true; KKs.sfx('whoosh');
+  var was = cards.filter(function (c) { return !c.up && !c.done; }); was.forEach(function (c, i) { setTimeout(function () { up(c, true); seen[cards.indexOf(c)] = c.id; }, i * 25); });
+  setTimeout(function () { was.forEach(function (c) { if (!c.done) up(c, false); }); lock = false; open = open.filter(function (c) { return c.up; }); }, 1500 + was.length * 25);
+}
+KKs.press(hintBtn, doHint); KKs.press(peekBtn, doPeek);
+setInterval(function () { if (phase === 'play' && !lock && !(SDK && SDK.paused)) { idleT += 1; if (idleT === 12) { hint(); } } }, 1000);
+$('cards').addEventListener('pointerdown', function (e) { var el = e.target.closest('.card'); if (!el) return; var c = cards[+el.dataset.i]; if (c) flip(c); }, { passive: true });
+$('cards').addEventListener('keydown', function (e) {
+  var el = e.target.closest('.card'); if (!el) return; var i = +el.dataset.i, c = cards[i];
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (c) flip(c); return; }
+  var cols = Math.max(1, Math.round(($('cards').clientWidth - 20) / ($('cards').querySelector('.card').offsetWidth + 8))), mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[e.key];
+  if (mv !== undefined) { e.preventDefault(); var n = cards[i + mv]; if (n) n.el.focus(); }
 });
-/* ---- first-run coach marks, taught by doing ---- */
-let tut=0,tutSeen=false;try{tutSeen=localStorage.getItem('memTut')==='1';}catch(e){}
-function coach(txt,btn){$('coachTxt').textContent=txt;$('coachBtn').textContent=btn||'Skip';$('coach').classList.remove('hidden');}
-function endTut(){tut=0;$('coach').classList.add('hidden');tutSeen=true;try{localStorage.setItem('memTut','1');}catch(e){}}
-press($('coachBtn'),endTut);
-function startTut(){tut=1;coach('👆 Tap any card to flip it over.');}
-function tutStep(kind,v){if(!tut)return;
-if(kind==='flip'&&tut===1&&v===1){tut=2;coach('Now tap a second card. Can you find its twin?');}
-else if(kind==='pair'&&tut===2){tut=3;coach(v?'✨ A pair! Matched cards stay face up. Match them all in as few moves as you can.':'No match, so both flip back. Remember where they were: that is the whole game!','Got it');}
-else if(kind==='pair'&&tut===3)endTut();}
-/* ---- hint: uses only the cards you have already seen ---- */
-function where(c){const cols=LEVELS[level].cols,i=+c.dataset.i;return 'row '+((i/cols|0)+1)+', card '+(i%cols+1);}
-function glow(cards){cards.forEach(c=>{c.classList.add('hinted');setTimeout(()=>c.classList.remove('hinted'),1800);});}
-function hint(){if(!$('start').classList.contains('hidden'))return 'Pick a level and press Play.';
-if(matched>=EMOJIS.length)return 'All pairs found! Press Play Again for a new deck.';
-const live=[...grid.children].filter(c=>!c.classList.contains('matched'));
-const down=live.filter(c=>!c.classList.contains('flip'));
-if(open.length===1){const o=open[0],twin=down.find(c=>seen.get(c)===o.emo);
-if(twin){glow([twin]);return 'You have seen the other '+o.emo+': it is at '+where(twin)+' (glowing).';}
-const fresh=down.find(c=>!seen.has(c));if(fresh){glow([fresh]);return 'You have not seen the other '+o.emo+' yet: try a new card, like '+where(fresh)+'.';}}
-const byE={};for(const c of down)if(seen.has(c))(byE[seen.get(c)]=byE[seen.get(c)]||[]).push(c);
-for(const e in byE)if(byE[e].length>=2){glow(byE[e].slice(0,2));return 'You already know where both '+e+' are: '+where(byE[e][0])+' and '+where(byE[e][1])+'.';}
-const fresh=down.find(c=>!seen.has(c));if(fresh){glow([fresh]);return 'Flip a card you have not seen yet, like '+where(fresh)+'. Then look for its twin.';}
-return 'Tap a card to start.';}
-press($('hintBtn'),()=>{if(busy())return;const t=hint();coach('💡 '+t,'OK');tut=0;});
-/* ---- title and levels ---- */
-function paintStart(){document.querySelectorAll('[data-lv]').forEach(b=>{b.classList.toggle('on',b.dataset.lv===level);b.setAttribute('aria-pressed',String(b.dataset.lv===level));});
-const L=LEVELS[level],b=+localStorage.getItem(bestKey())||0;$('startBest').textContent=(b?'Best: '+b+' moves':'No best yet')+' · 3★ in '+L.s3+' moves or fewer · ⭐ bank '+starBank;}
-document.querySelectorAll('[data-lv]').forEach(b=>press(b,()=>{level=b.dataset.lv;try{localStorage.setItem('memLevel',level);}catch(e){}paintStart();}));
-function showTitle(){clearInterval(timer);timer=null;$('over').classList.add('hidden');$('coach').classList.add('hidden');paintStart();$('start').classList.remove('hidden');scene('title');setTimeout(()=>{try{$('playBtn').focus({preventScroll:true});}catch(e){}},0);}
-function play(withTut){initAudio();newGame();if(withTut||!tutSeen)startTut();else{tut=0;$('coach').classList.add('hidden');}}
-press($('playBtn'),()=>play(false));
-/* ---- codes: just for fun; a game with a code on never replaces a saved best ---- */
-const CODES={PEEKABOO:'Peekaboo: three extra peeks',AUTOPAIR:'Auto pair: one pair matches itself (enter it again for more)',SLOWFLIP:'Slow flip: a wrong pair stays face up for 3 seconds'};
-function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
-if(c==='PEEKABOO'){tokens+=3;updatePeekUI();}if(c==='SLOWFLIP')slowFlip=true;
-if(c==='AUTOPAIR'&&!lock){const live=[...grid.children].filter(x=>!x.classList.contains('matched')&&!x.classList.contains('flip'));const e=live[0]&&live[0].dataset.e;const two=live.filter(x=>x.dataset.e===e).slice(0,2);
-if(two.length===2){startTimer();two.forEach(x=>{x.classList.add('flip','matched');seen.set(x,e);});matched++;snd('match');if(matched===EMOJIS.length)win();}}
-return{ok:true,message:CODES[c]};}
-if(SDK)SDK.init({
-pauseButton:'br',pauseKeys:'p+esc',
-onRestart:()=>play(false),
-onExit:showTitle,
-onTutorial:()=>play(true),
-onHint:hint,
-onCheat:code,
-});
-updMute();
-newGame(true);showTitle();
+document.addEventListener('keydown', function (e) { if (phase === 'title' && (e.key === ' ' || e.key === 'Enter') && !e.target.closest('button')) { e.preventDefault(); $('playBtn') && $('playBtn').click(); } });
+
+/* ---------- first-time coach: teach by doing ---------- */
+function startTutorial() {
+  var tp = { skip: function () { endTut(); P.flag('tutMem', true); } };
+  tut = { step: 1, co: KKs.ui.coach('Tap a card!', { pic: 'pointer-down', top: '150px', skip: tp.skip }) };
+  var r = cards[0].el.getBoundingClientRect(); tut.fg = h('img', { class: 'kk-finger', src: IMG('pointer'), alt: '', style: { left: (r.left + r.width / 2) + 'px', top: (r.top + r.height * .35) + 'px' } }); document.body.appendChild(tut.fg);
+}
+function tutStep(kind, v) {
+  if (!tut) return;
+  if (kind === 'flip' && tut.step === 1 && v === 1) { tut.step = 2; tut.fg && tut.fg.remove(); tut.co.close(); tut.co = KKs.ui.coach('Now find its twin!', { pic: 'rabbit-face', top: '150px', skip: function () { endTut(); P.flag('tutMem', true); } }); }
+  else if (kind === 'pair' && tut.step === 2) { tut.step = 3; tut.co.close(); tut.co = KKs.ui.coach(v ? 'A pair! Match them all!' : 'No match. Try to remember!', { pic: v ? 'party-popper' : 'thinking-face', top: '150px' }); setTimeout(function () { endTut(); P.flag('tutMem', true); }, 2600); }
+}
+function endTut() { if (!tut) return; if (tut.co) tut.co.close(); if (tut.fg) tut.fg.remove(); tut = null; }
+
+/* ======================= arcade hooks ======================= */
+var CODES = { PEEKABOO: 'Peekaboo: three extra peeks', AUTOPAIR: 'Auto pair: one pair matches itself (enter it again for more)', SLOWFLIP: 'Slow flip: a wrong pair stays face up for 3 seconds' };
+function code(c) {
+  c = String(c || '').toUpperCase(); if (!CODES[c]) return { ok: false };
+  cheated = true; $('codes').style.display = 'block';
+  if (c === 'PEEKABOO') { peeks += 3; $('pk').textContent = peeks; peekBtn.disabled = false; }
+  if (c === 'SLOWFLIP') cheats.slow = true;
+  if (c === 'AUTOPAIR' && phase === 'play' && !lock) {
+    var live = cards.filter(function (x) { return !x.done && !x.up; }), first = live[0]; if (first) { var two = live.filter(function (x) { return x.id === first.id; }).slice(0, 2); if (two.length === 2) { two.forEach(function (x) { up(x, true); }); moves++; setTimeout(function () { onMatch(two[0], two[1]); }, 350); } }
+  }
+  return { ok: true, message: CODES[c] };
+}
+if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: function () { startLevel(cur); }, onExit: showTitle, onTutorial: function () { P.flag('tutMem', false); startLevel(1); }, onHint: hint, onCheat: code, cheats: [{ code: 'PEEKABOO', effect: CODES.PEEKABOO }, { code: 'AUTOPAIR', effect: CODES.AUTOPAIR }, { code: 'SLOWFLIP', effect: CODES.SLOWFLIP }] });
+KKs.ui.topbar({ back: true });
+KKs.preload(['star', 'eye', 'magnifying-glass-tilted-left', 'rabbit-face', 'party-popper', 'thinking-face']);
+window.__mem = { get phase() { return phase; }, get cards() { return cards; }, get cfg() { return cfg; }, LV: LV, P: P, start: startLevel, flip: flip, get moves() { return moves; }, WORLDS: WORLDS };
+showTitle();
+})();
 </script>
 </body>
 </html>

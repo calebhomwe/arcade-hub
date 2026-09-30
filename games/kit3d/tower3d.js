@@ -156,24 +156,29 @@ export class TowerWorld {
 
   /** soft clouds/bubbles drifting around the tower: they scroll up as the ball falls, which sells the drop */
   _decor() {
-    const n = 26, geo = new THREE.IcosahedronGeometry(1, 1);
-    this.decorMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false, fog: true });
-    const im = this.decor = new THREE.InstancedMesh(geo, this.decorMat, n);
+    // soft warm cloud puffs: camera-facing quads with a radial alpha falloff (one instanced draw), far cheaper and gentler than solid blobs
+    const n = 22, cv = document.createElement('canvas'); cv.width = cv.height = 64;
+    const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    this.decorMat = new THREE.MeshBasicMaterial({ map: tex, color: '#ffe9d0', transparent: true, opacity: 0.5, depthWrite: false, fog: false });
+    const im = this.decor = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), this.decorMat, n);
     im.frustumCulled = false; im.renderOrder = -1;
     this.decorData = [];
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * TAU, r = 9 + Math.random() * 16;
-      this.decorData.push({ x: Math.cos(a) * r, z: Math.sin(a) * r - 4, y: Math.random(), s: 0.9 + Math.random() * 2.6, sq: 0.55 + Math.random() * 0.3 });
+      const a = Math.random() * TAU, r = 10 + Math.random() * 16;
+      this.decorData.push({ x: Math.cos(a) * r, z: Math.sin(a) * r - 4, y: Math.random(), s: 3.2 + Math.random() * 5, sq: 0.42 + Math.random() * 0.25 });
     }
     this.scene.add(im);
   }
   _decorStep(fy) {
-    const H = this.step * 26;
+    const H = this.step * 26, cq = this.camera.quaternion;
     for (let i = 0; i < this.decorData.length; i++) {
       const d = this.decorData[i];
       let y = fy + (((d.y * H - fy) % H) + H) % H - H * 0.55;
-      _p.set(d.x, y, d.z); _q.identity(); _s.set(d.s * 1.5, d.s * d.sq, d.s * 1.1);
-      _m.compose(_p, _q, _s); this.decor.setMatrixAt(i, _m);
+      _p.set(d.x, y, d.z); _s.set(d.s, d.s * d.sq, 1);
+      _m.compose(_p, cq, _s); this.decor.setMatrixAt(i, _m);
     }
     this.decor.instanceMatrix.needsUpdate = true;
   }

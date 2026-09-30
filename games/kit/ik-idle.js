@@ -15,17 +15,6 @@
   var D = W.document, IK = W.IK;
   var $ = IK.$, h = IK.h, fmt = IK.fmt, esc = IK.esc;
 
-  /* sprite html: tile n of a packed 16 px atlas, drawn px wide */
-  IK.spr = function (url, n, px, cols, rows, tw) {
-    tw = tw || 16; cols = cols || 12; rows = rows || 11;
-    var c = n % cols, r = Math.floor(n / cols);
-    return '<span class="spr" style="width:' + px + 'px;height:' + px + 'px;background-image:url(' + url + ');background-size:' + (cols * px) + 'px ' + (rows * px) + 'px;background-position:-' + (c * px) + 'px -' + (r * px) + 'px"></span>';
-  };
-  /* sprite html from a baked atlas rectangle (sx,sy,sw,sh inside an atlas of aw x ah), shown sw*k wide */
-  IK.sprRect = function (url, sx, sy, sw, sh, aw, ah, k) {
-    return '<span class="spr" style="width:' + (sw * k) + 'px;height:' + (sh * k) + 'px;background-image:url(' + url + ');background-size:' + (aw * k) + 'px ' + (ah * k) + 'px;background-position:-' + (sx * k) + 'px -' + (sy * k) + 'px"></span>';
-  };
-
   /* ---------- the coach: hints that point at what to do and never cover it ---------- */
   IK.coach = function (o) {
     var steps = o.steps, i = 0, card = null, ring = null, hand = null, done = false, tm = 0;
@@ -52,7 +41,7 @@
       var sk = h('button', '', s.on ? 'Skip' : 'Next'); sk.type = 'button';
       sk.addEventListener('click', function () { if (s.on) finish(false); else { i++; show(); } });
       card.appendChild(sk); D.body.appendChild(card);
-      if (s.target) { ring = h('div', 'ik-ring'); hand = h('div', 'ik-hand', '&#128070;'); D.body.appendChild(ring); D.body.appendChild(hand); }
+      if (s.target) { ring = h('div', 'ik-ring'); hand = h('div', 'ik-hand', IK.ico.hand(44)); D.body.appendChild(ring); D.body.appendChild(hand); }
       place();
     }
     function finish(completed) { if (done) return; done = true; clear(); W.clearInterval(tm); if (o.key) IK.ls.set('ik_coach_' + o.key, '1'); if (o.onDone) o.onDone(completed); }
@@ -101,7 +90,7 @@
     var E = this, c = E.cfg, list = [], g = c.genUps || { at: [10, 40, 75, 150, 250], mul: [2, 2, 2, 3, 3], costMul: 6, names: ['Better Tools', 'Trained Hands', 'Master Guild', 'Royal Charter', 'Golden Age'] };
     E.gens.forEach(function (gen, i) {
       g.at.forEach(function (at, k) {
-        list.push({ id: 'g' + i + '_' + k, gen: i, at: at, name: gen.name + ': ' + g.names[k], desc: gen.name + ' output ×' + g.mul[k], cost: Math.ceil(gen.cost * g.costMul * Math.pow(E.growth, at)), eff: { gen: i, mul: g.mul[k] }, ico: gen.ico, kind: 'gen',
+        list.push({ id: 'g' + i + '_' + k, gen: i, at: at, name: gen.name + ': ' + g.names[k], desc: gen.name + ' output ×' + g.mul[k], cost: Math.ceil(gen.cost * g.costMul * Math.pow(gen.growth || E.growth, at)), eff: { gen: i, mul: g.mul[k] }, ico: gen.ico, kind: 'gen',
           req: function (S) { return S.owned[i] >= at; }, reqText: 'Own ' + at + ' ' + gen.name });
       });
     });
@@ -113,7 +102,7 @@
   /* ---------- derived multipliers, recomputed when anything bought changes ---------- */
   P.recalc = function () {
     var E = this, S = E.S, c = E.cfg, m = E.mul, i;
-    m.all = 1; m.tapAdd = 0; m.tapMul = 1; m.tapPct = 0; m.auto = 0; m.capH = c.offlineCapH || 8; m.eff = c.offlineEff || 0.5; m.disc = 1; m.luck = 1;
+    m.all = 1; m.gold = 1; m.tapAdd = 0; m.tapMul = 1; m.tapPct = 0; m.auto = 0; m.capH = c.offlineCapH || 8; m.eff = c.offlineEff || 0.5; m.disc = 1; m.luck = 1;
     for (i = 0; i < E.n; i++) m.gen[i] = 1;
     var allAdd = 0;
     E.ups.forEach(function (u) {
@@ -121,6 +110,7 @@
       var e = u.eff || {};
       if (e.gen != null) m.gen[e.gen] *= e.mul;
       if (e.all) m.all *= e.all;
+      if (e.gold) m.gold *= e.gold;
       if (e.tapAdd) m.tapAdd += e.tapAdd;
       if (e.tapMul) m.tapMul *= e.tapMul;
       if (e.tapPct) m.tapPct += e.tapPct;
@@ -134,6 +124,7 @@
       var lv = S.perks[p.id] | 0; if (!lv) return;
       var e = p.eff || {};
       if (e.all) m.all *= Math.pow(e.all, lv);
+      if (e.gold) m.gold *= Math.pow(e.gold, lv);
       if (e.tapMul) m.tapMul *= Math.pow(e.tapMul, lv);
       if (e.capH) m.capH += e.capH * lv;
       if (e.eff) m.eff += e.eff * lv;
@@ -167,11 +158,11 @@
     return v;
   };
   P.cost = function (i, n) {
-    var g = this.gens[i], o = this.S.owned[i], r = this.growth;
+    var g = this.gens[i], o = this.S.owned[i], r = g.growth || this.growth;
     return g.cost * Math.pow(r, o) * (Math.pow(r, n) - 1) / (r - 1) * this.mul.disc;
   };
   P.maxN = function (i) {
-    var g = this.gens[i], o = this.S.owned[i], r = this.growth, c0 = g.cost * Math.pow(r, o) * this.mul.disc, coins = this.S.coins;
+    var g = this.gens[i], o = this.S.owned[i], r = g.growth || this.growth, c0 = g.cost * Math.pow(r, o) * this.mul.disc, coins = this.S.coins;
     if (coins < c0) return 0;
     var n = Math.floor(Math.log(coins * (r - 1) / c0 + 1) / Math.log(r));
     while (n > 0 && this.cost(i, n) > coins) n--;
@@ -238,7 +229,7 @@
   P.tabLevel = function (tab) { var t = this.cfg.tabLevels && this.cfg.tabLevels[tab]; return t || 1; };
   P.tabOpen = function (tab) { return this.S.lvl >= this.tabLevel(tab); };
   P.onLevelUp = function (lvl) {
-    var E = this, S = E.S, c = E.cfg, reward = Math.max(50, Math.floor(E.income() * 90));
+    var E = this, S = E.S, c = E.cfg, reward = c.levelReward ? c.levelReward(E, lvl) : Math.max(50, Math.floor(E.income() * 90));
     var line = '', art = '';
     var unlockTab = null;
     for (var t in (c.tabLevels || {})) if (c.tabLevels[t] === lvl) unlockTab = t;
@@ -265,7 +256,7 @@
     var S = this.S;
     if (!(amt > 0)) return;
     S.coins += amt;
-    if (countLife !== false) { S.lifetime += amt; S.alltime += amt; }
+    if (countLife !== false) { S.lifetime += amt; S.alltime += amt; this.earnAcc = (this.earnAcc || 0) + amt; }
   };
   P.event = function (kind, n) {                                   // daily quests and achievements listen here
     var E = this, S = E.S, d = S.daily; n = n == null ? 1 : n;
@@ -287,10 +278,11 @@
   /* the main tap. x,y are client coordinates (or null for an auto-tap). */
   P.tapMain = function (x, y, auto) {
     var E = this, S = E.S, v = E.tapPower();
-    E.gain(v); S.stats.taps++;
+    if (E.cfg.tapAction) E.cfg.tapAction(E, v, x, y, auto); else E.gain(v);
+    S.stats.taps++;
     E.event('tap', 1);
-    if (!auto) { E.lastTapAt = IK.now(); E.coachDid('tap'); IK.sfx('coin', { rate: 0.9 + Math.min(0.5, (E.combo || 0) * 0.02), volume: 0.5, gap: 60 }); IK.vibrate(6); }
-    if (x != null) { IK.fx.float(x, y - 10, '+' + fmt(v), v > E.income() * 4 && v > 10 ? 'big' : 'gold'); IK.fx.burst(x, y, { n: 6, speed: 150, size: 3 }); IK.fx.pop(E.el.wallet, 0.04); }
+    if (!auto) { E.lastTapAt = IK.now(); E.coachDid('tap'); if (!E.cfg.tapAction) IK.sfx('coin', { rate: 0.9 + Math.min(0.5, (E.combo || 0) * 0.02), volume: 0.5, gap: 60 }); IK.vibrate(6); }
+    if (x != null && !E.cfg.tapAction) { IK.fx.float(x, y - 10, '+' + fmt(v), v > E.income() * 4 && v > 10 ? 'big' : 'gold'); IK.fx.burst(x, y, { n: 6, speed: 150, size: 3 }); IK.fx.pop(E.el.wallet, 0.05); }
     if (E.cfg.onTap) E.cfg.onTap(E, v, auto);
     E.dirtyUI = true;
     return v;
@@ -327,7 +319,7 @@
       xp += 6 + 2 * i;
       if (i === E.n - 1) IK.fx.confetti(60);
     }
-    if (Math.random() < 0.06 && E.tabOpen('goals')) { S.chests++; IK.toast('A treasure chest dropped!', { icon: '&#127873;' }); IK.sfx('collect'); E.dirtyUI = true; }
+    if (Math.random() < 0.06 && E.tabOpen('goals') && !E.cfg.noEvents) { S.chests++; IK.toast('A treasure chest dropped!', { icon: '&#127873;' }); IK.sfx('collect'); E.dirtyUI = true; }
     E.addXp(xp, 'buy');
     if (E.cfg.onBuy) E.cfg.onBuy(E, i, n);
     E.dirtyUI = true; E.refreshNow();
@@ -359,7 +351,7 @@
     var E = this, S = E.S;
     if (!S.chests) { IK.sfx('error', { volume: 0.4 }); return; }
     S.chests--; S.stats.chests++;
-    var loot = Math.max(20 * E.tapPower(), Math.floor(E.income() * 30 * (0.6 + Math.random() * 1.6)));
+    var loot = E.cfg.chestLoot ? E.cfg.chestLoot(E) : Math.max(20 * E.tapPower(), Math.floor(E.income() * 30 * (0.6 + Math.random() * 1.6)));
     E.gain(loot); E.addXp(12, 'chest');
     IK.sfx('reward'); IK.vibrate(18);
     if (x == null && E.el.chest) { var b = E.el.chest.getBoundingClientRect(); x = b.left + b.width / 2; y = b.top; }
@@ -400,7 +392,7 @@
     S.gift = today;
     IK.Daily.touch(S);
     var st = (S.daily && S.daily.streak) || 1;
-    var amt = Math.max(100, E.income() * 60 * Math.min(7, st));
+    var amt = E.cfg.giftAmt ? E.cfg.giftAmt(E, st) : Math.max(100, E.income() * 60 * Math.min(7, st));
     E.gain(amt); E.addXp(15, 'gift');
     IK.sfx('reward'); IK.fx.confetti(40); IK.fx.float(W.innerWidth / 2, W.innerHeight * 0.3, '+' + fmt(amt), 'big'); IK.fx.flyTo(W.innerWidth / 2, W.innerHeight * 0.3, E.el.wallet, { n: 10 });
     IK.toast('Daily gift: +' + fmt(amt) + ' (day ' + st + ' streak)', { icon: '&#127873;', kind: 'gold' });
@@ -410,7 +402,7 @@
     var E = this, S = E.S, q = S.daily && S.daily.quests[idx];
     if (!q || !q.done || q.claimed) return;
     q.claimed = true; S.stats.quests++;
-    var amt = Math.max(200, E.income() * 120), xp = 30 + 10 * idx;
+    var amt = E.cfg.questAmt ? E.cfg.questAmt(E, idx) : Math.max(200, E.income() * 120), xp = 30 + 10 * idx;
     E.gain(amt); E.addXp(xp, 'quest');
     IK.sfx('reward'); IK.fx.confetti(24);
     IK.toast('+' + fmt(amt) + ' and ' + xp + ' XP!', { icon: '&#127942;', kind: 'gold' });
@@ -510,48 +502,61 @@
   };
 
   /* ================= UI ================= */
+  P.hasTab = function (id) { var t = this.cfg.tabs; for (var i = 0; i < t.length; i++) if (t[i].id === id) return true; return false; };
   P.tabLabel = function (id) { var t = this.cfg.tabs; for (var i = 0; i < t.length; i++) if (t[i].id === id) return t[i].label; return id; };
   P.build = function (root) {
     var E = this, c = E.cfg, S = E.S;
     root.innerHTML = '';
     var app = h('div', 'ik-app'); root.appendChild(app);
     E.el = { app: app };
+    IK.defs();
     app.innerHTML =
-      '<header class="ik-hd">' +
-      '<a class="ik-round" id="btnBack" href="../index.html" aria-label="Back to the arcade hub">' + IK.ico.back + '</a>' +
-      '<div class="ik-wallet" id="wallet"><span class="ik-cur">' + c.cur.ico(30) + '</span><div><b id="cur">0</b><small id="rate">0/s</small></div></div>' +
-      '<div class="ik-prem" id="premW" role="button" tabindex="0" hidden aria-label="' + esc(c.prestige.plural) + '">' + c.prestige.ico(24) + '<span id="prem">0</span></div>' +
-      '<button class="ik-round" id="btnMute" type="button" aria-label="Sound on or off">' + IK.ico.speaker + '</button>' +
-      '</header>' +
-      '<div class="ik-lvl" id="lvl"><span class="lv" id="lvN">Lv 1</span><div class="ik-bar"><i id="lvBar"></i></div><span class="txt" id="lvT">0/8</span></div>' +
-      '<section class="ik-scene" id="sceneWrap" aria-label="' + esc(c.name) + ' scene"><canvas id="scene" width="8" height="8"></canvas><div class="ik-chips" id="chips"></div></section>' +
-      '<button class="ik-quest" id="quest" type="button"><span class="q"><span id="qT">Next goal</span><small id="qS"></small><div class="ik-bar good"><i id="qBar"></i></div></span><span class="rw" id="qR"></span></button>' +
+      '<section class="ik-scene" id="sceneWrap" aria-label="' + esc(c.name) + ' scene"><canvas id="scene"></canvas>' +
+      '<div class="ik-hud">' +
+        '<a class="ik-glassbtn" id="btnBack" href="../index.html" aria-label="Back to the arcade hub">' + IK.ico.back(24) + '</a>' +
+        '<div class="ik-hudcol">' +
+          '<div class="ik-player"><span class="ik-lvbadge" id="lvN">1</span><div class="ik-lvbox"><div class="n">Level <small id="lvT">0/8 XP</small></div><div class="ik-bar"><i id="lvBar"></i></div></div></div>' +
+          '<div class="ik-pills">' +
+            '<div class="ik-pill" id="wallet"><span class="ik-cur">' + c.cur.ico(30) + '</span><div class="v"><b id="cur">0</b><small id="rate">0/s</small></div></div>' +
+            '<div class="ik-pill prem click" id="premW" role="button" tabindex="0" hidden aria-label="' + esc(c.prestige.plural) + '">' + c.prestige.ico(28) + '<div class="v"><b id="prem">0</b></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ik-sidebtns"><button class="ik-glassbtn" id="btnMute" type="button" aria-label="Sound on or off"></button></div>' +
+      '<div class="ik-chips" id="chips"></div>' +
+      '<button class="ik-goal" id="quest" type="button"><span class="q"><b id="qT">Next goal</b><small id="qS"></small><div class="ik-bar good"><i id="qBar"></i></div></span><span class="rw" id="qR"></span></button>' +
+      '</section>' +
       '<main class="ik-panels" id="panels"></main>' +
       '<nav class="ik-tabs" id="tabs" role="tablist"></nav>';
     ['wallet', 'cur', 'rate', 'premW', 'prem', 'btnMute', 'lvN', 'lvBar', 'lvT', 'sceneWrap', 'scene', 'chips', 'quest', 'qT', 'qS', 'qBar', 'qR', 'panels', 'tabs'].forEach(function (id) { E.el[id] = $(id); });
-    E.el.wallet = E.el.wallet;
+    E.el.pills = app.querySelector('.ik-pills');
     // tabs and panels
     c.tabs.forEach(function (t) {
-      var b = h('button', 'ik-tab', '<span class="ti">' + t.ico(24) + '</span><span class="tl">' + esc(t.label) + '</span><span class="dot" id="dot_' + t.id + '"></span>');
+      var b = h('button', 'ik-tab', '<span class="ti">' + t.ico(22) + '</span><span class="tl">' + esc(t.label) + '</span><span class="dot" id="dot_' + t.id + '"></span>');
       b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.tab = t.id; b.id = 'tab_' + t.id;
       b.addEventListener('click', function () { E.switchTab(t.id, true); });
       E.el.tabs.appendChild(b);
       var p = h('section', 'ik-panel'); p.id = 'panel_' + t.id; p.setAttribute('role', 'tabpanel'); E.el.panels.appendChild(p);
       E.el['p_' + t.id] = p;
     });
-    E.buildBuildPanel(); E.buildUpPanel(); E.buildGoalsPanel(); E.buildCrownPanel();
+    if (E.hasTab('build') && !c.noBuild) E.buildBuildPanel();
+    if (E.hasTab('ups')) E.buildUpPanel();
+    if (E.hasTab('goals')) E.buildGoalsPanel();
+    if (E.hasTab('crown')) E.buildCrownPanel();
+    if (c.panels) c.tabs.forEach(function (t) { if (c.panels[t.id]) c.panels[t.id].build(E, E.el['p_' + t.id]); });
+    if (c.hudPills) c.hudPills.forEach(function (p) { var d = h('div', 'ik-pill click', p.ico(28) + '<div class="v"><b id="' + p.id + '">0</b></div>'); d.id = p.id + 'W'; if (p.tab) d.addEventListener('click', function () { E.switchTab(p.tab, true); }); E.el.pills.appendChild(d); E.el[p.id] = d.querySelector('b'); E.el[p.id + 'W'] = d; });
     // scene
     E.scene = c.makeScene(E);
     var wrap = E.el.sceneWrap;
-    wrap.addEventListener('pointerdown', function (ev) { if (!E.inGame) return; if (ev.button > 0) return; E.scene.pointer(ev.clientX, ev.clientY, ev); }, { passive: true });
+    wrap.addEventListener('pointerdown', function (ev) { if (!E.inGame) return; if (ev.button > 0) return; if (ev.target.closest && ev.target.closest('.ik-goal,.ik-glassbtn,.ik-pill')) return; E.scene.pointer(ev.clientX, ev.clientY, ev); }, { passive: true });
     // events
-    E.el.btnMute.addEventListener('click', function () { IK.muted = !IK.muted; IK.ls.set(c.muteKey, IK.muted ? '1' : '0'); E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted : IK.ico.speaker; if (!IK.muted) IK.sfx('button'); });
-    E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted : IK.ico.speaker;
+    E.el.btnMute.addEventListener('click', function () { IK.muted = !IK.muted; IK.ls.set(c.muteKey, IK.muted ? '1' : '0'); E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted(22) : IK.ico.speaker(22); if (!IK.muted) IK.sfx('button'); });
+    E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted(22) : IK.ico.speaker(22);
     E.el.quest.addEventListener('click', function () { IK.sfx('tap'); if (E.goalTab) E.switchTab(E.goalTab, true); if (E.goalAct) E.goalAct(); });
     E.el.premW.addEventListener('click', function () { E.switchTab('crown', true); });
     // title
     E.buildTitle(root);
-    E.switchTab('build');
+    E.switchTab(c.tabs[0].id);
     E.refreshTabs();
   };
 
@@ -585,7 +590,7 @@
 
   P.buildTitle = function (root) {
     var E = this, c = E.cfg, t = h('div', 'ik-title'); t.id = 'title'; E.el.title = t;
-    t.innerHTML = '<h1 class="ik-logo">' + c.logo + '</h1><p class="ik-tag">' + c.tagline + '</p><div class="ik-stats" id="tStats"></div><button class="ik-btn acc big" id="btnPlay" type="button">Play</button><div class="row"><button class="ik-btn ghost" id="btnHow" type="button" style="min-width:150px">How to play</button><button class="ik-btn ghost" id="btnMore" type="button" style="min-width:110px">Options</button></div>';
+    t.innerHTML = '<div class="ik-plaque"><h1 class="ik-logo">' + c.logo + '</h1></div><p class="ik-tag">' + c.tagline + '</p><div class="ik-stats" id="tStats"></div><button class="ik-btn acc big" id="btnPlay" type="button">Play</button><div class="row"><button class="ik-btn ghost" id="btnHow" type="button" style="min-width:150px">How to play</button><button class="ik-btn ghost" id="btnMore" type="button" style="min-width:110px">Options</button></div>';
     root.appendChild(t);
     $('btnPlay').addEventListener('click', function () { E.start(false); });
     $('btnHow').addEventListener('click', function () { E.showHow(); });
@@ -623,7 +628,7 @@
   /* ---------- tabs ---------- */
   P.switchTab = function (id, click) {
     var E = this;
-    if (!E.tabOpen(id)) { IK.sfx('error', { volume: 0.4 }); IK.toast(E.tabLabel(id) + ' opens at level ' + E.tabLevel(id), { icon: IK.ico.lock }); return; }
+    if (!E.tabOpen(id)) { IK.sfx('error', { volume: 0.4 }); IK.toast(E.tabLabel(id) + ' opens at level ' + E.tabLevel(id), { icon: IK.ico.lock(18) }); return; }
     E.tab = id;
     E.cfg.tabs.forEach(function (t) {
       var on = t.id === id, b = $('tab_' + t.id);
@@ -671,7 +676,7 @@
         setText(r.sub, lockLvl ? 'Reach level ' + g.lvl : 'Build a ' + E.gens[i - 1].name + ' first', L, 'sub');
         r.bar.style.width = '0%';
         setText(r.bs, lockLvl ? 'Level ' + g.lvl : 'Locked', L, 'bs');
-        setHTML(r.bb, IK.ico.lock, L, 'bb');
+        setHTML(r.bb, IK.ico.lock(18), L, 'bb');
         r.btn.className = 'ik-buy lockd'; r.btn.disabled = true;
         continue;
       }
@@ -679,7 +684,8 @@
       setText(r.nm, g.name, L, 'nm');
       setText(r.own, '×' + S.owned[i], L, 'own');
       var mm = E.msMul(S.owned[i]), each = g.inc * mm * E.mul.gen[i] * E.globalMul();
-      var sub = S.owned[i] ? '<b>' + fmt(each * S.owned[i]) + '/s</b> · ' + fmt(each) + ' each' : (g.desc || fmt(each) + '/s each');
+      var ru = E.cfg.rateUnit || '/s';
+      var sub = g.sub ? g.sub(E, i, each) : S.owned[i] ? '<b>' + fmt(each * S.owned[i]) + ru + '</b> · ' + fmt(each) + ' each' : (g.desc || fmt(each) + ru + ' each');
       setHTML(r.sub, sub, L, 'sub');
       var nx = E.nextMs(S.owned[i]);
       var prev = 0; for (var k = 0; k < E.ms.length; k++) if (E.ms[k][0] <= S.owned[i]) prev = E.ms[k][0];
@@ -712,7 +718,7 @@
       E.el.upNext.innerHTML = '';
       locked.forEach(function (u) {
         var row = h('div', 'ik-row locked');
-        row.innerHTML = '<div class="ik-ico dark">' + (u.ico ? u.ico(44) : '') + '</div><div><div class="ik-nm"><span class="t">' + esc(u.name) + '</span></div><div class="ik-sub">' + esc(u.reqText || (u.lvl ? 'Reach level ' + u.lvl : 'Locked')) + '</div></div><div class="ik-buy lockd" style="pointer-events:none"><small>' + fmt(u.cost) + '</small><b>' + IK.ico.lock + '</b></div>';
+        row.innerHTML = '<div class="ik-ico dark">' + (u.ico ? u.ico(44) : '') + '</div><div><div class="ik-nm"><span class="t">' + esc(u.name) + '</span></div><div class="ik-sub">' + esc(u.reqText || (u.lvl ? 'Reach level ' + u.lvl : 'Locked')) + '</div></div><div class="ik-buy lockd" style="pointer-events:none"><small>' + fmt(u.cost) + '</small><b>' + IK.ico.lock(18) + '</b></div>';
         E.el.upNext.appendChild(row);
       });
     }
@@ -737,7 +743,7 @@
 
   P.updateGoals = function () {
     var E = this, S = E.S, d = S.daily;
-    var sig = E.tab === 'goals' ? JSON.stringify([d && d.quests, d && d.days.length, S.gift === IK.today(), E.achCount(), S.chests, d && d.weekChest]) : '';
+    var sig = E.tab === 'goals' ? JSON.stringify([d && d.quests, d && d.days.length, S.gift === IK.today(), E.achCount(), S.chests, d && d.weekChest, E.cfg.goalsSig ? E.cfg.goalsSig(E) : 0]) : '';
     // badge on the tab
     var claimables = 0; if (d) d.quests.forEach(function (q) { if (q.done && !q.claimed) claimables++; }); if (S.gift !== IK.today() && E.tabOpen('goals')) claimables++;
     var dot = $('dot_goals'), on = E.tabOpen('goals') && claimables > 0 && E.tab !== 'goals'; if (dot) { dot.classList.toggle('on', on); if (on) dot.textContent = String(claimables); }
@@ -751,7 +757,7 @@
     if (d) d.quests.forEach(function (q, i) {
       var pct = Math.min(100, Math.round(q.prog / q.goal * 100));
       html += '<div class="ik-row" style="grid-template-columns:1fr auto"><div><div class="ik-nm"><span class="t" style="white-space:normal">' + esc(E.questText(q)) + '</span></div><div class="ik-sub">' + fmt(q.prog) + ' / ' + fmt(q.goal) + ' · reward XP + ' + E.cfg.cur.name + '</div><div class="ik-bar good"><i style="width:' + pct + '%"></i></div></div>' +
-        '<button class="ik-btn ' + (q.claimed ? 'ghost' : q.done ? 'acc' : 'ghost') + '" data-q="' + i + '" style="min-width:86px"' + (q.done && !q.claimed ? '' : ' disabled') + '>' + (q.claimed ? IK.ico.check : q.done ? 'Claim' : pct + '%') + '</button></div>';
+        '<button class="ik-btn ' + (q.claimed ? 'ghost' : q.done ? 'acc' : 'ghost') + '" data-q="' + i + '" style="min-width:86px"' + (q.done && !q.claimed ? '' : ' disabled') + '>' + (q.claimed ? IK.ico.check(18) : q.done ? 'Claim' : pct + '%') + '</button></div>';
     });
     var names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     html += '<div class="ik-card"><h3>This week</h3><div class="ik-stamps">' + w.stamps.map(function (on, i) { return '<div class="ik-stamp' + (on ? ' on' : '') + (i === w.todayIdx ? ' today' : '') + '">' + names[i].charAt(0) + '</div>'; }).join('') + '</div>' +
@@ -762,6 +768,7 @@
       var got = S.ach[a.id], pr = a.prog ? a.prog(S, E) : null, pct = got ? 100 : pr ? Math.min(100, Math.round(pr[0] / pr[1] * 100)) : 0;
       html += '<div class="ik-row' + (got ? '' : ' locked') + '" style="grid-template-columns:44px 1fr"><div class="ik-ico' + (got ? '' : ' dark') + '" style="width:44px;height:44px">' + (a.ico ? a.ico(32) : '') + '</div><div><div class="ik-nm"><span class="t">' + esc(a.name) + '</span>' + (got ? '<span class="ik-own">+2%</span>' : '') + '</div><div class="ik-sub">' + esc(a.desc) + (pr && !got ? ' · ' + fmt(pr[0]) + '/' + fmt(pr[1]) : '') + '</div>' + (got ? '' : '<div class="ik-bar"><i style="width:' + pct + '%"></i></div>') + '</div></div>';
     });
+    if (E.cfg.goalsExtra) html += E.cfg.goalsExtra(E);
     E.el.goalsBody.innerHTML = html;
     var g = $('btnGift'); if (g) g.addEventListener('click', function () { E.claimGift(); });
     var wk = $('btnWeek'); if (wk) wk.addEventListener('click', function () { E.claimWeek(); });
@@ -790,7 +797,7 @@
     (E.cfg.perks || []).forEach(function (pk) {
       var lv = S.perks[pk.id] | 0, maxed = lv >= pk.max, cst = maxed ? 0 : pk.cost(lv), can = !maxed && (S.prem - S.spent) >= cst;
       html += '<div class="ik-row"><div class="ik-ico dark">' + pk.ico(44) + '</div><div><div class="ik-nm"><span class="t">' + esc(pk.name) + '</span><span class="ik-own">' + lv + '/' + pk.max + '</span></div><div class="ik-sub">' + esc(pk.desc) + '</div></div>' +
-        '<button class="ik-buy' + (can ? '' : ' no') + '" data-perk="' + pk.id + '"' + (maxed ? ' disabled' : '') + '><small>' + (maxed ? 'Maxed' : 'Buy') + '</small><b>' + (maxed ? IK.ico.check : p.ico(16) + cst) + '</b></button></div>';
+        '<button class="ik-buy' + (can ? '' : ' no') + '" data-perk="' + pk.id + '"' + (maxed ? ' disabled' : '') + '><small>' + (maxed ? 'Maxed' : 'Buy') + '</small><b>' + (maxed ? IK.ico.check(18) : p.ico(16) + cst) + '</b></button></div>';
     });
     E.el.crownBody.innerHTML = html;
     var d = $('btnDecree'); if (d) d.addEventListener('click', function () { E.confirmPrestige(); });
@@ -806,6 +813,7 @@
   /* the "next goal" chip: the one thing worth doing right now */
   P.updateGoalChip = function () {
     var E = this, S = E.S, c = E.cfg, hi = E.highest(), g = null, i;
+    if (c.goalChip) { g = c.goalChip(E); if (g) { E.goalTab = g.tab || 'build'; E.goalAct = null; E.paintGoal(g); return; } }
     var claim = 0; if (S.daily) S.daily.quests.forEach(function (q) { if (q.done && !q.claimed) claim++; });
     E.goalTab = 'build'; E.goalAct = null;
     if (E.prestigeGain() >= 1 && E.tabOpen('crown') && S.lifetime > c.prestige.unit * 4) {
@@ -825,6 +833,10 @@
       else { var lv = E.levelInfo(); g = { t: 'Reach level ' + (lv.lvl + 1), s: (lv.need - Math.floor(lv.into)) + ' XP to go: buy and build', p: lv.pct, r: 'Unlock' }; }
     }
     if (!g) g = { t: 'Keep building', s: '', p: 0, r: '' };
+    E.paintGoal(g);
+  };
+  P.paintGoal = function (g) {
+    var E = this;
     var q = E.el, L = E.txt;
     if (L.get('qT') !== g.t) { L.set('qT', g.t); q.qT.textContent = g.t; }
     if (L.get('qS') !== g.s) { L.set('qS', g.s); q.qS.textContent = g.s; }
@@ -837,10 +849,10 @@
   P.updateHud = function () {
     var E = this, S = E.S, L = E.txt, inc = E.income();
     E.roll.set(S.coins);
-    var r = fmt(inc) + '/s' + (E.frenzy > 0 ? '  ×' + E.frenzyMul : ''); if (L.get('rate') !== r) { L.set('rate', r); E.el.rate.textContent = r; }
+    var r = E.cfg.rateFn ? E.cfg.rateFn(E) : fmt(inc) + (E.cfg.rateUnit || '/s') + (E.frenzy > 0 ? '  ×' + E.frenzyMul : ''); if (L.get('rate') !== r) { L.set('rate', r); E.el.rate.textContent = r; }
     var li = E.levelInfo();
-    var ln = 'Lv ' + li.lvl; if (L.get('lvN') !== ln) { L.set('lvN', ln); E.el.lvN.textContent = ln; }
-    var lt = Math.floor(li.into) + '/' + li.need; if (L.get('lvT') !== lt) { L.set('lvT', lt); E.el.lvT.textContent = lt; }
+    var ln = String(li.lvl); if (L.get('lvN') !== ln) { L.set('lvN', ln); E.el.lvN.textContent = ln; }
+    var lt = Math.floor(li.into) + '/' + li.need + ' XP'; if (L.get('lvT') !== lt) { L.set('lvT', lt); E.el.lvT.textContent = lt; }
     var lw = (li.pct * 100).toFixed(1) + '%'; if (L.get('lvBar') !== lw) { L.set('lvBar', lw); E.el.lvBar.style.width = lw; }
     // chips in the scene: events with timers
     var chips = [];
@@ -863,7 +875,18 @@
     }
   };
 
-  P.refreshNow = function () { this.dirtyUI = false; this.updateHud(); this.updateGenRows(); this.updateUpgrades(); this.updateGoals(); this.updateCrown(); this.updateStrip(); this.updateGoalChip(); };
+  P.refreshAll = function () {
+    var E = this, c = E.cfg;
+    E.updateHud();
+    if (E.hasTab('build') && !c.noBuild) { E.updateGenRows(); E.updateStrip(); }
+    if (E.hasTab('ups')) E.updateUpgrades();
+    if (E.hasTab('goals')) E.updateGoals();
+    if (E.hasTab('crown')) E.updateCrown();
+    if (c.panels) c.tabs.forEach(function (t) { if (c.panels[t.id] && c.panels[t.id].update) c.panels[t.id].update(E, E.el['p_' + t.id], E.tab === t.id); });
+    if (c.updateHud) c.updateHud(E, E.el);
+    E.updateGoalChip();
+  };
+  P.refreshNow = function () { this.dirtyUI = false; this.refreshAll(); };
 
   /* ================= run loop ================= */
   P.start = function (teach) {
@@ -874,7 +897,7 @@
     E.carDue = IK.now() + (150 + Math.random() * 120) * 1000;
     E.evNext = IK.now() + (25 + Math.random() * 25) * 1000;
     E.rushNext = IK.now() + (60 + Math.random() * 50) * 1000;
-    E.refreshTabs(); E.updateQty(); E.refreshNow();
+    E.refreshTabs(); if (E.el.qty) E.updateQty(); E.refreshNow();
     E.roll.set(S.coins, true);
     E.report('play');
     if (E.coach) { E.coach.stop(); E.coach = null; }
@@ -909,16 +932,16 @@
     var E = this, S = E.S, now = IK.now();
     if (!E.inGame) return;
     if (E.dirty !== false) E.recalc();
-    var inc = E.income() * dt;
-    if (inc > 0) { S.coins += inc; S.lifetime += inc; S.alltime += inc; }
+    var inc = E.cfg.noPassive ? 0 : E.income() * dt;
+    if (inc > 0) { S.coins += inc; S.lifetime += inc; S.alltime += inc; E.earnAcc = (E.earnAcc || 0) + inc; }
     if (E.cfg.onTick) E.cfg.onTick(E, dt);
     if (E.rush > 0) E.rush = Math.max(0, E.rush - dt);
     if (E.frenzy > 0) E.frenzy = Math.max(0, E.frenzy - dt);
     if (E.mul.auto > 0) { E.autoAcc = (E.autoAcc || 0) + dt * E.mul.auto; while (E.autoAcc >= 1) { E.autoAcc -= 1; E.tapMain(null, null, true); } }
     // rush: only when the player has been tapping lately
-    if (E.rush === 0 && now > E.rushNext && now - E.lastTapAt < 15000 && E.tabOpen('goals')) { E.rush = 12; S.stats.rushes++; E.rushNext = now + (70 + Math.random() * 60) * 1000 / E.mul.luck; IK.toast('GOLDEN RUSH! Taps ×3 for 12s', { icon: '&#9889;', kind: 'gold' }); IK.sfx('powerup'); IK.fx.flash('#ffe27a', 220); }
+    if (!E.cfg.noEvents && E.rush === 0 && now > E.rushNext && now - E.lastTapAt < 15000 && E.tabOpen('goals')) { E.rush = 12; S.stats.rushes++; E.rushNext = now + (70 + Math.random() * 60) * 1000 / E.mul.luck; IK.toast('GOLDEN RUSH! Taps ×3 for 12s', { icon: '&#9889;', kind: 'gold' }); IK.sfx('powerup'); IK.fx.flash('#ffe27a', 220); }
     // critters
-    if (now > E.evNext && E.tabOpen('goals') && !E.critterOut && !IK.sheetOpen()) { E.evNext = now + 40000; if (E.scene.spawnCritter && E.scene.spawnCritter()) E.critterOut = true; }
+    if (!E.cfg.noEvents && now > E.evNext && E.tabOpen('goals') && !E.critterOut && !IK.sheetOpen()) { E.evNext = now + 40000; if (E.scene.spawnCritter && E.scene.spawnCritter()) E.critterOut = true; }
     // caravan
     if (E.carEnd && now >= E.carEnd) {
       var pay = Math.floor(E.carStake * (1.5 + Math.random() * 0.9)); E.gain(pay); E.carEnd = 0; E.carStake = 0; E.carDue = now + (150 + Math.random() * 150) * 1000;
@@ -926,8 +949,8 @@
       E.event('caravan', 1); E.dirtyUI = true;
       if (E.scene.onCaravan) E.scene.onCaravan('back');
     }
-    if (!E.carEnd && E.carDue && now >= E.carDue && S.coins >= 1000) { E.carDue = 0; IK.toast('A caravan is ready to trade!', { icon: '&#128667;' }); IK.sfx('whoosh'); E.dirtyUI = true; }
-    E.achT += dt; if (E.achT > 1) { E.achT = 0; E.checkAch(); E.event('earn', 0); E.event('lifetime', 0); }
+    if (!E.cfg.noEvents && !E.carEnd && E.carDue && now >= E.carDue && S.coins >= 1000) { E.carDue = 0; IK.toast('A caravan is ready to trade!', { icon: '&#128667;' }); IK.sfx('whoosh'); E.dirtyUI = true; }
+    E.achT += dt; if (E.achT > 1) { E.achT = 0; E.checkAch(); if (E.earnAcc) { E.event('earn', E.earnAcc); E.earnAcc = 0; } }
     E.saveT += dt; if (E.saveT > 6) { E.saveT = 0; E.save(); }
     E.sdkT += dt; if (E.sdkT > 8) { E.sdkT = 0; E.report(); }
   };
@@ -939,8 +962,8 @@
     E.tick(dt);
     E.roll.step(dt, E.el.cur);
     E.uiAcc += dt;
-    if (E.uiAcc >= 0.1 || E.dirtyUI) { E.uiAcc = 0; E.dirtyUI = false; if (E.inGame) { E.updateHud(); E.updateGenRows(); E.updateUpgrades(); E.updateGoals(); E.updateCrown(); E.updateStrip(); E.updateGoalChip(); } }
-    if (E.scene) { if (E.scene.update) E.scene.update(dt); if (E.scene.pc) E.scene.pc.frame(ts); }
+    if (E.uiAcc >= 0.1 || E.dirtyUI) { E.uiAcc = 0; E.dirtyUI = false; if (E.inGame) E.refreshAll(); }
+    if (E.scene) { if (E.scene.update) E.scene.update(dt); if (E.scene.stage) E.scene.stage.frame(ts); }
     E.pumpSheets();
     W.requestAnimationFrame(E.loopB);
   };
@@ -962,7 +985,7 @@
     IK.muted = IK.ls.get(c.muteKey) === '1';
     IK.fx.init($('fx'));
     E.build(root);
-    IK.Daily.ensure(S, c.id, c.dailyPool, 1 + Math.log10(1 + S.alltime) / 6);
+    IK.Daily.ensure(S, c.id, c.dailyPool, E);
     E.dirty = true; E.recalc();
     E.roll.set(S.coins, true);
     E.refreshTitle();

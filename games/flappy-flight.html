@@ -59,7 +59,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 #banner b{margin-top:2px;font-family:'Iowan Old Style','Palatino Linotype',Georgia,serif;font-size:28px;font-weight:900;color:#fff3c8;text-shadow:0 3px 0 #5a2c06,0 6px 14px rgba(0,0,0,.5)}
 #banner.on{animation:ban 1.5s ease-out}
 @keyframes ban{0%{opacity:0;transform:scale(.4)}12%{opacity:1;transform:scale(1.15)}22%{transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
-#back{position:absolute;left:max(10px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:5;min-height:44px;padding:0 10px;display:inline-flex;align-items:center;color:#cfe0ee;font-size:14px;font-weight:800;text-decoration:none;text-shadow:0 1px 3px #000}
+#back{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:5;min-height:44px;padding:0 10px;display:inline-flex;align-items:center;color:#cfe0ee;font-size:14px;font-weight:800;text-decoration:none;text-shadow:0 1px 3px #000}
 @media (prefers-reduced-motion:reduce){#score.pop,#feath.bump,#ready .tap,#banner.on{animation:none}#banner.on{opacity:1}}
 </style>
 </head>
@@ -96,7 +96,8 @@ const RM = FX.rm();
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, String(v)); } catch (e) {} };
 const rd = k => { const v = +lsGet(k); return Number.isFinite(v) && v > 0 ? v : 0; };
-try { if (window.parent === window) $('back').classList.remove('hidden'); } catch (e) {}
+let topLevel = false; try { topLevel = window.parent === window; } catch (e) {}
+const setBack = on => { if (topLevel) $('back').classList.toggle('hidden', !on); };
 
 /* ---------------------------------------------------------------- world size and canvas */
 const W = 420; let H = 760, GH = 76, GROUND = H - GH, SC = 1, CSSW = 390, CSSH = 760, Q = 2;
@@ -111,14 +112,14 @@ function fit() {
   cv.width = Math.round(CSSW * d); cv.height = Math.round(CSSH * d);
   ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
   const q = Math.min(2, Math.max(1, d * SC));
-  if (Math.abs(q - Q) > 0.3 || !assets.sky) { Q = q; buildAssets(); }
+  if (Math.abs(q - Q) > 0.3 || !assets.far) { Q = q; buildAssets(); }
 }
 
 /* ---------------------------------------------------------------- game state */
-const PW = 78, CAPW = 96, CAPH = 34, BR = 12;   // pipe body width, cap size, bird hit radius (drawn bird is bigger)
+const PW = 78, CAPW = 96, CAPH = 34, BR = 13;   // pipe body width, cap size, bird hit radius (drawn bird is bigger)
 const PHASE_LEN = 12;                            // pipes per time of day
 let state = 'title', mode = 'classic', score = 0, runPipes = 0, feathersRun = 0, closeRun = 0, t = 0, groundX = 0, farX = 0, midX = 0, treeX = 0, nearX = 0;
-let bird = { x: 108, y: 380, vy: 0, ang: 0, wing: 0, sq: 0 }, pipes = [], pickups = [], shield = false, invuln = 0, nearStreak = 0, ghost = false, slowmo = false, wide = false;
+let heroS = 2.1, bird = { x: 210, y: 300, vy: 0, ang: 0, wing: 0, sq: 0 }, pipes = [], pickups = [], shield = false, invuln = 0, nearStreak = 0, ghost = false, slowmo = false, wide = false;
 let bestScore = rd('flappyBest'), lifePipes = rd('flappyPipes'), galePipes = rd('flappyGale'), lifeFeathers = rd('flappyFeathers');
 let muted = lsGet('flappyMute') === '1', tutSeen = lsGet('flappyTut') === '1', flash = 0, medalShown = 0, deadT = 0, spawnX = 0, lastPipeY = 380, cooldown = 0;
 const shake = new FX.Shake({ maxOffset: 16, maxAngle: 0.025 }), timeFx = new FX.Time(), flapSpring = new FX.Spring(320, 15), parts = new FX.Particles(180), pops = new FX.Pops(14);
@@ -128,12 +129,12 @@ const rankFor = n => { let r = RANKS[0][1]; for (const x of RANKS) if (n >= x[0]
 /* ---------------------------------------------------------------- birds: nine skins, all drawn from one function */
 const SKINS = [
   { id: 'sunny', name: 'Sunny', cost: 0, body: ['#ffe27a', '#f6b73c', '#c8791a'], belly: '#fff2c4', wing: ['#f0a12a', '#b8620f'], beak: ['#ff9a3c', '#d2601a'], cheek: '#ff8f7a' },
-  { id: 'robin', name: 'Robin', cost: 40, body: ['#b98358', '#8b5a3c', '#5a3822'], belly: '#f08a58', wing: ['#7a4c2e', '#4a2c18'], beak: ['#f5c04a', '#c48a1c'], cheek: '#ff9c86' },
-  { id: 'jay', name: 'Blue Jay', cost: 80, body: ['#7fb2f0', '#3f78c4', '#22508f'], belly: '#eef3fb', wing: ['#2a5fae', '#163b70'], beak: ['#3a3f4a', '#1b1e26'], cheek: '#f6a8b8', acc: 'crest' },
-  { id: 'parakeet', name: 'Parakeet', cost: 130, body: ['#a8e070', '#56b04a', '#2f7a2c'], belly: '#d8f2a0', wing: ['#e2503c', '#a02a1c'], beak: ['#ffd062', '#d6942a'], cheek: '#ff9a70' },
-  { id: 'pilot', name: 'Ace Pilot', cost: 200, body: ['#ffe27a', '#f6b73c', '#c8791a'], belly: '#fff2c4', wing: ['#f0a12a', '#b8620f'], beak: ['#ff9a3c', '#d2601a'], cheek: '#ff8f7a', acc: 'pilot' },
-  { id: 'ninja', name: 'Ninja', cost: 280, body: ['#7a808c', '#454b58', '#22262e'], belly: '#8f96a4', wing: ['#2c313b', '#14171d'], beak: ['#c9a04a', '#8a6a24'], cheek: '#5a6070', acc: 'ninja' },
-  { id: 'royal', name: 'Royal', cost: 380, body: ['#c4a4f5', '#7b4fc0', '#4a2a8a'], belly: '#eadcff', wing: ['#5a34a0', '#341a68'], beak: ['#ffd062', '#c48a1c'], cheek: '#f6a0c8', acc: 'crown' },
+  { id: 'robin', name: 'Robin', cost: 30, body: ['#b98358', '#8b5a3c', '#5a3822'], belly: '#f08a58', wing: ['#7a4c2e', '#4a2c18'], beak: ['#f5c04a', '#c48a1c'], cheek: '#ff9c86' },
+  { id: 'jay', name: 'Blue Jay', cost: 70, body: ['#7fb2f0', '#3f78c4', '#22508f'], belly: '#eef3fb', wing: ['#2a5fae', '#163b70'], beak: ['#3a3f4a', '#1b1e26'], cheek: '#f6a8b8', acc: 'crest' },
+  { id: 'parakeet', name: 'Parakeet', cost: 120, body: ['#a8e070', '#56b04a', '#2f7a2c'], belly: '#d8f2a0', wing: ['#e2503c', '#a02a1c'], beak: ['#ffd062', '#d6942a'], cheek: '#ff9a70' },
+  { id: 'pilot', name: 'Ace Pilot', cost: 190, body: ['#ffe27a', '#f6b73c', '#c8791a'], belly: '#fff2c4', wing: ['#f0a12a', '#b8620f'], beak: ['#ff9a3c', '#d2601a'], cheek: '#ff8f7a', acc: 'pilot' },
+  { id: 'ninja', name: 'Ninja', cost: 270, body: ['#7a808c', '#454b58', '#22262e'], belly: '#8f96a4', wing: ['#2c313b', '#14171d'], beak: ['#c9a04a', '#8a6a24'], cheek: '#5a6070', acc: 'ninja' },
+  { id: 'royal', name: 'Royal', cost: 360, body: ['#c4a4f5', '#7b4fc0', '#4a2a8a'], belly: '#eadcff', wing: ['#5a34a0', '#341a68'], beak: ['#ffd062', '#c48a1c'], cheek: '#f6a0c8', acc: 'crown' },
   { id: 'golden', name: 'Golden', cost: 0, req: { stat: 'best', v: 35, text: 'Score 35 to win the Gold medal' }, body: ['#fff2a8', '#f2c230', '#b07a08'], belly: '#fff8d0', wing: ['#f0b420', '#9a6206'], beak: ['#ffb040', '#c07018'], cheek: '#ffb090', acc: 'halo', trail: 'sparkle' },
   { id: 'phoenix', name: 'Phoenix', cost: 0, req: { stat: 'best', v: 60, text: 'Score 60 to earn Platinum' }, body: ['#ffe066', '#ff8a2a', '#c8321a'], belly: '#fff0a0', wing: ['#ff5a2a', '#a01c10'], beak: ['#ffd070', '#d67a1c'], cheek: '#ffb070', acc: 'flame', trail: 'ember' },
 ];
@@ -223,41 +224,15 @@ paintMute();
 
 /* ---------------------------------------------------------------- pre-rendered art (built once, then only blitted) */
 const assets = {};
-const PHASES = [   // golden hour -> dusk -> night -> dawn
-  { top: '#3a5b94', mid: '#d69a86', bot: '#ffcf8c', tint: null, star: 0, sun: 1, sunY: 0.16, moon: 0 },
-  { top: '#232a5c', mid: '#8b4a7c', bot: '#f2825c', tint: '#c7a2c0', star: 0.15, sun: 0.85, sunY: 0.04, moon: 0 },
-  { top: '#080e2c', mid: '#1c2a5c', bot: '#3f4d86', tint: '#7a8ec6', star: 1, sun: 0, sunY: 0, moon: 1 },
-  { top: '#3a6096', mid: '#eaa4a4', bot: '#ffdcb4', tint: '#ffe6d8', star: 0.1, sun: 0.7, sunY: 0.02, moon: 0 },
-];
-function skyCanvas(p) {
-  const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, p.top); g.addColorStop(0.55, p.mid); g.addColorStop(1, p.bot); x.fillStyle = g; x.fillRect(0, 0, 4, 256); return c;
-}
+const sky = Art.Sky();
 function buildAssets() {
-  const q = Q, hs = GROUND;
-  assets.sky = PHASES.map(skyCanvas);
-  // sun bloom + moon
-  const sun = Art.make(320, 320, 1); let g = sun.x.createRadialGradient(160, 160, 0, 160, 160, 160);
-  g.addColorStop(0, 'rgba(255,250,225,1)'); g.addColorStop(0.08, 'rgba(255,238,190,.95)'); g.addColorStop(0.2, 'rgba(255,200,120,.5)'); g.addColorStop(0.5, 'rgba(255,150,80,.16)'); g.addColorStop(1, 'rgba(255,120,60,0)');
-  sun.x.fillStyle = g; sun.x.fillRect(0, 0, 320, 320); assets.sun = sun.c;
-  const moon = Art.make(120, 120, 1); g = moon.x.createRadialGradient(60, 60, 8, 60, 60, 60); g.addColorStop(0, 'rgba(210,225,255,.5)'); g.addColorStop(1, 'rgba(120,150,255,0)'); moon.x.fillStyle = g; moon.x.fillRect(0, 0, 120, 120);
-  g = moon.x.createRadialGradient(54, 54, 2, 60, 60, 20); g.addColorStop(0, '#fffef2'); g.addColorStop(1, '#c9d3ea'); moon.x.fillStyle = g; moon.x.beginPath(); moon.x.arc(60, 60, 19, 0, 6.283); moon.x.fill();
-  moon.x.fillStyle = 'rgba(120,130,170,.28)'; [[52, 54, 4.5], [67, 62, 3.4], [58, 70, 2.6]].forEach(k => { moon.x.beginPath(); moon.x.arc(k[0], k[1], k[2], 0, 6.283); moon.x.fill(); }); assets.moon = moon.c;
-  // stars
-  const st = Art.make(W, 520, 1), r = Art.rng(9); for (let i = 0; i < 90; i++) { const a = 0.35 + r() * 0.65, s = r() < 0.12 ? 1.8 : 0.9; st.x.fillStyle = 'rgba(255,250,235,' + a + ')'; st.x.beginPath(); st.x.arc(r() * W, r() * 470, s, 0, 6.283); st.x.fill(); } assets.stars = st.c;
-  // clouds: soft lobes lit from below-right by the low sun
-  assets.clouds = [];
-  for (let i = 0; i < 5; i++) {
-    const w = 170 + i * 24, h = 74, m = Art.make(w, h, q), rr = Art.rng(40 + i), x = m.x;
-    for (let k = 0; k < 9; k++) { const cx = 28 + rr() * (w - 56), cy = 34 + rr() * 14, R = 14 + rr() * 20;
-      g = x.createRadialGradient(cx + R * 0.25, cy - R * 0.4, 1, cx, cy, R * 1.05); g.addColorStop(0, 'rgba(255,248,236,.95)'); g.addColorStop(0.6, 'rgba(255,214,184,.85)'); g.addColorStop(1, 'rgba(232,150,140,.55)'); x.fillStyle = g; x.beginPath(); x.arc(cx, cy, R, 0, 6.283); x.fill(); }
-    g = x.createLinearGradient(0, 22, 0, h); g.addColorStop(0, 'rgba(120,80,120,0)'); g.addColorStop(1, 'rgba(120,80,120,.28)'); x.globalCompositeOperation = 'source-atop'; x.fillStyle = g; x.fillRect(0, 0, w, h);
-    assets.clouds.push(m.c);
-  }
+  const q = Q; let g;
+  sky.build(W);
+  assets.clouds = []; for (let i = 0; i < 5; i++) assets.clouds.push(Art.cloud(190 + i * 30, 84, { dpr: q, seed: 40 + i }));
   // hills and trees: three tiles 2 screens wide
   const TW = W * 2;
-  assets.far = Art.ridge(TW, 230, { dpr: q, seed: 5, amp: 150, base: 210, scale: 0.006, top: '#8a86ac', bot: '#e4b39a', lit: '#ffe1b0', snow: true, peaky: true, jag: 1.2, hazeA: 0.62 });
-  assets.mid = Art.ridge(TW, 170, { dpr: q, seed: 8, amp: 84, base: 160, scale: 0.011, top: '#5b7f7a', bot: '#b0b17e', lit: '#ffdca0', jag: 0.55, hazeA: 0.5 });
+  assets.far = Art.ridge(TW, 340, { dpr: q, seed: 5, amp: 250, base: 330, scale: 0.005, top: '#8a86ac', bot: '#e4b39a', lit: '#ffe1b0', snow: true, peaky: true, jag: 1.2, hazeA: 0.62 });
+  assets.mid = Art.ridge(TW, 200, { dpr: q, seed: 8, amp: 118, base: 190, scale: 0.009, top: '#5b7f7a', bot: '#b0b17e', lit: '#ffdca0', jag: 0.55, hazeA: 0.5 });
   assets.trees1 = Art.foliage(TW, 130, { dpr: q, seed: 12, dark: '#274d46', mid: '#4a7f4a', lit: '#f0dc86', min: 16, max: 26, spread: 20, count: 46, lift: 12 });
   assets.trees2 = Art.foliage(TW, 150, { dpr: q, seed: 19, dark: '#1c4128', mid: '#3d7a30', lit: '#e8e27a', min: 24, max: 40, spread: 28, count: 26, lift: 8 });
   assets.ground = Art.grass(TW / 2, GH + 6, { dpr: q, seed: 21, grassH: 17 });
@@ -298,16 +273,16 @@ function setMode(m) { mode = m; document.querySelectorAll('#modes button').forEa
 document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); setMode(b.dataset.m); }));
 function showTitle() {
   state = 'title'; meta.closeLayer(); pipes.length = 0; pickups.length = 0; parts.clear(); pops.clear(); score = 0;
-  ['hud', 'feath', 'shield', 'ready'].forEach(i => $(i).classList.add('hidden')); $('title').classList.remove('hidden');
-  bird = { x: 108, y: H * 0.42, vy: 0, ang: 0, wing: 0, sq: 0 };
+  ['hud', 'feath', 'shield', 'ready'].forEach(i => $(i).classList.add('hidden')); $('title').classList.remove('hidden'); setBack(true);
+  bird = { x: bird.x, y: H * 0.36, vy: 0, ang: 0, wing: 0, sq: 0 };
   $('info').innerHTML = 'Best <b>' + bestScore + '</b> &nbsp;·&nbsp; ' + rankFor(lifePipes) + ' &nbsp;·&nbsp; ' + lifePipes + ' pipes flown';
   if (mh && mh.refresh) mh.refresh(); scene('title');
 }
 function getReady(full) {
   state = 'ready'; meta.closeLayer(); meta.begin(); pipes.length = 0; pickups.length = 0; parts.clear(); pops.clear();
   score = 0; runPipes = 0; feathersRun = 0; closeRun = 0; nearStreak = 0; shield = false; invuln = 0; medalShown = 0; flash = 0; lastPipeY = GROUND * 0.48; spawnX = W + 60; cooldown = 0;
-  bird = { x: 108, y: H * 0.42, vy: 0, ang: 0, wing: 0, sq: 0 };
-  $('title').classList.add('hidden'); $('ready').classList.remove('hidden'); $('hud').classList.remove('hidden'); $('feath').classList.remove('hidden'); $('shield').classList.add('hidden');
+  bird = { x: bird.x, y: H * 0.42, vy: 0, ang: 0, wing: 0, sq: 0 };
+  setBack(false); $('title').classList.add('hidden'); $('ready').classList.remove('hidden'); $('hud').classList.remove('hidden'); $('feath').classList.remove('hidden'); $('shield').classList.add('hidden');
   $('score').textContent = '0'; $('fcount').textContent = '0'; paintGoal(); $('readyMore').classList.toggle('hidden', tutSeen && !full);
   scene('play');
 }
@@ -378,7 +353,8 @@ function update(dt) {
   const sp = state === 'play' ? speedFor(runPipes) : state === 'dead' || state === 'won' ? 0 : 60;
   if (dt > 0) { const m = sp * dt; groundX = (groundX + m) % (W); nearX = (nearX + m * 0.55) % (W * 2); treeX = (treeX + m * 0.3) % (W * 2); midX = (midX + m * 0.14) % (W * 2); farX = (farX + m * 0.05) % (W * 2); }
   cloudsX += (10 + sp * 0.03) * real;
-  if (state === 'title' || state === 'ready') { bird.y = H * 0.42 + Math.sin(t * 3.2) * 9; bird.ang = Math.sin(t * 3.2) * 0.06; bird.wing = Math.sin(t * 10) * 0.55; return; }
+  { const k = Math.min(1, real * 5); bird.x += ((state === 'title' ? W * 0.5 : 108) - bird.x) * k; heroS += ((state === 'title' ? 2.1 : 1.28) - heroS) * k; }
+  if (state === 'title' || state === 'ready') { const by = state === 'title' ? H * 0.36 : H * 0.42; bird.y += (by + Math.sin(t * 3.2) * 9 - bird.y) * Math.min(1, real * 8); bird.ang = Math.sin(t * 3.2) * 0.06; bird.wing = Math.sin(t * 10) * 0.55; return; }
   if (dt <= 0) return;
   const steps = 2, h = dt / steps;
   if (state === 'play') {
@@ -432,49 +408,39 @@ function update(dt) {
 let cloudsX = 0;
 
 /* ---------------------------------------------------------------- draw */
-function tile(img, ox, y, w, h) {   // draw a 2-screen-wide strip scrolled by ox, seamlessly
-  const iw = W * 2; let x = -(ox % iw); if (x > 0) x -= iw;
-  for (; x < W; x += iw) ctx.drawImage(img, x, y, iw, h);
-}
-function phaseInfo() {
-  const p = FX.clamp(score / PHASE_LEN, 0, 1e9) , i = Math.floor(p) % 4, f = p - Math.floor(p), k = f < 0.7 ? 0 : (f - 0.7) / 0.3;   // hold a look for 70% then cross-fade
-  return { a: i, b: (i + 1) % 4, k: k * k * (3 - 2 * k) };
+function tile(img, ox, y, w, h) {   // draw a 2-screen-wide strip scrolled by ox, seamlessly (whole pixels, 1px overlap)
+  const iw = W * 2; let x = -Math.floor(ox % iw); if (x > 0) x -= iw;
+  for (; x < W; x += iw) ctx.drawImage(img, x, y, iw + 1, h);
 }
 function draw() {
-  const ph = phaseInfo(), A = PHASES[ph.a], B = PHASES[ph.b], k = ph.k;
   ctx.save(); shake.apply(ctx, W, H);
   ctx.fillStyle = '#000'; ctx.fillRect(-20, -20, W + 40, H + 40);
-  // sky
-  ctx.drawImage(assets.sky[ph.a], 0, 0, W, GROUND); if (k > 0) { ctx.globalAlpha = k; ctx.drawImage(assets.sky[ph.b], 0, 0, W, GROUND); ctx.globalAlpha = 1; }
-  const star = FX.lerp(A.star, B.star, k); if (star > 0.02) { ctx.globalAlpha = star * (0.75 + 0.25 * Math.sin(t * 2.2)); ctx.drawImage(assets.stars, 0, 0, W, 520); ctx.globalAlpha = star * 0.5 * (0.5 + 0.5 * Math.sin(t * 3.1 + 1)); ctx.drawImage(assets.stars, 30, 20, W, 520); ctx.globalAlpha = 1; }
-  const sunA = FX.lerp(A.sun, B.sun, k), horizon = GROUND - 90, sunY = horizon - FX.lerp(A.sunY, B.sunY, k) * 900 - 20;
-  if (sunA > 0.02) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = sunA; ctx.drawImage(assets.sun, W - 130, sunY - 130, 260, 260); ctx.restore(); }
-  const moonA = FX.lerp(A.moon, B.moon, k); if (moonA > 0.02) { ctx.globalAlpha = moonA; ctx.drawImage(assets.moon, W - 150, 110, 100, 100); ctx.globalAlpha = 1; }
+  const ph = sky.draw(ctx, W, GROUND, score / PHASE_LEN, t), star = ph.star;
   // clouds (warm light from below, drifting)
   for (let i = 0; i < 5; i++) { const c = assets.clouds[i], w = c.width / Q, cx = ((i * 190 - cloudsX * (0.5 + i * 0.16)) % (W + 240) + W + 240) % (W + 240) - 120, cy = 70 + ((i * 97) % 5) * 52 + i * 8; ctx.globalAlpha = 0.9 - i * 0.05 - star * 0.6; if (ctx.globalAlpha > 0.02) ctx.drawImage(c, cx - w / 2, cy, w, c.height / Q); }
   ctx.globalAlpha = 1;
   // layered land: far peaks, mid hills, two tree belts
-  tile(assets.far, farX, GROUND - 236, W * 2, 230); tile(assets.mid, midX, GROUND - 168, W * 2, 170); tile(assets.trees1, treeX, GROUND - 118, W * 2, 130); tile(assets.trees2, nearX, GROUND - 120, W * 2, 150);
+  tile(assets.far, farX, GROUND - 346, W * 2, 340); tile(assets.mid, midX, GROUND - 198, W * 2, 200); tile(assets.trees1, treeX, GROUND - 118, W * 2, 130); tile(assets.trees2, nearX, GROUND - 120, W * 2, 150);
   // pipes: soft shadow to the left (the sun is low on the right), body, cap
   for (const p of pipes) {
     const top = p.y - p.gap / 2, bot = p.y + p.gap / 2;
-    ctx.fillStyle = 'rgba(20,10,30,.22)'; ctx.fillRect(p.x - 26, 0, 26, top - CAPH + 4); ctx.fillRect(p.x - 26, bot + CAPH - 4, 26, GROUND - bot);
+    const sg = ctx.createLinearGradient(p.x - 26, 0, p.x, 0); sg.addColorStop(0, 'rgba(20,10,30,0)'); sg.addColorStop(1, 'rgba(20,10,30,.3)'); ctx.fillStyle = sg; ctx.fillRect(p.x - 26, 0, 26, top - CAPH + 4); ctx.fillRect(p.x - 26, bot + CAPH - 4, 26, GROUND - bot);
     pipeBody(p.x, 0, top - CAPH + 2, true); pipeBody(p.x, bot + CAPH - 2, GROUND, false);
     ctx.drawImage(assets.cap, p.x - (CAPW - PW) / 2, top - CAPH, CAPW, CAPH);
     ctx.save(); ctx.translate(p.x - (CAPW - PW) / 2, bot); ctx.drawImage(assets.cap, 0, 0, CAPW, CAPH); ctx.restore();
     ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(p.x - 6, top, PW + 12, 5); ctx.fillRect(p.x - 6, bot + CAPH, PW + 12, 4);
   }
   // ground
-  const gy = GROUND - 4; let gx = -(groundX % (W)); for (; gx < W; gx += W) ctx.drawImage(assets.ground, gx, gy, W, GH + 6);
+  const gy = GROUND - 4; let gx = -Math.floor(groundX % W); for (; gx < W; gx += W) ctx.drawImage(assets.ground, gx, gy, W + 1, GH + 6);
   // time-of-day grade over the land (multiply keeps texture, shifts colour); nothing at golden hour
-  const tn = tintOf(A, B, k); if (tn) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = tn; ctx.fillRect(0, GROUND - 260, W, H - GROUND + 260); ctx.restore(); }
+  const tn = sky.tint(ph); if (tn) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = tn; ctx.fillRect(0, GROUND - 260, W, H - GROUND + 260); ctx.restore(); }
   // pickups
   for (const kk of pickups) { const y = kk.y + Math.sin(t * 3 + kk.ph) * 5; if (kk.kind === 'f') { ctx.save(); ctx.translate(kk.x, y); ctx.rotate(Math.sin(t * 2 + kk.ph) * 0.25); const s = 1 + Math.sin(t * 5 + kk.ph) * 0.06; ctx.drawImage(assets.feather, -22 * s, -22 * s, 44 * s, 44 * s); ctx.restore(); } else { ctx.drawImage(assets.bubble, kk.x - 24, y - 24, 48, 48); } }
   // bird
   const sk = skinNow(), sq = FX.squash(flapSpring.x), ba = bird.ang;
   ctx.save(); if (invuln > 0 && state === 'play') ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 40);
   if (shield && state !== 'title') { ctx.drawImage(assets.bubble, bird.x - 34, bird.y - 34, 68, 68); }
-  drawBird(ctx, sk, bird.x, bird.y, 1.02, ba, bird.wing, sq.sx, sq.sy, t); ctx.restore();
+  drawBird(ctx, sk, bird.x, bird.y, heroS, ba, bird.wing, sq.sx, sq.sy, t); ctx.restore();
   parts.draw(ctx); pops.draw(ctx);
   ctx.drawImage(assets.vig, 0, 0, W, H);
   if (flash > 0) { ctx.globalAlpha = Math.min(1, flash) * 0.6; ctx.fillStyle = '#fff'; ctx.fillRect(-20, -20, W + 40, H + 40); ctx.globalAlpha = 1; }
@@ -485,12 +451,6 @@ function pipeBody(x, y0, y1, fromBottom) {   // tile the 256px texture away from
   if (fromBottom) { for (let y = y1; y > y0; y -= th) { const h = Math.min(th, y - y0); ctx.drawImage(assets.pipe, 0, (th - h) * Q, PW * Q, h * Q, x, y - h, PW, h); } }
   else { for (let y = y0; y < y1; y += th) { const h = Math.min(th, y1 - y); ctx.drawImage(assets.pipe, 0, 0, PW * Q, h * Q, x, y, PW, h); } }
 }
-const tintCache = {};
-function tintOf(A, B, k) {
-  if (!A.tint && !B.tint) return null; const wh = '#ffffff', a = A.tint || wh, b = B.tint || wh, key = a + b + Math.round(k * 20);
-  return tintCache[key] || (tintCache[key] = 'rgb(' + Art.mixc(Art.hex(a), Art.hex(b), k).map(Math.round) + ')');
-}
-
 /* ---------------------------------------------------------------- loop */
 let last = 0, running = true;
 function loop(now) {

@@ -1,1087 +1,437 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a33">
+<meta name="description" content="Farm Harvest: plant, water and harvest seven crops, fill orders for the delivery truck, hire helpers and grow your farm.">
 <title>Farm Harvest</title>
+<link rel="stylesheet" href="kit/ik.css">
 <style>
-  :root{
-    --bg1:#0c1f12; --bg2:#12311c; --card:#1b4426; --card2:#245a33;
-    --txt:#e8ffe9; --dim:#9fc8a4; --accent:#7dff8a; --gold:#ffd86b;
-    --ready:#fff0a8; --water:#7dd0ff; --danger:#ff7d7d;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; height:100%;}
-  body{
-    background:radial-gradient(120% 100% at 50% 0%, var(--bg2) 0%, var(--bg1) 60%, #08150d 100%);
-    color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
-  }
-  #app{max-width:620px; margin:0 auto; padding:8px 10px 90px; min-height:100%;}
-  a.hub{display:inline-flex; align-items:center; min-height:44px; padding:0 10px; margin:2px 0 2px -10px;
-  border-radius:10px; color:var(--dim); text-decoration:none; font-size:14px;}
-.hub:hover{color:var(--txt); background:rgba(255,255,255,.07);}
-.btn:focus-visible,.iconBtn:focus-visible,.crop:focus-visible,.buyBtn:focus-visible,.hub:focus-visible{
-  outline:3px solid #facc15; outline-offset:3px;}
-.btn:active,.iconBtn:active,.crop:active,.buyBtn:active{transform:scale(.95);}
-.btn,.iconBtn,.crop,.buyBtn{transition:transform .1s ease, filter .12s ease, background .12s ease;}
-.btn:hover,.buyBtn:hover{filter:brightness(1.07);}
-@keyframes denyShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.denyShake{animation:denyShake .22s ease-out;}
-@media (prefers-reduced-motion:reduce){
-  *{animation-duration:.001s !important; animation-iteration-count:1 !important;}
-  .btn,.iconBtn,.crop,.buyBtn{transition:none;}
-}
-  .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.18);
-    border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
-  #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
-  .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
-  .stat small{display:block; color:var(--dim); font-size:12px; font-weight:500;}
-  .iconBtn{background:var(--card2); border:1px solid rgba(125,255,138,.25); color:var(--txt);
-    border-radius:10px; min-width:48px; min-height:48px; font-size:20px; cursor:pointer;}
-  #cropBar{display:flex; gap:6px; padding:8px; margin-bottom:8px; overflow-x:auto;}
-  .crop{flex:0 0 auto; background:var(--card2); border:2px solid transparent; color:var(--txt);
-    border-radius:12px; padding:8px 10px; min-height:48px; cursor:pointer; text-align:center; font-size:13px;}
-  .crop .e{font-size:24px; display:block;}
-  .crop.sel{border-color:var(--accent); box-shadow:0 0 12px rgba(125,255,138,.5); background:#2c6a3c;}
-  .crop.poor{opacity:.45;}
-  #plotGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px;}
-  .plot{aspect-ratio:1/1; background:linear-gradient(180deg,#1a3a22,#14301b);
-    border:2px dashed rgba(125,255,138,.28); border-radius:14px; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:4px; padding:6px; position:relative; transition:transform .08s;}
-  .plot:active{transform:scale(.94);}
-  .plot .emoji{font-size:34px; line-height:1;}
-  .plot .emoji.pop{animation:readyPop .4s ease-out;}
-  .plot .emptyHint{font-size:28px; color:var(--dim); opacity:.5;}
-  .plot .label{font-size:12px; color:var(--dim);}
-  .bar{width:80%; height:6px; background:rgba(0,0,0,.4); border-radius:4px; overflow:hidden;}
-  .fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--gold)); width:0%; border-radius:4px; transition:width .2s linear;}
-  .plot.ready{border:2px solid var(--ready); box-shadow:0 0 16px rgba(255,240,168,.7); animation:pulse 1s infinite;}
-  .plot.ready .emoji{filter:drop-shadow(0 0 8px rgba(255,240,168,.95));}
-  .plot.watered{border-color:var(--water); box-shadow:0 0 12px rgba(125,208,255,.5);}
-  .tag{position:absolute; top:3px; right:5px; font-size:14px; animation:pop .3s;}
-  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.03);}}
-  @keyframes pop{from{transform:scale(0);}to{transform:scale(1);}}
-  @keyframes readyPop{0%{transform:scale(.6);}55%{transform:scale(1.3);}100%{transform:scale(1);}}
-  #shopTitle{font-size:15px; font-weight:700; color:var(--gold); margin:6px 2px 6px;}
-  #shop{display:flex; flex-direction:column; gap:6px;}
-  .shopItem{display:flex; align-items:center; gap:10px; padding:10px 12px;}
-  .shopItem .ic{font-size:28px;}
-  .shopItem .info{flex:1;}
-  .shopItem .name{font-weight:700; font-size:14px;}
-  .shopItem .desc{color:var(--dim); font-size:12px;}
-  .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
-    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
-    transition:transform .1s;}
-  .buyBtn:active:not(:disabled){transform:scale(.92);}
-  .buyBtn:disabled{opacity:.4; cursor:not-allowed;}
-  .buyBtn.afford,.crop.afford{animation:affordPulse .5s;}
-  @keyframes affordPulse{40%{transform:scale(1.08);filter:brightness(1.35);}}
-  .crop{transition:transform .1s;}
-  .crop:active{transform:scale(.93);}
-  .big{animation:bigBob 2.6s ease-in-out infinite;}
-  @keyframes bigBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-  .buyBtn.flash{animation:buyFlash .35s ease-out;}
-  @keyframes buyFlash{0%{transform:scale(.9); box-shadow:0 0 16px rgba(125,255,138,.9);}100%{transform:scale(1);}}
-  .overlay{position:fixed; inset:0; background:rgba(5,15,8,.92); display:flex; align-items:center; justify-content:center;
-    z-index:50; padding:20px;}
-  .overlay .box{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.3);
-    border-radius:18px; padding:24px; max-width:400px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);}
-  .big{font-size:56px; margin-bottom:6px;}
-  h1{margin:0 0 4px; font-size:30px; text-shadow:0 0 18px rgba(125,255,138,.6);}
-  .sub{color:var(--dim); margin:0 0 16px; font-size:14px;}
-  .btn{display:block; width:100%; background:linear-gradient(180deg,#35a04f,#1f6b34); color:#fff; border:1px solid var(--accent);
-    border-radius:12px; min-height:52px; font-size:18px; font-weight:800; cursor:pointer; margin:6px 0; box-shadow:0 4px 14px rgba(53,160,79,.5);}
-  .btn.alt{background:linear-gradient(180deg,#4a5560,#2b343c); border-color:#7a8a96;}
-  .hidden{display:none !important;}
-  #goalBar{padding:8px 12px; margin-bottom:8px; font-size:14px;}
-  #goalBar .gt{display:flex; justify-content:space-between; gap:8px; font-weight:700;}
-  #goalBar .gt span:last-child{color:var(--gold); white-space:nowrap;}
-  #goalBar .bar{width:100%; margin-top:6px; height:8px;}
-  #app.night{filter:brightness(.82) saturate(.85);}
-  .barnRow{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:6px 0; text-align:left; font-size:14px;}
-  .barnRow .ic{font-size:28px;} .barnRow .info{flex:1;} .barnRow b{color:var(--gold);}
-  .barnRow small{display:block; color:var(--dim); font-size:12px;}
-  #fx{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
-  .fxFloat{position:absolute; transform:translate(-50%,-50%); font-weight:800; font-size:16px; color:var(--gold);
-    text-shadow:0 0 10px rgba(255,216,107,.9); white-space:nowrap; animation:fxUp .9s ease-out forwards;}
-  @keyframes fxUp{0%{opacity:0; margin-top:8px;}15%{opacity:1;}100%{opacity:0; margin-top:-46px;}}
-  .fxPart{position:absolute; transform:translate(-50%,-50%); font-size:15px;
-    text-shadow:0 0 8px rgba(125,255,138,.6); transition:transform .7s cubic-bezier(.2,.7,.3,1), opacity .7s ease-out;}
-  #toast{position:fixed; left:50%; bottom:18px; transform:translate(-50%,80px); max-width:90%;
-    background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(125,255,138,.35);
-    color:var(--txt); padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600;
-    box-shadow:0 6px 24px rgba(0,0,0,.5); opacity:0; transition:transform .3s, opacity .3s; z-index:70; pointer-events:none;}
-  #toast.show{opacity:1; transform:translate(-50%,0);}
-  @media (orientation:landscape) and (max-width:820px){ #plotGrid{grid-template-columns:repeat(6,1fr);} }
-  @media (min-width:700px){ #plotGrid{grid-template-columns:repeat(6,1fr);} }
+.hv-actions{display:flex;gap:8px;margin-bottom:8px}
+.hv-actions .ik-btn{flex:1;min-width:0;padding:6px 6px;font-size:15px}
+.hv-actions .ik-btn small{display:block;font:700 14px var(--ik-ui);opacity:.9}
+.hv-crops{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hv-crop{position:relative;border:1px solid var(--ik-paperline);border-radius:14px;color:var(--ik-paperink);background:linear-gradient(rgba(255,248,226,.55),rgba(232,208,150,.55)),url(../assets/idle/tex/paper.jpg);background-size:auto,220px;box-shadow:0 2px 0 #8d6d34,inset 0 1px 0 rgba(255,255,255,.8);padding:6px 4px 8px;text-align:center;font:800 15px/1.15 var(--ik-ui);min-height:132px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.hv-crop .im{height:62px;width:100%;display:grid;place-items:center}
+.hv-crop small{display:block;font:600 14px/1.2 var(--ik-ui);color:var(--ik-paperdim)}
+.hv-crop.sel{outline:3px solid #f2c14e;outline-offset:1px;box-shadow:0 0 0 2px #06101f,0 0 16px rgba(242,193,78,.7)}
+.hv-crop.locked{filter:saturate(.4) brightness(.8);cursor:default}
+.hv-crop.locked .im .spr{filter:brightness(0) opacity(.45)}
+.hv-crop .lk{position:absolute;top:4px;right:6px;font:800 13px var(--ik-ui);background:#13284a;color:#ffe08a;border-radius:8px;padding:1px 6px}
+.hv-need{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.hv-item{display:flex;align-items:center;gap:2px;padding:1px 8px 1px 2px;border-radius:12px;background:rgba(2,8,20,.55);border:1px solid rgba(0,0,0,.4);font:800 14px var(--ik-ui);color:#fff}
+.hv-item.ok{background:linear-gradient(#5cc03d,#2f8a22);border-color:#1f5f17}
+.hv-item .im{width:30px;height:30px;display:grid;place-items:center}
+.hv-rw{display:flex;gap:10px;font:800 15px var(--ik-ui);color:var(--ik-paperink);align-items:center}
+.hv-rw span{display:inline-flex;align-items:center;gap:3px}
+.hv-stock{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(120,86,30,.25)}
+.hv-stock:last-child{border:0}
+.hv-stock .n{flex:1;font:800 16px var(--ik-ui);color:var(--ik-paperink)}
+.hv-stock .n small{display:block;font:600 14px var(--ik-ui);color:var(--ik-paperdim)}
+.hv-stock .ik-btn{min-width:70px;min-height:44px;padding:4px 8px;font-size:14px}
 </style>
 </head>
 <body>
-<div id="app">
-  <a class="hub" href="../index.html">← Hub</a>
-  <div id="hud" class="panel">
-    <div class="stat">🪙 <span id="coins">0</span><small>coins</small></div>
-    <div class="stat">⏱ <span id="cps">0</span>/s<small>income</small></div>
-    <div class="stat">🏆 <span id="best">0</span><small>lifetime</small></div>
-    <div class="stat">🌱 <span id="seeds">0</span><small>seeds</small></div>
-    <div class="stat"><span id="clock">☀️ Day 1 · 6:00</span><small>farm time</small></div>
-    <button class="iconBtn" id="barnBtn" aria-label="Barn: your seeds and helpers">🎒</button>
-    <button class="iconBtn" id="muteBtn">🔊</button>
-    <button class="iconBtn" id="menuBtn">⚙️</button>
-  </div>
-  <div id="goalBar" class="panel"><div class="gt"><span id="goalTxt">🎯 Goal</span><span id="goalRew"></span></div><div class="bar"><div class="fill" id="goalFill"></div></div></div>
-  <div id="cropBar" class="panel"></div>
-  <div id="plotGrid"></div>
-  <div id="shopTitle">🏪 SHOP</div>
-  <div id="shop"></div>
-</div>
-
-<div id="startScreen" class="overlay">
-  <div class="box">
-    <div class="big">🌾</div>
-    <h1>Farm Harvest</h1>
-    <p class="sub">Plant · Water · Harvest. Build helpers &amp; grow your fortune!</p>
-    <button class="btn" id="playBtn">▶ Play</button>
-    <button class="btn alt" id="howBtn" type="button">❓ Learn to play</button>
-    <p class="sub" style="margin:10px 0 0;">Best: <span id="startBest">0</span> coins earned</p>
-  </div>
-</div>
-
-<div id="barnScreen" class="overlay hidden">
-  <div class="box">
-    <h1 style="font-size:24px;">🎒 Barn</h1>
-    <p class="sub" style="margin:0 0 6px;">Saved seeds are planted first, for free.</p>
-    <div id="barnList" style="max-height:52vh; overflow-y:auto;"></div>
-    <button class="btn" id="barnClose">✓ Close</button>
-  </div>
-</div>
-<div id="dayCard" class="overlay hidden">
-  <div class="box">
-    <div class="big">🌙</div>
-    <h1 style="font-size:26px;" id="dayTitle">Day 1 done</h1>
-    <p class="sub" id="dayMsg"></p>
-    <button class="btn" id="dayNext">☀️ Start the next day</button>
-  </div>
-</div>
-<div id="menuScreen" class="overlay hidden">
-  <div class="box">
-    <h1>⚙️ Farm settings</h1>
-    <button class="btn" id="resumeBtn">✓ Close</button>
-    <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
-    <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
-  </div>
-</div>
-
-<script src="kit/juicekit.js"></script>
-<script src="kit/playkit.js"></script>
+<div id="root"></div>
+<canvas id="fx"></canvas>
+<script src="assets/idle/harvest.js"></script>
+<script src="kit/ik-core.js"></script>
+<script src="kit/ik-iso.js"></script>
+<script src="kit/ik-idle.js"></script>
 <script>
+(function () {
+'use strict';
+var IK = window.IK, $ = IK.$, fmt = IK.fmt, esc = IK.esc, h = IK.h;
+var A = new IK.Atlas('assets/idle/harvest.webp', window.IK_ATLAS.harvest);
+IK.ico.sprout = function (px) { return '<svg class="ic" viewBox="0 0 32 32" width="' + px + '" height="' + px + '" aria-hidden="true"><path d="M16 28V15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/><path d="M16 16C16 9 11 6 4 6c0 7 4 10 12 10z" fill="currentColor"/><path d="M16 14c0-6 4-9 12-9 0 7-4 10-12 9z" fill="currentColor" opacity=".8"/></svg>'; };
+IK.ico.truck = function (px) { return '<svg class="ic" viewBox="0 0 32 32" width="' + px + '" height="' + px + '" aria-hidden="true"><path d="M3 9h16v13H3zM19 13h6l4 4v5H19z" fill="currentColor"/><circle cx="9" cy="24" r="3" fill="#0b1a33" stroke="currentColor" stroke-width="1.6"/><circle cx="23" cy="24" r="3" fill="#0b1a33" stroke="currentColor" stroke-width="1.6"/></svg>'; };
 
-(function(){
-  "use strict";
-  var CROPS = {
-    carrot:  {emoji:"🥕", name:"Carrot",  growTime:10, cost:5,   value:10},
-    tomato:  {emoji:"🍅", name:"Tomato",  growTime:20, cost:15,  value:34},
-    corn:    {emoji:"🌽", name:"Corn",    growTime:35, cost:40,  value:95},
-    pumpkin: {emoji:"🎃", name:"Pumpkin", growTime:60, cost:100, value:260}
+/* ---------- crops: what they cost, how long they take, when they unlock ---------- */
+var CROPS = [
+  { id: 'wheat', name: 'Wheat', lvl: 1, grow: 12, seed: 2, sell: 6, xp: 2 },
+  { id: 'carrot', name: 'Carrot', lvl: 2, grow: 30, seed: 6, sell: 16, xp: 4 },
+  { id: 'strawberry', name: 'Strawberry', lvl: 3, grow: 75, seed: 14, sell: 40, xp: 7 },
+  { id: 'sunflower', name: 'Sunflower', lvl: 4, grow: 180, seed: 40, sell: 110, xp: 12 },
+  { id: 'corn', name: 'Corn', lvl: 6, grow: 360, seed: 110, sell: 300, xp: 20 },
+  { id: 'pumpkin', name: 'Pumpkin', lvl: 8, grow: 720, seed: 320, sell: 850, xp: 34 },
+  { id: 'melon', name: 'Melon', lvl: 10, grow: 1200, seed: 900, sell: 2400, xp: 55 }
+];
+var CBY = {}; CROPS.forEach(function (c) { CBY[c.id] = c; });
+function cIcon(id, px) { return A.icon(id + '_3', px, 2); }
+function fmtSec(s) { s = Math.round(s); return s >= 60 ? Math.floor(s / 60) + 'm' + (s % 60 ? ' ' + (s % 60) + 's' : '') : s + 's'; }
+
+/* land: which tile each plot stands on, in the order the farm grows */
+var PLOTC = [[2, 2], [1, 2], [2, 3], [1, 3], [2, 1], [3, 2], [3, 3], [1, 1], [3, 1], [2, 4], [1, 4], [3, 4]];
+var PLOTCOST = [0, 0, 0, 0, 80, 160, 320, 640, 1200, 2400, 4800, 9600];
+var HELPER = { hand: { name: 'Farmhand', desc: 'Harvests ripe crops for you', cost: [200, 1200, 7500], every: [0, 9, 5, 3] }, sow: { name: 'Sower', desc: 'Plants your chosen seed on empty plots', cost: [250, 1500, 9000], every: [0, 9, 5, 3] } };
+var CAPCOST = [150, 450, 1400, 4200, 12000, 36000];
+
+var S0 = null;    // the engine's save, set below
+
+function blankFarm(S) {
+  var X = S.x;
+  if (!X.plots) { X.plots = []; for (var i = 0; i < 12; i++) X.plots.push(null); }
+  if (X.open == null) X.open = 4;
+  if (!X.barn) X.barn = {};
+  if (!X.cap) X.cap = 24;
+  if (!X.orders) X.orders = [];
+  if (!X.helpers) X.helpers = { hand: 0, sow: 0 };
+  if (!X.sel) X.sel = 'wheat';
+  if (!X.st) X.st = { harvested: 0, delivered: 0, sold: 0, planted: 0, watered: 0, earned: 0 };
+  if (X.capLv == null) X.capLv = 0;
+}
+function stockTotal(X) { var t = 0; for (var k in X.barn) t += X.barn[k] | 0; return t; }
+function cropStage(p, now) {                                     // 1 seedling, 2 growing, 3 ripe
+  var c = CBY[p.c], f = (now - p.t) / (c.grow * 1000);
+  return f >= 1 ? 3 : f >= 0.34 ? 2 : 1;
+}
+function cropFrac(p, now) { return Math.max(0, Math.min(1, (now - p.t) / (CBY[p.c].grow * 1000))); }
+function slotCount(lvl) { return lvl >= 11 ? 5 : lvl >= 6 ? 4 : 3; }
+
+function makeOrder(E) {
+  var S = E.S, L = S.lvl, un = CROPS.filter(function (c) { return c.lvl <= L; }), kinds = 1 + (L >= 3 && Math.random() < 0.6 ? 1 : 0) + (L >= 8 && Math.random() < 0.4 ? 1 : 0);
+  var pool = un.slice(), need = {}, coins = 0, xp = 4;
+  for (var k = 0; k < kinds && pool.length; k++) {
+    var pi = Math.floor(Math.random() * pool.length), c = pool.splice(pi, 1)[0];
+    var hi = c.grow >= 360 ? 4 : 5 + Math.floor(L / 2), q = 2 + Math.floor(Math.random() * (hi - 1));
+    if (c.grow >= 360) q = 1 + Math.floor(Math.random() * 4);
+    need[c.id] = Math.min(12, q); coins += need[c.id] * c.sell * 1.5; xp += need[c.id] * c.xp * 2;
+  }
+  return { need: need, coins: Math.ceil(coins / 5) * 5, xp: Math.round(xp) };
+}
+
+/* ================= the field ================= */
+function makeScene(E) {
+  var S = E.S, X = S.x, cv = $('scene'), wrap = $('sceneWrap');
+  var st = new IK.Stage(cv, draw, 2);
+  var iso = new IK.Iso(st, { N: 4, M: 5, tex: ['mountain_grass', 'soil_tilled', 'dirt_track', 'rock', 'plaza_stone'] });
+  var pops = [], drops = [], sparks = [], dust = [], walkers = [], drag = null, helperT = { hand: 0, sow: 0 }, tract = { i: 0.4, dir: 1 }, tgt = null;
+  st.onResize = function (W, H) { iso.layout(W, H); };
+  iso.layout(st.w || 390, st.h || 300);
+  var tg = h('div', ''); tg.id = 'tgt'; tg.style.cssText = 'position:absolute;pointer-events:none;width:1px;height:1px;left:0;top:0'; wrap.appendChild(tg);
+  function cellPlot(ci, cj) { for (var i = 0; i < PLOTC.length; i++) if (PLOTC[i][0] === ci && PLOTC[i][1] === cj) return i; return -1; }
+  function plotXY(i) { return iso.cellXY(PLOTC[i][0], PLOTC[i][1]); }
+  function nowT() { return IK.now(); }
+  ['sheep', 'sheep', 'chicken', 'chicken', 'chicken'].forEach(function (k, n) { var j0 = k === 'sheep' ? 2.2 : 3.2; walkers.push({ kind: k, i: 0.2 + Math.random() * 0.5, j: j0 + Math.random() * 0.8, tx: 0, ty: 0, wait: Math.random() * 2, flip: false, ph: n }); });
+
+  function sfxAt(name, r) { IK.sfx(name, { rate: r || 1, volume: 0.6, gap: 40 }); }
+  function toClient(i) { var p = plotXY(i); return st.toClient(p.x, p.y - 12 * iso.sc); }
+  function plant(i, quiet) {
+    var c = CBY[X.sel]; if (!c || c.lvl > S.lvl) return false;
+    if (X.plots[i] || i >= X.open) return false;
+    if (S.coins < c.seed) { if (!quiet) { IK.sfx('error', { volume: 0.4 }); IK.toast('Seeds cost ' + c.seed + ' coins', { icon: IK.ico.coin(22) }); } return false; }
+    S.coins -= c.seed; X.plots[i] = { c: c.id, t: nowT(), w: false }; X.st.planted++;
+    pops.push({ i: i, t: 0 }); var p = toClient(i); IK.fx.burst(p.x, p.y, { n: 5, speed: 90, size: 3, colors: ['#8a5a2b', '#b07a44'] }); sfxAt('plant', 1 + Math.random() * 0.2);
+    E.event('plant', 1); E.coachDid('plant'); E.dirtyUI = true; return true;
+  }
+  function water(i, quiet) {
+    var p = X.plots[i]; if (!p || p.w) return false; var c = CBY[p.c], now = nowT();
+    if (cropStage(p, now) === 3) return false;
+    var remain = (1 - cropFrac(p, now)) * c.grow * 1000; p.t -= remain * 0.5; p.w = true; X.st.watered++;
+    var q = toClient(i); IK.fx.burst(q.x, q.y - 10, { n: 10, speed: 120, angle: -Math.PI / 2, spread: 1.8, grav: 380, size: 3, colors: ['#8be3ff', '#c8f1ff', '#4aa3e8'] }); sfxAt('water', 1 + Math.random() * 0.2);
+    E.event('water', 1); E.coachDid('water'); E.dirtyUI = true; return true;
+  }
+  function harvest(i, quiet, auto) {
+    var p = X.plots[i]; if (!p || cropStage(p, nowT()) < 3) return false; var c = CBY[p.c];
+    if (stockTotal(X) >= X.cap) { if (!quiet) { IK.sfx('error', { volume: 0.4 }); IK.toast('The barn is full: fill orders or sell some crops', { icon: A.icon('crate', 22, 2) }); } return false; }
+    X.plots[i] = null; X.barn[c.id] = (X.barn[c.id] | 0) + 1; X.st.harvested++;
+    var q = toClient(i); IK.fx.float(q.x, q.y - 30, '+1 ' + c.name, 'green'); IK.fx.burst(q.x, q.y - 10, { n: 8, speed: 160, size: 3.5, colors: ['#ffe08a', '#bff09a', '#fff'] });
+    if (E.el.stockW) IK.fx.flyTo(q.x, q.y - 14, E.el.stockW, { n: 3, color: '#f2c14e', shape: 'coin', size: 4 });
+    sfxAt('harvest', 0.95 + Math.random() * 0.25); IK.vibrate(8);
+    E.addXp(c.xp, 'harvest'); IK.fx.float(q.x + 30, q.y - 8, '+' + c.xp + ' XP', 'blue');
+    E.event('harvest', 1); E.coachDid('harvest'); E.dirtyUI = true; return true;
+  }
+  function act(ci, cj) {
+    var i = cellPlot(ci, cj); if (i < 0) return 0;
+    if (i >= X.open) { if (i === X.open) return buyPlot() ? 1 : 0; return 0; }
+    var p = X.plots[i];
+    if (!p) return plant(i) ? 1 : 0;
+    var stg = cropStage(p, nowT());
+    if (stg === 3) return harvest(i) ? 1 : 0;
+    return water(i) ? 1 : 0;
+  }
+  function buyPlot() {
+    var i = X.open, cost = PLOTCOST[i]; if (i >= 12) return false;
+    if (S.coins < cost) { IK.sfx('error', { volume: 0.4 }); IK.toast('A new plot costs ' + fmt(cost) + ' coins', { icon: IK.ico.coin(22) }); return false; }
+    S.coins -= cost; X.open++; var p = plotXY(i), c = st.toClient(p.x, p.y);
+    IK.fx.burst(c.x, c.y, { n: 18, speed: 220, shape: 'star', size: 4 }); IK.fx.confetti(18); sfxAt('unlock'); pops.push({ i: i, t: 0 });
+    IK.toast('New plot ready!', { icon: IK.ico.sprout(22), kind: 'gold' }); E.addXp(6, 'plot'); E.dirtyUI = true; return true;
+  }
+  function cellAt(x, y) { var sc = iso.sc, u = ((x - iso.ox) / (iso.HW * sc) + (y - iso.oy) / (iso.HH * sc)) / 2, v = ((y - iso.oy) / (iso.HH * sc) - (x - iso.ox) / (iso.HW * sc)) / 2; return [Math.floor(u), Math.floor(v)]; }
+  wrap.addEventListener('pointermove', function (ev) {
+    if (!drag || !E.inGame) return;
+    var p = st.toLocal(ev.clientX, ev.clientY), c = cellAt(p.x, p.y), key = c[0] + ',' + c[1];
+    if (drag.last === key) return; drag.last = key;
+    if (cellPlot(c[0], c[1]) >= 0 && cellPlot(c[0], c[1]) < X.open) { act(c[0], c[1]); }
+  }, { passive: true });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { wrap.addEventListener(n, function () { drag = null; }, { passive: true }); });
+
+  function drawPlots(cx, t, now, ss) {
+    var sc = iso.sc, dry = iso.pattern(cx, 'soil_tilled');
+    for (var i = 0; i < PLOTC.length; i++) {
+      var p = plotXY(i), open = i < X.open, pl = X.plots[i];
+      if (!open) {
+        iso.diamond(cx, p.x, p.y, 0.95); cx.fillStyle = i === X.open ? 'rgba(255,240,200,.16)' : 'rgba(30,60,20,.10)'; cx.fill();
+        if (i === X.open) { cx.strokeStyle = 'rgba(255,224,130,' + (0.6 + 0.3 * Math.sin(t * 4)) + ')'; cx.lineWidth = 2.5; cx.setLineDash([7, 5]); cx.stroke(); cx.setLineDash([]); iso.chip(cx, PLOTCOST[i] ? fmt(PLOTCOST[i]) + ' +' : 'FREE', p.x, p.y, S.coins >= PLOTCOST[i]); }
+      }
+    }
+  }
+  function draw(cx, dt, t, W, H) {
+    var sc = iso.sc, ss = iso.sprS * sc, now = nowT();
+    if (W !== iso.w || H !== iso.h) iso.layout(W, H);
+    cx.clearRect(0, 0, W, H);
+    iso.backdrop(cx, dt, t);
+    iso.ground(cx, function (g) {
+      var dirt = iso.pattern(g, 'dirt_track');
+      g.fillStyle = dirt || '#a9773f'; g.globalAlpha = 0.9; iso.pad(g, 1, 1, dirt || '#a9773f', 'rgba(70,40,12,.4)', 0.02, 3, 4); g.globalAlpha = 1;
+    });
+    drawPlots(cx, t, now, ss);
+    // sprites in painter's order
+    var items = [];
+    [['barn', 0, 0, 1.0], ['home', 1, 0, 0.92], ['silos', 2, 0, 1.0], ['truck', 3, 0, 1.0], ['farm_windmill', 0, 1, 0.95], ['tree', 0, 2, 1], ['pine', 0, 4, 1], ['hay_bales', 0.2, 3.9, 0.55], ['crate', 3.3, 4.5, 0.9], ['treepink', 3.3, 3.2, 0.7]].forEach(function (d) { items.push({ d: d[1] + d[2] + 0.02, kind: 'deco', n: d[0], i: d[1], j: d[2], s: d[3] }); });
+    for (var i = 0; i < X.open; i++) items.push({ d: PLOTC[i][0] + PLOTC[i][1] + 0.05, kind: 'plot', i: i });
+    walkers.forEach(function (w) { items.push({ d: w.i + w.j, kind: 'walker', w: w }); });
+    if (X.helpers.hand || X.helpers.sow) items.push({ d: tract.i + 5, kind: 'tractor' });
+    items.sort(function (a, b) { return a.d - b.d; });
+    walkers.forEach(function (w) { w.wait -= dt; if (w.wait <= 0 && (!w.tx || (Math.abs(w.i - w.tx) < 0.03 && Math.abs(w.j - w.ty) < 0.03))) { w.tx = 0.15 + Math.random() * 0.6; w.ty = (w.kind === 'sheep' ? 2.1 : 3.1) + Math.random() * 0.9; w.wait = 0.5 + Math.random() * 2.5; } if (w.wait <= 0) { var dx = w.tx - w.i, dy = w.ty - w.j, d = Math.hypot(dx, dy) || 1, v = (w.kind === 'chicken' ? 0.3 : 0.14) * dt; w.i += dx / d * Math.min(v, d); w.j += dy / d * Math.min(v, d); w.flip = (dx - dy) < 0; } });
+    tract.i += tract.dir * 0.45 * dt; if (tract.i > 3.2) tract.dir = -1; if (tract.i < 0.3) tract.dir = 1;
+    var readyN = 0;
+    items.forEach(function (it) {
+      if (it.kind === 'deco') { var q = iso.cellXY(it.i, it.j); A.draw(cx, it.n, q.x, q.y, ss * it.s); }
+      else if (it.kind === 'walker') { var w = it.w, pw = iso.cellXY(w.i - 0.5, w.j - 0.5), bob = Math.abs(Math.sin(t * 6 + w.ph)) * (w.wait <= 0 ? 2.2 : 0.3); A.draw(cx, w.kind, pw.x, pw.y - bob, ss * (w.kind === 'chicken' ? 1.5 : 1.3), 1, w.flip); }
+      else if (it.kind === 'tractor') { var pt = iso.cellXY(tract.i, 4.75); A.draw(cx, 'tractor', pt.x, pt.y, ss * 0.85, 1, tract.dir < 0); }
+      else if (it.kind === 'plot') {
+        var i = it.i, pl = X.plots[i], q = plotXY(i), k = 1;
+        for (var pp = pops.length - 1; pp >= 0; pp--) if (pops[pp].i === i) { pops[pp].t += dt; var u = pops[pp].t / 0.35; if (u >= 1) pops.splice(pp, 1); else k = u < 0.6 ? 0.4 + 0.8 * u / 0.6 : 1.2 - 0.2 * (u - 0.6) / 0.4; }
+        if (!pl) { A.draw(cx, 'plot_empty', q.x, q.y, ss); if (E.inGame && X.st.planted === 0 && i === 0) iso.chip(cx, 'TAP!', q.x, q.y - 30 * sc + Math.sin(t * 4) * 3, true); return; }
+        var stg = cropStage(pl, now), fr = cropFrac(pl, now);
+        cx.save(); cx.translate(q.x, q.y); cx.scale(k, k); A.draw(cx, pl.c + '_' + stg, 0, 0, ss); cx.restore();
+        if (pl.w && stg < 3) { iso.diamond(cx, q.x, q.y, 0.8); cx.fillStyle = 'rgba(20,50,90,.22)'; cx.fill(); }
+        if (stg < 3) { var bw = 44 * sc, bx = q.x - bw / 2, by = q.y + 12 * sc; cx.fillStyle = 'rgba(4,10,24,.75)'; iso.rr(cx, bx - 1, by - 1, bw + 2, 8, 4); cx.fill(); cx.fillStyle = pl.w ? '#5ab8f0' : '#f2c14e'; iso.rr(cx, bx, by, Math.max(4, bw * fr), 6, 3); cx.fill(); if (!pl.w) { var wd = 6 + Math.sin(t * 5) * 1.5; cx.fillStyle = 'rgba(140,220,255,.9)'; cx.beginPath(); cx.arc(q.x + bw / 2 + 8, by + 3, wd * 0.5, 0, 6.2832); cx.fill(); } }
+        else {
+          readyN++; var bob = Math.sin(t * 5 + i) * 3;
+          cx.fillStyle = 'rgba(255,255,255,.92)'; cx.beginPath(); cx.arc(q.x, q.y - 50 * sc + bob, 15, 0, 6.2832); cx.fill(); cx.strokeStyle = '#f2c14e'; cx.lineWidth = 3; cx.stroke();
+          var cm = A.map[pl.c + '_3']; if (cm) { var kk = 20 / Math.max(cm[2], cm[3]) * 1.15; cx.drawImage(A.rec.img, cm[0], cm[1], cm[2], cm[3], q.x - cm[2] * kk / 2, q.y - 50 * sc + bob - cm[3] * kk / 2, cm[2] * kk, cm[3] * kk); }
+          if (Math.random() < 0.02) sparks.push({ x: q.x + (Math.random() - 0.5) * 30 * sc, y: q.y - 20 * sc, t: 0 });
+        }
+      }
+    });
+    for (var s2 = sparks.length - 1; s2 >= 0; s2--) { var sp = sparks[s2]; sp.t += dt; if (sp.t > 0.8) { sparks.splice(s2, 1); continue; } cx.globalCompositeOperation = 'lighter'; cx.fillStyle = 'rgba(255,240,180,' + (1 - sp.t / 0.8) + ')'; cx.beginPath(); cx.arc(sp.x, sp.y - sp.t * 20, 2.5, 0, 6.2832); cx.fill(); cx.globalCompositeOperation = 'source-over'; }
+    // auto helpers
+    if (E.inGame) {
+      if (X.helpers.hand) { helperT.hand += dt; if (helperT.hand >= HELPER.hand.every[X.helpers.hand]) { helperT.hand = 0; for (var a = 0; a < X.open; a++) if (X.plots[a] && cropStage(X.plots[a], now) === 3) { if (harvest(a, true, true)) break; } } }
+      if (X.helpers.sow) { helperT.sow += dt; if (helperT.sow >= HELPER.sow.every[X.helpers.sow]) { helperT.sow = 0; for (var b2 = 0; b2 < X.open; b2++) if (!X.plots[b2]) { if (plant(b2, true)) break; } } }
+    }
+    E.readyN = readyN;
+    tgt = plotXY(0);
+    if (tgt) { var cc = st.toClient(tgt.x, tgt.y - 8 * sc); tg.style.left = (cc.x - st.cv.getBoundingClientRect().left - 34) + 'px'; tg.style.top = (cc.y - st.cv.getBoundingClientRect().top - 22) + 'px'; tg.style.width = '68px'; tg.style.height = '44px'; tgt = null; }
+    iso.light(cx, dt, t);
+  }
+  E.harvestAll = function () { var n = 0; for (var i = 0; i < X.open; i++) if (X.plots[i] && cropStage(X.plots[i], nowT()) === 3) { if (harvest(i)) n++; else break; } if (!n) IK.sfx('error', { volume: 0.4 }); };
+  E.plantAll = function () { var n = 0; for (var i = 0; i < X.open; i++) if (!X.plots[i]) { if (plant(i, n > 0)) n++; else break; } if (!n) IK.sfx('error', { volume: 0.4 }); };
+  E.waterAll = function () { var n = 0; for (var i = 0; i < X.open; i++) if (X.plots[i] && !X.plots[i].w && cropStage(X.plots[i], nowT()) < 3) { if (water(i)) n++; } if (!n) IK.sfx('error', { volume: 0.4 }); };
+  E.buyPlot = buyPlot;
+  return {
+    stage: st,
+    pointer: function (cxp, cyp, ev) {
+      var p = st.toLocal(cxp, cyp), c = cellAt(p.x, p.y);
+      if (c[1] === 0 && c[0] === 3) { IK.sfx('tap'); E.switchTab('orders', true); return; }
+      if ((c[1] === 0 && c[0] <= 2) || (c[0] === 0 && c[1] === 1)) { IK.sfx('tap'); E.switchTab('orders', true); return; }
+      drag = { last: c[0] + ',' + c[1] }; act(c[0], c[1]);
+    },
+    update: function () {},
+    onBuy: function () {}, onLevel: function () {}, spawnCritter: function () { return false; }, onCaravan: function () {},
+    plotRect: function (i) { var p = plotXY(i), a = st.toClient(p.x, p.y); return a; }
   };
-  var CROP_IDS = ["carrot","tomato","corn","pumpkin"];
-  var PLOT_MAX = 12;
-  var PLOT_COSTS = [0,0,0,0,0,0,0,0,400,800,1600,3200];
-  var WATER_MS = 6000;
-  var OFFLINE_CAP = 7200;
-  var MASTERY_BONUS = 0.06;
-  var SAVE_KEY = "farmHarvestSave_v1";
-  var CHICKEN_PER_LEVEL = 2;
-  var DAY_LEN = 240; // seconds of play per farm day (6:00 to 22:00)
-  var SDK = window.ArcadeSDK || null, RM = !!(window.PlayKit && PlayKit.rm), coach = null;
-  function scene(sc, extra){ try{ if(SDK) SDK.state(Object.assign({scene:sc}, extra || {})); }catch(e){} }
-  function did(n){ if(coach) coach.did(n); }
-  function cheated(){ return !!(SDK && SDK.cheated); }
-  function playing(){ return ["startScreen","menuScreen","barnScreen","dayCard"].every(function(id){ return $(id).classList.contains("hidden"); }); }
+}
 
-  function emptyPlot(){ return {crop:null, progress:0, waterUntil:0}; }
-  function defaultState(){
-    var plots = []; for(var i=0;i<8;i++) plots.push(emptyPlot());
-    return {
-      coins:10, earned:0, unlocked:8, selected:"carrot",
-      mastery:{carrot:0,tomato:0,corn:0,pumpkin:0},
-      seeds:{carrot:0,tomato:0,corn:0,pumpkin:0}, seedBadge:false,
-      sprinkler:false, harvester:false, chicken:0,
-      muted:false, lastSave:Date.now(), plots:plots,
-      day:1, dayT:0, dayH:0, dayE:0
-    };
-  }
-  var state = defaultState();
-  // The hub (and the kit) own 'gamesMuted'. This game used to keep a private
-  // flag, so muting here left the kit noisy and muting elsewhere did not carry
-  // in. Adopt the shared key on boot and mirror every change back to it.
-  function readHubMute(){ try { return localStorage.getItem('gamesMuted') === '1'; } catch(e){ return false; } }
-  function writeHubMute(v){ try { localStorage.setItem('gamesMuted', v ? '1' : '0'); } catch(e){} }
-  var bestCelebrated = false, bestSeen = 0;
-  function setMuted(v){
-    state.muted = !!v;
-    writeHubMute(state.muted);
-    // juicekit bridges the hub key off a GLOBAL `muted`; this game keeps it in
-    // state, so without mirroring it the kit's own muteBtn listener writes the
-    // stale value straight back over ours.
-    try { window.muted = state.muted; } catch(e){}
-  }
-  var plotRefs = [], wasReady = [], cropBtnRefs = [];
-  var shopRefs = null, dispCoins = 0, pendingToast = null;
-  var lastCps = "", lastBest = "", lastMute = null, lastSeeds = -1;
-  var MILES = [100,500,1000,5000,10000,50000,100000,500000,1000000,5000000,10000000];
-  var mileIdx = 0;
-  var comboN = 0, comboT = 0;
-
-  var $ = function(id){ return document.getElementById(id); };
-  var coinsEl=$("coins"), cpsEl=$("cps"), bestEl=$("best"), startBestEl=$("startBest");
-
-  function num(v, d){ return (typeof v === "number" && isFinite(v)) ? v : d; }
-  function fmt(n){
-    if(!isFinite(n)) return "0";
-    if(n < 1000) return Math.floor(n).toString();
-    var u = 0, units = ["","K","M","B","T"];
-    while(n >= 1000 && u < units.length-1){ n/=1000; u++; }
-    var s = n<10 ? (Math.round(n*100)/100).toString() : (n<100 ? (Math.round(n*10)/10).toString() : Math.floor(n).toString());
-    return s + units[u];
-  }
-  function fmtTime(s){
-    s = Math.max(0, Math.floor(s));
-    var h = (s/3600)|0, m = ((s%3600)/60)|0, ss = s%60;
-    if(h > 0) return h + "h " + m + "m";
-    if(m > 0) return m + "m " + ss + "s";
-    return ss + "s";
-  }
-
-  var AC = null;
-  function ac(){
-    if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); }
-    if(AC.state === "suspended") AC.resume();
-    return AC;
-  }
-  function beep(freq, dur, type, vol, slide, delay){
-    if(state.muted) return;
-    try{
-      var c = ac(), t0 = c.currentTime + (delay || 0);
-      var o = c.createOscillator(), g = c.createGain();
-      o.type = type || "sine";
-      o.frequency.setValueAtTime(freq, t0);
-      if(slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
-      g.gain.setValueAtTime(vol || 0.15, t0);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(g); g.connect(c.destination);
-      o.start(t0); o.stop(t0 + dur);
-    }catch(e){}
-  }
-  const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-  const SFXMAP={plant:'pop',water:'whoosh',harvest:'coin',ready:'pop',buy:'tap',deny:'buzz',click:'tap'};
-  function sfx(t){
-    if(state.muted) return;
-    var m=SFXMAP[t]||t,a=SFXP[m];
-    if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
-    if(t==="plant") beep(260,0.1,"triangle",0.18,360);
-    else if(t==="water") beep(700,0.16,"sine",0.13,320);
-    else if(t==="harvest"){ beep(660,0.09,"triangle",0.18); beep(880,0.09,"triangle",0.16,0,0.06); beep(1175,0.14,"triangle",0.15,0,0.12); }
-    else if(t==="ready"){ beep(523,0.09,"sine",0.11); beep(784,0.12,"sine",0.11,0,0.08); }
-    else if(t==="buy"){ beep(520,0.09,"triangle",0.2); beep(780,0.13,"triangle",0.18,0,0.07); }
-    else if(t==="deny") beep(150,0.16,"sawtooth",0.12,90);
-    else if(t==="click") beep(240,0.05,"triangle",0.1);
-  }
-
-  var fxLayer = null, fxTotal = 0, FXMAX = 40, fPool = [], pPool = [];
-  function fx(){
-    if(!fxLayer){ fxLayer = document.createElement("div"); fxLayer.id = "fx"; document.body.appendChild(fxLayer); }
-    return fxLayer;
-  }
-  function floatText(x, y, txt){
-    var s = fPool.pop();
-    if(!s){
-      if(fxTotal >= FXMAX) return;
-      s = document.createElement("span");
-      s.className = "fxFloat";
-      fx().appendChild(s);
-      fxTotal++;
-    }
-    s.textContent = txt;
-    s.style.left = x + "px"; s.style.top = y + "px";
-    s.style.animation = "none"; void s.offsetWidth; s.style.animation = "";
-    var seq = (s._seq = (s._seq || 0) + 1);
-    setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
-  }
-  function burst(x, y, chars, n, spread, up){
-    if(RM) return;
-    for(var i=0;i<n;i++){
-      var s = pPool.pop();
-      if(!s){
-        if(fxTotal >= FXMAX) return;
-        s = document.createElement("span");
-        s.className = "fxPart";
-        fx().appendChild(s);
-        fxTotal++;
-      }
-      s.textContent = chars[(Math.random()*chars.length)|0];
-      s.style.left = x + "px"; s.style.top = y + "px";
-      s.style.transition = "none";
-      s.style.transform = "translate(-50%,-50%)";
-      s.style.opacity = "1";
-      void s.offsetWidth;
-      s.style.transition = "";
-      var dx = (Math.random()*2-1)*spread;
-      var dy = up ? -(12 + Math.random()*spread*1.2) : (8 + Math.random()*22);
-      (function(s, dx, dy){
-        var seq = (s._seq = (s._seq || 0) + 1);
-        requestAnimationFrame(function(){
-          if(s._seq !== seq) return;
-          s.style.transform = "translate(" + dx + "px," + dy + "px) scale(.3)";
-          s.style.opacity = "0";
+/* ================= panels ================= */
+var PANELS = {
+  build: {
+    build: function (E, el) {
+      el.innerHTML = '<div class="hv-actions"><button class="ik-btn go" id="btnHarv" type="button">Harvest<small id="hvN">0 ready</small></button><button class="ik-btn acc" id="btnPlantAll" type="button">Plant all<small id="plN"></small></button><button class="ik-btn ghost" id="btnWaterAll" type="button">Water all<small id="waN"></small></button></div>' +
+        '<div class="ik-sec">Choose your seed</div><div class="hv-crops" id="cropGrid"></div>' +
+        '<div class="ik-sec">Your farm</div><div id="farmRows"></div><div class="ik-sec">Helpers</div><div id="helpRows"></div>';
+      E.el.btnHarv = $('btnHarv'); $('btnHarv').addEventListener('click', function () { E.harvestAll(); });
+      $('btnPlantAll').addEventListener('click', function () { E.plantAll(); }); $('btnWaterAll').addEventListener('click', function () { E.waterAll(); });
+      var grid = $('cropGrid');
+      CROPS.forEach(function (c) {
+        var d = h('button', 'hv-crop'); d.type = 'button'; d.id = 'crop_' + c.id;
+        d.addEventListener('click', function () { if (c.lvl > E.S.lvl) { IK.sfx('error', { volume: 0.4 }); IK.toast(c.name + ' unlocks at level ' + c.lvl, { icon: IK.ico.lock(18) }); return; } E.S.x.sel = c.id; IK.sfx('tap'); E.dirtyUI = true; E.coachDid('select'); });
+        grid.appendChild(d);
+      });
+      E.cropSig = ''; E.farmSig = '';
+    },
+    update: function (E, el, active) {
+      var S = E.S, X = S.x, now = IK.now(), ready = 0, empty = 0, dry = 0, i;
+      for (i = 0; i < X.open; i++) { var p = X.plots[i]; if (!p) empty++; else { var st = cropStage(p, now); if (st === 3) ready++; else if (!p.w) dry++; } }
+      var c = CBY[X.sel];
+      $('hvN').textContent = ready + ' ready'; $('plN').textContent = empty ? empty + ' · ' + fmt(empty * c.seed) : 'none empty'; $('waN').textContent = dry ? dry + ' plots' : 'all wet';
+      E.el.btnHarv.className = 'ik-btn ' + (ready ? 'go' : 'ghost');
+      if (!active) return;
+      var sig = [S.lvl, X.sel, Math.floor(S.coins / 10)].join('|');
+      if (sig !== E.cropSig) {
+        E.cropSig = sig;
+        CROPS.forEach(function (cr) {
+          var d = $('crop_' + cr.id), lock = cr.lvl > S.lvl;
+          d.className = 'hv-crop' + (cr.id === X.sel ? ' sel' : '') + (lock ? ' locked' : '');
+          d.innerHTML = (lock ? '<span class="lk">Lv ' + cr.lvl + '</span>' : '') + '<span class="im">' + cIcon(cr.id, 56) + '</span>' + esc(cr.name) + '<small>Seed ' + cr.seed + ' · ' + fmtSec(cr.grow) + '</small><small>Sells ' + fmt(cr.sell) + '</small>';
         });
-        setTimeout(function(){ if(s._seq === seq) pPool.push(s); }, 750);
-      })(s, dx, dy);
-    }
-  }
-  function confetti(){
-    if(RM) return;
-    var chars=["✨","🪙","🌾","🎉"], i;
-    for(i=0;i<24;i++){
-      var s=pPool.pop();
-      if(!s){ if(fxTotal>=FXMAX) return; s=document.createElement("span"); s.className="fxPart"; fx().appendChild(s); fxTotal++; }
-      s.textContent=chars[(Math.random()*chars.length)|0];
-      s.style.left=(Math.random()*window.innerWidth)+"px";
-      s.style.top="-16px";
-      s.style.transition="none";
-      s.style.transform="translate(-50%,-50%)";
-      s.style.opacity="1";
-      void s.offsetWidth;
-      s.style.transition="transform 1.1s cubic-bezier(.2,.6,.4,1), opacity 1.1s ease-out";
-      (function(s){
-        var seq=(s._seq=(s._seq||0)+1);
-        requestAnimationFrame(function(){ if(s._seq!==seq) return; s.style.transform="translate("+((Math.random()*2-1)*60)+"px,"+(window.innerHeight+40)+"px) scale(.6)"; s.style.opacity="0"; });
-        setTimeout(function(){ if(s._seq===seq) pPool.push(s); },1150);
-      })(s);
-    }
-  }
-  var centersDirty = true, tmpC = {x:0, y:0};
-  function invalidateCenters(){ centersDirty = true; }
-  window.addEventListener("resize", invalidateCenters);
-  window.addEventListener("scroll", invalidateCenters, true);
-  function plotCenter(i){
-    if(centersDirty){
-      for(var j=0;j<plotRefs.length;j++){
-        var r = plotRefs[j].root.getBoundingClientRect();
-        plotRefs[j].cx = r.left + r.width/2;
-        plotRefs[j].cy = r.top + r.height/2;
       }
-      centersDirty = false;
-    }
-    var R = plotRefs[i];
-    tmpC.x = R.cx; tmpC.y = R.cy;
-    return tmpC;
-  }
-  var toastEl = null, toastTimer = 0;
-  function toast(msg){
-    if(!toastEl){ toastEl = document.createElement("div"); toastEl.id = "toast"; document.body.appendChild(toastEl); }
-    toastEl.textContent = msg;
-    toastEl.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
-  }
-  function flash(btn){
-    if(!btn) return;
-    btn.classList.remove("flash");
-    void btn.offsetWidth;
-    btn.classList.add("flash");
-  }
-  function checkMiles(){
-    if(mileIdx >= MILES.length) return;
-    var fired = -1;
-    while(mileIdx < MILES.length && state.earned >= MILES[mileIdx]) fired = mileIdx++;
-    if(fired < 0) return;
-    var v = MILES[fired], rew = Math.round(v * 0.1);
-    state.coins += rew;
-    toast("🏆 Goal reached: " + fmt(v) + " coins earned! +" + fmt(rew) + " 🪙");
-    sfx("levelup");
-    var r = coinsEl.getBoundingClientRect();
-    burst(r.left + r.width/2, r.top + r.height/2, ["🪙","✨"], 8, 30, true);
-    confetti();
-  }
-
-  function growTime(cropId){ return CROPS[cropId].growTime; }
-  function cropValue(cropId){ return Math.round(CROPS[cropId].value * (1 + state.mastery[cropId]*MASTERY_BONUS)); }
-  function chickenIncome(){ return state.chicken * CHICKEN_PER_LEVEL; }
-  function coinsPerSec(){ return chickenIncome(); }
-
-  function plant(i){
-    var id = state.selected, c = CROPS[id];
-    var fromSeed = (state.seeds[id] || 0) > 0;
-    if(!fromSeed && state.coins < c.cost){
-      sfx("deny");
-      // visible refusal: a sound alone is nothing on a muted phone
-      if(plotRefs[i]){
-        var cd = plotCenter(i);
-        floatText(cd.x, cd.y - 10, "Need " + fmt(c.cost) + " \ud83e\udd99");
-        var rootEl = plotRefs[i].root;
-        rootEl.classList.remove("denyShake"); void rootEl.offsetWidth; rootEl.classList.add("denyShake");
+      var fs = [X.open, X.cap, X.capLv, X.helpers.hand, X.helpers.sow, Math.min(S.coins, 1e9) > (PLOTCOST[X.open] || 1e18), S.lvl].join('|') + '|' + Math.floor(S.coins / 20);
+      if (fs !== E.farmSig) {
+        E.farmSig = fs;
+        var rows = '';
+        if (X.open < 12) rows += row('New plot', 'Grow one more plot (' + X.open + ' of 12)', IK.ico.sprout(40), PLOTCOST[X.open], S.coins >= PLOTCOST[X.open], 'btnPlot');
+        if (X.capLv < CAPCOST.length) rows += row('Bigger barn', 'Store 12 more crops (' + X.cap + ' now)', A.icon('barn', 46, 2), CAPCOST[X.capLv], S.coins >= CAPCOST[X.capLv], 'btnCap');
+        $('farmRows').innerHTML = rows || '<div class="ik-empty">Your farm is fully grown!</div>';
+        var hr = '';
+        if (S.lvl < 3) hr = '<div class="ik-empty">Helpers unlock at level 3.</div>';
+        else ['hand', 'sow'].forEach(function (k) {
+          var lv = X.helpers[k], H = HELPER[k], max = lv >= 3;
+          hr += row(H.name + (lv ? ' ' + 'I'.repeat(lv) : ''), H.desc + (lv ? ' every ' + H.every[lv] + 's' : ''), k === 'hand' ? A.icon('tractor', 46, 2) : A.icon('cow', 46, 2), max ? 0 : H.cost[lv], !max && S.coins >= H.cost[lv], 'btnH_' + k, max);
+        });
+        $('helpRows').innerHTML = hr;
+        var b1 = $('btnPlot'); if (b1) b1.addEventListener('click', function () { E.buyPlot(); E.dirtyUI = true; });
+        var b2 = $('btnCap'); if (b2) b2.addEventListener('click', function () { var cst = CAPCOST[X.capLv]; if (S.coins < cst) { IK.sfx('error', { volume: 0.4 }); return; } S.coins -= cst; X.cap += 12; X.capLv++; IK.sfx('powerup'); IK.fx.confetti(20); IK.toast('Barn holds ' + X.cap + ' now', { icon: A.icon('barn', 24, 2), kind: 'gold' }); E.addXp(8, 'barn'); E.dirtyUI = true; });
+        ['hand', 'sow'].forEach(function (k) { var b = $('btnH_' + k); if (b) b.addEventListener('click', function () { var lv = X.helpers[k]; if (lv >= 3) return; var cst = HELPER[k].cost[lv]; if (S.coins < cst) { IK.sfx('error', { volume: 0.4 }); return; } S.coins -= cst; X.helpers[k]++; IK.sfx('powerup'); IK.fx.confetti(20); IK.toast(HELPER[k].name + ' hired!', { icon: IK.ico.star(22), kind: 'gold' }); E.addXp(10, 'helper'); E.dirtyUI = true; }); });
       }
-      var cheapest = null;
-      for(var k=0;k<CROP_IDS.length;k++){
-        var cid = CROP_IDS[k];
-        if(state.coins >= CROPS[cid].cost && (!cheapest || CROPS[cid].cost > CROPS[cheapest].cost)) cheapest = cid;
-      }
-      toast(cheapest
-        ? (CROPS[id].name + " costs " + fmt(c.cost) + " \u2014 you can afford " + CROPS[cheapest].emoji + " " + CROPS[cheapest].name)
-        : ("Harvest a ready plot first \u2014 " + CROPS[id].name + " costs " + fmt(c.cost)));
-      return;
-    }
-    if(fromSeed) state.seeds[id]--; else state.coins -= c.cost;
-    var p = state.plots[i];
-    p.crop = id; p.progress = 0; p.waterUntil = 0;
-    wasReady[i] = false;
-    sfx("plant");
-    did("plant");
-    if(fromSeed && plotRefs[i]){ var cs = plotCenter(i); floatText(cs.x, cs.y - 30, "🌱 saved seed"); }
-    if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y, ["🌱","✨"], 3, 18, true); }
-    render();
-  }
-  function water(i){
-    var p = state.plots[i];
-    if(p.waterUntil > Date.now()) return;
-    p.waterUntil = Date.now() + WATER_MS;
-    sfx("water");
-    did("water");
-    if(plotRefs[i]){ var c0 = plotCenter(i); burst(c0.x, c0.y - 8, ["💧"], 4, 22, false); }
-    render();
-  }
-  function harvest(i, silent, skipRender){
-    var p = state.plots[i];
-    if(!p.crop) return;
-    var id = p.crop, val = cropValue(id);
-    state.coins += val; state.earned += val;
-    state.mastery[id]++;
-    state.dayH++; state.dayE += val;
-    if(!silent) did("harvest");
-    p.crop = null; p.progress = 0; p.waterUntil = 0;
-    wasReady[i] = false;
-    if(!silent){
-      var cnow = Date.now();
-      if(cnow - comboT < 2000) comboN++; else comboN = 1;
-      comboT = cnow;
-      sfx("harvest");
-      if(plotRefs[i]){
-        var c0 = plotCenter(i);
-        try { if(window.Kit) Kit.hit(c0.x, c0.y, Math.round(val)); } catch(e){}
-        floatText(c0.x, c0.y - 10, "+" + fmt(val) + " 🪙");
-        if(comboN >= 3){
-          sfx("levelup");
-          // audio layering: the combo rings a bright fifth over the harvest
-          // blip, and a low body thump lands under a big-value pull
-          beep(880 + Math.min(comboN, 8) * 55, 0.09, "triangle", 0.05, 0, 0.02);
-          if(val >= 40) beep(120, 0.14, "sine", 0.05, -30, 0);
-          floatText(c0.x, c0.y - 36, "COMBO x" + comboN + "!");
-        }
-        burst(c0.x, c0.y, ["✨","🪙",CROPS[id].emoji], 7, 34, true);
-        if(Math.random() < 0.08){
-          state.seeds[id] = (state.seeds[id] || 0) + 1;
-          sfx("coin");
-          floatText(c0.x, c0.y - 58, "+🌱 Seed");
-          if(!state.seedBadge && state.seeds.carrot >= 10 && state.seeds.tomato >= 10 &&
-             state.seeds.corn >= 10 && state.seeds.pumpkin >= 10){
-            state.seedBadge = true;
-            toast("🌻 Seed Album complete!");
-            sfx("levelup");
-          }
-        }
-      }
-      try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
-    }
-    if(!skipRender) render();
-  }
-  function onPlotTap(i){
-    var p = state.plots[i];
-    if(!p.crop){ plant(i); }
-    else if(p.progress >= growTime(p.crop)){ harvest(i, false); }
-    else { water(i); }
-  }
-  function collectReady(replant){
-    for(var k=0;k<state.unlocked;k++){
-      var r = state.plots[k];
-      if(r.crop && r.progress >= growTime(r.crop)){
-        harvest(k, true, true);
-        if(replant){
-          var sel = CROPS[state.selected];
-          if(state.coins >= sel.cost){
-            state.coins -= sel.cost;
-            r.crop = state.selected; r.progress = 0; r.waterUntil = 0;
-            wasReady[k] = false;
-          }
-        }
+      function row(name, sub, ico, cost, ok, id, maxed) {
+        return '<div class="ik-row"><div class="ik-ico">' + ico + '</div><div><div class="ik-nm"><span class="t">' + esc(name) + '</span></div><div class="ik-sub">' + esc(sub) + '</div></div><button class="ik-buy' + (ok ? '' : ' no') + '" id="' + id + '"' + (maxed ? ' disabled' : '') + '><small>' + (maxed ? 'Max' : cost ? 'Buy' : 'Free') + '</small><b>' + (maxed ? IK.ico.check(18) : IK.ico.coin(16) + fmt(cost)) + '</b></button></div>';
       }
     }
-  }
-
-  function buyPlot(){
-    var n = state.unlocked;
-    if(n >= PLOT_MAX){ sfx("deny"); return; }
-    var cost = PLOT_COSTS[n];
-    if(state.coins < cost){ sfx("deny"); return; }
-    state.coins -= cost;
-    state.plots.push(emptyPlot());
-    state.unlocked++;
-    buildGrid();
-    sfx("buy");
-    if(shopRefs) flash(shopRefs.plot.btn);
-    toast("Plot unlocked! " + state.unlocked + "/" + PLOT_MAX);
-    if(state.unlocked >= PLOT_MAX){
-      try { if(window.Kit) Kit.win("FARM COMPLETE!", "Every plot unlocked - " + fmt(state.earned) + " earned"); } catch(e){}
-    }
-    render();
-  }
-  function buySprinkler(){
-    if(state.sprinkler){ sfx("deny"); return; }
-    var cost = 1200;
-    if(state.coins < cost){ sfx("deny"); return; }
-    state.coins -= cost; state.sprinkler = true;
-    sfx("buy");
-    if(shopRefs) flash(shopRefs.spr.btn);
-    toast("Sprinkler built! All crops grow 2× faster");
-    render();
-  }
-  function buyHarvester(){
-    if(state.harvester){ sfx("deny"); return; }
-    var cost = 3000;
-    if(state.coins < cost){ sfx("deny"); return; }
-    state.coins -= cost; state.harvester = true;
-    sfx("buy");
-    if(shopRefs) flash(shopRefs.harv.btn);
-    toast("Harvester built! Auto-harvests & re-plants");
-    render();
-  }
-  function buyChicken(){
-    var cost = Math.round(150 * Math.pow(1.5, state.chicken));
-    if(state.coins < cost){ sfx("deny"); return; }
-    state.coins -= cost; state.chicken++;
-    sfx("buy");
-    if(shopRefs) flash(shopRefs.chick.btn);
-    render();
-  }
-  function buyMarket(){
-    var cost = 250;
-    if(state.coins < cost){ sfx("deny"); return; }
-    state.coins -= cost;
-    var roll = Math.random(), win = 0;
-    if(roll < 0.15){ /* crop rot */ }
-    else if(roll < 0.50) win = 300;
-    else if(roll < 0.80) win = 400;
-    else if(roll < 0.95) win = 750;
-    else if(roll < 0.99) win = 1500;
-    else win = 5000;
-    if(win > 0){
-      state.coins += win;
-      sfx("coin");
-      toast("\ud83c\udfb2 Market deal: +" + fmt(win) + " \ud83e\udef6");
-    } else {
-      sfx("deny");
-      toast("\ud83c\udfb2 Market deal: crop rot! -250 \ud83e\udef6");
-    }
-    if(shopRefs) flash(shopRefs.mkt.btn);
-    render();
-  }
-
-  var gridDelegated = false;
-  function buildGrid(){
-    var grid = $("plotGrid");
-    grid.innerHTML = "";
-    plotRefs = []; wasReady = [];
-    centersDirty = true;
-    if(!gridDelegated){
-      gridDelegated = true;
-      grid.addEventListener("click", function(e){
-        var el = e.target;
-        while(el && el !== grid && !(el.classList && el.classList.contains("plot"))) el = el.parentNode;
-        if(!el || el === grid) return;
-        onPlotTap(parseInt(el.dataset.i, 10));
+  },
+  orders: {
+    build: function (E, el) { el.innerHTML = '<div id="ordBody"></div>'; E.ordSig = ''; },
+    update: function (E, el, active) {
+      var S = E.S, X = S.x, now = IK.now(), n = slotCount(S.lvl), i;
+      // keep the right number of slots; empty slots refill after a short wait
+      while (X.orders.length < n) X.orders.push({ at: now + 500 });
+      for (i = 0; i < X.orders.length; i++) { var o = X.orders[i]; if (o && o.at && now >= o.at) X.orders[i] = makeOrder(E); }
+      var ready = 0; X.orders.forEach(function (o) { if (o && o.need && Object.keys(o.need).every(function (k) { return (X.barn[k] | 0) >= o.need[k]; })) ready++; });
+      var dot = $('dot_orders'); if (dot) { var on = ready > 0 && E.tab !== 'orders'; dot.classList.toggle('on', on); if (on) dot.textContent = String(ready); }
+      if (!active) return;
+      var sig = JSON.stringify([X.orders, X.barn, X.cap, Math.floor(now / 3000)]);
+      if (sig === E.ordSig) return; E.ordSig = sig;
+      var html = '<div class="ik-card"><h3>Delivery truck</h3><div class="ik-sub">Fill orders for coins and XP. The truck brings a new one soon after.</div></div>';
+      X.orders.forEach(function (o, idx) {
+        if (!o || !o.need) { html += '<div class="ik-row" style="grid-template-columns:60px 1fr"><div class="ik-ico dark">' + IK.ico.truck(34) + '</div><div><div class="ik-nm">Waiting for the truck</div><div class="ik-sub">A new order arrives in ' + Math.max(1, Math.ceil(((o && o.at) - now) / 1000)) + 's</div></div></div>'; return; }
+        var ok = Object.keys(o.need).every(function (k) { return (X.barn[k] | 0) >= o.need[k]; });
+        html += '<div class="ik-row" style="grid-template-columns:1fr auto"><div><div class="hv-need">' + Object.keys(o.need).map(function (k) { var have = X.barn[k] | 0; return '<span class="hv-item' + (have >= o.need[k] ? ' ok' : '') + '"><span class="im">' + cIcon(k, 28) + '</span>' + have + '/' + o.need[k] + '</span>'; }).join('') + '</div><div class="hv-rw"><span>' + IK.ico.coin(18) + fmt(o.coins) + '</span><span>' + IK.ico.star(18) + o.xp + ' XP</span></div></div><button class="ik-buy' + (ok ? '' : ' no') + '" data-o="' + idx + '"><small>' + (ok ? 'Ready' : 'Need more') + '</small><b>Deliver</b></button></div>';
       });
-    }
-    for(var i=0;i<state.unlocked;i++){
-      (function(i){
-        var el = document.createElement("div");
-        el.className = "plot";
-        el.dataset.i = i;
-        var hint = document.createElement("span"); hint.className = "emptyHint"; hint.textContent = "＋";
-        var emo = document.createElement("div"); emo.className = "emoji"; emo.style.display = "none";
-        var bar = document.createElement("div"); bar.className = "bar"; bar.style.display = "none";
-        var fill = document.createElement("div"); fill.className = "fill";
-        bar.appendChild(fill);
-        var tag = document.createElement("div"); tag.className = "tag"; tag.style.display = "none";
-        var label = document.createElement("span"); label.className = "label"; label.textContent = "Plant";
-        el.appendChild(hint); el.appendChild(emo); el.appendChild(bar); el.appendChild(tag); el.appendChild(label);
-        grid.appendChild(el);
-        plotRefs.push({root:el, hint:hint, emo:emo, bar:bar, fill:fill, tag:tag, label:label,
-          mode:"", cls:"", crop:"", pct:-1, tagTxt:"", lbl:"", cx:0, cy:0});
-        wasReady.push(false);
-      })(i);
-    }
-    renderPlots();
-  }
-  var lastChime = 0;
-  function onReady(i){
-    var R = plotRefs[i];
-    if(R){
-      R.emo.classList.add("pop");
-      setTimeout(function(){ R.emo.classList.remove("pop"); }, 450);
-    }
-    var now = Date.now();
-    if(now - lastChime > 900){ sfx("ready"); lastChime = now; }
-  }
-  function renderPlots(){
-    var now = Date.now();
-    for(var i=0;i<state.unlocked;i++){
-      var p = state.plots[i], R = plotRefs[i];
-      if(!R) continue;
-      if(!p.crop){
-        if(R.mode !== "empty"){
-          R.mode = "empty"; R.cls = "plot"; R.crop = ""; R.pct = -1; R.tagTxt = ""; R.lbl = "";
-          R.root.className = "plot";
-          R.hint.style.display = ""; R.label.style.display = ""; R.label.textContent = "Plant";
-          R.emo.style.display = "none"; R.bar.style.display = "none"; R.tag.style.display = "none";
-        }
-        continue;
-      }
-      var c = CROPS[p.crop], gt = c.growTime;
-      var ready = p.progress >= gt;
-      var pct = ready ? 100 : Math.min(100, (p.progress/gt)*100);
-      var watered = !ready && (now < p.waterUntil);
-      if(R.mode !== "grow"){
-        R.mode = "grow";
-        R.hint.style.display = "none"; R.label.style.display = "";
-        R.emo.style.display = ""; R.bar.style.display = "";
-      }
-      var cls = "plot" + (ready ? " ready" : " growing") + (watered ? " watered" : "");
-      if(R.cls !== cls){ R.cls = cls; R.root.className = cls; }
-      var stageEmo = ready ? c.emoji : (pct < 34 ? "🌱" : (pct < 67 ? "🌿" : c.emoji));
-      var emoKey = p.crop + stageEmo;
-      if(R.crop !== emoKey){ R.crop = emoKey; R.emo.textContent = stageEmo; }
-      var rp = Math.round(pct);
-      if(R.pct !== rp){
-        R.pct = rp;
-        R.fill.style.width = rp + "%";
-        R.emo.style.transform = "scale(" + (0.55 + 0.45*rp/100).toFixed(2) + ")";
-      }
-      var tagTxt = ready ? "✅" : (watered ? "💧" : "");
-      if(R.tagTxt !== tagTxt){
-        R.tagTxt = tagTxt;
-        if(tagTxt){ R.tag.textContent = tagTxt; R.tag.style.display = ""; }
-        else R.tag.style.display = "none";
-      }
-      var lbl = ready ? "Harvest!" : (watered ? "Growing…" : "Water 💧");
-      if(R.lbl !== lbl){ R.lbl = lbl; R.label.textContent = lbl; }
+      html += '<div class="ik-sec">Barn · ' + stockTotal(X) + ' / ' + X.cap + '</div><div class="ik-card">';
+      var any = false; CROPS.forEach(function (c) { var q = X.barn[c.id] | 0; if (!q) return; any = true; html += '<div class="hv-stock"><span class="im">' + cIcon(c.id, 40) + '</span><div class="n">' + esc(c.name) + ' ×' + q + '<small>Sells ' + fmt(c.sell) + ' each</small></div><button class="ik-btn ghost" data-s="' + c.id + ':1">Sell 1</button><button class="ik-btn acc" data-s="' + c.id + ':' + q + '">Sell all</button></div>'; });
+      if (!any) html += '<div class="ik-empty">The barn is empty. Harvest some crops!</div>';
+      html += '</div>';
+      $('ordBody').innerHTML = html;
+      Array.prototype.forEach.call(el.querySelectorAll('button[data-o]'), function (b) { b.addEventListener('click', function () { deliver(E, +b.dataset.o); }); });
+      Array.prototype.forEach.call(el.querySelectorAll('button[data-s]'), function (b) { b.addEventListener('click', function () { var a = b.dataset.s.split(':'); sell(E, a[0], +a[1]); }); });
     }
   }
-  function buildCropBar(){
-    var bar = $("cropBar");
-    bar.innerHTML = "";
-    cropBtnRefs = [];
-    CROP_IDS.forEach(function(id){
-      var c = CROPS[id];
-      var b = document.createElement("button");
-      b.className = "crop";
-      b.addEventListener("click", function(){
-        state.selected = id; sfx("click"); render();
-      });
-      bar.appendChild(b);
-      cropBtnRefs.push({btn:b, html:"", sel:null, poor:null});
-    });
-  }
-  function addShopItem(ic, name, onClick){
-    var row = document.createElement("div");
-    row.className = "shopItem panel";
-    row.innerHTML =
-      '<div class="ic">' + ic + '</div>' +
-      '<div class="info"><div class="name">' + name + '</div><div class="desc"></div></div>';
-    var btn = document.createElement("button");
-    btn.className = "buyBtn";
-    btn.addEventListener("click", onClick);
-    row.appendChild(btn);
-    $("shop").appendChild(row);
-    return {btn:btn, desc:row.querySelector(".desc"), d:""};
-  }
-  function buildShop(){
-    $("shop").innerHTML = "";
-    shopRefs = {
-      plot: addShopItem("🧺", "Unlock Plot", buyPlot),
-      spr: addShopItem("💧", "Sprinkler", buySprinkler),
-      harv: addShopItem("🤖", "Harvester", buyHarvester),
-      chick: addShopItem("🐔", "Chicken Coop", buyChicken),
-      mkt: addShopItem("🎲", "Rice Market", buyMarket)
-    };
-  }
-  function setBtn(r, txt, dis){
-    if(r.btn.textContent !== txt) r.btn.textContent = txt;
-    if(r.btn.disabled !== dis){
-      if(r.btn.disabled && !dis){ r.btn.classList.remove("afford"); void r.btn.offsetWidth; r.btn.classList.add("afford"); }
-      r.btn.disabled = dis;
-    }
-  }
-  function setDesc(r, txt){
-    if(r.d !== txt){ r.d = txt; if(r.desc) r.desc.textContent = txt; }
-  }
-  function renderShop(){
-    if(!shopRefs) return;
-    var R = shopRefs, pc;
-    if(state.unlocked >= PLOT_MAX){
-      setDesc(R.plot, "All " + PLOT_MAX + " plots unlocked!");
-      setBtn(R.plot, "✔", true);
-    } else {
-      pc = PLOT_COSTS[state.unlocked];
-      setDesc(R.plot, "Unlock plot #" + (state.unlocked+1) + " · " + state.unlocked + "/" + PLOT_MAX + " plots");
-      setBtn(R.plot, "🪙 " + fmt(pc), state.coins < pc);
-    }
-    if(state.sprinkler){
-      setDesc(R.spr, "Auto-waters all crops (2× speed). Owned!");
-      setBtn(R.spr, "✔", true);
-    } else {
-      setDesc(R.spr, "Auto-waters all crops for 2× speed.");
-      setBtn(R.spr, "🪙 " + fmt(1200), state.coins < 1200);
-    }
-    if(state.harvester){
-      setDesc(R.harv, "Auto-collects & re-plants crops. Owned!");
-      setBtn(R.harv, "✔", true);
-    } else {
-      setDesc(R.harv, "Auto-collects ready crops and re-plants them.");
-      setBtn(R.harv, "🪙 " + fmt(3000), state.coins < 3000);
-    }
-    var chickCost = Math.round(150 * Math.pow(1.5, state.chicken));
-    setDesc(R.chick, "Passive egg income · Lv " + state.chicken + " → " + chickenIncome() + "/s");
-    setBtn(R.chick, "🪙 " + fmt(chickCost), state.coins < chickCost);
-    setDesc(R.mkt, "Gamble 250 coins: 15% rot, up to 5000 on a golden delivery.");
-    setBtn(R.mkt, "🎲 250", state.coins < 250);
-  }
-  function renderHud(){
-    var cs = fmt(coinsPerSec());
-    if(lastCps !== cs){ lastCps = cs; cpsEl.textContent = cs; }
-    var bs = fmt(state.earned);
-    if(lastBest !== bs){ lastBest = bs; bestEl.textContent = bs; startBestEl.textContent = bs; }
-    if(!bestCelebrated && bs > 0 && state.earned >= bs && state.earned > bestSeen){
-      bestCelebrated = true;
-      try { if(window.Kit) Kit.text(window.innerWidth/2, 120, "NEW BEST!", "#facc15", 26); } catch(e){}
-    }
-    bestSeen = Math.max(bestSeen, state.earned);
-    var seedTotal = 0;
-    for(var si=0; si<CROP_IDS.length; si++) seedTotal += (state.seeds[CROP_IDS[si]] || 0);
-    if(lastSeeds !== seedTotal){ lastSeeds = seedTotal; $("seeds").textContent = seedTotal; }
-    var mt = state.muted ? "🔇" : "🔊";
-    if(lastMute !== mt){ lastMute = mt; $("muteBtn").textContent = mt; }
-    for(var idx=0; idx<CROP_IDS.length; idx++){
-      var id = CROP_IDS[idx], r = cropBtnRefs[idx];
-      if(!r) continue;
-      var sel = state.selected === id;
-      if(r.sel !== sel){ r.sel = sel; r.btn.classList.toggle("sel", sel); }
-      var poor = state.coins < CROPS[id].cost;
-      if(r.poor !== poor){
-        if(r.poor === true && !poor){ r.btn.classList.remove("afford"); void r.btn.offsetWidth; r.btn.classList.add("afford"); }
-        r.poor = poor; r.btn.classList.toggle("poor", poor);
-      }
-      var html = '<span class="e">' + CROPS[id].emoji + '</span>' + CROPS[id].name +
-        '<br>🌱' + CROPS[id].cost + ' · 💰' + cropValue(id) + ' · ✨' + (state.seeds[id] || 0);
-      if(r.html !== html){ r.html = html; r.btn.innerHTML = html; }
-    }
-    checkMiles();
-    renderGoal();
-    renderClock();
-  }
-  var lastGoal = "", lastClock = "";
-  function renderGoal(){
-    var t;
-    if(mileIdx >= MILES.length) t = "🎯 Every goal reached. What a farm!";
-    else t = "🎯 Goal: earn " + fmt(MILES[mileIdx]) + " coins in all · " + fmt(state.earned) + "/" + fmt(MILES[mileIdx]);
-    if(t !== lastGoal){
-      lastGoal = t; $("goalTxt").textContent = t;
-      $("goalRew").textContent = mileIdx < MILES.length ? "+" + fmt(Math.round(MILES[mileIdx] * 0.1)) + " 🪙" : "";
-      var lo = mileIdx > 0 ? MILES[mileIdx - 1] : 0, hi = mileIdx < MILES.length ? MILES[mileIdx] : 1;
-      $("goalFill").style.width = (mileIdx < MILES.length ? Math.max(0, Math.min(100, (state.earned - lo) / (hi - lo) * 100)) : 100) + "%";
-    }
-  }
-  function clockText(){
-    var mins = 360 + Math.floor(state.dayT / DAY_LEN * 960), h = Math.floor(mins / 60), m = mins % 60;
-    var night = h >= 19;
-    return (night ? "🌙" : h < 8 ? "🌅" : "☀️") + " Day " + state.day + " · " + h + ":" + (m < 10 ? "0" : "") + m;
-  }
-  function renderClock(){
-    var t = clockText();
-    if(t !== lastClock){ lastClock = t; $("clock").textContent = t; $("app").classList.toggle("night", t.charAt(0) === "🌙"); }
-  }
-  function endDay(){
-    $("dayTitle").textContent = "Day " + state.day + " done";
-    $("dayMsg").innerHTML = "You harvested <b>" + state.dayH + "</b> crop" + (state.dayH === 1 ? "" : "s") + " and earned <b>" + fmt(state.dayE) + "</b> coins today.<br>" +
-      (mileIdx < MILES.length ? "Next goal: " + fmt(MILES[mileIdx]) + " coins in all (" + fmt(state.earned) + " so far)." : "Every goal reached!");
-    scene("over", {score: Math.round(state.dayE)});
-    state.day++; state.dayT = 0; state.dayH = 0; state.dayE = 0;
-    save();
-    $("dayCard").classList.remove("hidden");
-    sfx("levelup");
-  }
-  function openBarn(){
-    var h = "";
-    CROP_IDS.forEach(function(id){
-      var c = CROPS[id];
-      h += '<div class="barnRow panel"><div class="ic">' + c.emoji + '</div><div class="info">' + c.name + ' seeds: <b>' + (state.seeds[id] || 0) + '</b>' +
-        '<small>' + state.mastery[id] + ' harvested · sells for ' + cropValue(id) + ' (+' + Math.round(state.mastery[id] * MASTERY_BONUS * 100) + '% mastery)</small></div></div>';
-    });
-    h += '<div class="barnRow panel"><div class="ic">🧺</div><div class="info">Plots: <b>' + state.unlocked + '/' + PLOT_MAX + '</b><small>' +
-      (state.sprinkler ? '💧 Sprinkler · ' : '') + (state.harvester ? '🤖 Harvester · ' : '') + '🐔 Chickens Lv ' + state.chicken + '</small></div></div>';
-    $("barnList").innerHTML = h;
-    $("barnScreen").classList.remove("hidden");
-  }
-  function render(){
-    renderHud();
-    renderPlots();
-    renderShop();
-  }
+};
+function deliver(E, idx) {
+  var S = E.S, X = S.x, o = X.orders[idx]; if (!o || !o.need) return;
+  var ok = Object.keys(o.need).every(function (k) { return (X.barn[k] | 0) >= o.need[k]; });
+  if (!ok) { IK.sfx('error', { volume: 0.4 }); IK.toast('You need more crops for this order', { icon: A.icon('crate', 22, 2) }); return; }
+  Object.keys(o.need).forEach(function (k) { X.barn[k] -= o.need[k]; });
+  E.gain(o.coins); X.st.delivered++; X.st.earned += o.coins; E.addXp(o.xp, 'order'); E.event('deliver', 1); E.coachDid('deliver');
+  X.orders[idx] = { at: IK.now() + 8000 + Math.random() * 6000 };
+  IK.sfx('reward'); IK.sfx('coin', { rate: 1.2, gap: 0 }); IK.fx.confetti(24); var b = E.el.wallet.getBoundingClientRect(); IK.fx.float(b.left + b.width / 2, b.bottom + 10, '+' + fmt(o.coins), 'big'); IK.fx.flyTo(window.innerWidth / 2, window.innerHeight * 0.6, E.el.wallet, { n: 10 });
+  IK.toast('Order delivered! +' + fmt(o.coins) + ' coins', { icon: IK.ico.truck(22), kind: 'gold' });
+  E.ordSig = ''; E.dirtyUI = true; E.save();
+}
+function sell(E, id, n) {
+  var S = E.S, X = S.x, c = CBY[id], have = X.barn[id] | 0; n = Math.min(n, have); if (n < 1) return;
+  X.barn[id] -= n; var amt = n * c.sell; E.gain(amt); X.st.sold += n; X.st.earned += amt;
+  IK.sfx('coin', { rate: 1 + Math.min(0.4, n * 0.02) }); var b = E.el.wallet.getBoundingClientRect(); IK.fx.float(b.left + b.width / 2, b.bottom + 10, '+' + fmt(amt), 'gold');
+  E.ordSig = ''; E.dirtyUI = true;
+}
 
-  var lastTick = Date.now(), uiAcc = 0;
-  function tickDt(dt, now){
-    for(var i=0;i<state.unlocked;i++){
-      var p = state.plots[i];
-      if(!p.crop) continue;
-      var gt = growTime(p.crop);
-      if(p.progress < gt){
-        var rate = (now < p.waterUntil) ? 2 : 1;
-        p.progress += dt * rate;
-        if(p.progress >= gt) p.progress = gt;
-      }
-      if(p.progress >= gt && !wasReady[i]){ wasReady[i] = true; onReady(i); }
-    }
-    if(state.sprinkler){
-      for(var j=0;j<state.unlocked;j++){
-        var q = state.plots[j];
-        if(q.crop && q.progress < growTime(q.crop) && now >= q.waterUntil){
-          q.waterUntil = now + WATER_MS;
-        }
-      }
-    }
-    if(state.harvester) collectReady(true);
-    if(chickenIncome() > 0){
-      var gain = chickenIncome() * dt;
-      state.coins += gain; state.earned += gain;
-    }
-    if(playing() && !(coach && coach.active)){
-      state.dayT += dt;
-      if(state.dayT >= DAY_LEN) endDay();
-    }
-  }
-  function frame(){
-    var now = Date.now();
-    var dt = (now - lastTick) / 1000;
-    lastTick = now;
-    if(dt > 0 && isFinite(dt)){
-      if(dt > OFFLINE_CAP) dt = OFFLINE_CAP;
-      if(dt <= 1){
-        tickDt(dt, now);
-      } else {
-        var steps = Math.ceil(dt), sdt = dt / steps, k;
-        for(k = 0; k < steps; k++){
-          tickDt(sdt, now - (dt - sdt * (k + 1)) * 1000);
-        }
-      }
-      dispCoins += (state.coins - dispCoins) * Math.min(1, dt*10 + 0.16);
-      if(Math.abs(state.coins - dispCoins) < 0.6) dispCoins = state.coins;
-      var cTxt = fmt(dispCoins);
-      if(coinsEl.textContent !== cTxt) coinsEl.textContent = cTxt;
-      uiAcc += dt;
-      if(uiAcc >= 0.1){ uiAcc = 0; render(); }
-    }
-    requestAnimationFrame(frame);
-  }
+/* ---------- deeds and daily goals ---------- */
+var ACH = [
+  { id: 'h50', name: 'Green Thumb', desc: 'Harvest 50 crops', tier: 'bronze', test: function (S) { return S.x.st.harvested >= 50; }, prog: function (S) { return [S.x.st.harvested, 50]; }, ico: function (p) { return cIcon('wheat', p); } },
+  { id: 'h300', name: 'Busy Farmer', desc: 'Harvest 300 crops', tier: 'silver', test: function (S) { return S.x.st.harvested >= 300; }, prog: function (S) { return [S.x.st.harvested, 300]; }, ico: function (p) { return cIcon('corn', p); } },
+  { id: 'h1500', name: 'Harvest Hero', desc: 'Harvest 1,500 crops', tier: 'gold', test: function (S) { return S.x.st.harvested >= 1500; }, prog: function (S) { return [S.x.st.harvested, 1500]; }, ico: function (p) { return cIcon('melon', p); } },
+  { id: 'd5', name: 'Good Neighbour', desc: 'Deliver 5 orders', tier: 'bronze', test: function (S) { return S.x.st.delivered >= 5; }, prog: function (S) { return [S.x.st.delivered, 5]; }, ico: function (p) { return IK.ico.truck(p); } },
+  { id: 'd30', name: 'Trusted Supplier', desc: 'Deliver 30 orders', tier: 'silver', test: function (S) { return S.x.st.delivered >= 30; }, prog: function (S) { return [S.x.st.delivered, 30]; }, ico: function (p) { return IK.ico.truck(p); } },
+  { id: 'd120', name: 'Delivery Legend', desc: 'Deliver 120 orders', tier: 'gold', test: function (S) { return S.x.st.delivered >= 120; }, prog: function (S) { return [S.x.st.delivered, 120]; }, ico: function (p) { return IK.ico.truck(p); } },
+  { id: 'e1k', name: 'First Thousand', desc: 'Earn 1,000 coins', tier: 'bronze', test: function (S) { return S.alltime >= 1e3; }, prog: function (S) { return [S.alltime, 1e3]; }, ico: function (p) { return IK.ico.coin(p); } },
+  { id: 'e100k', name: 'Big Money', desc: 'Earn 100,000 coins', tier: 'silver', test: function (S) { return S.alltime >= 1e5; }, prog: function (S) { return [S.alltime, 1e5]; }, ico: function (p) { return IK.ico.gem(p); } },
+  { id: 'w100', name: 'Rain Maker', desc: 'Water 100 plants', tier: 'bronze', test: function (S) { return S.x.st.watered >= 100; }, prog: function (S) { return [S.x.st.watered, 100]; }, ico: function (p) { return IK.ico.gem(p); } },
+  { id: 'p12', name: 'Full Farm', desc: 'Grow all 12 plots', tier: 'silver', test: function (S) { return S.x.open >= 12; }, prog: function (S) { return [S.x.open, 12]; }, ico: function (p) { return IK.ico.sprout(p); } },
+  { id: 'cap', name: 'Big Barn', desc: 'Store 60 crops', tier: 'silver', test: function (S) { return S.x.cap >= 60; }, prog: function (S) { return [S.x.cap, 60]; }, ico: function (p) { return A.icon('barn', p, 2); } },
+  { id: 'help', name: 'Team Farm', desc: 'Hire both helpers', tier: 'silver', test: function (S) { return S.x.helpers.hand > 0 && S.x.helpers.sow > 0; }, prog: function (S) { return [(S.x.helpers.hand > 0 ? 1 : 0) + (S.x.helpers.sow > 0 ? 1 : 0), 2]; }, ico: function (p) { return IK.ico.star(p); } },
+  { id: 'lvl5', name: 'Growing Up', desc: 'Reach level 5', tier: 'bronze', test: function (S) { return S.lvl >= 5; }, prog: function (S) { return [S.lvl, 5]; }, ico: function (p) { return IK.ico.star(p); } },
+  { id: 'lvl10', name: 'Master Farmer', desc: 'Reach level 10', tier: 'gold', test: function (S) { return S.lvl >= 10; }, prog: function (S) { return [S.lvl, 10]; }, ico: function (p) { return IK.ico.crown(p); } },
+  { id: 'streak3', name: 'Every Day', desc: 'Play 3 days in a row', tier: 'bronze', test: function (S) { return S.daily && S.daily.best >= 3; }, prog: function (S) { return [S.daily ? S.daily.best : 0, 3]; }, ico: function (p) { return IK.ico.scroll(p); } },
+  { id: 'quests', name: 'Chore Champion', desc: 'Finish 10 daily goals', tier: 'silver', test: function (S) { return S.stats.quests >= 10; }, prog: function (S) { return [S.stats.quests, 10]; }, ico: function (p) { return IK.ico.trophy(p); } }
+];
+var POOL = [
+  { id: 'harv', kind: 'harvest', text: 'Harvest {n} crops', goals: [10, 25, 50] },
+  { id: 'deliv', kind: 'deliver', text: 'Deliver {n} orders', goals: [1, 2, 4] },
+  { id: 'earn', kind: 'earn', text: 'Earn {n} coins', goals: function (E) { var L = E.S.lvl; return [40 * L + 60, 120 * L + 200, 320 * L + 600]; } },
+  { id: 'plant', kind: 'plant', text: 'Plant {n} seeds', goals: [8, 20, 40] },
+  { id: 'water', kind: 'water', text: 'Water {n} plants', goals: [5, 12, 25] }
+];
 
-  function save(){
-    if(cheated()) return;
-    state.lastSave = Date.now();
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
-  }
-  function applyOffline(){
-    var now = Date.now();
-    var elapsed = (now - state.lastSave) / 1000;
-    if(!isFinite(elapsed) || elapsed <= 5) return null;
-    elapsed = Math.min(elapsed, OFFLINE_CAP);
-    var e0 = state.earned, grown = 0;
-    for(var i=0;i<state.unlocked;i++){
-      var p = state.plots[i];
-      if(p.crop && p.progress < growTime(p.crop)){
-        p.progress = Math.min(growTime(p.crop), p.progress + elapsed * (state.sprinkler ? 2 : 1));
-        if(p.progress >= growTime(p.crop)) grown++;
-      }
-    }
-    if(chickenIncome() > 0){
-      var gain = chickenIncome() * elapsed;
-      state.coins += gain; state.earned += gain;
-    }
-    if(state.harvester) collectReady(true);
-    return {secs:elapsed, gain:state.earned - e0, grown:grown};
-  }
-  function mergeSave(s){
-    state = defaultState();
-    state.coins = Math.max(0, num(s.coins, 0));
-    state.earned = Math.max(0, num(s.earned, 0));
-    state.unlocked = Math.min(PLOT_MAX, Math.max(1, Math.floor(num(s.unlocked, 8))));
-    state.selected = (CROP_IDS.indexOf(s.selected) >= 0) ? s.selected : "carrot";
-    state.sprinkler = s.sprinkler === true;
-    state.harvester = s.harvester === true;
-    state.muted = s.muted === true;
-    state.chicken = Math.max(0, Math.floor(num(s.chicken, 0)));
-    state.lastSave = num(s.lastSave, Date.now());
-    var m = (s.mastery && typeof s.mastery === "object") ? s.mastery : {};
-    CROP_IDS.forEach(function(id){
-      state.mastery[id] = Math.max(0, Math.floor(num(m[id], 0)));
-    });
-    var sd = (s.seeds && typeof s.seeds === "object") ? s.seeds : {};
-    CROP_IDS.forEach(function(id){
-      state.seeds[id] = Math.max(0, Math.floor(num(sd[id], 0)));
-    });
-    state.seedBadge = s.seedBadge === true;
-    state.day = Math.max(1, Math.floor(num(s.day, 1)));
-    state.dayT = Math.max(0, Math.min(DAY_LEN, num(s.dayT, 0)));
-    state.dayH = Math.max(0, Math.floor(num(s.dayH, 0)));
-    state.dayE = Math.max(0, num(s.dayE, 0));
-    var sp = Array.isArray(s.plots) ? s.plots : [];
-    state.plots = [];
-    for(var i=0;i<state.unlocked;i++){
-      var q = sp[i], p = emptyPlot();
-      if(q && typeof q === "object"){
-        if(q.crop && CROPS[q.crop]) p.crop = q.crop;
-        if(p.crop) p.progress = Math.min(growTime(p.crop), Math.max(0, num(q.progress, 0)));
-        p.waterUntil = num(q.waterUntil, 0);
-      }
-      state.plots.push(p);
-    }
-  }
-  function load(){
-    try{
-      var raw = localStorage.getItem(SAVE_KEY);
-      if(raw){
-        var s = JSON.parse(raw);
-        if(s && typeof s === "object") mergeSave(s);
-      }
-    }catch(e){ state = defaultState(); }
-    // the hub-wide key wins over anything the old private flag saved
-    state.muted = readHubMute();
-    try { window.muted = state.muted; } catch(e){}
-    var away = applyOffline();
-    if(away && (away.gain >= 1 || away.grown > 0)){
-      pendingToast = "While away (" + fmtTime(away.secs) + "): +" + fmt(away.gain) + " 🪙" +
-        (away.grown ? " · " + away.grown + " crop" + (away.grown > 1 ? "s" : "") + " ready" : "");
-    }
-    save();
-  }
-
-  function startGame(teach){
-    ["startScreen","menuScreen","barnScreen","dayCard"].forEach(function(id){ $(id).classList.add("hidden"); });
-    buildGrid();
-    render();
-    sfx("click");
-    scene("play");
-    if(pendingToast){
-      var t = pendingToast; pendingToast = null;
-      setTimeout(function(){ toast(t); }, 400);
-    }
-    if(coach){ coach.stop(true); coach = null; }
-    if(window.PlayKit && (teach === true || !PlayKit.seen("fh_tut"))){
-      coach = PlayKit.coach({key:"fh_tut", theme:{panel:"#153a20", fg:"#e8ffe9", accent:"#7dff8a"}, steps:[
-        {text:"Pick a crop to grow. Carrots are cheap and quick.", target:"#cropBar"},
-        {text:"Tap an empty plot to plant it.", target:"#plotGrid", on:"plant"},
-        {text:"Tap a growing plot to water it: watered crops grow twice as fast.", target:"#plotGrid", on:"water"},
-        {text:"When a crop glows, tap it to harvest and sell it.", target:"#plotGrid", on:"harvest"},
-        {text:"Spend coins in the shop on more plots and helpers, and chase the goal at the top. The day ends at 22:00 with a summary.", target:"#goalBar"}
-      ]});
-    }
-  }
-  function toTitle(){
-    save(); if(coach){ coach.stop(true); coach = null; }
-    ["menuScreen","barnScreen","dayCard"].forEach(function(id){ $(id).classList.add("hidden"); });
-    $("startScreen").classList.remove("hidden"); scene("title");
-  }
-  function sdkHint(){
-    if(!$("startScreen").classList.contains("hidden")) return "Press Play, pick a crop, then tap a plot to plant, water and harvest.";
-    var ready = 0, empty = 0, dry = 0, i;
-    for(i = 0; i < state.unlocked; i++){ var p = state.plots[i]; if(!p.crop) empty++; else if(p.progress >= growTime(p.crop)) ready++; else if(p.waterUntil <= Date.now()) dry++; }
-    if(ready) return ready + " crop" + (ready > 1 ? "s are" : " is") + " ready: tap the glowing plots to harvest.";
-    if(empty && (state.coins >= CROPS[state.selected].cost || state.seeds[state.selected] > 0)) return "You have " + empty + " empty plot" + (empty > 1 ? "s" : "") + ": tap to plant " + CROPS[state.selected].name + ".";
-    if(empty) return "Pick a cheaper crop you can afford, then plant your empty plots.";
-    if(dry && !state.sprinkler) return "Tap growing crops to water them: they grow twice as fast.";
-    if(!state.sprinkler && state.coins >= 1200) return "Buy the Sprinkler: it waters every crop for you.";
-    if(state.unlocked < PLOT_MAX && state.coins >= PLOT_COSTS[state.unlocked]) return "Unlock another plot in the shop to grow more at once.";
-    var best = CROP_IDS.filter(function(id){ return state.coins >= CROPS[id].cost; }).sort(function(a, b){ return (cropValue(b) - CROPS[b].cost) / growTime(b) - (cropValue(a) - CROPS[a].cost) / growTime(a); })[0];
-    return best ? CROPS[best].emoji + " " + CROPS[best].name + " earns the most per second of the crops you can afford." : "Wait for your crops to grow, then harvest them.";
-  }
-  function code(c){
-    var i;
-    if(c === "COINSHOWER"){ state.coins += Math.max(1000, Math.round(state.earned * 0.2)); }
-    else if(c === "QUICKGROW"){ for(i = 0; i < state.unlocked; i++){ var p = state.plots[i]; if(p.crop) p.progress = growTime(p.crop); } }
-    else if(c === "MAGICBEANS"){ CROP_IDS.forEach(function(id){ state.seeds[id] = (state.seeds[id] || 0) + 10; }); }
-    else return {ok:false};
-    if(window.PlayKit) PlayKit.codes(true);
-    render();
-    return {ok:true, message:{COINSHOWER:"Coin shower: a big pile of coins", QUICKGROW:"Quick grow: every planted crop is ready now", MAGICBEANS:"Magic beans: 10 free seeds of every crop"}[c] + ". Codes on: the farm is not saved."};
-  }
-  $("playBtn").addEventListener("click", function(){ startGame(); });
-  $("howBtn").addEventListener("click", function(){ startGame(true); });
-  $("barnBtn").addEventListener("click", function(){ openBarn(); sfx("click"); });
-  $("barnClose").addEventListener("click", function(){ $("barnScreen").classList.add("hidden"); sfx("click"); });
-  $("dayNext").addEventListener("click", function(){ $("dayCard").classList.add("hidden"); sfx("click"); scene("play"); });
-  $("resumeBtn").addEventListener("click", function(){
-    $("menuScreen").classList.add("hidden"); sfx("click");
-  });
-  $("menuBtn").addEventListener("click", function(){
-    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
-    $("menuScreen").classList.remove("hidden"); sfx("click");
-  });
-  $("toggleMuteBtn").addEventListener("click", function(){
-    setMuted(!state.muted);
-    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
-    save(); render();
-  });
-  $("muteBtn").addEventListener("click", function(){
-    setMuted(!state.muted); save(); render();
-  });
-  document.addEventListener("pointerdown", function(e){
-    var b = e.target && e.target.closest ? e.target.closest("button") : null;
-    if(b) { try { if(window.Kit) Kit.click(); } catch(err){} }
-  }, true);
-  $("resetBtn").addEventListener("click", function(){
-    if(confirm("Reset your farm and lose all progress?")){
-      state = defaultState();
-      mileIdx = 0;
-      dispCoins = state.coins;
-      lastCps = ""; lastBest = ""; lastMute = null;
-      for(var i=0;i<cropBtnRefs.length;i++){ cropBtnRefs[i].html = ""; cropBtnRefs[i].sel = null; cropBtnRefs[i].poor = null; }
-      save(); buildGrid(); render();
-      $("menuScreen").classList.add("hidden");
-      toast("Farm reset. Fresh start!");
-    }
-  });
-
-  load();
-  while(mileIdx < MILES.length && state.earned >= MILES[mileIdx]) mileIdx++;
-  buildCropBar();
-  buildGrid();
-  buildShop();
-  render();
-  dispCoins = state.coins;
-  setInterval(save, 5000);
-  window.addEventListener("beforeunload", save);
-  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
-  lastTick = Date.now();
-  requestAnimationFrame(frame);
-  scene("title");
-  if(SDK) SDK.init({
-    pauseButton: "tr",
-    onRestart: function(){ startGame(); },
-    onExit: toTitle,
-    onTutorial: function(){ startGame(true); },
-    onHint: sdkHint,
-    onCheat: code
-  });
+var E = new IK.Idle({
+  id: 'farm-harvest', name: 'Farm Harvest', saveKey: 'farmHarvestSave_v2', muteKey: 'fh_muted',
+  cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
+  gens: [], noBuild: false, noEvents: true, ups: [], perks: [], ach: ACH, dailyPool: POOL, tapBase: 0, lvlBase: 10, lvlPow: 1.5,
+  prestige: { name: 'Star', plural: 'Stars', label: 'Grand Fair', ico: function (px) { return IK.ico.star(px); }, unit: Infinity, coef: 1, per: 0, lore: '' },
+  tabs: [{ id: 'build', label: 'Farm', ico: IK.ico.sprout }, { id: 'orders', label: 'Orders', ico: IK.ico.truck }, { id: 'goals', label: 'Goals', ico: IK.ico.scroll }],
+  tabLevels: {},
+  panels: PANELS,
+  hudPills: [{ id: 'stock', ico: function (px) { return A.icon('crate', px, 2); }, tab: 'orders' }],
+  updateHud: function (E, el) { var X = E.S.x; if (!X.barn) return; var v = stockTotal(X) + '/' + X.cap; if (E.txt.get('stock') !== v) { E.txt.set('stock', v); el.stock.textContent = v; } },
+  rateFn: function (E) { var n = E.readyN | 0; return n ? n + ' ready to pick' : 'Level ' + E.S.lvl + ' farmer'; },
+  levelReward: function (E, lvl) { return 30 * lvl + 50; },
+  giftAmt: function (E, st) { return 40 * E.S.lvl * Math.min(7, st) + 60; },
+  questAmt: function (E, idx) { return 60 * E.S.lvl + 100 * (idx + 1); },
+  chestLoot: function (E) { return 80 * E.S.lvl + 200; },
+  levelInfo: { 2: { kind: 'New crop', text: 'Carrots' }, 3: { kind: 'New crop', text: 'Strawberries · and Helpers' }, 4: { kind: 'New crop', text: 'Sunflowers' }, 6: { kind: 'New crop', text: 'Corn · a 4th order slot' }, 8: { kind: 'New crop', text: 'Pumpkins' }, 10: { kind: 'New crop', text: 'Melons' }, 11: { kind: 'Unlocked', text: 'A 5th order slot' } },
+  levelArt: function () { return IK.ico.star(56); }, welcomeArt: function () { return A.icon('barn', 64, 2); },
+  logo: 'FARM<br>HARVEST<small>PLANT · WATER · GROW</small>', tagline: 'Plant, water and harvest crops, fill orders for the delivery truck and grow your farm.', pitch: 'Seven crops, one growing farm.',
+  howto: ['Tap an empty plot to plant the seed you chose. Swipe across plots to do several at once.', 'Tap a growing plot to water it: it grows twice as fast. Tap a ripe crop to harvest it.', 'Fill orders in the Orders tab for coins and XP, or sell crops straight from the barn.', 'Level up to unlock new crops, then spend coins on plots, a bigger barn and helpers that work for you.'],
+  coach: function (E) {
+    return [
+      { text: 'Tap an empty plot to plant wheat.', target: '#tgt', on: 'plant' },
+      { text: 'Tap the growing plot to water it. Wet plants grow twice as fast.', target: '#tgt', on: 'water' },
+      { text: 'When the crop is ripe, tap it to harvest.', target: '#tgt', on: 'harvest' },
+      { text: 'Open Orders and deliver crops for coins.', target: '#tab_orders', on: 'deliver' },
+      { text: 'Level up to unlock more crops and land. Your crops keep growing while you are away.', target: '', on: null }
+    ];
+  },
+  goalChip: function (E) {
+    var S = E.S, X = S.x, now = IK.now(); if (!X.plots) return null;
+    var claim = 0; if (S.daily) S.daily.quests.forEach(function (q) { if (q.done && !q.claimed) claim++; });
+    if (claim) return { t: claim + ' goal' + (claim > 1 ? 's' : '') + ' ready', s: 'Tap to collect your reward', p: 1, r: 'XP', ready: true, tab: 'goals' };
+    if (S.gift !== IK.today()) return { t: 'Your daily gift is waiting', s: 'Free coins, every day', p: 1, r: '', ready: true, tab: 'goals' };
+    var dl = null; X.orders.forEach(function (o, i) { if (o && o.need && Object.keys(o.need).every(function (k) { return (X.barn[k] | 0) >= o.need[k]; })) dl = o; });
+    if (dl) return { t: 'An order is ready to deliver', s: 'Worth ' + fmt(dl.coins) + ' coins', p: 1, r: fmt(dl.coins), ready: true, tab: 'orders' };
+    var ready = E.readyN | 0; if (ready) return { t: ready + ' crop' + (ready > 1 ? 's are' : ' is') + ' ripe', s: 'Tap the ripe plots to harvest', p: 1, r: '+XP', ready: true, tab: 'build' };
+    var empty = 0; for (var i = 0; i < X.open; i++) if (!X.plots[i]) empty++;
+    if (empty) return { t: 'Plant ' + CBY[X.sel].name, s: empty + ' empty plot' + (empty > 1 ? 's' : '') + ' · seeds ' + CBY[X.sel].seed + ' each', p: Math.min(1, S.coins / CBY[X.sel].seed), r: '', ready: false, tab: 'build' };
+    var nx = CROPS.filter(function (c) { return c.lvl > S.lvl; })[0], li = E.levelInfo();
+    if (nx) return { t: 'Reach level ' + nx.lvl + ' for ' + nx.name, s: (li.need - Math.floor(li.into)) + ' XP to the next level', p: li.pct, r: 'New crop', ready: false, tab: 'orders' };
+    return { t: 'Keep your farm growing', s: 'Fill orders and fill the barn', p: 0.5, r: '', ready: false, tab: 'orders' };
+  },
+  makeScene: makeScene,
+  cheats: {
+    HOTMONEY: function (E) { E.S.coins += 100000; return '+100,000 coins.'; },
+    GREENTHUMB: function (E) { E.S.x.plots.forEach(function (p) { if (p) p.t = 0; }); return 'Every crop ripens right now.'; },
+    FULLBARN: function (E) { CROPS.forEach(function (c) { if (c.lvl <= E.S.lvl) E.S.x.barn[c.id] = Math.max(E.S.x.barn[c.id] | 0, 6); }); return 'The barn is stocked with crops.'; }
+  },
+  afterLoad: function (E) { blankFarm(E.S); },
+  migrate: function (d) { return { v: 2, coins: d.coins || 0, alltime: d.lifetime || 0, lifetime: d.lifetime || 0, x: {} }; }
+});
+E.codes = {};
+blankFarm(E.S);
+if (E.S.coins === 0 && !E.hadSave) E.S.coins = 30;
+window.__empire = E;
+E.boot($('root'));
 })();
 </script>
 </body>

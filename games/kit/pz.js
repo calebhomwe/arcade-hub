@@ -405,8 +405,8 @@
     };
     function levelUp(from, to) {
       const fresh = themes.filter(t => t.level > from && t.level <= to);
-      card({ icon: '🏅', title: 'Level ' + to + '!', sub: fresh.length ? 'You unlocked a new look:<br><b>' + esc(fresh.map(t => t.name).join(', ')) + '</b>' : 'Keep going: ' + (themes.find(t => t.level > to) ? 'the next look unlocks at level ' + themes.find(t => t.level > to).level + '.' : 'you have every look!'), button: fresh.length ? 'Use ' + fresh[0].name : 'Nice!', button2: fresh.length ? 'Later' : '', confetti: 60, sound: 'unlock',
-        onOk: () => { if (fresh.length) P.setTheme(fresh[0].id); } });
+      setTimeout(() => card({ icon: '🏅', title: 'Level ' + to + '!', sub: fresh.length ? 'You unlocked a new look:<br><b>' + esc(fresh.map(t => t.name).join(', ')) + '</b>' : 'Keep going: ' + (themes.find(t => t.level > to) ? 'the next look unlocks at level ' + themes.find(t => t.level > to).level + '.' : 'you have every look!'), button: fresh.length ? 'Use ' + fresh[0].name : 'Nice!', button2: fresh.length ? 'Later' : '', confetti: 60, sound: 'unlock',
+        onOk: () => { if (fresh.length) P.setTheme(fresh[0].id); } }), 1100);
       try { opts.onLevel && opts.onLevel(to); } catch (e) {}
     }
     /* daily goal progress. kind 'sum' adds, kind 'max' keeps the best value seen today */

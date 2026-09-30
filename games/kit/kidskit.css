@@ -44,12 +44,12 @@ body.kk::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:4;b
 .kk-wood{--bd:#3d2411;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(0,0,0,.18)),var(--kk-tex-wood) center/220px}
 .kk-big{font-size:30px;min-height:76px;padding:0 44px;border-radius:20px}
 .kk-btn img{width:32px;height:32px}
-.kk-icon{appearance:none;-webkit-appearance:none;cursor:pointer;width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:var(--kk-cream);position:relative;margin-bottom:4px;
+.kk-icon{text-decoration:none;appearance:none;-webkit-appearance:none;cursor:pointer;width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:var(--kk-cream);position:relative;margin-bottom:4px;
   border:2px solid var(--kk-goldline);background:radial-gradient(circle at 32% 24%,#3d6a8d 0,#1a3d59 46%,#0c1e30 100%);
   box-shadow:0 4px 0 #6b430c,0 9px 14px rgba(20,8,0,.45),inset 0 2px 0 rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.35);transition:transform .08s,box-shadow .08s}
 .kk-icon:active{transform:translateY(3px);box-shadow:0 1px 0 #6b430c,0 3px 6px rgba(20,8,0,.4),inset 0 2px 0 rgba(255,255,255,.2)}
 .kk-icon img{width:34px;height:34px}
-.kk-icon.kk-lg{width:74px;height:74px;border-width:3px}.kk-icon.kk-lg img{width:46px;height:46px}
+.kk-icon.kk-lg{width:66px;height:66px;border-width:3px}.kk-icon.kk-lg img{width:42px;height:42px}
 .kk-icon .kk-cap{position:absolute;left:50%;top:100%;transform:translate(-50%,3px);font-size:14px;font-weight:700;color:var(--kk-cream);white-space:nowrap;text-shadow:0 2px 3px rgba(0,0,0,.8)}
 .kk-dot{position:absolute;top:-5px;right:-5px;min-width:24px;height:24px;border-radius:12px;background:linear-gradient(180deg,#ff8064,#c8321c);border:2px solid #fff4d6;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 4px rgba(0,0,0,.45);animation:kkPulse 1.4s ease-in-out infinite}
 
@@ -88,26 +88,27 @@ body.kk::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:4;b
 .kk-bar>i{display:block;height:100%;border-radius:9px;background:linear-gradient(180deg,#ffeaa6,#e9b544 55%,#c98a1a);width:0;transition:width .5s cubic-bezier(.2,1,.3,1);box-shadow:inset 0 2px 0 rgba(255,255,255,.55)}
 
 /* ---- title screen: a carved wooden sign, three round glass buttons, a week of gold stamps ---- */
-.kk-title{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:calc(var(--kk-top) + 56px) 16px calc(var(--kk-bot) + 12px);text-align:center}
+.kk-title{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:calc(var(--kk-top) + 50px) 16px calc(var(--kk-bot) + 8px);text-align:center;overflow-y:auto;overflow-x:hidden}
+.kk-title>*{flex:none}
 .kk-sign{position:relative;padding:12px 30px 14px;border-radius:18px;border:4px solid #2c1a0a;transform:rotate(-1.5deg);
   background:linear-gradient(180deg,rgba(255,220,150,.28),rgba(0,0,0,.18)),var(--kk-tex-wood) center/240px;
   box-shadow:0 12px 24px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,235,190,.6),inset 0 -6px 12px rgba(40,20,0,.5)}
 .kk-sign::before,.kk-sign::after{content:'';position:absolute;top:50%;width:11px;height:11px;margin-top:-5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff4c0,#c8922e 55%,#6b430c);box-shadow:0 1px 2px rgba(0,0,0,.6)}
 .kk-sign::before{left:9px}.kk-sign::after{right:9px}
-.kk-logo{margin:0;font-size:clamp(38px,12.5vw,54px);line-height:1;font-weight:700;letter-spacing:.5px;color:transparent;background:linear-gradient(180deg,#fffbe6 0,#ffe9a0 46%,#e5b03e 100%);-webkit-background-clip:text;background-clip:text;
+.kk-logo{margin:0;white-space:nowrap;font-size:clamp(32px,10.4vw,52px);line-height:1;font-weight:700;letter-spacing:.5px;color:transparent;background:linear-gradient(180deg,#fffbe6 0,#ffe9a0 46%,#e5b03e 100%);-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(0 2px 0 #4a2a08) drop-shadow(0 4px 3px rgba(0,0,0,.55))}
 .kk-tag{margin:10px 0 0;font-size:20px;font-weight:600;color:var(--kk-cream);text-shadow:0 2px 4px rgba(0,0,0,.85)}
-.kk-hero{position:relative;height:190px;width:min(100%,340px);margin:8px 0 6px}
+.kk-hero{position:relative;height:clamp(120px,24vh,200px);width:min(100%,340px);margin:6px 0 4px}
 .kk-hero img{position:absolute;width:118px;height:118px;left:50%;top:50%;margin:-59px 0 0 -59px;animation:kkBob 2.4s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 10px 8px rgba(0,0,0,.35))}
-.kk-menu{display:flex;gap:20px;margin-top:12px;justify-content:center}
-.kk-week{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:16px;padding:8px 12px;border-radius:20px;color:var(--kk-cream);
+.kk-menu{display:flex;gap:20px;margin:4px 0 22px;justify-content:center}
+.kk-week{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:0;padding:6px 12px;border-radius:20px;color:var(--kk-cream);
   background:linear-gradient(180deg,rgba(27,58,85,.92),rgba(10,26,42,.94));border:1.5px solid rgba(233,181,68,.75);box-shadow:0 4px 10px rgba(20,8,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
 .kk-week .kk-d{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);box-shadow:inset 0 2px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:rgba(255,244,214,.7)}
 .kk-week .kk-d.on{background:radial-gradient(circle at 35% 30%,#fff2b0,#e9b544);color:#7a4300;box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7)}
 .kk-week .kk-d.today{outline:2px solid var(--kk-gold1);outline-offset:2px}
 .kk-week .kk-fl{display:flex;align-items:center;gap:2px;font-weight:700;font-size:18px;margin-right:4px}
 .kk-week .kk-fl img{width:26px;height:26px}
-.kk-daily{margin-top:10px;display:flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;border-radius:18px;font-weight:600;font-size:16px;color:var(--kk-cream);
+.kk-daily{margin-top:8px;display:flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;border-radius:18px;font-weight:600;font-size:16px;color:var(--kk-cream);
   background:linear-gradient(180deg,rgba(27,58,85,.9),rgba(10,26,42,.92));border:1.5px solid rgba(233,181,68,.6);box-shadow:0 3px 8px rgba(20,8,0,.45)}
 .kk-daily img{width:28px;height:28px}
 .kk-daily.done{background:linear-gradient(180deg,#3f8a24,#2a6418);border-color:#a8e07a}
@@ -166,7 +167,7 @@ body.kk::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:4;b
 .kk-banner-big{position:fixed;left:50%;top:38%;z-index:85;transform:translate(-50%,-50%);font-size:clamp(44px,15vw,72px);font-weight:700;color:#fff2b0;text-shadow:0 5px 0 #7e430c,4px 0 0 #7e430c,-4px 0 0 #7e430c,0 -4px 0 #7e430c,0 14px 22px rgba(0,0,0,.45);pointer-events:none;animation:kkBanner 1.3s cubic-bezier(.2,1.4,.4,1) forwards;white-space:nowrap}
 
 /* ---- coach bubble ---- */
-.kk-coach{position:fixed;left:50%;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;max-width:min(92vw,380px);padding:10px 14px 10px 10px;border-radius:22px;color:var(--kk-ink);
+.kk-coach{position:fixed;left:12px;right:12px;margin:0 auto;width:max-content;z-index:70;display:flex;align-items:center;gap:10px;max-width:min(92vw,380px);padding:10px 14px 10px 10px;border-radius:22px;color:var(--kk-ink);
   background:linear-gradient(180deg,rgba(255,250,236,.98),rgba(243,222,170,.98));border:3px solid var(--kk-goldline);box-shadow:0 10px 24px rgba(0,0,0,.5);animation:kkPanel .35s cubic-bezier(.2,1.4,.4,1)}
 .kk-coach img{width:54px;height:54px;flex:none;animation:kkNudge 1s ease-in-out infinite;filter:drop-shadow(0 4px 3px rgba(60,30,0,.3))}
 .kk-coach .kk-ct{font-size:21px;font-weight:700;line-height:1.15}
@@ -193,4 +194,4 @@ body.kk::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:4;b
   .kk-shake{animation:none}
   .kk-banner-big,.kk-float{animation-duration:.6s}
 }
-@media (max-height:640px){.kk-hero{height:130px}.kk-hero img{width:88px;height:88px;margin:-44px 0 0 -44px}.kk-logo{font-size:40px}}
+@media (max-height:640px){.kk-hero{height:130px}.kk-hero img{width:88px;height:88px;margin:-44px 0 0 -44px}}

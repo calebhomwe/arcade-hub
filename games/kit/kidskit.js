@@ -28,7 +28,7 @@
     if (props) for (var k in props) {
       var v = props[k]; if (v == null || v === false) continue;
       if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k === 'html') e.innerHTML = v;
-      else if (k === 'style' && typeof v === 'object') for (var s in v) e.style.setProperty(s, v[s]);
+      else if (k === 'style' && typeof v === 'object') for (var s in v) e.style.setProperty(s.replace(/[A-Z]/g, function (m) { return '-' + m.toLowerCase(); }), v[s]);
       else if (k.slice(0, 2) === 'on' && typeof v === 'function') e.addEventListener(k.slice(2), v);
       else e.setAttribute(k, v === true ? '' : v);
     }
@@ -283,10 +283,11 @@
     function ic(cls, pic, label, fn, badge) { var b = h('button', { class: 'kk-icon kk-lg ' + cls, type: 'button', 'aria-label': label }, [img(pic), h('span', { class: 'kk-cap', text: label }), badge ? h('span', { class: 'kk-dot', text: badge }) : null]); press(b, fn); return b; }
     if (o.onMap) menu.appendChild(ic('kk-blue', 'world-map', 'Levels', o.onMap, ''));
     if (o.onAlbum) menu.appendChild(ic('kk-pink', o.albumPic || 'sparkles', o.albumLabel || 'Stickers', o.onAlbum, o.dot));
+    (o.extraIcons || []).forEach(function (x) { menu.appendChild(ic(x.cls || 'kk-blue', x.pic, x.label, x.fn, x.badge)); });
     if (o.onHelp) menu.appendChild(ic('kk-purple', 'thinking-face', 'Help', o.onHelp, ''));
     var leafA = img('herb'), leafB = img('herb'); leafA.style.cssText = 'position:absolute;width:52px;height:52px;left:-16px;bottom:-14px;transform:rotate(-24deg)'; leafB.style.cssText = 'position:absolute;width:52px;height:52px;right:-16px;bottom:-14px;transform:scaleX(-1) rotate(-24deg)';
     var sign = h('div', { class: 'kk-sign' }, [h('h1', { class: 'kk-logo', text: o.title }), leafA, leafB]);
-    var el = h('div', { class: 'kk-title', id: 'kkTitle' }, [sign, o.tagline ? h('p', { class: 'kk-tag', text: o.tagline }) : null, hero, play, h('div', { style: { height: '28px' } }), menu, P ? weekRow(P) : null, P ? dailyChip(P) : null, o.extra || null]);
+    var el = h('div', { class: 'kk-title', id: 'kkTitle' }, [sign, o.tagline ? h('p', { class: 'kk-tag', text: o.tagline }) : null, hero, play, menu, P ? weekRow(P) : null, P ? dailyChip(P) : null, o.extra || null]);
     root.appendChild(el); return el;
   }
   // levels: [{n, name?, boss?, banner?}] ; banner text is drawn above the node that has it
@@ -329,16 +330,17 @@
     head.appendChild(h('div', { class: 'kk-chip' }, [img('star'), h('b', { text: String(tot) })]));
     var body = h('div', { class: 'kk-album-body' });
     (o.sections || []).forEach(function (sec) {
-      var have = sec.items.filter(function (it) { return P.unlocked(it, tot); }).length, nextIt = sec.items.filter(function (it) { return !P.unlocked(it, tot); }).sort(function (a, b) { return a.need - b.need; })[0];
+      var isOpen = sec.isOpen || function (it) { return P.unlocked(it, tot); };
+      var have = sec.items.filter(isOpen).length, nextIt = sec.isOpen ? null : sec.items.filter(function (it) { return !isOpen(it); }).sort(function (a, b) { return a.need - b.need; })[0];
       var bar = h('div', { class: 'kk-bar' }, [h('i', { style: { width: Math.round(have / sec.items.length * 100) + '%' } })]);
       body.appendChild(h('div', { class: 'kk-sechd' }, [h('span', { text: sec.title }), bar, h('span', { text: have + '/' + sec.items.length })]));
-      if (nextIt) body.appendChild(h('p', { style: { maxWidth: '420px', margin: '0 auto 8px', fontSize: '16px', color: 'var(--kk-ink2)', fontWeight: '600' }, text: 'Next: ' + (nextIt.need - tot) + ' more stars' }));
+      if (nextIt) body.appendChild(h('p', { style: { maxWidth: '420px', margin: '0 auto 8px', fontSize: '16px', color: 'var(--kk-gold1)', fontWeight: '600' }, text: 'Next: ' + (nextIt.need - tot) + ' more stars' }));
       var g = h('div', { class: 'kk-grid' });
       sec.items.forEach(function (it) {
-        var un = P.unlocked(it, tot), eq = sec.slot && P.eqp(sec.slot, sec.def) === it.id;
-        var b = h('button', { class: 'kk-slot' + (un ? '' : ' lock') + (eq ? ' sel' : ''), type: 'button', 'aria-label': (un ? it.name : 'Locked, needs ' + it.need + ' stars') }, [img(it.img), un ? null : h('small', { text: it.need + ' ★' }), (un && sec.slot) ? null : null, eq ? h('span', { class: 'kk-tick', text: '✓' }) : null]);
+        var un = isOpen(it), eq = sec.slot && P.eqp(sec.slot, sec.def) === it.id;
+        var b = h('button', { class: 'kk-slot' + (un ? '' : ' lock') + (eq ? ' sel' : ''), type: 'button', 'aria-label': (un ? it.name : 'Locked') }, [img(it.img), un ? (sec.caption ? h('small', { text: it.name, style: { color: 'var(--kk-ink2)', textShadow: 'none' } }) : null) : h('small', { text: sec.isOpen ? '?' : it.need + ' \u2605' }), eq ? h('span', { class: 'kk-tick', text: '\u2713' }) : null]);
         press(b, function () {
-          if (!un) { sfx('oops'); shake(b, 5); toast(it.need - tot + ' more stars to unlock', 'star'); return; }
+          if (!un) { sfx('oops'); shake(b, 5); toast(sec.isOpen ? (sec.lockHint || 'Not found yet') : (it.need - tot) + ' more stars to unlock', 'star'); return; }
           sfx('good'); if (sec.slot) { P.equip(sec.slot, it.id); if (o.onEquip) o.onEquip(sec.slot, it.id); el.remove(); album(root, o); } else { toast(it.name, it.img); say(it.name); }
         });
         g.appendChild(b);
@@ -408,5 +410,5 @@
     profile: profile, audio: { unlock: unlock, ctx: function () { return A.ctx; } }, sfx: sfx, note: note, say: say, setVoice: setVoice, voiceOn: function () { return voiceOn; }, muted: muted,
     fx: { burst: burst }, float: floatText, shake: shake, haptic: haptic, confetti: confetti,
     ui: { coach: coach, title: title, map: map, album: album, result: result, help: help, toast: toast, banner: banner, stars: starsRow, overlay: overlay, topbar: topbar, chip: chip, week: weekRow, daily: dailyChip, mute: muteButton },
-    preload: preload, sprite: sprite };
+    banner: banner, toast: toast, preload: preload, sprite: sprite };
 })();

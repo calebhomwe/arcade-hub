@@ -1,987 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a33">
+<meta name="description" content="Farm Idle Tycoon: milk the cow, plant fields, raise animals and grow a farm into a windmill estate.">
 <title>Farm Idle Tycoon</title>
-<style>
-  :root{
-    --bg1:#0a120f; --bg2:#14231a; --card:#1c3223; --card2:#27452f;
-    --txt:#ecffe9; --dim:#a4c7a8; --accent:#8dff9b; --gold:#ffd86b;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; height:100%;}
-  body{
-    background:radial-gradient(120% 100% at 50% 0%, var(--bg2) 0%, var(--bg1) 60%, #050b07 100%);
-    color:var(--txt); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    overflow-x:hidden; touch-action:manipulation; user-select:none; -webkit-user-select:none;
-  }
-  #app{max-width:620px; margin:0 auto; padding:8px 10px 30px; min-height:100%;}
-  a.hub{display:inline-flex; align-items:center; min-height:44px; color:var(--dim); text-decoration:none; font-size:14px; margin:0 0 4px;}
-  .panel{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.16);
-    border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,.35);}
-  /* HUD */
-  #hud{display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:8px; flex-wrap:wrap;}
-  .stat{flex:1 1 auto; font-weight:700; font-size:17px; white-space:nowrap;}
-  .stat small{display:block; color:var(--dim); font-size:12px; font-weight:500;}
-  #coins{display:inline-block;}
-  #coins.pop{animation:coinPop .22s ease-out;}
-  @keyframes coinPop{0%{transform:scale(1);}40%{transform:scale(1.35); color:#fff;}100%{transform:scale(1);}}
-  .iconBtn{background:var(--card2); border:1px solid rgba(141,255,155,.25); color:var(--txt);
-    border-radius:10px; min-width:48px; min-height:48px; font-size:20px; cursor:pointer;}
-  /* tractor */
-  #tapArea{display:flex; justify-content:center; margin:6px 0 10px;}
-  #tractor{width:150px; height:150px; border-radius:50%; font-size:72px; cursor:pointer;
-    background:radial-gradient(circle at 35% 30%, #3c7a48, #1c3a22); border:3px solid var(--accent);
-    box-shadow:0 0 28px rgba(141,255,155,.55), inset 0 0 18px rgba(0,0,0,.35);
-    transition:transform .06s;}
-  #tractor:active{transform:scale(.92);}
-  #clickBurst{text-align:center; min-height:22px; color:var(--gold); font-weight:800; font-size:18px; transition:opacity .25s;}
-  /* buy qty */
-  #qtyRow{display:flex; gap:8px; padding:8px; margin-bottom:8px; justify-content:center;}
-  .qty{flex:1; background:var(--card2); border:2px solid transparent; color:var(--txt); border-radius:10px;
-    min-height:48px; font-weight:800; font-size:15px; cursor:pointer;}
-  .qty.sel{border-color:var(--accent); background:#2c6a3c; box-shadow:0 0 10px rgba(141,255,155,.5);}
-  /* buildings */
-  #bList{display:flex; flex-direction:column; gap:6px; max-height:44vh; overflow-y:auto; margin-bottom:8px; padding:2px;}
-  .bRow{display:flex; align-items:center; gap:10px; padding:9px 12px;}
-  .bRow .ic{font-size:30px;}
-  .bRow .info{flex:1; min-width:0;}
-  .bRow .name{font-weight:700; font-size:14px;}
-  .bRow .sub{color:var(--dim); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .bRow .cnt{font-weight:800; font-size:16px; min-width:40px; text-align:right;}
-  .buyBtn{background:linear-gradient(180deg,#2f7d44,#1f5c30); color:var(--txt); border:1px solid var(--accent);
-    border-radius:10px; min-height:48px; padding:6px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;
-    transition:transform .1s;}
-  .buyBtn:active:not(:disabled){transform:scale(.92);}
-  .buyBtn:disabled{opacity:.4; cursor:not-allowed;}
-  .buyBtn.afford{animation:affordPulse .5s;}
-  @keyframes affordPulse{40%{transform:scale(1.08);filter:brightness(1.35);}}
-  .bRow.flash{animation:rowFlash .45s;}
-  @keyframes rowFlash{30%{box-shadow:0 0 18px rgba(141,255,155,.75);}}
-  #tapArea{animation:breathe 2.8s ease-in-out infinite;}
-  @keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.006);}}
-  .big{animation:bigBob 2.6s ease-in-out infinite;}
-  @keyframes bigBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-  /* prestige */
-  #prestige{padding:12px; text-align:center;}
-  #prestige .lp{font-size:26px; font-weight:800; color:var(--gold); text-shadow:0 0 12px rgba(255,216,107,.5);}
-  .btn{display:block; width:100%; background:linear-gradient(180deg,#b8860b,#7a5c06); color:#fff; border:1px solid var(--gold);
-    border-radius:12px; min-height:52px; font-size:17px; font-weight:800; cursor:pointer; margin:8px 0 0; box-shadow:0 4px 14px rgba(184,134,11,.4);}
-  .btn:disabled{opacity:.4; cursor:not-allowed;}
-  /* overlay */
-  .overlay{position:fixed; inset:0; background:rgba(4,12,6,.94); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
-  .overlay .box{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.3);
-    border-radius:18px; padding:24px; max-width:400px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6);}
-  .big{font-size:58px; margin-bottom:6px;}
-  h1{margin:0 0 4px; font-size:30px; text-shadow:0 0 18px rgba(141,255,155,.6);}
-  .sub{color:var(--dim); margin:0 0 16px; font-size:14px;}
-  .btn.green{background:linear-gradient(180deg,#35a04f,#1f6b34); border-color:var(--accent);}
-  .btn.alt{background:linear-gradient(180deg,#4a5560,#2b343c); border-color:#7a8a96;}
-  .hidden{display:none !important;}
-  #fx{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
-  .fxFloat{position:absolute; transform:translate(-50%,-50%); font-weight:800; font-size:16px; color:var(--gold);
-    text-shadow:0 0 10px rgba(255,216,107,.9); white-space:nowrap; animation:fxUp .9s ease-out forwards;}
-  @keyframes fxUp{0%{opacity:0; margin-top:8px;}15%{opacity:1;}100%{opacity:0; margin-top:-46px;}}
-  .fxPart{position:absolute; transform:translate(-50%,-50%); font-size:15px;
-    text-shadow:0 0 8px rgba(141,255,155,.6); transition:transform .7s cubic-bezier(.2,.7,.3,1), opacity .7s ease-out;}
-  #toast{position:fixed; left:50%; bottom:18px; transform:translate(-50%,80px); max-width:90%;
-    background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid rgba(141,255,155,.35);
-    color:var(--txt); padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600;
-    box-shadow:0 6px 24px rgba(0,0,0,.5); opacity:0; transition:transform .3s, opacity .3s; z-index:70; pointer-events:none;}
-  #toast.show{opacity:1; transform:translate(-50%,0);}
-  #bfly{position:fixed;z-index:30;width:64px;height:64px;font-size:46px;cursor:pointer;left:-70px;top:32vh;
-    pointer-events:auto;filter:drop-shadow(0 0 10px rgba(141,255,155,.6));animation:bflyfly 7s linear forwards}
-  @keyframes bflyfly{0%{left:-70px;top:32vh}10%{left:6vw;top:27vh}20%{left:16vw;top:36vh}30%{left:28vw;top:28vh}
-    40%{left:40vw;top:34vh}50%{left:52vw;top:26vh}60%{left:64vw;top:33vh}70%{left:76vw;top:27vh}
-    80%{left:88vw;top:32vh}92%{left:100vw;top:29vh}100%{left:110vw;top:32vh}}
-  #welcome .sub b{color:var(--gold);}
-  @media (prefers-reduced-motion:reduce){#coins.pop,.buyBtn.afford,.bRow.flash,#tapArea,.big{animation:none!important;} #tractor:active,.buyBtn:active:not(:disabled){transform:none;}}
-</style>
+<link rel="stylesheet" href="kit/ik.css">
 </head>
 <body>
-<div id="app">
-  <a class="hub" href="../index.html">← Hub</a>
-  <div id="hud" class="panel">
-    <div class="stat">🪙 <span id="coins">0</span><small>coins</small></div>
-    <div class="stat">⏱ <span id="cps">0</span>/s<small>income</small></div>
-    <div class="stat">🚜 <span id="cp">1</span><small>click power</small></div>
-    <div class="stat">🏆 <span id="lp">0</span><small>legacy</small></div>
-    <div class="stat">🦋 <span id="bf">0</span><small>caught</small></div>
-    <button class="iconBtn" id="muteBtn">🔊</button>
-    <button class="iconBtn" id="achBtn" title="Achievements">🏅 0</button>
-  </div>
-
-  <div id="tapArea"><button id="tractor">🚜</button></div>
-  <div id="clickBurst"></div>
-
-  <div id="goldWrap" class="panel" style="padding:10px 12px;margin-bottom:8px;text-align:center;">
-    <div class="sub" id="goldInfo" style="margin:0 0 6px;"></div>
-    <div style="height:10px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden;margin-bottom:8px;"><div id="goldBar" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd86b,#8dff9b);border-radius:6px;transition:width .15s;"></div></div>
-    <button class="btn" id="goldBtn" disabled>✨ Golden Harvest</button>
-  </div>
-
-  <div id="ordWrap" class="panel" style="padding:10px 12px;margin-bottom:8px;text-align:center;">
-    <div class="sub" id="ordInfo" style="margin:0 0 6px;"></div>
-    <div style="height:10px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden;"><div id="ordBar" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd86b,#8dff9b);border-radius:6px;transition:width .15s;"></div></div>
-  </div>
-
-  <div id="qtyRow" class="panel">
-    <button class="qty sel" data-q="1">×1</button>
-    <button class="qty" data-q="10">×10</button>
-    <button class="qty" data-q="25">×25</button>
-  </div>
-
-  <div id="bList"></div>
-
-  <div id="wheel" class="panel" style="padding:12px;text-align:center;margin-bottom:8px;">
-    <div class="lp" id="wheelTitle">🎰 Farm Market</div>
-    <div class="sub" id="wheelDesc" style="margin:4px 0 0;"></div>
-    <button class="btn" id="wheelBtn">🎰 Spin</button>
-  </div>
-
-  <div id="prestige" class="panel">
-    <div class="lp" id="lpGain">+0 Legacy Points</div>
-    <div class="sub" id="lpDesc" style="margin:4px 0 0;">New Farm+ grants +10% income each</div>
-    <button class="btn" id="prestigeBtn">🌟 New Farm+</button>
-  </div>
-</div>
-
-<div id="startScreen" class="overlay">
-  <div class="box">
-    <div class="big">🚜</div>
-    <h1>Farm Idle Tycoon</h1>
-    <p class="sub">Tap the tractor, buy buildings, and grow an endless farming empire!</p>
-    <button class="btn green" id="playBtn">▶ Play</button>
-    <button class="btn alt" id="howBtn" type="button">❓ Learn to play</button>
-    <p class="sub" style="margin:10px 0 0;">Best Legacy: <span id="startBest">0</span></p>
-  </div>
-</div>
-
-<div id="achScreen" class="overlay hidden">
-  <div class="box">
-    <h1 style="font-size:24px;">🏅 Achievements</h1>
-    <div id="achList" style="max-height:44vh; overflow-y:auto; text-align:left; margin:12px 0;"></div>
-    <button class="btn alt" id="achCloseBtn">Close</button>
-  </div>
-</div>
-
-<div id="prestigeCard" class="overlay hidden">
-  <div class="box">
-    <div class="big">🌟</div>
-    <h1 style="font-size:26px;">New Farm+</h1>
-    <div style="font-size:32px;font-weight:800;color:var(--gold);margin:4px 0 8px" id="pcGain">+0 🏆</div>
-    <p class="sub" id="pcMsg"></p>
-    <button class="btn green" id="pcBtn">🚜 Keep Farming</button>
-  </div>
-</div>
-<div id="welcome" class="overlay hidden">
-  <div class="box">
-    <div class="big">⏳</div>
-    <h1 style="font-size:26px;">Welcome back!</h1>
-    <p class="sub" id="welcomeMsg"></p>
-    <button class="btn green" id="welcomeBtn">🪙 Collect</button>
-  </div>
-</div>
-<div id="menuScreen" class="overlay hidden">
-  <div class="box">
-    <h1>⚙️ Farm settings</h1>
-    <button class="btn green" id="resumeBtn">✓ Close</button>
-    <button class="btn alt" id="toggleMuteBtn">🔊 Sound: On</button>
-    <button class="btn alt" id="resetBtn">🗑 Reset Farm</button>
-  </div>
-</div>
-
-<script src="kit/playkit.js"></script>
+<div id="root"></div>
+<canvas id="fx"></canvas>
+<script src="assets/idle/farm.js"></script>
+<script src="kit/ik-core.js"></script>
+<script src="kit/ik-iso.js"></script>
+<script src="kit/ik-idle.js"></script>
 <script>
+(function () {
+'use strict';
+var IK = window.IK, $ = IK.$, fmt = IK.fmt;
+var A = new IK.Atlas('assets/idle/farm.webp', window.IK_ATLAS.farm);
 
-(function(){
-  "use strict";
-  var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null,codes={};
-  function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
-  function did(n){if(coach)coach.did(n);}
-  function cheated(){return !!(SDK&&SDK.cheated);}
-  var BUILDINGS = [
-    {id:"wheat",  name:"Wheat Field",    emoji:"🌾", baseCost:15,      baseIncome:0.5},
-    {id:"chicken",name:"Chicken Coop",   emoji:"🐔", baseCost:100,     baseIncome:2.5},
-    {id:"cow",    name:"Cow Barn",       emoji:"🐄", baseCost:1100,    baseIncome:7},
-    {id:"apple",  name:"Apple Orchard",  emoji:"🍎", baseCost:12000,   baseIncome:60},
-    {id:"bee",    name:"Bee Hive",       emoji:"🐝", baseCost:130000,  baseIncome:400},
-    {id:"tractor",name:"Tractor Fleet",  emoji:"🚜", baseCost:1.4e6,   baseIncome:3000},
-    {id:"green",  name:"Greenhouse",     emoji:"🌿", baseCost:2e7,     baseIncome:20000},
-    {id:"dairy",  name:"Dairy Factory",  emoji:"🥛", baseCost:3.3e8,   baseIncome:130000},
-    {id:"wine",   name:"Wine Cellar",    emoji:"🍷", baseCost:5.1e9,   baseIncome:850000},
-    {id:"mega",   name:"Mega Farm",      emoji:"🏰", baseCost:7.5e10,  baseIncome:5.5e6}
-  ];
-  var SAVE_KEY = "farmIdleSave_v1";
-  var OFFLINE_CAP = 8 * 3600;
-  var OFFLINE_RATE = 0.5;
-  var LEGACY_BONUS = 0.10;
-  var GOLD_TAPS = 25, GOLD_DUR = 10, GOLD_TAP_X = 5, GOLD_FEST = 0.25;
-  var ORD_TIME = {tap:45, buy:45, bfly:80};
-  var ORD_TIERS = {tap:[15,25,40], buy:[3,5,8], bfly:[1,1,2]};
+/* a blue-ribbon rosette for the prestige currency */
+IK.ico.ribbon = function (px) { return '<svg class="ic" viewBox="0 0 32 32" width="' + px + '" height="' + px + '" aria-hidden="true"><path d="M9 18l-4 12 6-3 3 4 3-12zM23 18l4 12-6-3-3 4-3-12z" fill="#2a71b8" stroke="#0f3d7a" stroke-width="1.3" stroke-linejoin="round"/><circle cx="16" cy="12" r="10.5" fill="url(#ikGem)" stroke="#0f3d7a" stroke-width="1.5"/><circle cx="16" cy="12" r="6.5" fill="none" stroke="#e8f8ff" stroke-opacity=".8" stroke-width="1.4"/><path d="M16 7.5l1.5 3.2 3.4.4-2.5 2.3.7 3.3-3.1-1.7-3.1 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fff3b0"/></svg>'; };
 
-  function defaultState(){
-    var owned = {};
-    BUILDINGS.forEach(function(b){ owned[b.id] = 0; });
-    return {coins:0, lifetime:0, clickPower:1, legacy:0, buyQty:1, butterflies:0, muted:false, lastSave:Date.now(), goldMeter:0, goldActive:0, goldCount:0, ordType:"", ordN:0, ordProg:0, ordT:0, ordDone:0, owned:owned};
-  }
-  var state = defaultState();
+var G = [
+  { name: 'Wheat Field', cost: 15, inc: 0.5, spr: 'crop_wheat', desc: 'Golden rows in the sun.', verb: 'Plant' },
+  { name: 'Chicken Coop', cost: 100, inc: 2.5, spr: 'pet_park', desc: 'Fresh eggs every morning.', verb: 'Build' },
+  { name: 'Sunflower Patch', cost: 1100, inc: 7, spr: 'crop_sunflower', desc: 'Seeds, oil and smiles.', verb: 'Plant' },
+  { name: 'Cow Barn', cost: 12000, inc: 60, spr: 'barn', desc: 'Milk, cream and butter.', verb: 'Build' },
+  { name: 'Strawberry Farm', cost: 130000, inc: 400, spr: 'crop_strawberry', desc: 'Sweet jam by the jar.', verb: 'Plant', lvl: 3 },
+  { name: 'Orange Orchard', cost: 1.4e6, inc: 3000, spr: 'orange_tree', desc: 'Juice for the whole town.', verb: 'Plant', lvl: 4 },
+  { name: 'Tractor Fleet', cost: 2e7, inc: 20000, spr: 'tractor', desc: 'Harvest in half the time.', verb: 'Buy', lvl: 6 },
+  { name: 'Greenhouse', cost: 3.3e8, inc: 130000, spr: 'greenhouse', desc: 'Summer all year round.', verb: 'Build', lvl: 8 },
+  { name: 'Silo Tower', cost: 5.1e9, inc: 850000, spr: 'silos', desc: 'Grain stored by the ton.', verb: 'Build', lvl: 10 },
+  { name: 'Windmill Estate', cost: 7.5e10, inc: 5.5e6, spr: 'farm_windmill', desc: 'Flour for the whole coast.', verb: 'Build', lvl: 12 }
+];
+G.forEach(function (g) { g.ico = function (px) { return A.icon(g.spr, px, 6); }; });
+var LOT = [{ i: 3, j: 2 }, { i: 3, j: 1 }, { i: 2, j: 2 }, { i: 2, j: 1 }, { i: 1, j: 2 }, { i: 2, j: 0 }, { i: 0, j: 2 }, { i: 1, j: 0 }, { i: 0, j: 1 }, { i: 0, j: 0 }];
+var CROP = { 0: 1, 2: 1, 4: 1 };
+var DECOR = [
+  { n: 'pine', i: 3, j: 0, s: 1 }, { n: 'tree', i: 3, j: 3, s: 1 }, { n: 'treepink', i: 0, j: 3, s: 1 }, { n: 'orange_tree', i: 2, j: 3, s: 0.9 }, { n: 'hay_bales', i: 1.2, j: 3, s: 0.6 },
+  { n: 'mailbox', i: 3.4, j: 1.6, s: 1 }, { n: 'crate', i: 3.3, j: 2.55, s: 1 }, { n: 'flower_box', i: 0.6, j: 1.55, s: 0.9 }
+];
 
-  var $ = function(id){ return document.getElementById(id); };
-  var coinsEl=$("coins"), cpsEl=$("cps"), cpEl=$("cp"), lpEl=$("lp");
+var UPS = [
+  { id: 'pail1', name: 'Tin Pail', desc: 'Each tap +2', cost: 200, eff: { tapAdd: 2 }, kind: 'tap', ico: function (p) { return A.icon('cow', p, 6); }, lvl: 2 },
+  { id: 'pail2', name: 'Golden Pail', desc: 'Taps ×2', cost: 3000, eff: { tapMul: 2 }, kind: 'tap', ico: function (p) { return A.icon('cow', p, 6); }, req: function (S) { return S.ups.pail1; }, reqText: 'Buy Tin Pail first' },
+  { id: 'hand', name: 'Farm Hand', desc: 'A helper milks once a second', cost: 1500, eff: { auto: 1 }, kind: 'auto', ico: function (p) { return IK.ico.star(p * 0.8); }, lvl: 3, reqText: 'Reach level 3' },
+  { id: 'fert', name: 'Fertilizer', desc: 'All income ×1.25', cost: 25000, eff: { all: 1.25 }, kind: 'all', ico: function (p) { return IK.ico.gem(p * 0.8); }, req: function (S, E) { return E.totalOwned() >= 15; }, reqText: 'Own 15 farm buildings' },
+  { id: 'cold', name: 'Cold Storage', desc: 'Away earnings last 4 hours longer', cost: 400000, eff: { capH: 4 }, kind: 'time', ico: function (p) { return G[8].ico(p); }, lvl: 5 },
+  { id: 'pail3', name: 'Fresh Milk Blessing', desc: 'Taps add 1% of income per second', cost: 60000, eff: { tapPct: 0.01 }, kind: 'tap', ico: function (p) { return A.icon('cow', p, 6); }, req: function (S) { return S.ups.pail2; }, reqText: 'Buy Golden Pail first' },
+  { id: 'scare', name: 'Friendly Scarecrow', desc: 'Butterflies visit 50% more often', cost: 800000, eff: { luck: 1.5 }, kind: 'luck', ico: function (p) { return IK.ico.gift(p * 0.8); }, lvl: 6 },
+  { id: 'irri', name: 'Irrigation', desc: 'All income ×1.5', cost: 2e6, eff: { all: 1.5 }, kind: 'all', ico: function (p) { return IK.ico.gem(p * 0.8); }, req: function (S) { return S.ups.fert; }, reqText: 'Buy Fertilizer first' },
+  { id: 'crew', name: 'Farm Crew', desc: 'Four more helper taps a second', cost: 5e5, eff: { auto: 4 }, kind: 'auto', ico: function (p) { return IK.ico.star(p * 0.8); }, req: function (S) { return S.ups.hand; }, reqText: 'Buy Farm Hand first' },
+  { id: 'bulk', name: 'Bulk Orders', desc: 'Farm buildings cost 10% less', cost: 1e7, eff: { disc: 0.9 }, kind: 'disc', ico: function (p) { return G[3].ico(p); }, lvl: 8 },
+  { id: 'coop', name: 'Cooperative', desc: 'All income ×2', cost: 3e8, eff: { all: 2 }, kind: 'all', ico: function (p) { return G[9].ico(p); }, req: function (S) { return S.ups.irri; }, reqText: 'Buy Irrigation first' },
+  { id: 'truck', name: 'Delivery Truck', desc: 'Away earnings +20%', cost: 6e7, eff: { eff: 0.2 }, kind: 'time', ico: function (p) { return IK.ico.cart(p * 0.8); }, req: function (S) { return S.ups.cold; }, reqText: 'Buy Cold Storage first' },
+  { id: 'pail4', name: 'Blue Ribbon Cow', desc: 'Taps ×3', cost: 4e6, eff: { tapMul: 3 }, kind: 'tap', ico: function (p) { return IK.ico.ribbon(p * 0.8); }, req: function (S) { return S.ups.pail3; }, reqText: 'Buy Fresh Milk Blessing first' },
+  { id: 'market', name: 'Farmers Market', desc: 'All income ×3', cost: 5e10, eff: { all: 3 }, kind: 'all', ico: function (p) { return IK.ico.ribbon(p * 0.8); }, req: function (S) { return S.ups.coop; }, reqText: 'Buy Cooperative first' }
+];
 
-  function fmt(n){
-    if(!isFinite(n)) return "∞";
-    if(n < 1000) return n < 10 && n % 1 !== 0 ? n.toFixed(1) : Math.floor(n).toString();
-    var u = 0, units = ["","K","M","B","T"];
-    while(n >= 1000 && u < units.length - 1){ n /= 1000; u++; }
-    var d = n < 10 ? 2 : (n < 100 ? 1 : 0);
-    return n.toFixed(d) + units[u];
-  }
+var PERKS = [
+  { id: 'seed', name: 'Seed Money', desc: 'Start every season with 1,000 coins', max: 5, cost: function (l) { return [2, 4, 7, 11, 16][l]; }, eff: { start: 1000 }, ico: function (p) { return IK.ico.coin(p * 0.8); } },
+  { id: 'tools', name: 'Sharp Tools', desc: 'Farm buildings cost 5% less', max: 5, cost: function (l) { return [3, 6, 10, 15, 21][l]; }, eff: { disc: 0.95 }, ico: function (p) { return G[3].ico(p); } },
+  { id: 'cow', name: 'Prize Cow', desc: 'Taps ×2', max: 3, cost: function (l) { return [3, 8, 20][l]; }, eff: { tapMul: 2 }, ico: function (p) { return A.icon('cow', p, 6); } },
+  { id: 'fly', name: 'Butterfly Garden', desc: 'Butterflies visit 30% more often', max: 4, cost: function (l) { return [2, 4, 8, 14][l]; }, eff: { luck: 1.3 }, ico: function (p) { return IK.ico.gift(p * 0.8); } },
+  { id: 'barn', name: 'Big Barn', desc: 'Away earnings last 4 hours longer', max: 4, cost: function (l) { return [2, 5, 9, 14][l]; }, eff: { capH: 4, eff: 0.05 }, ico: function (p) { return G[8].ico(p); } },
+  { id: 'heir', name: 'Family Fields', desc: 'Keep 5 Wheat Fields after the fair', max: 4, cost: function (l) { return [2, 3, 5, 8][l]; }, eff: { keep: 5 }, ico: function (p) { return G[0].ico(p); } },
+  { id: 'legacy', name: 'Legacy Farm', desc: 'All income ×1.25', max: 3, cost: function (l) { return [5, 12, 30][l]; }, eff: { all: 1.25 }, ico: function (p) { return IK.ico.ribbon(p * 0.8); } }
+];
 
-  // ---- Audio ----
-  var AC = null;
-  function ac(){
-    if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); }
-    if(AC.state === "suspended") AC.resume();
-    return AC;
-  }
-  function beep(freq, dur, type, vol, slide){
-    if(state.muted) return;
-    try{
-      var c = ac();
-      var o = c.createOscillator();
-      var g = c.createGain();
-      o.type = type || "sine";
-      o.frequency.setValueAtTime(freq, c.currentTime);
-      if(slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime + dur);
-      g.gain.setValueAtTime(vol || 0.15, c.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
-      o.connect(g); g.connect(c.destination);
-      o.start(); o.stop(c.currentTime + dur);
-    }catch(e){}
-  }
-  const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-  const SFXMAP={click:'tap',buy:'tap',prestige:'win',deny:'buzz'};
-  function sfx(t){
-    if(state.muted) return;
-    var m=SFXMAP[t]||t,a=SFXP[m];
-    if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
-    if(t==="click") beep(300,0.06,"triangle",0.12);
-    else if(t==="buy"){ beep(520,0.1,"triangle",0.2); setTimeout(function(){ beep(780,0.14,"triangle",0.2); },60); }
-    else if(t==="prestige"){ beep(660,0.14,"triangle",0.2); beep(880,0.18,"triangle",0.2); beep(1100,0.24,"triangle",0.2); }
-    else if(t==="deny") beep(180,0.15,"sawtooth",0.14);
-  }
+function anyTier(n) { return function (S) { return Math.max.apply(null, S.owned) >= n; }; }
+var ACH = [
+  { id: 'first', name: 'First Harvest', desc: 'Earn 1,000 coins in all', test: function (S) { return S.alltime >= 1e3; }, prog: function (S) { return [S.alltime, 1e3]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'hoard', name: 'Full Barn', desc: 'Earn 100K coins', test: function (S) { return S.alltime >= 1e5; }, prog: function (S) { return [S.alltime, 1e5]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'mill', name: 'Millionaire Farmer', desc: 'Earn 1M coins', test: function (S) { return S.alltime >= 1e6; }, prog: function (S) { return [S.alltime, 1e6]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'bill', name: 'Billion Bushels', desc: 'Earn 1B coins', test: function (S) { return S.alltime >= 1e9; }, prog: function (S) { return [S.alltime, 1e9]; }, ico: function (p) { return IK.ico.gem(p) } },
+  { id: 'trill', name: 'Farm Baron', desc: 'Earn 1T coins', test: function (S) { return S.alltime >= 1e12; }, prog: function (S) { return [S.alltime, 1e12]; }, ico: function (p) { return IK.ico.gem(p) } },
+  { id: 'builder', name: 'Busy Farm', desc: 'Own 50 farm buildings at once', test: function (S, E) { return E.totalOwned() >= 50; }, prog: function (S, E) { return [E.totalOwned(), 50]; }, ico: function (p) { return G[3].ico(p); } },
+  { id: 'magnate', name: 'Big Farm', desc: 'Own 150 farm buildings at once', test: function (S, E) { return E.totalOwned() >= 150; }, prog: function (S, E) { return [E.totalOwned(), 150]; }, ico: function (p) { return G[8].ico(p); } },
+  { id: 'board', name: 'One of Everything', desc: 'Own at least one of every kind', test: function (S) { return S.owned.every(function (n) { return n > 0; }); }, prog: function (S) { return [S.owned.filter(function (n) { return n > 0; }).length, 10]; }, ico: function (p) { return G[9].ico(p); } },
+  { id: 'r10', name: 'Ribbon Collector', desc: 'Hold 10 blue ribbons', test: function (S) { return S.prem >= 10; }, prog: function (S) { return [S.prem, 10]; }, ico: function (p) { return IK.ico.ribbon(p); } },
+  { id: 'r50', name: 'Fair Champion', desc: 'Hold 50 blue ribbons', test: function (S) { return S.prem >= 50; }, prog: function (S) { return [S.prem, 50]; }, ico: function (p) { return IK.ico.ribbon(p); } },
+  { id: 'taps', name: 'Milk Maid', desc: 'Tap the cow 500 times', test: function (S) { return S.stats.taps >= 500; }, prog: function (S) { return [S.stats.taps, 500]; }, ico: function (p) { return A.icon('cow', p, 4); } },
+  { id: 'chests', name: 'Treasure Hunter', desc: 'Open 5 chests', test: function (S) { return S.stats.chests >= 5; }, prog: function (S) { return [S.stats.chests, 5]; }, ico: function (p) { return IK.ico.gift(p); } },
+  { id: 'bfly', name: 'Butterfly Friend', desc: 'Catch 10 butterflies', test: function (S) { return S.stats.critters >= 10; }, prog: function (S) { return [S.stats.critters, 10]; }, ico: function (p) { return IK.ico.gift(p); } },
+  { id: 'century', name: 'Hundred Rows', desc: 'Own 100 of one building', test: anyTier(100), prog: function (S) { return [Math.max.apply(null, S.owned), 100]; }, ico: function (p) { return G[0].ico(p); } },
+  { id: 'lvl10', name: 'Rising Farmer', desc: 'Reach level 10', test: function (S) { return S.lvl >= 10; }, prog: function (S) { return [S.lvl, 10]; }, ico: function (p) { return IK.ico.star(p); } },
+  { id: 'fair', name: 'First Fair', desc: 'Enter the Grand Fair', test: function (S) { return S.runs >= 1; }, prog: function (S) { return [S.runs, 1]; }, ico: function (p) { return IK.ico.ribbon(p); } },
+  { id: 'trader', name: 'Trade Master', desc: 'Send 5 caravans', test: function (S) { return S.stats.trades >= 5; }, prog: function (S) { return [S.stats.trades, 5]; }, ico: function (p) { return IK.ico.cart(p); } },
+  { id: 'streak3', name: 'Early Bird', desc: 'Play 3 days in a row', test: function (S) { return S.daily && S.daily.best >= 3; }, prog: function (S) { return [S.daily ? S.daily.best : 0, 3]; }, ico: function (p) { return IK.ico.scroll(p); } },
+  { id: 'quests', name: 'Chore Champion', desc: 'Finish 10 daily goals', test: function (S) { return S.stats.quests >= 10; }, prog: function (S) { return [S.stats.quests, 10]; }, ico: function (p) { return IK.ico.trophy(p); } },
+  { id: 'mill2', name: 'Miller', desc: 'Build the Windmill Estate', test: function (S) { return S.owned[9] > 0; }, prog: function (S) { return [S.owned[9], 1]; }, ico: function (p) { return G[9].ico(p); } }
+];
+var POOL = [
+  { id: 'tap', kind: 'tap', text: 'Tap the cow {n} times', goals: [40, 100, 220] },
+  { id: 'buy', kind: 'buy', text: 'Add {n} farm buildings', goals: [8, 20, 40] },
+  { id: 'earn', kind: 'earn', text: 'Earn {n} coins', goals: function (E) { var r = Math.max(60, E.income()); return [r * 150, r * 500, r * 1500]; } },
+  { id: 'upg', kind: 'upgrade', text: 'Buy {n} upgrades', goals: [1, 2, 4] },
+  { id: 'crit', kind: 'critter', text: 'Catch {n} butterflies', goals: [1, 2, 3] }
+];
 
-  // ---- Economy ----
-  function milestoneMult(count){
-    var m = 1;
-    if(count >= 25) m *= 2;
-    if(count >= 50) m *= 2;
-    if(count >= 100) m *= 2;
-    return m;
+/* ================= the farm ================= */
+function makeScene(E) {
+  var S = E.S, cv = $('scene');
+  var st = new IK.Stage(cv, draw, 2);
+  var iso = new IK.Iso(st, { N: 4, M: 4, tex: ['mountain_grass', 'soil_tilled', 'dirt_track', 'rock', 'plaza_stone'] });
+  var built = [], coins = [], dust = [], bfly = null, bounce = 0, coinT = 0, walkers = [], tract = [];
+  var HOME = { i: 1, j: 1 }, COW = { i: 1.55, j: 1.62 };
+  st.onResize = function (W, H) { iso.layout(W, H); };
+  iso.layout(st.w || 390, st.h || 300);
+  function mkWalker(kind, i0, j0, i1, j1) { return { kind: kind, i: i0 + Math.random() * (i1 - i0), j: j0 + Math.random() * (j1 - j0), tx: 0, ty: 0, box: [i0, j0, i1, j1], wait: Math.random() * 2, flip: false, ph: Math.random() * 6 }; }
+  function syncWalkers() {                                          // animals and tractors appear as the farm grows
+    var want = { chicken: Math.min(6, Math.ceil(S.owned[1] / 3)), cow: Math.min(3, Math.ceil(S.owned[3] / 4)), sheep: 2 }, have = { chicken: 0, cow: 0, sheep: 0 };
+    walkers.forEach(function (w) { have[w.kind]++; });
+    if (have.chicken < want.chicken) walkers.push(mkWalker('chicken', 2.7, 1.05, 3.6, 1.9));
+    if (have.cow < want.cow) walkers.push(mkWalker('cow', 1.9, 1.15, 2.7, 1.9));
+    if (have.sheep < want.sheep) walkers.push(mkWalker('sheep', 0.3, 2.9, 1.9, 3.7));
+    var tw = Math.min(3, Math.ceil(S.owned[6] / 6)); while (tract.length < tw) tract.push({ i: 0.2 + tract.length * 1.1, dir: 1, v: 0.35 + Math.random() * 0.1 });
   }
-  function prestigeMult(){ return 1 + state.legacy * LEGACY_BONUS; }
-  function buildingIncome(b){
-    var owned = state.owned[b.id];
-    if(owned === 0) return 0;
-    return owned * b.baseIncome * milestoneMult(owned) * prestigeMult();
-  }
-  function totalIncome(){
-    var s = 0;
-    BUILDINGS.forEach(function(b){ s += buildingIncome(b); });
-    return s;
-  }
-  function currentClickPower(){
-    return (state.clickPower + state.legacy)*(codes.BUMPERCROP?10:1);
-  }
-  function buildingCost(b){
-    return b.baseCost * Math.pow(1.15, state.owned[b.id]);
-  }
-  function bulkCost(b, n){
-    var owned = state.owned[b.id];
-    var first = b.baseCost * Math.pow(1.15, owned);
-    return first * (Math.pow(1.15, n) - 1) / 0.15;
-  }
-  function maxAffordable(b, qty){
-    var owned = state.owned[b.id];
-    var first = b.baseCost * Math.pow(1.15, owned);
-    var n = 0;
-    var coins = state.coins;
-    var cost = first;
-    while(n < qty && coins >= cost){
-      coins -= cost;
-      n++;
-      cost *= 1.15;
-    }
-    return n;
-  }
-
-  // ---- Click combo ----
-  var combo = 0, comboT = 0, lastComboMult = 1;
-  function comboMult(){
-    return combo >= 25 ? 8 : combo >= 12 ? 5 : combo >= 5 ? 3 : combo >= 2 ? 2 : 1;
-  }
-
-  // ---- Golden Harvest (additive bonus meter) ----
-  function goldTap(){
-    if(state.goldActive > 0){
-      var extra = currentClickPower() * comboMult() * GOLD_TAP_X;
-      state.coins += extra;
-      return extra;
-    }
-    if(state.goldMeter < GOLD_TAPS){
-      state.goldMeter++;
-      if(state.goldMeter === GOLD_TAPS){ showToast("✨ Golden Harvest ready!"); sfx("levelup"); }
-    }
-    return 0;
-  }
-  function activateGold(){
-    if(state.goldActive > 0 || state.goldMeter < GOLD_TAPS){ sfx("deny"); return; }
-    state.goldMeter = 0;
-    state.goldActive = GOLD_DUR;
-    state.goldCount++;
-    sfx("prestige");
-    confetti();
-    showToast("✨ Golden Harvest! +" + Math.round(GOLD_FEST * 100) + "% income & ×" + GOLD_TAP_X + " taps for " + GOLD_DUR + "s");
-    render();
-  }
-
-  // ---- Market Orders (additive quests) ----
-  function orderReward(){ return Math.max(500, totalIncome() * 25); }
-  function newOrder(){
-    var types = ["tap", "buy", "bfly"];
-    state.ordType = types[(Math.random() * types.length) | 0];
-    var tiers = ORD_TIERS[state.ordType];
-    state.ordN = tiers[(Math.random() * tiers.length) | 0];
-    state.ordProg = 0;
-    state.ordT = ORD_TIME[state.ordType];
-  }
-  function ordHit(type, n){
-    if(!state.ordType || state.ordType !== type) return;
-    state.ordProg += n;
-    if(state.ordProg < state.ordN) return;
-    var rw = orderReward();
-    state.coins += rw;
-    state.ordDone++;
-    showToast("📦 Order filled! +" + fmt(rw) + " 🪙 (" + state.ordDone + " filled)");
-    sfx("win");
-    var c0 = centerOf($("tractor"));
-    partBurst(c0.x, c0.y - 60, ["📦", "🪙"], 5, 28);
-    if(state.ordDone % 5 === 0){
-      state.coins += rw;
-      showToast("📦 5-order bonus! +" + fmt(rw) + " 🪙");
-      confetti();
-      sfx("levelup");
-    }
-    newOrder();
-  }
-  function expireOrder(){
-    showToast("📦 Order expired — new request at the market");
-    sfx("deny");
-    newOrder();
-  }
-  function orderText(){
-    if(state.ordType === "tap") return "👆 Tap the tractor " + state.ordN + " times";
-    if(state.ordType === "buy") return "🏗 Buy " + state.ordN + " buildings";
-    if(state.ordType === "bfly") return "🦋 Catch " + state.ordN + " butterfly";
-    return "";
-  }
-
-  // ---- Actions ----
-  function popCoins(){
-    coinsEl.classList.remove("pop");
-    void coinsEl.offsetWidth;
-    coinsEl.classList.add("pop");
-  }
-  function doClick(){
-    var pw = currentClickPower();
-    state.coins += pw; state.lifetime += pw;
-    combo++; comboT = Date.now();
-    var m = comboMult();
-    if(m > 1){
-      var bonus = pw * (m - 1);
-      state.coins += bonus; state.lifetime += bonus;
-      if(m > lastComboMult){ lastComboMult = m; sfx("levelup"); }
-    } else { lastComboMult = 1; }
-    popCoins();
-    burst("+" + fmt(pw) + (m > 1 ? " ×" + m : ""));
-    var c0 = centerOf($("tractor"));
-    floatText(c0.x, c0.y - 40, "+" + fmt(pw * m) + " 🪙");
-    partBurst(c0.x, c0.y, ["🌾","🪙","✨"], 4, 26);
-    var gExtra = goldTap();
-    if(gExtra > 0) floatText(c0.x, c0.y - 74, "+" + fmt(gExtra) + " ✨");
-    ordHit("tap", 1);
-    did("tap");
-    try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
-    sfx("click");
-    render();
-  }
-  function buyBuilding(b){
-    var n = maxAffordable(b, state.buyQty);
-    if(n === 0){ sfx("deny"); return; }
-    var cost = bulkCost(b, n);
-    state.coins = Math.max(0, state.coins - cost);
-    state.owned[b.id] += n;
-    ordHit("buy", n);
-    popCoins();
-    sfx("buy");
-    did("buy");
-    try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
-    var rr = rowRefs[BUILDINGS.indexOf(b)];
-    if(rr && rr.row){
-      rr.row.classList.remove("flash"); void rr.row.offsetWidth; rr.row.classList.add("flash");
-      try{ var rc = rr.row.getBoundingClientRect(); partBurst(rc.left + rc.width/2, rc.top + rc.height/2, [b.emoji,"✨"], 4, 24); }catch(e){}
-    }
-    render();
-  }
-  function prestige(){
-    var gain = Math.floor(Math.sqrt(state.lifetime / 1e6));
-    if(gain < 1){ sfx("deny"); return; }
-    var earned = state.lifetime;
-    state.legacy += gain;
-    state.coins = 0;
-    state.lifetime = 0;
-    state.clickPower = 1;
-    BUILDINGS.forEach(function(b){ state.owned[b.id] = 0; });
-    sfx("prestige");
-    confetti();
-    save();
-    render();
-    $("pcGain").textContent = "+" + gain + " 🏆";
-    $("pcMsg").innerHTML = "This farm earned <b>" + fmt(earned) + "</b> coins.<br>Legacy Points: <b>" + state.legacy + "</b> · income now <b>×" + prestigeMult().toFixed(2) + "</b>";
-    $("prestigeCard").classList.remove("hidden");
-    scene("over", {score: state.legacy});
-  }
-
-  // ---- Farm Market gamble ----
-  var elWheelBtn = $("wheelBtn"), elWheelDesc = $("wheelDesc");
-  function wheelStake(){ return Math.max(1000, state.coins * 0.05); }
-  function spinWheel(){
-    if(state.coins < 1000){ sfx("deny"); showToast("🎰 Farm Market: need at least 1K coins"); return; }
-    var stake = Math.max(1000, state.coins * 0.05);
-    state.coins -= stake;
-    var roll = Math.random(), win = 0, label;
-    if(roll < 0.10){ win = 0; label = "Crop rot!"; sfx("deny"); }
-    else if(roll < 0.40){ win = stake; label = "Stake back"; sfx("tick"); }
-    else if(roll < 0.75){ win = stake * 1.5; label = "×1.5 win!"; sfx("levelup"); }
-    else if(roll < 0.93){ win = stake * 2; label = "×2 JACKPOT!"; sfx("levelup"); }
-    else if(roll < 0.99){ win = stake * 4; label = "×4 GOLD!"; sfx("win"); }
-    else { win = stake * 15; label = "×15 MEGA!"; sfx("win"); }
-    if(win > 0){
-      state.coins += win;
-      showToast("🎰 " + label + " (+" + fmt(win) + " 🪙)");
-      try{
-        var wr = elWheelBtn.getBoundingClientRect();
-        partBurst(wr.left + wr.width/2, wr.top + wr.height/2, ["🪙","✨"], win >= stake*4 ? 8 : 4, 26);
-      }catch(e){}
-      if(win >= stake*4) confetti();
-    } else {
-      showToast("🎰 " + label + " (-" + fmt(stake) + " 🪙)");
-    }
-    render();
-  }
-  $("wheelBtn").addEventListener("click", spinWheel);
-
-  // ---- Butterfly event ----
-  var bflyT = 20 + Math.random() * 30, bflyEl = null, bflyTm = 0;
-  function spawnBfly(){
-    if(bflyEl) return;
-    if($("startScreen").className.indexOf("hidden") !== -1){ bflyT = 8 + Math.random() * 12; return; }
-    bflyEl = document.createElement("div");
-    bflyEl.id = "bfly";
-    bflyEl.textContent = "\ud83e\udd8b";
-    bflyEl.addEventListener("pointerdown", catchBfly);
-    document.body.appendChild(bflyEl);
-    clearTimeout(bflyTm);
-    bflyTm = setTimeout(function(){ if(bflyEl){ bflyEl.remove(); bflyEl = null; } }, 7600);
-  }
-  function catchBfly(e){
-    e.preventDefault();
-    if(!bflyEl) return;
-    var c0 = centerOf($("tractor"));
-    var gift = Math.max(20, totalIncome() * 3);
-    state.coins += gift;
-    state.butterflies = (state.butterflies || 0) + 1;
-    ordHit("bfly", 1);
-    partBurst(c0.x, c0.y, ["\ud83e\udd8b","\u2728"], 5, 30);
-    if(state.butterflies % 10 === 0){
-      var bonus = totalIncome() * 30;
-      if(bonus > 0) state.coins += bonus;
-      showToast("\ud83e\udd8b Butterfly parade! +" + fmt(gift + bonus) + " \ud83e\udef6");
-      sfx("levelup");
-    } else {
-      showToast("\ud83e\udd8b Caught! +" + fmt(gift) + " \ud83e\udef6");
-      sfx("coin");
-    }
-    clearTimeout(bflyTm);
-    bflyEl.remove(); bflyEl = null;
-    bflyT = 45 + Math.random() * 45;
-    render();
-  }
-
-  // ---- Achievements ----
-  var ACH_INFO = [
-    {id:"harvest",  name:"First Harvest",     icon:"🌱", desc:"Earn 1K lifetime coins", test:function(){return state.lifetime >= 1e3;}},
-    {id:"million",  name:"Millionaire",       icon:"💰", desc:"Earn 1M lifetime coins", test:function(){return state.lifetime >= 1e6;}},
-    {id:"billion",  name:"Agro Giant",        icon:"💵", desc:"Earn 1B lifetime coins", test:function(){return state.lifetime >= 1e9;}},
-    {id:"milestone",name:"Milestone Mover",   icon:"🏗", desc:"Own 25 of a single building", test:function(){
-      for(var i=0;i<BUILDINGS.length;i++){ if(state.owned[BUILDINGS[i].id] >= 25) return true; }
-      return false;
-    }},
-    {id:"empire",   name:"Empire Builder",    icon:"🏰", desc:"Own 100 buildings total", test:function(){
-      var n=0; for(var i=0;i<BUILDINGS.length;i++){ n += state.owned[BUILDINGS[i].id]; }
-      return n >= 100;
-    }},
-    {id:"income",   name:"Cash Flow",         icon:"🏦", desc:"Reach 10K coins/s income", test:function(){return totalIncome() >= 1e4;}},
-    {id:"legacy",   name:"New Farm+",         icon:"🌟", desc:"Prestige at least once", test:function(){return state.legacy >= 1;}},
-    {id:"legend",   name:"Legacy Legend",     icon:"👑", desc:"Hold 15 Legacy Points", test:function(){return state.legacy >= 15;}},
-    {id:"mega",     name:"Mega Owner",        icon:"🚀", desc:"Buy a Mega Farm", test:function(){return state.owned.mega >= 1;}}
-  ];
-  var ACH_KEY = "farmIdleAch_v1";
-  var achUnlocked = {};
-  var achRefs = [];
-  function loadAch(){
-    try{ var raw = localStorage.getItem(ACH_KEY); if(raw){ var a = JSON.parse(raw); if(a && typeof a === "object") achUnlocked = a; } }catch(e){}
-  }
-  function saveAch(){ try{ localStorage.setItem(ACH_KEY, JSON.stringify(achUnlocked)); }catch(e){} }
-  function achCount(){ var n=0; for(var k in achUnlocked){ if(achUnlocked[k]) n++; } return n; }
-  function buildAchList(){
-    if(achRefs.length) return;
-    var l = $("achList");
-    ACH_INFO.forEach(function(a){
-      var row = document.createElement("div");
-      row.className = "bRow panel";
-      row.style.margin = "5px 0";
-      row.innerHTML = '<div class="ic">' + a.icon + '</div>' +
-        '<div class="info"><div class="name">' + a.name + '</div><div class="sub">' + a.desc + '</div></div>';
-      var s = document.createElement("div");
-      s.className = "cnt";
-      row.appendChild(s);
-      l.appendChild(row);
-      achRefs.push(s);
+  function ground(cx) {
+    var soil = iso.pattern(cx, 'soil_tilled'), dirt = iso.pattern(cx, 'dirt_track');
+    LOT.forEach(function (L, tier) {
+      if (CROP[tier]) { iso.pad(cx, L.i, L.j, soil || '#7a4a26', 'rgba(50,28,10,.6)', 0.06); cx.strokeStyle = 'rgba(40,22,8,.35)'; cx.lineWidth = 5; for (var k = 1; k < 7; k++) { cx.beginPath(); cx.moveTo(L.i * 256 + 26, L.j * 256 + 26 + k * 29); cx.lineTo(L.i * 256 + 230, L.j * 256 + 26 + k * 29); cx.stroke(); } }
+      else { cx.globalAlpha = 0.9; iso.pad(cx, L.i, L.j, dirt || '#a9773f', 'rgba(70,40,12,.5)', 0.12); cx.globalAlpha = 1; }
     });
+    cx.fillStyle = dirt || '#a9773f'; cx.fillRect(256 + 100, 0, 56, 4 * 256); cx.fillRect(0, 256 + 100, 4 * 256, 56);
+    iso.pad(cx, 1, 1, dirt || '#a9773f', 'rgba(70,40,12,.5)', 0.03);
   }
-  function renderAchList(){
-    for(var i=0;i<ACH_INFO.length;i++){
-      if(achRefs[i]) achRefs[i].textContent = achUnlocked[ACH_INFO[i].id] ? "✅" : "🔒";
-    }
+  function spawnCoin(tier) {
+    var L = LOT[tier], p = iso.cellXY(L.i, L.j), s = A.size(G[tier].spr), top = (s ? s.ay : 60) * iso.sprS * iso.sc;
+    coins.push({ x: p.x + (Math.random() - 0.5) * 20 * iso.sc, y: p.y - top * 0.6, vy: -22 - Math.random() * 12, t: 0, life: 1.4 });
+    if (coins.length > 30) coins.shift();
   }
-  function checkAch(){
-    var fresh = false;
-    ACH_INFO.forEach(function(a){
-      if(!achUnlocked[a.id] && a.test()){
-        achUnlocked[a.id] = true;
-        showToast(a.icon + " Unlocked: " + a.name);
-        sfx("levelup");
-        fresh = true;
-      }
+  function butterfly(cx, x, y, t, sc) {
+    var f = Math.sin(t * 22) * 0.6 + 0.4, w2 = 13 * sc;
+    cx.save(); cx.translate(x, y); cx.rotate(Math.sin(t * 3) * 0.2);
+    cx.fillStyle = '#ff9a4d'; cx.strokeStyle = '#5a2a08'; cx.lineWidth = 1.4;
+    [[-1, 0], [1, 0]].forEach(function (d) { cx.save(); cx.scale(d[0] * f, 1); cx.beginPath(); cx.ellipse(w2 * 0.55, -w2 * 0.35, w2 * 0.6, w2 * 0.85, -0.5, 0, 6.2832); cx.fill(); cx.stroke(); cx.fillStyle = '#ffd45a'; cx.beginPath(); cx.ellipse(w2 * 0.4, w2 * 0.45, w2 * 0.4, w2 * 0.5, 0.5, 0, 6.2832); cx.fill(); cx.stroke(); cx.fillStyle = '#ff9a4d'; cx.restore(); });
+    cx.fillStyle = '#3a2208'; cx.fillRect(-1.5, -w2 * 0.6, 3, w2 * 1.4); cx.restore();
+  }
+
+  function draw(cx, dt, t, W, H) {
+    var sc = iso.sc, ss = iso.sprS * sc;
+    if (W !== iso.w || H !== iso.h) iso.layout(W, H);
+    cx.clearRect(0, 0, W, H);
+    iso.backdrop(cx, dt, t);
+    iso.ground(cx, ground);
+    syncWalkers();
+    walkers.forEach(function (w) {                                  // wander inside their pen
+      w.wait -= dt;
+      if (w.wait <= 0 && (Math.abs(w.i - w.tx) < 0.03 && Math.abs(w.j - w.ty) < 0.03 || !w.tx)) { w.tx = w.box[0] + Math.random() * (w.box[2] - w.box[0]); w.ty = w.box[1] + Math.random() * (w.box[3] - w.box[1]); w.wait = 0.5 + Math.random() * 2.5; }
+      if (w.wait <= 0) { var dx = w.tx - w.i, dy = w.ty - w.j, d = Math.hypot(dx, dy) || 1, v = (w.kind === 'chicken' ? 0.35 : 0.16) * dt; w.i += dx / d * Math.min(v, d); w.j += dy / d * Math.min(v, d); w.flip = (dx - dy) < 0; }
     });
-    if(fresh){ saveAch(); renderAchList(); confetti(); }
-  }
-
-  // ---- Burst ----
-  var burstTimer = null;
-  function burst(txt){
-    var el = $("clickBurst");
-    el.textContent = txt;
-    el.style.opacity = "1";
-    if(burstTimer) clearTimeout(burstTimer);
-    burstTimer = setTimeout(function(){ el.style.opacity = "0"; }, 500);
-  }
-  var fxLayer = null, fxTotal = 0, FXMAX = 40, fPool = [], pPool = [];
-  function fx(){
-    if(!fxLayer){ fxLayer = document.createElement("div"); fxLayer.id = "fx"; document.body.appendChild(fxLayer); }
-    return fxLayer;
-  }
-  function floatText(x, y, txt){
-    var s = fPool.pop();
-    if(!s){
-      if(fxTotal >= FXMAX) return;
-      s = document.createElement("span");
-      s.className = "fxFloat";
-      fx().appendChild(s);
-      fxTotal++;
-    }
-    s.textContent = txt;
-    s.style.left = x + "px"; s.style.top = y + "px";
-    s.style.animation = "none"; void s.offsetWidth; s.style.animation = "";
-    var seq = (s._seq = (s._seq || 0) + 1);
-    setTimeout(function(){ if(s._seq === seq) fPool.push(s); }, 950);
-  }
-  function partBurst(x, y, chars, n, spread){
-    if(RM) return;
-    for(var i=0;i<n;i++){
-      var s = pPool.pop();
-      if(!s){
-        if(fxTotal >= FXMAX) return;
-        s = document.createElement("span");
-        s.className = "fxPart";
-        fx().appendChild(s);
-        fxTotal++;
-      }
-      s.textContent = chars[(Math.random()*chars.length)|0];
-      s.style.left = x + "px"; s.style.top = y + "px";
-      s.style.transition = "none";
-      s.style.transform = "translate(-50%,-50%)";
-      s.style.opacity = "1";
-      void s.offsetWidth;
-      s.style.transition = "";
-      var dx = (Math.random()*2-1)*spread;
-      var dy = -(12 + Math.random()*spread*1.2);
-      (function(s, dx, dy){
-        var seq = (s._seq = (s._seq || 0) + 1);
-        requestAnimationFrame(function(){
-          if(s._seq !== seq) return;
-          s.style.transform = "translate(" + dx + "px," + dy + "px) scale(.3)";
-          s.style.opacity = "0";
-        });
-        setTimeout(function(){ if(s._seq === seq) pPool.push(s); }, 750);
-      })(s, dx, dy);
-    }
-  }
-  function confetti(){
-    if(RM) return;
-    var chars=["🌾","✨","🪙","🎉"], i;
-    for(i=0;i<24;i++){
-      var s=pPool.pop();
-      if(!s){ if(fxTotal>=FXMAX) return; s=document.createElement("span"); s.className="fxPart"; fx().appendChild(s); fxTotal++; }
-      s.textContent=chars[(Math.random()*chars.length)|0];
-      s.style.left=(Math.random()*window.innerWidth)+"px";
-      s.style.top="-16px";
-      s.style.transition="none";
-      s.style.transform="translate(-50%,-50%)";
-      s.style.opacity="1";
-      void s.offsetWidth;
-      s.style.transition="transform 1.1s cubic-bezier(.2,.6,.4,1), opacity 1.1s ease-out";
-      (function(s){
-        var seq=(s._seq=(s._seq||0)+1);
-        requestAnimationFrame(function(){ if(s._seq!==seq) return; s.style.transform="translate("+((Math.random()*2-1)*60)+"px,"+(window.innerHeight+40)+"px) scale(.6)"; s.style.opacity="0"; });
-        setTimeout(function(){ if(s._seq===seq) pPool.push(s); },1150);
-      })(s);
-    }
-  }
-  var tractorC = {x:0, y:0}, tractorDirty = true;
-  function invalidateTractor(){ tractorDirty = true; }
-  window.addEventListener("resize", invalidateTractor);
-  window.addEventListener("scroll", invalidateTractor, true);
-  function centerOf(el){
-    if(tractorDirty){
-      var r = el.getBoundingClientRect();
-      tractorC.x = r.left + r.width/2;
-      tractorC.y = r.top + r.height/2;
-      tractorDirty = false;
-    }
-    return tractorC;
-  }
-
-  // ---- Render ----
-  var rowRefs = [];
-  function buildList(){
-    var list = $("bList");
-    list.innerHTML = "";
-    rowRefs = [];
-    BUILDINGS.forEach(function(b){
-      var row = document.createElement("div");
-      row.className = "bRow panel";
-      row.innerHTML =
-        '<div class="ic">' + b.emoji + '</div>' +
-        '<div class="info"><div class="name">' + b.name + '</div>' +
-        '<div class="sub"></div></div>' +
-        '<div class="cnt">0</div>';
-      var btn = document.createElement("button");
-      btn.className = "buyBtn";
-      btn.addEventListener("click", function(){ buyBuilding(b); });
-      row.appendChild(btn);
-      list.appendChild(row);
-      rowRefs.push({row: row, sub: row.querySelector(".sub"), cnt: row.querySelector(".cnt"), btn: btn, s:"", c:"", b:"", d:null});
-    });
-  }
-  function renderList(){
-    BUILDINGS.forEach(function(b, i){
-      var r = rowRefs[i];
-      if(!r) return;
-      var cost = bulkCost(b, state.buyQty);
-      var dis = !(state.coins >= cost);
-      var s = fmt(buildingIncome(b)) + "/s · each " + fmt(b.baseIncome) + "/s";
-      if(r.s !== s){ r.s = s; r.sub.textContent = s; }
-      var c = String(state.owned[b.id]);
-      if(r.c !== c){ r.c = c; r.cnt.textContent = c; }
-      var bt = "🪙 " + fmt(cost);
-      if(r.b !== bt){ r.b = bt; r.btn.textContent = bt; }
-      if(r.d !== dis){
-        if(r.d === true && !dis){ r.btn.classList.remove("afford"); void r.btn.offsetWidth; r.btn.classList.add("afford"); }
-        r.d = dis; r.btn.disabled = dis;
-      }
-    });
-  }
-  var elStartBest=$("startBest"), elLpGain=$("lpGain"), elPrestigeBtn=$("prestigeBtn"), elMute=$("muteBtn"), elAch=$("achBtn"), elBf=$("bf");
-  var lastQty=-1, lastMuteIcon="";
-  function setTxt(el, v){ if(el.textContent !== v) el.textContent = v; }
-  var goldBarEl=null, goldBtnEl=null, goldInfoEl=null, goldLast="", goldBarW="", goldBtnTxt="";
-  function renderGold(){
-    if(!goldBarEl){ goldBarEl=$("goldBar"); goldBtnEl=$("goldBtn"); goldInfoEl=$("goldInfo"); }
-    var s = state.goldActive > 0
-      ? "✨ ACTIVE " + state.goldActive.toFixed(1) + "s · taps pay ×" + GOLD_TAP_X + " click power"
-      : state.goldMeter + "/" + GOLD_TAPS + " taps charged · ready bonus: +" + Math.round(GOLD_FEST * 100) + "% income, 10s";
-    if(s !== goldLast){ goldLast = s; goldInfoEl.textContent = s; }
-    var w = (state.goldActive > 0 ? 100 : state.goldMeter / GOLD_TAPS * 100).toFixed(0) + "%";
-    if(w !== goldBarW){ goldBarW = w; goldBarEl.style.width = w; }
-    var bt = state.goldActive > 0 ? "✨ Harvesting…" : "✨ Golden Harvest (" + state.goldCount + ")";
-    if(bt !== goldBtnTxt){ goldBtnTxt = bt; goldBtnEl.textContent = bt; }
-    var dis = state.goldActive > 0 || state.goldMeter < GOLD_TAPS;
-    if(goldBtnEl.disabled !== dis) goldBtnEl.disabled = dis;
-  }
-  var ordInfoEl=null, ordBarEl=null, ordLast="", ordBarW="";
-  function renderOrder(){
-    if(!ordInfoEl){ ordInfoEl=$("ordInfo"); ordBarEl=$("ordBar"); }
-    var s = state.ordType
-      ? orderText() + " — " + state.ordProg + "/" + state.ordN + " · " + Math.ceil(state.ordT) + "s left · pays " + fmt(orderReward()) + " 🪙"
-      : "📦 The market posts timed orders — fill them for bonus coins";
-    if(s !== ordLast){ ordLast = s; ordInfoEl.textContent = s; }
-    var w = (state.ordType && state.ordN > 0 ? Math.min(100, state.ordProg / state.ordN * 100) : 0).toFixed(0) + "%";
-    if(w !== ordBarW){ ordBarW = w; ordBarEl.style.width = w; }
-  }
-  function render(){
-    setTxt(coinsEl, fmt(state.coins));
-    setTxt(cpsEl, fmt(totalIncome()));
-    setTxt(cpEl, fmt(currentClickPower()));
-    setTxt(lpEl, fmt(state.legacy));
-    setTxt(elStartBest, fmt(state.legacy));
-    setTxt(elAch, "🏅 " + achCount() + "/" + ACH_INFO.length);
-    setTxt(elBf, String(state.butterflies || 0));
-
-    var gain = Math.floor(Math.sqrt(state.lifetime / 1e6));
-    setTxt(elLpGain, "+" + fmt(gain) + " Legacy Points");
-    var dis = gain < 1;
-    if(elPrestigeBtn.disabled !== dis) elPrestigeBtn.disabled = dis;
-
-    setTxt(elWheelDesc, "Stake: " + fmt(wheelStake()) + " 🪙 (5% of coins, min 1K)");
-    var wDis = state.coins < 1000;
-    if(elWheelBtn.disabled !== wDis) elWheelBtn.disabled = wDis;
-    renderGold();
-    renderOrder();
-
-    if(lastQty !== state.buyQty){
-      lastQty = state.buyQty;
-      document.querySelectorAll(".qty").forEach(function(q){
-        q.classList.toggle("sel", parseInt(q.dataset.q, 10) === state.buyQty);
-      });
-    }
-    var mi = state.muted ? "🔇" : "🔊";
-    if(lastMuteIcon !== mi){ lastMuteIcon = mi; elMute.textContent = mi; }
-    renderList();
-  }
-
-  // ---- Loop ----
-  var lastTick = Date.now(), uiAcc = 0, achAcc = 0;
-  function frame(){
-    var now = Date.now();
-    var dt = (now - lastTick) / 1000;
-    lastTick = now;
-    if(combo > 0 && now - comboT > 1600){ combo = 0; comboT = 0; lastComboMult = 1; }
-    if(dt > 0){
-      if(dt > OFFLINE_CAP) dt = OFFLINE_CAP;
-      var inc = totalIncome();
-      if(inc > 0){
-        var gain = inc * dt;
-        state.coins += gain; state.lifetime += gain;
-      }
-      if(state.goldActive > 0){
-        var gdt = Math.min(dt, 0.5);
-        state.goldActive = Math.max(0, state.goldActive - gdt);
-        if(inc > 0) state.coins += inc * GOLD_FEST * gdt;
-        if(state.goldActive <= 0) showToast("✨ Golden Harvest ended");
-      }
-      if(!state.ordType) newOrder();
-      else {
-        state.ordT -= Math.min(dt, 0.5);
-        if(state.ordT <= 0) expireOrder();
-      }
-      uiAcc += dt;
-      if(uiAcc >= 0.1){ uiAcc = 0; render(); }
-      achAcc += dt;
-      if(achAcc >= 1){ achAcc = 0; checkAch(); }
-      if(bflyT > 0) bflyT -= dt;
-      else { bflyT = 45 + Math.random() * 45; spawnBfly(); }
-    }
-    requestAnimationFrame(frame);
-  }
-
-  // ---- Save / Load / Offline ----
-  function save(){
-    if(cheated()) return;
-    state.lastSave = Date.now();
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
-  }
-  function showToast(msg){
-    var t = $("toast");
-    if(!t){ t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(showToast._tm);
-    showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 3500);
-  }
-  function applyOffline(){
-    var now = Date.now();
-    var elapsed = (now - state.lastSave) / 1000;
-    if(elapsed <= 0) return;
-    elapsed = Math.min(elapsed, OFFLINE_CAP);
-    var gain = totalIncome() * elapsed * OFFLINE_RATE;
-    if(gain > 0){ state.coins += gain; state.lifetime += gain; }
-    if(elapsed >= 15 && gain > 0){
-      var mins = Math.floor(elapsed/60), hrs = Math.floor(mins/60);
-      var away = hrs >= 1 ? hrs + "h " + (mins % 60) + "m" : mins >= 1 ? mins + "m" : Math.floor(elapsed) + "s";
-      $("welcomeMsg").innerHTML = "You were away for <b>" + away + "</b>" + (elapsed >= OFFLINE_CAP ? " (8h cap)" : "") + ".<br>Your farm earned <b>" + fmt(gain) + "</b> coins at half rate (" + fmt(totalIncome() * OFFLINE_RATE) + "/s).";
-      $("welcomeBtn").textContent = "🪙 Collect " + fmt(gain);
-      $("welcome").classList.remove("hidden");
-    }
-  }
-  function num(v, d){ v = Number(v); return isFinite(v) ? v : d; }
-  function sanitize(){
-    state.coins = Math.max(0, num(state.coins, 0));
-    state.lifetime = Math.max(0, num(state.lifetime, 0));
-    state.clickPower = Math.max(1, num(state.clickPower, 1));
-    state.legacy = Math.max(0, num(state.legacy, 0));
-    state.butterflies = Math.max(0, Math.floor(num(state.butterflies, 0)));
-    state.goldMeter = Math.max(0, Math.min(GOLD_TAPS, Math.floor(num(state.goldMeter, 0))));
-    state.goldActive = Math.max(0, Math.min(GOLD_DUR, num(state.goldActive, 0)));
-    state.goldCount = Math.max(0, Math.floor(num(state.goldCount, 0)));
-    if(["tap","buy","bfly"].indexOf(state.ordType) < 0) state.ordType = "";
-    state.ordN = Math.max(1, Math.floor(num(state.ordN, 15)));
-    state.ordProg = Math.max(0, Math.floor(num(state.ordProg, 0)));
-    state.ordT = Math.max(0, num(state.ordT, 0));
-    state.ordDone = Math.max(0, Math.floor(num(state.ordDone, 0)));
-    state.lastSave = num(state.lastSave, Date.now());
-    state.muted = !!state.muted;
-    if([1,10,25].indexOf(state.buyQty) < 0) state.buyQty = 1;
-    BUILDINGS.forEach(function(b){
-      var v = Math.floor(num(state.owned[b.id], 0));
-      state.owned[b.id] = v > 0 ? v : 0;
-    });
-  }
-  function load(){
-    try{
-      var raw = localStorage.getItem(SAVE_KEY);
-      if(raw){
-        var s = JSON.parse(raw);
-        if(s && typeof s === "object"){
-          state = Object.assign(defaultState(), s);
-          state.owned = Object.assign(defaultState().owned, s.owned || {});
-          sanitize();
+    tract.forEach(function (tr) { tr.i += tr.dir * tr.v * dt; if (tr.i > 3.2) { tr.dir = -1; } if (tr.i < 0.2) { tr.dir = 1; } });
+    var items = [];
+    DECOR.forEach(function (d) { items.push({ d: d.i + d.j, kind: 'decor', n: d.n, i: d.i, j: d.j, s: d.s }); });
+    items.push({ d: HOME.i + HOME.j + 0.02, kind: 'home' });
+    items.push({ d: COW.i + COW.j, kind: 'cow' });
+    LOT.forEach(function (L, tier) { items.push({ d: L.i + L.j + 0.05, kind: 'lot', tier: tier, i: L.i, j: L.j }); });
+    walkers.forEach(function (w) { items.push({ d: w.i + w.j, kind: 'walker', w: w }); });
+    tract.forEach(function (tr) { items.push({ d: tr.i + 3.5, kind: 'tractor', tr: tr }); });
+    items.sort(function (p, q) { return p.d - q.d; });
+    var hi = E.highest();
+    items.forEach(function (it) {
+      if (it.kind === 'decor') { var p = iso.cellXY(it.i, it.j); A.draw(cx, it.n, p.x, p.y, ss * it.s); }
+      else if (it.kind === 'home') { var ph = iso.cellXY(HOME.i, HOME.j); A.draw(cx, 'home', ph.x, ph.y - 4 * sc, ss * 0.95); }
+      else if (it.kind === 'cow') {
+        var pc = iso.cellXY(COW.i, COW.j), sq = bounce > 0 ? 1 + Math.sin(bounce * 20) * 0.08 * bounce / 0.3 : 1;
+        cx.save(); cx.translate(pc.x, pc.y); cx.scale(sq, 2 - sq); A.draw(cx, 'cow', 0, 0, ss * 1.9); cx.restore();
+        if (E.inGame && S.stats.taps < 3) iso.chip(cx, 'TAP!', pc.x, pc.y - 62 * sc + Math.sin(t * 4) * 3, true);
+      } else if (it.kind === 'walker') {
+        var w = it.w, pw = iso.cellXY(w.i - 0.5, w.j - 0.5), bob = Math.abs(Math.sin(t * 6 + w.ph)) * (w.wait <= 0 ? 2.5 : 0.4);
+        A.draw(cx, w.kind, pw.x, pw.y - bob, ss * (w.kind === 'chicken' ? 1.5 : w.kind === 'cow' ? 1.3 : 1.3), 1, w.flip);
+      } else if (it.kind === 'tractor') { var pt = iso.cellXY(it.tr.i, 3.3); A.draw(cx, 'tractor', pt.x, pt.y, ss * 0.9, 1, it.tr.dir < 0); }
+      else if (it.kind === 'lot') {
+        var tier = it.tier, g = G[tier], p3 = iso.cellXY(it.i, it.j), owned = S.owned[tier], bd = built[tier];
+        if (owned > 0) {
+          var k2 = 1;
+          if (bd && bd.t < 0.6) { var u = bd.t / 0.6; k2 = u < 0.6 ? 0.5 + 0.7 * (u / 0.6) : 1.2 - 0.2 * ((u - 0.6) / 0.4); bd.t += dt; }
+          else if (bd && bd.b > 0) { k2 = 1 + 0.06 * Math.sin(bd.b * 18) * (bd.b / 0.25); bd.b -= dt; }
+          cx.save(); cx.translate(p3.x, p3.y); cx.scale(k2, Math.max(0.9, Math.min(1.05, 2 - k2)));
+          if (CROP[tier]) { var n = Math.min(4, 1 + Math.floor(Math.log(owned + 1) / 1.4)), off = [[0, -0.22], [-0.24, 0], [0.24, 0], [0, 0.22]]; for (var q = 0; q < n; q++) { var o = off[q]; A.draw(cx, g.spr, (o[0] - o[1]) * 50 * sc * 0.9, (o[0] + o[1]) * 25 * sc * 0.9 + 2 * sc, ss * (n > 2 ? 0.62 : 0.8)); } }
+          else if (tier === 5) { var offs = [[-0.24, -0.02], [0.2, -0.2], [0.05, 0.22]]; for (var q2 = 0; q2 < Math.min(3, 1 + Math.floor(owned / 4)); q2++) { var o2 = offs[q2]; A.draw(cx, g.spr, (o2[0] - o2[1]) * 50 * sc, (o2[0] + o2[1]) * 25 * sc, ss * 0.85); } }
+          else A.draw(cx, g.spr, 0, 0, ss);
+          cx.restore();
+          iso.chip(cx, '×' + owned, p3.x, p3.y + 15 * sc, false);
+          if (owned >= 25) { var st2 = owned >= 100 ? 3 : owned >= 50 ? 2 : 1, star = '★★★'.slice(0, st2); cx.font = '800 13px "DM Sans", sans-serif'; cx.textAlign = 'center'; cx.strokeStyle = 'rgba(40,20,0,.8)'; cx.lineWidth = 3; cx.strokeText(star, p3.x, p3.y + 31 * sc); cx.fillStyle = '#ffd45a'; cx.fillText(star, p3.x, p3.y + 31 * sc); }
+        } else {
+          var can = E.canBuy(tier), nextUp = tier === hi + 1 && can;
+          iso.drawGhost(cx, A, g.spr, p3.x, p3.y, ss, nextUp ? 0.5 + 0.12 * Math.sin(t * 3) : 0.2);
+          if (nextUp) {
+            cx.strokeStyle = 'rgba(255,224,130,' + (0.6 + 0.3 * Math.sin(t * 4)) + ')'; cx.lineWidth = 2.5; cx.setLineDash([7, 5]); iso.diamond(cx, p3.x, p3.y, 0.9); cx.stroke(); cx.setLineDash([]);
+            iso.chip(cx, S.coins >= E.cost(tier, 1) ? g.verb.toUpperCase() + '!' : 'NEXT', p3.x, p3.y - 6 * sc + Math.sin(t * 4) * 2, S.coins >= E.cost(tier, 1));
+          } else if (tier > hi + 1 || !E.unlocked(tier)) { cx.fillStyle = 'rgba(255,255,255,.6)'; cx.font = '800 14px "DM Sans", sans-serif'; cx.textAlign = 'center'; cx.fillText(E.unlocked(tier) ? '?' : 'Lv ' + g.lvl, p3.x, p3.y + 4); }
         }
       }
-    }catch(e){}
-    applyOffline();
-    save();
-  }
-
-  // ---- Events ----
-  function startPlay(teach){
-    ["startScreen","achScreen","menuScreen","welcome","prestigeCard"].forEach(function(id){ $(id).classList.add("hidden"); });
-    render(); scene("play");
-    if(coach){ coach.stop(true); coach = null; }
-    if(window.PlayKit && (teach === true || !PlayKit.seen("fi_tut"))){
-      coach = PlayKit.coach({key:"fi_tut", theme:{panel:"#11261a", fg:"#e8ffe9", accent:"#8dff9b"}, steps:[
-        {text:"Tap the tractor to earn coins.", target:"#tractor", on:"tap"},
-        {text:"Buy a building when you can afford one (a Wheat Field costs 15). Buildings earn coins every second, even while you are away.", target:"#bList", on:"buy"},
-        {text:"Fill orders for bonus coins and tap for a Golden Harvest. At 1M coins earned, New Farm+ gives Legacy Points: +10% income each.", target:"#prestige"}
-      ]});
-    }
-  }
-  function toTitle(){
-    save(); if(coach){ coach.stop(true); coach = null; }
-    ["achScreen","menuScreen","welcome","prestigeCard"].forEach(function(id){ $(id).classList.add("hidden"); });
-    $("startBest").textContent = fmt(state.legacy);
-    $("startScreen").classList.remove("hidden"); scene("title");
-  }
-  function sdkHint(){
-    if($("startScreen").className.indexOf("hidden") === -1) return "Press Play, tap the tractor, and buy buildings: they earn coins every second.";
-    var lp = Math.floor(Math.sqrt(state.lifetime / 1e6));
-    if(lp >= 3) return "New Farm+ now for " + lp + " Legacy Points: +" + (lp * 10) + "% income forever.";
-    if(state.goldMeter >= GOLD_TAPS && state.goldActive <= 0) return "Your Golden Harvest is ready: tap it for a burst of coins.";
-    var best = null, bv = 0;
-    BUILDINGS.forEach(function(b, i){ if(i > 0 && !state.owned[BUILDINGS[i-1].id]) return; var v = b.baseIncome / buildingCost(b); if(v > bv){ bv = v; best = b; } });
-    if(!best) return "Tap the tractor to earn your first 15 coins, then buy a Wheat Field.";
-    var c = buildingCost(best);
-    return (state.coins >= c ? "Buy a " + best.name + " now" : "Save " + fmt(c - state.coins) + " more coins for a " + best.name) + ": " + best.emoji + " gives the most income for its price.";
-  }
-  function code(c){
-    if(c === "HAYRAIN"){ var g = Math.max(10000, totalIncome() * 600); state.coins += g; state.lifetime += g; }
-    else if(c === "GOLDENHOUR"){ state.goldActive = GOLD_DUR * 6; }
-    else if(c === "BUMPERCROP"){ codes.BUMPERCROP = 1; }
-    else return {ok:false};
-    if(window.PlayKit) PlayKit.codes(true);
-    render();
-    return {ok:true, message:{HAYRAIN:"Hay rain: a big pile of coins", GOLDENHOUR:"Golden hour: a Golden Harvest that lasts a whole minute", BUMPERCROP:"Bumper crop: every tractor tap is worth 10 times more"}[c] + ". Codes on: this session is not saved."};
-  }
-  $("playBtn").addEventListener("click", function(){ startPlay(); sfx("click"); });
-  $("howBtn").addEventListener("click", function(){ startPlay(true); sfx("click"); });
-  $("pcBtn").addEventListener("click", function(){ $("prestigeCard").classList.add("hidden"); sfx("click"); scene("play"); });
-  $("welcomeBtn").addEventListener("click", function(){ $("welcome").classList.add("hidden"); sfx("buy"); });
-  $("tractor").addEventListener("click", doClick);
-  document.querySelectorAll(".qty").forEach(function(q){
-    q.addEventListener("click", function(){
-      state.buyQty = parseInt(q.dataset.q, 10);
-      sfx("click"); render();
     });
-  });
-  $("prestigeBtn").addEventListener("click", prestige);
-  $("goldBtn").addEventListener("click", activateGold);
-  $("achBtn").addEventListener("click", function(){ buildAchList(); renderAchList(); $("achScreen").classList.remove("hidden"); sfx("click"); });
-  $("achCloseBtn").addEventListener("click", function(){ $("achScreen").classList.add("hidden"); sfx("click"); });
-  $("muteBtn").addEventListener("click", function(){ state.muted = !state.muted; save(); render(); });
-  $("resumeBtn").addEventListener("click", function(){ $("menuScreen").classList.add("hidden"); sfx("click"); });
-  $("toggleMuteBtn").addEventListener("click", function(){
-    state.muted = !state.muted;
-    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
-    save(); render();
-  });
-  $("resetBtn").addEventListener("click", function(){
-    if(confirm("Reset your farm and lose all progress?")){
-      state = defaultState();
-      save(); render();
-      $("menuScreen").classList.add("hidden");
+    if (bfly) {
+      bfly.t += dt; bfly.x += bfly.vx * dt; bfly.y = bfly.y0 + Math.sin(bfly.t * 2.2) * 26 * sc + Math.sin(bfly.t * 5.1) * 6;
+      butterfly(cx, bfly.x, bfly.y, t, sc * 1.4); iso.chip(cx, 'CATCH!', bfly.x, bfly.y - 26 * sc + Math.sin(t * 6) * 2, true);
+      if (bfly.t > 14 || bfly.x > W + 40) { bfly = null; E.critterOut = false; }
     }
-  });
-  var menuBtn = document.createElement("button");
-  menuBtn.className = "iconBtn";
-  menuBtn.id = "menuBtn";
-  menuBtn.textContent = "⚙️";
-  menuBtn.addEventListener("click", function(){
-    $("toggleMuteBtn").textContent = state.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
-    $("menuScreen").classList.remove("hidden");
-    sfx("click");
-  });
-  $("hud").appendChild(menuBtn);
-
-  // ---- Init ----
-  load();
-  loadAch();
-  buildList();
-  render();
-  if(state.lifetime === 0){
-    var hb = $("clickBurst");
-    hb.textContent = "👆 Tap the tractor to earn coins!";
-    hb.style.opacity = "1";
+    coinT -= dt;
+    if (E.inGame && coinT <= 0) {
+      if (E.income() > 0) {
+        var ws = [], wsum = 0, i2; for (i2 = 0; i2 < G.length; i2++) { var r = E.genRate(i2); ws.push(r); wsum += r; }
+        var pick = Math.random() * wsum, ti = 0; for (i2 = 0; i2 < ws.length; i2++) { pick -= ws[i2]; if (pick <= 0) { ti = i2; break; } }
+        spawnCoin(ti); coinT = 0.45 + Math.random() * 0.5;
+      } else coinT = 1;
+    }
+    for (var c2 = coins.length - 1; c2 >= 0; c2--) {
+      var co = coins[c2]; co.t += dt; if (co.t > co.life) { coins.splice(c2, 1); continue; }
+      co.y += co.vy * dt; var al = co.t < 0.15 ? co.t / 0.15 : co.t > co.life - 0.4 ? (co.life - co.t) / 0.4 : 1;
+      cx.globalAlpha = al; cx.fillStyle = '#8a5a12'; cx.beginPath(); cx.arc(co.x, co.y + 1, 7, 0, 6.2832); cx.fill(); cx.fillStyle = '#f2c14e'; cx.beginPath(); cx.arc(co.x, co.y, 7, 0, 6.2832); cx.fill(); cx.fillStyle = 'rgba(255,255,255,.6)'; cx.beginPath(); cx.arc(co.x - 2, co.y - 2, 2.5, 0, 6.2832); cx.fill(); cx.globalAlpha = 1;
+    }
+    for (var d2 = dust.length - 1; d2 >= 0; d2--) { var du = dust[d2]; du.t += dt; if (du.t > du.life) { dust.splice(d2, 1); continue; } var f = du.t / du.life; cx.globalAlpha = 0.5 * (1 - f); cx.fillStyle = '#eadcc0'; cx.beginPath(); cx.arc(du.x + du.vx * du.t, du.y + du.vy * du.t, du.r * (0.6 + f), 0, 6.2832); cx.fill(); cx.globalAlpha = 1; }
+    bounce = Math.max(0, bounce - dt);
+    iso.light(cx, dt, t);
   }
-  setInterval(save, 5000);
-  window.addEventListener("beforeunload", save);
-  document.addEventListener("visibilitychange", function(){ if(document.hidden) save(); });
-  lastTick = Date.now();
-  requestAnimationFrame(frame);
-  $("startBest").textContent = fmt(state.legacy);
-  scene("title");
-  if(SDK) SDK.init({
-    pauseButton: "tr",
-    onRestart: function(){ startPlay(); },
-    onExit: toTitle,
-    onTutorial: function(){ startPlay(true); },
-    onHint: sdkHint,
-    onCheat: code
-  });
+  function hitCow(p) { var c = iso.cellXY(COW.i, COW.j), k = iso.sprS * iso.sc * 1.9; return Math.abs(p.x - c.x) < 40 * iso.sc && p.y > c.y - 52 * iso.sc && p.y < c.y + 14 * iso.sc; }
+  return {
+    stage: st,
+    pointer: function (cxp, cyp) {
+      var p = st.toLocal(cxp, cyp), sc = iso.sc, k = iso.sprS * sc;
+      if (bfly && Math.abs(p.x - bfly.x) < 40 * sc && Math.abs(p.y - bfly.y) < 40 * sc) { var cc = st.toClient(bfly.x, bfly.y); E.critterTapped('butterfly', cc.x, cc.y); bfly = null; E.critterOut = false; return; }
+      var onCow = hitCow(p);
+      if (!onCow) {
+        for (var tier = 0; tier < LOT.length; tier++) {
+          if (S.owned[tier] <= 0) continue;
+          var L = LOT[tier], c = iso.cellXY(L.i, L.j), s = A.size(G[tier].spr); if (!s) continue;
+          var hh = Math.min(s.h * k * 0.9, 90 * sc), ww = Math.min(s.w * k * 0.5, 50 * sc);
+          if (Math.abs(p.x - c.x) < ww && p.y < c.y + 12 * sc && p.y > c.y - hh + 6 * sc) {
+            IK.sfx('tap'); built[tier] = built[tier] || {}; built[tier].b = 0.25; IK.fx.pop(E.rows[tier].row, 0.02);
+            IK.toast(G[tier].name + ' ×' + S.owned[tier] + ': ' + fmt(E.genRate(tier) * E.globalMul()) + ' coins per second', { icon: G[tier].ico(24) });
+            E.switchTab('build'); var row = E.rows[tier].row; if (row && row.scrollIntoView) { try { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { row.scrollIntoView(); } }
+            return;
+          }
+        }
+      }
+      var f = iso.cellXY(COW.i, COW.j), cl = st.toClient(f.x, f.y - 30 * sc);
+      bounce = 0.3; E.tapMain(onCow ? cl.x : cxp, onCow ? cl.y : cyp);
+      IK.fx.burst(cl.x, cl.y, { n: 7, speed: 190, angle: -Math.PI / 2, spread: 1.6, grav: 520, shape: 'coin', size: 4.5, colors: ['#f2c14e', '#ffe08a'] });
+      IK.fx.burst(cl.x, cl.y, { n: 5, speed: 120, angle: -Math.PI / 2, spread: 1.2, grav: 380, size: 3, colors: ['#ffffff', '#e8f3ff'] });
+    },
+    update: function () {},
+    onBuy: function (i, n, first) {
+      built[i] = built[i] || {}; if (first) built[i].t = 0; else built[i].b = 0.25;
+      var L = LOT[i], p = iso.cellXY(L.i, L.j), sc = iso.sc;
+      for (var q = 0; q < (first ? 14 : 5); q++) dust.push({ x: p.x + (Math.random() - 0.5) * 40 * sc, y: p.y + (Math.random() - 0.3) * 10 * sc, vx: (Math.random() - 0.5) * 30, vy: -12 - Math.random() * 20, r: 5 + Math.random() * 6, t: 0, life: 0.7 + Math.random() * 0.4 });
+      var c = st.toClient(p.x, p.y - 30 * sc); IK.fx.burst(c.x, c.y, { n: first ? 24 : 10, speed: 200, shape: 'star', size: 4 });
+    },
+    onLevel: function () {},
+    spawnCritter: function () {
+      if (bfly) return false;
+      bfly = { x: -20, y0: st.h * 0.45 + Math.random() * 40, y: 0, vx: 44 + Math.random() * 16, t: 0 };
+      IK.toast('A butterfly flutters by. Catch it!', { icon: IK.ico.gift(22) }); IK.sfx('whoosh', { volume: 0.4 });
+      return true;
+    },
+    onCaravan: function (kind) { if (kind === 'go') IK.sfx('whoosh', { volume: 0.4 }); }
+  };
+}
+
+var E = new IK.Idle({
+  id: 'farm-idle', name: 'Farm Idle Tycoon', saveKey: 'farmIdleSave_v2', muteKey: 'fi_muted',
+  cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
+  gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL,
+  tapBase: 1, tapName: 'cow', workers: 'farmhands', critterName: 'The butterfly',
+  tabs: [{ id: 'build', label: 'Farm', ico: IK.ico.hammer }, { id: 'ups', label: 'Upgrades', ico: IK.ico.up }, { id: 'goals', label: 'Goals', ico: IK.ico.scroll }, { id: 'crown', label: 'Fair', ico: IK.ico.ribbon }],
+  tabLevels: { ups: 2, goals: 3, crown: 5 },
+  levelInfo: { 2: { kind: 'Unlocked', text: 'Upgrades for your farm' }, 3: { kind: 'Unlocked', text: 'Daily goals, gifts and butterflies' }, 5: { kind: 'Unlocked', text: 'The Grand Fair and the Ribbon shop' } },
+  prestige: { name: 'Blue Ribbon', plural: 'Blue Ribbons', label: 'Enter the Grand Fair', tab: 'Fair', ico: function (px) { return IK.ico.ribbon(px); }, art: function (px) { return IK.ico.ribbon(px); }, unit: 1e6, coef: 3, per: 0.10, lore: 'Show off your farm at the Grand Fair. You start a new season, and every blue ribbon adds 10% to all income forever.' },
+  levelArt: function () { return IK.ico.star(56); }, welcomeArt: function () { return A.icon('cow', 64, 4); },
+  logo: 'FARM IDLE<br>TYCOON<small>FIELDS TO WINDMILLS</small>', tagline: 'Milk the cow, plant fields and raise a farm that works while you sleep.', pitch: 'A small farm with big dreams.',
+  howto: ['Tap the cow to milk it and earn coins.', 'Plant a Wheat Field, then more fields, animals and buildings. Each one earns coins every second, even while you are away.', 'Own 25, 50 or 100 of one thing to multiply its output. Buy upgrades for more.', 'Reach 1M coins in one season, then enter the Grand Fair for blue ribbons: a permanent bonus and a shop of perks.'],
+  coach: function (E) {
+    return [
+      { text: 'Tap the cow to milk it and earn coins.', target: '#sceneWrap', on: 'tap' },
+      { text: 'Great! Now plant your first Wheat Field.', target: function () { return E.rows[0].btn; }, on: 'buy' },
+      { text: 'Every field and animal earns coins by itself, even when you are away. Keep growing to level up and unlock new tabs.', target: '', on: null }
+    ];
+  },
+  makeScene: makeScene,
+  cheats: {
+    GOLDRAIN: function (E) { var g = Math.max(1e6, E.income() * 600); E.S.coins += g; E.S.lifetime += g; E.S.alltime += g; return 'Coin shower: +' + fmt(g) + ' coins.'; },
+    MIDAS: function (E) { E.codes.MIDAS = 1; return 'Golden udder: every tap is worth 10 times more.'; },
+    TIMEWARP: function (E) { var h = E.income() * 3600; E.S.coins += h; E.S.lifetime += h; E.S.alltime += h; return 'Time warp: one hour of income (+' + fmt(h) + ').'; }
+  },
+  migrate: function (d) {
+    var own = {}, ids = ['wheat', 'chicken', 'cow', 'apple', 'bee', 'tractor', 'green', 'dairy', 'wine', 'mega'];
+    var arr = ids.map(function (k) { return (d.owned && d.owned[k]) | 0; });
+    return { v: 2, coins: d.coins, lifetime: d.lifetime, owned: arr, prem: d.legacy || 0, buy: d.buyQty, stats: { taps: 0 }, last: d.lastSave };
+  }
+});
+E.codes = {};
+window.__empire = E;
+E.boot($('root'));
 })();
 </script>
 </body>

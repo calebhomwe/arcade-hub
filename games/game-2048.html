@@ -18,7 +18,7 @@ button{font-family:inherit;color:inherit;-webkit-appearance:none;appearance:none
 #top{width:min(100%,480px);display:flex;align-items:center;gap:8px;min-height:48px;padding-right:52px}
 #back{display:inline-flex;align-items:center;min-height:44px;padding:0 12px 0 4px;color:var(--muted);text-decoration:none;font:700 15px/1 var(--pz-display,sans-serif)}
 #modeName{flex:1;text-align:center;font:600 16px/1.1 var(--pz-display,sans-serif);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#hud{width:var(--bs);display:flex;gap:10px;align-items:stretch;min-height:64px}
+#hud{width:var(--bs);display:flex;gap:10px;align-items:stretch;min-height:64px;margin-top:auto}
 .stat{flex:1;padding:8px 12px 7px;min-width:0;position:relative}
 .stat small{display:block;font:700 12px/1 var(--pz-display,sans-serif);letter-spacing:.14em;color:rgba(255,243,210,.7)}
 .stat b{display:block;font:700 28px/1.1 var(--pz-display,sans-serif);font-variant-numeric:tabular-nums;white-space:nowrap;background:linear-gradient(180deg,#fff8d2,#f6c651 62%,#d9902a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(60,25,0,.85));width:fit-content;max-width:100%}
@@ -65,7 +65,7 @@ body.faces .tile .in::before{display:none}
 .tool[disabled]{opacity:.4}
 .tool.armed{box-shadow:inset 0 0 0 3px #ffd979,0 0 18px rgba(255,205,90,.8)}
 .tool .n{position:absolute;top:-7px;right:-3px;min-width:23px;height:23px;padding:0 5px;border-radius:12px;background:var(--pz-gold,#f0b93a);color:#4a2a00;display:grid;place-items:center;font:700 13px/1 var(--pz-display,sans-serif);box-shadow:0 0 0 1.5px #8a5a0c,0 2px 0 1.5px #6b4408;text-shadow:0 1px 0 rgba(255,255,255,.5)}
-#hintline{width:var(--bs);min-height:40px;font:800 15px/1.3 var(--pz-text,sans-serif);color:var(--muted);text-align:center;display:flex;align-items:center;justify-content:center}
+#hintline{width:var(--bs);min-height:40px;margin-bottom:auto;font:800 15px/1.3 var(--pz-text,sans-serif);color:var(--muted);text-align:center;display:flex;align-items:center;justify-content:center}
 #hintline.coach{color:#4a2f17;border-radius:16px;padding:6px 6px 6px 14px;justify-content:space-between;gap:10px;text-align:left;background-color:#f3e2b3;background-image:linear-gradient(180deg,rgba(255,250,232,.55),rgba(214,170,96,.18)),var(--pz-paper);background-blend-mode:normal,overlay;background-size:auto,220px;box-shadow:0 0 0 2px #6e4519,0 0 0 4px #e6bb55,0 8px 18px rgba(0,0,0,.3)}
 #hintline button{flex:none;min-height:44px;min-width:60px;border:0;border-radius:12px;background:linear-gradient(180deg,#a5773d,#6b4519);box-shadow:0 0 0 2px #4b2e10,inset 0 1px 0 rgba(255,255,255,.4);font:700 15px/1 var(--pz-display,sans-serif);color:#fff3d2;cursor:pointer}
 .tool:focus-visible,.mbtn:focus-visible,#back:focus-visible,.sbtn:focus-visible,#board:focus-visible,.sizes button:focus-visible{outline:3px solid #ffd979;outline-offset:3px}
@@ -98,6 +98,7 @@ body.faces .tile .in::before{display:none}
 .album svg{display:block;width:100%;height:100%}
 .album div.no .fc{filter:grayscale(1) brightness(.5);opacity:.55}
 .album div.got{color:#4a2f17}
+.pz-ov:not(.dim){background-color:var(--bg2);background-image:radial-gradient(90% 46% at 50% -4%,rgba(255,214,140,.5),rgba(255,214,140,0) 70%),linear-gradient(180deg,var(--bg1),var(--bg2)),var(--bgtex);background-size:auto,auto,300px;background-blend-mode:normal,normal,multiply}
 [hidden]{display:none!important}
 @media (max-height:640px){#hud{min-height:56px}.stat b{font-size:24px}#hintline{min-height:32px}}
 @media (prefers-reduced-motion:reduce){.tile{transition:none}.tile.pop .in,.tile.born .in,#board.danger,#logo i,#praise.go,#arrow.on,.stat b.bump{animation:none!important}}
@@ -107,9 +108,9 @@ body.faces .tile .in::before{display:none}
 <div id="app">
   <div id="top"><a id="back" href="../index.html" aria-label="Back to the arcade hub">‹ Hub</a><div id="modeName">2048</div></div>
   <div id="hud">
-    <div class="stat"><small>SCORE</small><b id="score">0</b></div>
-    <div class="stat"><small>BEST</small><b id="best">0</b></div>
-    <div class="stat goal" id="goalBox" hidden><small id="goalLab">GOAL</small><b id="goalVal"></b></div>
+    <div class="stat glass"><small>SCORE</small><b id="score">0</b></div>
+    <div class="stat glass"><small>BEST</small><b id="best">0</b></div>
+    <div class="stat goal glass" id="goalBox" hidden><small id="goalLab">GOAL</small><b id="goalVal"></b></div>
   </div>
   <div id="stage">
     <div id="board" tabindex="0" role="application" aria-label="2048 board. Swipe or use the arrow keys."></div>
@@ -117,10 +118,10 @@ body.faces .tile .in::before{display:none}
     <div id="praise" aria-hidden="true"></div>
   </div>
   <div id="tools">
-    <button class="tool" id="btnUndo" aria-label="Undo the last move"><span id="icoUndo"></span>Undo<span class="n" id="nUndo">3</span></button>
-    <button class="tool" id="btnHint" aria-label="Show a good move"><span id="icoHint"></span>Hint</button>
-    <button class="tool" id="btnHammer" aria-label="Hammer: smash one tile"><span id="icoHammer"></span>Hammer<span class="n" id="nHammer">0</span></button>
-    <button class="tool" id="btnMenu" aria-label="Menu"><span id="icoMenu"></span>Menu</button>
+    <button class="tool glass" id="btnUndo" aria-label="Undo the last move"><span id="icoUndo"></span>Undo<span class="n" id="nUndo">3</span></button>
+    <button class="tool glass" id="btnHint" aria-label="Show a good move"><span id="icoHint"></span>Hint</button>
+    <button class="tool glass" id="btnHammer" aria-label="Hammer: smash one tile"><span id="icoHammer"></span>Hammer<span class="n" id="nHammer">0</span></button>
+    <button class="tool glass" id="btnMenu" aria-label="Menu"><span id="icoMenu"></span>Menu</button>
   </div>
   <div id="hintline" aria-live="polite">Swipe anywhere to slide the tiles</div>
 </div>
@@ -144,6 +145,7 @@ body.faces .tile .in::before{display:none}
 <div class="pz-ov dim" id="result" role="dialog" aria-label="Result"></div>
 
 <script src="kit/pz.js"></script>
+<script src="kit/critters.js"></script>
 <script src="kit/g2048-core.js"></script>
 <script>
 (function () {
@@ -156,18 +158,18 @@ const cheated = () => !!(SDK && SDK.cheated);
 const say = t => { const l = $('live'); l.textContent = ''; setTimeout(() => { l.textContent = t; }, 30); };
 
 /* ------------------------------------------------------------ looks you unlock by playing */
-const RAMP_COZY = ['#fff1cf', '#ffe0a3', '#ffbf7a', '#ff9d6c', '#ff7f7f', '#ff6b9c', '#d27ce0', '#9d86ff', '#6fa8ff', '#47c9c2', '#ffcf33', '#ff5d73', '#5a3a22'];
+const RAMP_COZY = ['#efe2c4', '#ead29a', '#e2a35a', '#d4794b', '#c95a4a', '#b8476a', '#8f5aa8', '#5a72b8', '#3a9aa6', '#5a9f4a', '#e6b53d', '#8a1f2b', '#3a2a1a'];
 const THEMES = [
-  { id: 'cozy', name: 'Cozy', level: 1, colors: ['#fff6e8', '#ffbf7a', '#ff7f7f'], bg: ['#fff6e8', '#ffd9b5'], ink: '#5a3a22', board: '#c9a27e', cell: '#dfc3a4', panel: 'rgba(255,255,255,.55)', tint: '#fff0dc', ramp: RAMP_COZY, faces: false },
-  { id: 'critters', name: 'Critters', level: 2, colors: ['#fff6e8', '#ffe0a3', '#ff9d6c'], bg: ['#fff6e8', '#ffd9b5'], ink: '#5a3a22', board: '#c9a27e', cell: '#dfc3a4', panel: 'rgba(255,255,255,.55)', tint: '#fff0dc', ramp: RAMP_COZY, faces: true },
-  { id: 'candy', name: 'Candy Pop', level: 4, colors: ['#ffe3f1', '#ff8fc2', '#8fe3ff'], bg: ['#ffe9f4', '#ffc4de'], ink: '#6a2a58', board: '#f29ac0', cell: '#f8bbd6', panel: 'rgba(255,255,255,.6)', tint: '#ffe3f1', faces: false,
-    ramp: ['#fff0f7', '#ffd0e6', '#ffb0d5', '#ff8fc2', '#ff6fb1', '#c785ff', '#8f9cff', '#6fc6ff', '#5fe0c4', '#9be86a', '#ffd84d', '#ff8a5c', '#6a2a58'] },
-  { id: 'night', name: 'Night Owl', level: 6, colors: ['#1b1745', '#7b5cff', '#39e6c5'], bg: ['#2a2263', '#0c0a24'], ink: '#efeaff', board: '#3a3280', cell: '#2c2666', panel: 'rgba(255,255,255,.10)', tint: '#1b1745', faces: false,
-    ramp: ['#4a4396', '#5a52b8', '#7b5cff', '#a25cff', '#e05cff', '#ff5cae', '#ff6b6b', '#ff9a4d', '#ffcb47', '#8ce86a', '#39e6c5', '#4dc3ff', '#ffffff'] },
-  { id: 'ocean', name: 'Ocean', level: 9, colors: ['#0a6a86', '#4ee0b8', '#ffe066'], bg: ['#0a7a94', '#03263a'], ink: '#eafcff', board: '#0d5872', cell: '#0a4a62', panel: 'rgba(255,255,255,.12)', tint: '#0a5a72', faces: false,
-    ramp: ['#bfeaf5', '#8fdcf0', '#5cc8ea', '#3aa7e6', '#4b83f0', '#6b66e8', '#9a5fe0', '#e05cae', '#ff7a6b', '#ffb347', '#ffe066', '#7ff0b0', '#ffffff'] },
-  { id: 'gold', name: 'Gold Rush', level: 12, colors: ['#15120a', '#ffcf33', '#fff2b8'], bg: ['#2a2412', '#090805'], ink: '#fff2c9', board: '#3a3117', cell: '#2b2410', panel: 'rgba(255,220,120,.12)', tint: '#15120a', faces: false,
-    ramp: ['#6b5a2a', '#8a7333', '#a88b3a', '#c4a23f', '#e0b93f', '#f5cf3f', '#ffdc5a', '#ffe680', '#fff0a8', '#fff5c8', '#ffffff', '#ffd1e0', '#ffffff'] },
+  { id: 'cozy', name: 'Cozy Oak', level: 1, colors: ['#f6ead0', '#e2a35a', '#c95a4a'], bg: ['#f6ead0', '#d9b88a'], ink: '#4a2f17', muted: 'rgba(74,47,23,.68)', bgTex: 'linen', frameTex: 'walnut', wellTex: 'walnut', wellShade: 'rgba(52,24,6,.5)', tileTex: 'oak', blend: 'overlay', texSize: 150, ramp: RAMP_COZY, faces: false, tint: '#f6ead0', darkUI: false },
+  { id: 'critters', name: 'Critters', level: 2, colors: ['#f6ead0', '#ead29a', '#d4794b'], bg: ['#f6ead0', '#d9b88a'], ink: '#4a2f17', muted: 'rgba(74,47,23,.68)', bgTex: 'linen', frameTex: 'walnut', wellTex: 'walnut', wellShade: 'rgba(52,24,6,.5)', tileTex: 'oak', blend: 'overlay', texSize: 150, ramp: RAMP_COZY, faces: true, tint: '#f6ead0', darkUI: false },
+  { id: 'marble', name: 'Marble Tiles', level: 4, colors: ['#efe8da', '#7f8fb8', '#b5527a'], bg: ['#f0eadc', '#c6b99c'], ink: '#4a3a24', muted: 'rgba(74,58,36,.7)', bgTex: 'linen', frameTex: 'marble', wellTex: 'onyx', wellShade: 'rgba(30,30,50,.62)', tileTex: 'marble', blend: 'overlay', texSize: 190, faces: false, tint: '#f0eadc', darkUI: false,
+    ramp: ['#f4eee0', '#e6dcc2', '#e0b98a', '#d8917a', '#c96a6a', '#b5527a', '#8f62a8', '#5f74b8', '#3f9aa8', '#4fa070', '#d9b03c', '#8a2030', '#2a2a35'] },
+  { id: 'night', name: 'Night Glass', level: 6, colors: ['#1b1745', '#7b5cff', '#39e6c5'], bg: ['#2a2668', '#0a0926'], ink: '#efeaff', muted: 'rgba(239,234,255,.72)', bgTex: 'leather', frameTex: 'onyx', wellTex: 'leather', wellShade: 'rgba(4,2,30,.72)', tileTex: 'none', blend: 'normal', texSize: 150, faces: false, tint: '#1b1745', darkUI: true,
+    ramp: ['#4a4a9e', '#5a5cc0', '#7b5cff', '#a25cff', '#d85cf0', '#ff5cae', '#ff6b6b', '#ff9a4d', '#ffcb47', '#7fe06a', '#39e6c5', '#4dc3ff', '#ffffff'] },
+  { id: 'ocean', name: 'Ocean Pearl', level: 9, colors: ['#0a5a78', '#4fd0d8', '#ffe066'], bg: ['#0d6f92', '#032336'], ink: '#e6f7ff', muted: 'rgba(230,247,255,.74)', bgTex: 'leather', frameTex: 'onyx', wellTex: 'leather', wellShade: 'rgba(0,22,44,.7)', tileTex: 'onyx', blend: 'overlay', texSize: 170, faces: false, tint: '#0d5a7c', darkUI: true,
+    ramp: ['#cfeaf2', '#a5dceb', '#6cc8e6', '#3aa7e0', '#4b83f0', '#6b66e8', '#9a5fe0', '#e05cae', '#ff7a6b', '#ffb347', '#ffe066', '#7ff0b0', '#ffffff'] },
+  { id: 'gold', name: 'Gold Rush', level: 12, colors: ['#15120a', '#ffcf33', '#fff2b8'], bg: ['#3a3016', '#0a0805'], ink: '#fff2c9', muted: 'rgba(255,242,201,.74)', bgTex: 'leather', frameTex: 'walnut', wellTex: 'leather', wellShade: 'rgba(0,0,0,.66)', tileTex: 'walnut', blend: 'overlay', texSize: 160, faces: false, tint: '#15120a', darkUI: true,
+    ramp: ['#8a7333', '#a88b3a', '#c4a23f', '#dcb43f', '#eec53f', '#f5cf3f', '#ffdc5a', '#ffe680', '#fff0a8', '#fff5c8', '#ffffff', '#ffd1e0', '#ffffff'] },
 ];
 const QUESTS = [
   { id: 'merge60', key: 'merges', text: 'Merge {n} tiles', goal: 60, xp: 30 },
@@ -185,44 +187,28 @@ const QUESTS = [
 let theme = THEMES[0], ready = false;
 const prof = PZ.profile({ id: 'g2048', name: 'Your progress', xp: { base: 60, p: 1.45 }, themes: THEMES, quests: QUESTS,
   onTheme: t => applyTheme(t), onOpen: () => { uiOpen = true; }, onClose: () => { uiOpen = false; },
-  extra: el => { el.innerHTML = '<h3>Critter album</h3><div class="album">' + CRITTERS.map(c => '<div class="' + (bestTile >= c.v ? 'got' : 'no') + '">' + critterSVG(c, faceColor(c.v)) + (bestTile >= c.v ? PZ.esc(c.name) : c.v + '?') + '</div>').join('') + '</div>'; } });
+  extra: el => { el.innerHTML = '<h3>Critter album</h3><div class="album">' + CRITTERS.map(c => '<div class="' + (bestTile >= c.v ? 'got' : 'no') + '"><div class="fc" style="--bg:' + colorForTheme(THEMES[1], c.v) + ';--sh:' + shade(colorForTheme(THEMES[1], c.v), -0.24) + ';--tiletex:url(assets/tex/oak.jpg)">' + critterSVG(c, shade(colorForTheme(THEMES[1], c.v), -0.28)) + '</div>' + (bestTile >= c.v ? PZ.esc(c.name) : c.v + '?') + '</div>').join('') + '</div>'; } });
 let uiOpen = false;
 
-/* ------------------------------------------------------------ critters: small SVG faces, one per tile value */
-const K = '#3b2417';
-const eyes = (y, dx, r) => '<circle cx="' + (50 - dx) + '" cy="' + y + '" r="' + r + '" fill="' + K + '"/><circle cx="' + (50 + dx) + '" cy="' + y + '" r="' + r + '" fill="' + K + '"/><circle cx="' + (50 - dx + r * 0.35) + '" cy="' + (y - r * 0.4) + '" r="' + r * 0.36 + '" fill="#fff"/><circle cx="' + (50 + dx + r * 0.35) + '" cy="' + (y - r * 0.4) + '" r="' + r * 0.36 + '" fill="#fff"/>';
-const cheeks = '<ellipse cx="25" cy="63" rx="7" ry="4.6" fill="#ff7f9b" opacity=".5"/><ellipse cx="75" cy="63" rx="7" ry="4.6" fill="#ff7f9b" opacity=".5"/>';
-const mouthW = y => '<path d="M43 ' + y + ' q3.5 5.5 7 0 q3.5 5.5 7 0" fill="none" stroke="' + K + '" stroke-width="2.6" stroke-linecap="round"/>';
-const mouthU = y => '<path d="M42 ' + y + ' q8 9 16 0" fill="none" stroke="' + K + '" stroke-width="2.8" stroke-linecap="round"/>';
-const noseP = y => '<ellipse cx="50" cy="' + y + '" rx="4.2" ry="3" fill="#ff7f9b"/>';
-const CRITTERS = [
-  { v: 2, name: 'Mousey', svg: (s) => '<circle cx="21" cy="26" r="14" fill="' + s + '"/><circle cx="21" cy="26" r="8" fill="#ffb3c4"/><circle cx="79" cy="26" r="14" fill="' + s + '"/><circle cx="79" cy="26" r="8" fill="#ffb3c4"/>' + eyes(52, 17, 5.5) + cheeks + noseP(60) + mouthW(67) + '<path d="M12 60l-9-3M12 66l-9 3M88 60l9-3M88 66l9 3" stroke="' + K + '" stroke-width="1.6" stroke-linecap="round"/>' },
-  { v: 4, name: 'Bunny', svg: (s) => '<ellipse cx="34" cy="16" rx="9" ry="21" fill="' + s + '"/><ellipse cx="34" cy="18" rx="4.5" ry="15" fill="#ffb3c4"/><ellipse cx="66" cy="16" rx="9" ry="21" fill="' + s + '"/><ellipse cx="66" cy="18" rx="4.5" ry="15" fill="#ffb3c4"/>' + eyes(54, 17, 5.5) + cheeks + noseP(62) + mouthW(68) + '<rect x="46.5" y="72" width="7" height="8" rx="2" fill="#fff" stroke="' + K + '" stroke-width="1.2"/>' },
-  { v: 8, name: 'Kitty', svg: (s) => '<path d="M13 44 L19 8 L45 27Z" fill="' + s + '"/><path d="M87 44 L81 8 L55 27Z" fill="' + s + '"/><path d="M20 36 L23 17 L37 28Z" fill="#ffb3c4"/><path d="M80 36 L77 17 L63 28Z" fill="#ffb3c4"/>' + eyes(52, 18, 5.5) + cheeks + '<path d="M46 60 h8 l-4 5Z" fill="#ff7f9b"/>' + mouthW(69) + '<path d="M10 60l-9-2M10 66l-9 3M90 60l9-2M90 66l9 3" stroke="' + K + '" stroke-width="1.7" stroke-linecap="round"/>' },
-  { v: 16, name: 'Foxy', svg: (s) => '<path d="M11 48 L15 4 L46 28Z" fill="' + s + '"/><path d="M89 48 L85 4 L54 28Z" fill="' + s + '"/><path d="M15 4 L27 15 L17 22Z M85 4 L73 15 L83 22Z" fill="#5a2d18"/><path d="M8 60 Q50 98 92 60 Q84 92 50 92 Q16 92 8 60Z" fill="#fff8ee"/>' + eyes(52, 19, 5.2) + '<ellipse cx="50" cy="72" rx="5" ry="3.6" fill="' + K + '"/>' + mouthU(76).replace('stroke-width="2.8"', 'stroke-width="2.2"') },
-  { v: 32, name: 'Froggy', svg: (s) => '<circle cx="27" cy="25" r="16" fill="' + s + '"/><circle cx="73" cy="25" r="16" fill="' + s + '"/><circle cx="27" cy="25" r="11" fill="#fff"/><circle cx="73" cy="25" r="11" fill="#fff"/><circle cx="29" cy="26" r="6" fill="' + K + '"/><circle cx="71" cy="26" r="6" fill="' + K + '"/><circle cx="31" cy="23.5" r="2" fill="#fff"/><circle cx="73" cy="23.5" r="2" fill="#fff"/>' + cheeks.replace(/cy="63"/g, 'cy="66"') + '<path d="M22 62 Q50 92 78 62" fill="none" stroke="' + K + '" stroke-width="3" stroke-linecap="round"/><circle cx="45" cy="52" r="1.8" fill="' + K + '"/><circle cx="55" cy="52" r="1.8" fill="' + K + '"/>' },
-  { v: 64, name: 'Bearry', svg: (s) => '<circle cx="21" cy="24" r="13" fill="' + s + '"/><circle cx="21" cy="24" r="7" fill="#f6d5b3"/><circle cx="79" cy="24" r="13" fill="' + s + '"/><circle cx="79" cy="24" r="7" fill="#f6d5b3"/>' + eyes(48, 19, 5.5) + '<ellipse cx="50" cy="65" rx="18" ry="14" fill="#f6d5b3"/><ellipse cx="50" cy="58" rx="6" ry="4.2" fill="' + K + '"/>' + mouthW(69) + cheeks.replace(/cy="63"/g, 'cy="60"') },
-  { v: 128, name: 'Panda', svg: () => '<circle cx="20" cy="22" r="14" fill="#2b2b33"/><circle cx="80" cy="22" r="14" fill="#2b2b33"/><ellipse cx="50" cy="58" rx="38" ry="34" fill="#fff"/><ellipse cx="33" cy="52" rx="10" ry="12" fill="#2b2b33" transform="rotate(-20 33 52)"/><ellipse cx="67" cy="52" rx="10" ry="12" fill="#2b2b33" transform="rotate(20 67 52)"/><circle cx="34" cy="51" r="4.5" fill="#fff"/><circle cx="66" cy="51" r="4.5" fill="#fff"/><circle cx="35" cy="51" r="2.4" fill="' + K + '"/><circle cx="65" cy="51" r="2.4" fill="' + K + '"/><ellipse cx="50" cy="64" rx="5.5" ry="4" fill="#2b2b33"/>' + mouthW(72) },
-  { v: 256, name: 'Owl', svg: (s) => '<path d="M14 36 L12 4 L42 22Z" fill="' + s + '"/><path d="M86 36 L88 4 L58 22Z" fill="' + s + '"/><circle cx="33" cy="48" r="17" fill="#fff8e6"/><circle cx="67" cy="48" r="17" fill="#fff8e6"/><circle cx="33" cy="48" r="17" fill="none" stroke="' + s + '" stroke-width="4"/><circle cx="67" cy="48" r="17" fill="none" stroke="' + s + '" stroke-width="4"/><circle cx="35" cy="49" r="8" fill="' + K + '"/><circle cx="65" cy="49" r="8" fill="' + K + '"/><circle cx="38" cy="46" r="2.8" fill="#fff"/><circle cx="68" cy="46" r="2.8" fill="#fff"/><path d="M44 60 L56 60 L50 72Z" fill="#ffb01f" stroke="#c77a00" stroke-width="1.5" stroke-linejoin="round"/><path d="M30 82 q6 6 12 0 M46 86 q6 6 12 0 M62 82 q6 6 12 0" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2.4" stroke-linecap="round"/>' },
-  { v: 512, name: 'Penguin', svg: () => '<ellipse cx="50" cy="66" rx="30" ry="32" fill="#fff"/><path d="M12 62 q-8 16 4 26 q6 -14 4 -26Z M88 62 q8 16 -4 26 q-6 -14 -4 -26Z" fill="rgba(0,0,0,.28)"/>' + eyes(46, 15, 5.2) + '<path d="M42 55 Q50 50 58 55 Q50 66 42 55Z" fill="#ffab1f" stroke="#c77a00" stroke-width="1.5" stroke-linejoin="round"/>' + cheeks.replace(/cy="63"/g, 'cy="58"').replace(/cx="25"/, 'cx="27"').replace(/cx="75"/, 'cx="73"') + '<ellipse cx="38" cy="96" rx="9" ry="4" fill="#ffab1f"/><ellipse cx="62" cy="96" rx="9" ry="4" fill="#ffab1f"/>' },
-  { v: 1024, name: 'Dragon', svg: (s) => '<path d="M24 32 L18 2 L40 22Z" fill="#ffd54a"/><path d="M76 32 L82 2 L60 22Z" fill="#ffd54a"/><path d="M34 16 L38 8 L44 15 L50 6 L56 15 L62 8 L66 16Z" fill="rgba(0,0,0,.2)"/><ellipse cx="34" cy="50" rx="8" ry="9" fill="#fff8b8"/><ellipse cx="66" cy="50" rx="8" ry="9" fill="#fff8b8"/><ellipse cx="34" cy="51" rx="2.6" ry="7" fill="' + K + '"/><ellipse cx="66" cy="51" rx="2.6" ry="7" fill="' + K + '"/><ellipse cx="50" cy="70" rx="20" ry="13" fill="rgba(255,255,255,.28)"/><circle cx="43" cy="68" r="2.4" fill="' + K + '"/><circle cx="57" cy="68" r="2.4" fill="' + K + '"/><path d="M38 78 q12 9 24 0" fill="none" stroke="' + K + '" stroke-width="2.8" stroke-linecap="round"/><path d="M42 79 v5 l3 -3Z M58 79 v5 l-3 -3Z" fill="#fff"/>' },
-  { v: 2048, name: 'Unicorn', svg: (s) => '<path d="M50 -2 L41 32 L59 32Z" fill="#fff6c9" stroke="#e0a800" stroke-width="2" stroke-linejoin="round"/><path d="M45 14 L56 18 M43 24 L58 28" stroke="#ff9ad0" stroke-width="2.6" stroke-linecap="round"/><path d="M22 38 Q8 40 10 62 Q14 48 24 50Z" fill="#ff9ad0"/><path d="M78 38 Q92 40 90 62 Q86 48 76 50Z" fill="#9ad8ff"/><path d="M18 30 L14 10 L34 24Z M82 30 L86 10 L66 24Z" fill="' + s + '"/>' + eyes(54, 18, 5.5) + '<path d="M24 47 l-5 -3 M76 47 l5 -3" stroke="' + K + '" stroke-width="2.2" stroke-linecap="round"/>' + cheeks + mouthU(66) + '<path d="M80 12l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2Z" fill="#fff"/>' },
-  { v: 4096, name: 'Sunny', svg: () => '<path d="M14 34 L24 6 L38 26 L50 2 L62 26 L76 6 L86 34Z" fill="#ffe14d" stroke="#d29a00" stroke-width="2" stroke-linejoin="round"/><circle cx="50" cy="10" r="4" fill="#ff5d73"/><rect x="18" y="42" width="27" height="17" rx="7" fill="' + K + '"/><rect x="55" y="42" width="27" height="17" rx="7" fill="' + K + '"/><rect x="43" y="47" width="14" height="4" fill="' + K + '"/><path d="M22 46 l8 -1 M60 46 l8 -1" stroke="rgba(255,255,255,.7)" stroke-width="2.4" stroke-linecap="round"/><path d="M28 70 Q50 92 72 70Z" fill="#fff" stroke="' + K + '" stroke-width="2.6" stroke-linejoin="round"/>' },
-];
-const critterFor = v => CRITTERS.find(c => c.v === v) || CRITTERS[CRITTERS.length - 1];
+/* critters live in kit/critters.js (shared with Tic Tac Toe and Connect Four) */
+const CRITTERS = window.Critters.list;
+const critterFor = v => window.Critters.byValue(v);
 const faceColor = v => shade(colorFor(v), -0.28);
-const critterSVG = (c, s) => '<svg viewBox="0 0 100 100" class="face" aria-hidden="true">' + c.svg(s) + '</svg>';
+const critterSVG = (c, s) => window.Critters.svg(c, s);
 function shade(hex, amt) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; const t = amt < 0 ? 0 : 255, p = Math.abs(amt); r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
-function colorFor(v) { const k = Math.max(0, Math.min(12, Math.round(Math.log2(v)) - 1)); return theme.ramp[k]; }
+function colorForTheme(t, v) { const k = Math.max(0, Math.min(12, Math.round(Math.log2(v)) - 1)); return (t.ramp || RAMP_COZY)[k]; }
+function colorFor(v) { return colorForTheme(theme, v); }
 function lum(hex) { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; }
 
 function applyTheme(t) {
   theme = t; const r = document.documentElement.style;
-  r.setProperty('--bg1', t.bg[0]); r.setProperty('--bg2', t.bg[1]); r.setProperty('--ink', t.ink); r.setProperty('--muted', t.ink + 'a8'); r.setProperty('--board', t.board); r.setProperty('--cellc', t.cell); r.setProperty('--panel', t.panel);
+  r.setProperty('--bg1', t.bg[0]); r.setProperty('--bg2', t.bg[1]); r.setProperty('--ink', t.ink); r.setProperty('--muted', t.muted);
+  r.setProperty('--bgtex', 'url(assets/tex/' + t.bgTex + '.jpg)'); r.setProperty('--frametex', 'url(assets/tex/' + t.frameTex + '.jpg)'); r.setProperty('--welltex', 'url(assets/tex/' + t.wellTex + '.jpg)'); r.setProperty('--wellshade', t.wellShade);
+  r.setProperty('--tiletex', t.tileTex === 'none' ? 'none' : 'url(assets/tex/' + t.tileTex + '.jpg)'); r.setProperty('--blend', t.blend); r.setProperty('--texsize', t.texSize + 'px');
   r.setProperty('--pz-ov1', t.bg[0]); r.setProperty('--pz-ov2', t.bg[1]); r.setProperty('--pz-ovink', t.ink);
   const m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t.tint);
   document.body.classList.toggle('faces', !!t.faces);
-  if (ready) { repaintAll(); }
+  if (ready) { repaintAll(); buildLogo(); }
 }
 
 /* ------------------------------------------------------------ icons */
@@ -263,8 +249,10 @@ const boardEl = $('board');
 
 /* ------------------------------------------------------------ tiles (DOM) */
 function paintTile(t) {
-  const el = t.el, bg = colorFor(t.v), sh = shade(bg, -0.24), light = lum(bg) > 0.62;
-  el.style.setProperty('--bg', bg); el.style.setProperty('--sh', sh); el.style.setProperty('--fg', theme.id === 'night' || theme.id === 'gold' || theme.id === 'ocean' ? (light ? '#1d1a3a' : '#fff') : (light ? '#5a3a22' : '#fff'));
+  const el = t.el, bg = colorFor(t.v), sh = shade(bg, -0.3), light = lum(bg) > 0.6;
+  el.style.setProperty('--bg', bg); el.style.setProperty('--sh', sh); el.style.setProperty('--fg', light ? '#4a2f17' : '#fff6dc');
+  el.style.setProperty('--numsh', light ? '0 1px 0 rgba(255,255,255,.55), 0 -1px 0 rgba(0,0,0,.18)' : '0 2px 0 rgba(0,0,0,.42), 0 0 6px rgba(0,0,0,.25)');
+  el.style.setProperty('--tx', (t.tx || 0) + 'px'); el.style.setProperty('--ty', (t.ty || 0) + 'px'); el.classList.toggle('gold', t.v >= 2048);
   el.dataset.len = String(String(t.v).length); el.dataset.v = t.v;
   const c = critterFor(t.v);
   el.querySelector('.in').innerHTML = (theme.faces ? critterSVG(c, faceColor(t.v)) : '') + '<span class="num">' + t.v + '</span>';
@@ -272,7 +260,7 @@ function paintTile(t) {
 function setPos(t) { t.el.style.setProperty('--r', t.r); t.el.style.setProperty('--c', t.c); }
 function addTile(v, r, c, born) {
   const el = document.createElement('div'); el.className = 'tile' + (born ? ' born' : ''); el.innerHTML = '<div class="in"></div>';
-  const t = { id: nextId++, v, r, c, el }; setPos(t); paintTile(t); boardEl.appendChild(el); tiles.push(t);
+  const t = { id: nextId++, v, r, c, el, tx: -((Math.random() * 400) | 0), ty: -((Math.random() * 400) | 0) }; setPos(t); paintTile(t); boardEl.appendChild(el); tiles.push(t);
   if (born) setTimeout(() => el.classList.remove('born'), 260);
   return t;
 }
@@ -280,7 +268,7 @@ function clearTiles() { tiles && tiles.forEach(t => t.el.remove()); tiles = []; 
 function repaintAll() { if (!tiles) return; tiles.forEach(t => paintTile(t)); }
 function buildCells() { boardEl.querySelectorAll('.cell').forEach(e => e.remove()); document.documentElement.style.setProperty('--n', N); for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const d = document.createElement('div'); d.className = 'cell'; d.style.setProperty('--r', r); d.style.setProperty('--c', c); boardEl.insertBefore(d, boardEl.firstChild); } }
 const grid = () => { const g = new Array(N * N).fill(0); for (const t of tiles) g[t.r * N + t.c] = t.v; return g; };
-const tileXY = t => { const br = boardEl.getBoundingClientRect(), cell = br.width / (N + 0.035 * 2 * N / 1 * 0 + 0), u = br.width; const pad = u * 0.035, gap = u * 0.028, cs = (u - 2 * pad - (N - 1) * gap) / N; return { x: br.left + pad + t.c * (cs + gap) + cs / 2, y: br.top + pad + t.r * (cs + gap) + cs / 2, cs }; };
+const tileXY = t => { const br = boardEl.getBoundingClientRect(), u = br.width, pad = u * 0.045, gap = u * 0.026, cs = (u - 2 * pad - (N - 1) * gap) / N; return { x: br.left + pad + t.c * (cs + gap) + cs / 2, y: br.top + pad + t.r * (cs + gap) + cs / 2, cs }; };
 
 function spawn(quiet) {
   const empty = []; for (let i = 0; i < N * N; i++) empty.push(i); const used = new Set(tiles.map(t => t.r * N + t.c)); const free = empty.filter(i => !used.has(i)); if (!free.length) return null;
@@ -291,7 +279,7 @@ function spawn(quiet) {
 function snap() { return { g: grid(), score, moves, merges, movesLeft, hammers, mergeCount, rng: RNG.s, runMerges, runMaxTile }; }
 function restore(s) { clearTiles(); s.g.forEach((v, i) => { if (v) addTile(v, (i / N) | 0, i % N, false); }); score = s.score; moves = s.moves; merges = s.merges; movesLeft = s.movesLeft; hammers = s.hammers; mergeCount = s.mergeCount; RNG.s = s.rng; runMerges = s.runMerges; runMaxTile = s.runMaxTile; }
 function move(dir) {
-  if (!playing || over || uiOpen || (SDK && SDK.paused) || hammerMode) return;
+  if (!playing || over || uiOpen || (SDK && SDK.paused) || hammerMode || document.querySelector('.pz-card-wrap')) return;
   const g = grid(), res = G.slide(g, N, dir);
   if (!res.moved) { nudge(dir); PZ.snd.play('error'); return; }
   clearHintArrow(); const before = snap();
@@ -347,6 +335,7 @@ function afterMove(res) {
 function newFriend(v, xy) {
   const prev = bestTile; bestTile = v; if (!cheated()) LS.set('bestTile2048', v);
   const c = CRITTERS.find(k => k.v === v); if (!c || v <= prev) return;
+  if (v < 128) { PZ.toast('<i>🐾</i><span><b>New friend: ' + c.name + '!</b> You made a ' + v + '</span>'); PZ.snd.play('coin'); return; }
   PZ.snd.play('unlock'); PZ.fx.confetti(v >= 512 ? 60 : 24);
   setTimeout(() => PZ.card({ icon: '<div style="width:96px;height:96px;margin:0 auto;border-radius:24px;background:' + colorFor(v) + ';box-shadow:0 6px 0 ' + shade(colorFor(v), -0.24) + '">' + critterSVG(c, faceColor(v)) + '</div>', title: 'New friend: ' + c.name + '!', sub: 'You made a <b>' + v + '</b> tile. ' + (v >= 2048 ? 'That is the big one!' : 'Keep going to meet the next critter.'), button: 'Yay!', sound: false }), 450);
 }
@@ -484,7 +473,7 @@ function refreshTitle() {
   document.querySelectorAll('#sizes [data-n]').forEach(b => { b.classList.toggle('on', +b.dataset.n === N); b.setAttribute('aria-pressed', String(+b.dataset.n === N)); });
   const tc = $('titleChip'); if (!tc.firstChild) { prof.chip(tc); const h = document.createElement('button'); h.className = 'sbtn'; h.textContent = 'How to play'; h.addEventListener('click', () => { PZ.snd.play('tap'); newRun('classic', null, { tutorial: true }); }); tc.appendChild(h); }
 }
-function buildLogo() { const el = $('logo'); el.innerHTML = ''; ['2', '0', '4', '8'].forEach((d, k) => { const v = [2, 8, 32, 128][k], i = document.createElement('i'); i.textContent = d; const bg = THEMES[0].ramp[Math.log2(v) - 1]; i.style.setProperty('--bg', bg); i.style.setProperty('--sh', shade(bg, -0.28)); i.style.animationDelay = (-k * 0.4) + 's'; if (lum(bg) > 0.62) i.style.color = '#5a3a22'; el.appendChild(i); }); }
+function buildLogo() { const el = $('logo'); el.innerHTML = ''; ['2', '0', '4', '8'].forEach((d, k) => { const v = [2, 8, 32, 128][k], i = document.createElement('i'); i.textContent = d; const bg = colorFor(v); i.style.setProperty('--bg', bg); i.style.setProperty('--sh', shade(bg, -0.3)); const light = lum(bg) > 0.6; i.style.setProperty('--fg', light ? '#4a2f17' : '#fff6dc'); i.style.setProperty('--numsh', light ? '0 1px 0 rgba(255,255,255,.55)' : '0 2px 0 rgba(0,0,0,.42)'); i.style.animationDelay = (-k * 0.4) + 's'; el.appendChild(i); }); }
 document.querySelectorAll('#sizes [data-n]').forEach(b => b.addEventListener('click', () => { N = +b.dataset.n; try { localStorage.setItem('size2048', N); } catch (e) {} PZ.snd.play('tap'); refreshTitle(); }));
 $('mClassic').addEventListener('click', () => { PZ.snd.play('tap'); newRun('classic'); try { localStorage.setItem('mode2048', 'classic'); } catch (e) {} });
 $('mDaily').addEventListener('click', () => { PZ.snd.play('tap'); newRun('daily'); try { localStorage.setItem('mode2048', 'daily'); } catch (e) {} });
@@ -529,12 +518,12 @@ function code(c) {
   if (c === 'BIGTILE' && tiles) { const used = new Set(tiles.map(t => t.r * N + t.c)); const free = []; for (let i = 0; i < N * N; i++) if (!used.has(i)) free.push(i); if (free.length) { const k = free[(Math.random() * free.length) | 0]; addTile(256, (k / N) | 0, k % N, true); } }
   return { ok: true, message: CODES[c] };
 }
-if (SDK) SDK.init({ pauseButton: 'br', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'trial' && def) newRun('trial', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
+if (SDK) SDK.init({ pauseButton: 'tr', pauseKeys: 'p+esc', onRestart: () => { if (mode === 'trial' && def) newRun('trial', def); else newRun(mode || 'classic'); }, onExit: toTitle, onTutorial: () => newRun('classic', null, { tutorial: true }), onHint: () => showHint(), onCheat: code });
 
 /* ------------------------------------------------------------ boot */
 tiles = []; nextId = 1; score = 0; moves = 0; merges = 0; movesLeft = 99; history = []; undoLeft = 5; hammers = 0; mergeCount = 0; hammerMode = false; over = false; playing = false; won = false; runMaxTile = 0; runMerges = 0;
 buildLogo(); prof.chip($('top')); ready = true; applyTheme(prof.theme()); buildCells(); fitBoard(); updateHud(); toTitle();
-window.__g48 = { newRun, move, get state() { return { mode, N, score, over, playing, movesLeft, grid: grid(), level: prof.level(), best: bestTile }; }, prof, G, trial: startTrial, openTrials };
+window.__g48 = { newRun, toTitle, move, get state() { return { mode, N, score, over, playing, movesLeft, grid: grid(), level: prof.level(), best: bestTile }; }, prof, G, trial: startTrial, openTrials };
 })();
 </script>
 </body>

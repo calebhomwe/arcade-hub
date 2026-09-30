@@ -118,7 +118,7 @@ const SKINS = [
   { id:'gold',   name:'Gold',      css:'radial-gradient(circle at 35% 28%,#fff,#ffd23f 40%,#ff8a1c 75%,#b95a00)', color:'#ffd23f', metal:0.85, rough:0.15, glow:0.3, emissive:'#ff9d00', trail:'#ffe37a', cost:{ stars:30 } },
 ];
 const WORLDS = [
-  { name:'Terracotta Tower', sky:['#2b5384','#f5bd85'], glow:'#ffb464', sun:'#ffc78a', pole:'#f0dcc4', hemi:['#9db9de','#8c5d3f'], decor:'#ffe2c0', bands:[['#c8643c','#b0532f'],['#2f9a9a','#268080'],['#e0b040','#c69a2c'],['#7aa872','#628f5c'],['#8a5a92','#734a7c'],['#d9834a','#c36f38']] },
+  { name:'Terracotta', sky:['#2b5384','#f5bd85'], glow:'#ffb464', sun:'#ffc78a', pole:'#f0dcc4', hemi:['#9db9de','#8c5d3f'], decor:'#ffe2c0', bands:[['#c8643c','#b0532f'],['#2f9a9a','#268080'],['#e0b040','#c69a2c'],['#7aa872','#628f5c'],['#8a5a92','#734a7c'],['#d9834a','#c36f38']] },
   { name:'Rose Garden',      sky:['#4a3a7c','#f4b3a6'], glow:'#ffa88a', sun:'#ffbe98', pole:'#fff0e8', hemi:['#c4b0e8','#8a5a6a'], decor:'#ffd8d0', bands:[['#d97a8c','#c4607a'],['#e8b04a','#d19a34'],['#6fa8a0','#5a908a'],['#9a7ac0','#8464a8'],['#e8946a','#d47c54']] },
   { name:'Deep Sea',         sky:['#0d5f8c','#bfe8ea'], glow:'#fff0b8', sun:'#fff1d6', pole:'#f2fbff', hemi:['#bfe4ff','#4b7a8a'], decor:'#ffffff', bands:[['#3aa898','#2a8f80'],['#e8b45a','#d09a3c'],['#d8687a','#c0506a'],['#6c8ad0','#5673b8'],['#b9dfe6','#9cc8d2']] },
   { name:'Ember Night',      sky:['#150f36','#c8583a'], glow:'#ff9a5a', sun:'#ffa868', pole:'#f2d8c0', hemi:['#8f7fd0','#5a2f2a'], decor:'#ff9a78', bands:[['#3fa0c8','#2e88ae'],['#d9466e','#c0345a'],['#9ac83c','#82ae2c'],['#f0a030','#d88a20'],['#8a5ad0','#7448b8']] },
@@ -668,7 +668,7 @@ if (/[?&]bot\b/.test(location.search)) setInterval(() => {
   if (phase !== 'resting') return;
   if (waiting) { tap({ preventDefault() {} }); return; }
   const i = nextSolid(cur + 1), p = platAt(i); if (!p) return;
-  const save = p.rot; p.rot += p.rs * 0.3; const c = topColor(p); p.rot = save;
+  const save = p.rot; p.rot += p.rs * 0.11; const c = topColor(p); p.rot = save;
   if (p.finish || c !== BLACK || codes.STEELBALL) tap({ preventDefault() {} });
 }, 40);
 resize();

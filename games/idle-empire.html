@@ -3,815 +3,279 @@
 <head>
 <meta charset="utf-8">
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#141005">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a33">
+<meta name="description" content="Idle Empire: grow a market stall into a harbour city. Tap the fountain, build, upgrade and crown a new age.">
 <title>Idle Empire</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#141005;color:#fff7e0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#5e4a12 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#4a1663 0%,transparent 55%),#141005}
-.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#fde68a;text-decoration:none;font-weight:700;font-size:16px;background:rgba(50,40,10,.85);border:1px solid rgba(253,230,138,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(251,191,36,.25)}
-.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(253,230,138,.35);background:rgba(50,40,10,.85);color:#fff;cursor:pointer}
-#fx{position:fixed;inset:0;z-index:65;pointer-events:none}
-.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto}
-.screen.s-active{display:flex}
-.logo{font-size:72px;margin-bottom:6px;filter:drop-shadow(0 0 20px rgba(251,191,36,.6));animation:bob 2.2s ease-in-out infinite}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.title{font-size:44px;font-weight:900;letter-spacing:2px;line-height:1.1;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fde68a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
-.sub{max-width:460px;font-size:15px;color:#d9c07a;margin-bottom:18px;line-height:1.5}
-.best-box{font-size:16px;color:#d9c07a;background:rgba(50,40,10,.7);border:1px solid #6b561d;padding:10px 22px;border-radius:14px;margin-bottom:14px;line-height:1.7}
-.best-box b{color:#fbbf24}
-.tip{max-width:460px;font-size:13px;color:#a08c50;line-height:1.6;margin-bottom:16px}
-.btn{font-family:inherit;border:none;cursor:pointer;font-weight:800;border-radius:14px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;padding:14px 22px;font-size:18px;box-shadow:0 4px 20px rgba(217,119,6,.4);transition:transform .18s cubic-bezier(.34,1.56,.64,1),filter .12s;min-height:48px}
-.btn:active{transform:scale(.94);filter:brightness(1.2)}
-.btn-big{font-size:24px;padding:16px 44px;min-height:60px}
-.btn-ghost{background:transparent;border:2px solid #6b561d;color:#d9c07a;margin-top:12px}
-#s-game{padding:12px;justify-content:flex-start}
-.hud{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0}
-.hud-item{background:rgba(50,40,10,.75);border:1px solid #6b561d;border-radius:12px;padding:8px 14px;font-size:15px;font-weight:800;min-width:60px}
-.hud-item span{color:#fde68a}
-.game-grid{display:flex;flex-direction:column;gap:12px;width:100%;max-width:980px;flex:1;min-height:0}
-.left-col{display:flex;flex-direction:column;align-items:center;gap:10px}
-.coin-btn{width:150px;height:150px;border-radius:50%;font-size:76px;border:4px solid #fbbf24;background:radial-gradient(circle at 35% 30%,#fde68a,#b45309);cursor:pointer;box-shadow:0 0 40px rgba(251,191,36,.45),inset 0 0 30px rgba(0,0,0,.25);transition:transform .08s;touch-action:manipulation}
-.coin-btn:active{transform:scale(.9)}
-.coin-btn.pop{animation:coinPop .25s}
-@keyframes coinPop{40%{transform:scale(1.12) rotate(8deg)}}
-.coin-btn.rush{animation:rushGlow .5s ease-in-out infinite alternate}
-@keyframes rushGlow{from{box-shadow:0 0 30px rgba(251,191,36,.55),inset 0 0 30px rgba(0,0,0,.25)}to{box-shadow:0 0 80px rgba(253,230,138,.95),inset 0 0 30px rgba(0,0,0,.25)}}
-.coin-label{font-size:13px;color:#a08c50;letter-spacing:2px;text-transform:uppercase}
-.buy-row{display:flex;gap:8px}
-.buy-amt{font-size:16px;padding:10px 18px;min-height:44px;background:rgba(50,40,10,.9);border:2px solid #6b561d;color:#d9c07a;border-radius:12px;cursor:pointer;font-weight:800;font-family:inherit}
-.buy-amt.sel{border-color:#fbbf24;color:#fde68a;background:linear-gradient(135deg,rgba(217,119,6,.4),rgba(180,83,9,.4))}
-.prestige-btn{font-size:15px;padding:12px 20px;min-height:48px;background:linear-gradient(135deg,#a21caf,#6d28d9)}
-.prestige-btn:disabled{opacity:.45;filter:grayscale(.6)}
-.pbar{width:180px;height:8px;border-radius:6px;background:rgba(50,40,10,.9);border:1px solid #6b561d;overflow:hidden}
-.pfill{height:100%;width:0;background:linear-gradient(90deg,#d97706,#fde68a);transition:width .25s}
-.list-col{flex:1;min-height:200px;overflow-y:auto;background:rgba(30,24,8,.5);border:1px solid #4a3b12;border-radius:16px;padding:8px;-webkit-overflow-scrolling:touch}
-.brow{display:flex;align-items:center;gap:8px;background:rgba(50,40,10,.6);border:1px solid #6b561d;border-radius:12px;padding:8px 10px;margin-bottom:8px}
-.brow.flash{animation:rowFlash .4s}
-@keyframes rowFlash{30%{background:rgba(251,191,36,.35);border-color:#fde68a;box-shadow:0 0 16px rgba(251,191,36,.5)}}
-.brow .e{font-size:26px}
-.brow .info{flex:1;min-width:0;text-align:left}
-.brow .nm{font-size:15px;font-weight:800;color:#fde68a}
-.brow .dt{font-size:12px;color:#a08c50}
-.brow .stars{font-size:12px;color:#fbbf24;margin-left:4px}
-.brow .buy{font-size:13px;font-weight:800;color:#1a1205;background:linear-gradient(160deg,#fbbf24,#d97706);border:none;border-radius:10px;padding:10px 12px;cursor:pointer;min-height:42px;white-space:nowrap;touch-action:manipulation}
-.brow .buy:active{transform:scale(.94)}
-.brow .buy.no{filter:grayscale(.85);opacity:.55}
-.brow .buy.afford{animation:affordPulse .5s}
-@keyframes affordPulse{40%{transform:scale(1.1);filter:brightness(1.4)}}
-.prestige-btn.ready{animation:readyPulse 1.4s ease-in-out infinite}
-@keyframes readyPulse{0%,100%{box-shadow:0 4px 20px rgba(217,119,6,.4)}50%{box-shadow:0 0 28px rgba(162,28,175,.9)}}
-.pfill.full{animation:pfillPulse 1.1s ease-in-out infinite}
-@keyframes pfillPulse{50%{filter:brightness(1.5)}}
-.brow .owned{font-size:14px;font-weight:900;color:#fbbf24;min-width:52px;text-align:center}
-.float{position:fixed;z-index:70;font-size:22px;font-weight:900;color:#fde68a;text-shadow:0 0 12px rgba(251,191,36,.8);pointer-events:none;animation:floatUp 0.9s ease-out forwards}
-@keyframes floatUp{0%{opacity:0;transform:translateY(10px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-64px) scale(1)}}
-.toast{position:fixed;top:16%;left:50%;transform:translateX(-50%);z-index:70;font-size:19px;font-weight:900;color:#fde68a;background:rgba(50,40,10,.95);border:1px solid #fbbf24;padding:10px 24px;border-radius:14px;pointer-events:none;animation:toastIn 1.8s ease-out forwards;box-shadow:0 0 24px rgba(251,191,36,.4)}
-@keyframes toastIn{0%{opacity:0;transform:translate(-50%,-14px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
-.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);padding:16px}
-.modal.open{display:flex}
-.modal-box{background:#1e1808;border:2px solid #fbbf24;border-radius:20px;padding:26px;max-width:380px;width:100%;text-align:center;box-shadow:0 0 50px rgba(251,191,36,.35)}
-.modal-box h2{font-size:26px;margin-bottom:12px;color:#fde68a}
-.modal-box p{font-size:15px;color:#d9c07a;margin-bottom:18px;line-height:1.5}
-.ps-title{font-size:30px;font-weight:900;color:#fde68a;margin-bottom:6px}
-.ps-stats{width:100%;max-width:360px;margin:12px 0;display:flex;flex-direction:column;gap:8px}
-.ps-row{display:flex;justify-content:space-between;background:rgba(50,40,10,.6);border:1px solid #6b561d;border-radius:10px;padding:10px 14px;font-size:15px}
-.ps-row b{color:#fbbf24}
-@media (min-width:900px){
-  .game-grid{flex-direction:row;align-items:stretch}
-  .left-col{flex:0 0 300px;justify-content:center}
-  .list-col{max-height:none}
-  .title{font-size:56px}
-}
-.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
-@media (max-width:620px){#s-game{padding-top:60px}}
-@media (prefers-reduced-motion:reduce){.logo,.coin-btn.pop,.coin-btn.rush,.brow.flash,.brow .buy.afford,.prestige-btn.ready,.pfill.full{animation:none!important}.float,.toast{animation-duration:.01s!important}.coin-btn:active,.btn:active{transform:none}}
-</style>
+<link rel="stylesheet" href="kit/ik.css">
 </head>
 <body>
-<div class="bg"></div>
-<a class="hub" href="../index.html">← Hub</a>
-<button class="mute" id="muteBtn" aria-label="Mute">🔊</button>
+<div id="root"></div>
 <canvas id="fx"></canvas>
-
-<div class="screen s-active" id="s-start">
-  <div class="logo">👑</div>
-  <h1 class="title">IDLE EMPIRE</h1>
-  <p class="sub">Tap the coin, buy buildings, and grow an empire! Own 25, 50 or 100 of a building to double its output each time.</p>
-  <div class="best-box">🪙 Golden coins: <b id="startGold">0</b> · Income ×<b id="startMult">1</b><br>🏆 All-time earned: <b id="startAll">0</b><br>🏅 Deeds: <b id="startDeeds">0</b>/10 (+0%)<br>🛒 Caravans: <b id="startCar">0</b> · 🎁 Chests: <b id="startChest">0</b> · ☀️ Tributes: <b id="startTrib">0</b> · 👆 Taps: <b id="startTaps">0</b></div>
-  <p class="tip">✨ Prestige for golden coins — each gives +10% income · 📴 Offline earnings: 50% rate, up to 8 hours · 💾 Auto-saves every 5 seconds</p>
-  <button class="btn btn-big" id="btnPlay">▶ Play</button>
-  <button class="btn btn-ghost" id="btnReset">New Run (keep golden coins)</button>
-  <div class="gu-row"><button class="btn btn-ghost" id="btnHow" type="button">❓ Learn to play</button></div>
-</div>
-
-<div class="screen" id="s-game">
-  <div class="hud">
-    <div class="hud-item">💰 <span id="coins">0</span></div>
-    <div class="hud-item">⚡ <span id="persec">0</span>/s</div>
-    <div class="hud-item">🪙 <span id="gold">0</span></div>
-  </div>
-  <div class="game-grid">
-    <div class="left-col">
-      <button class="coin-btn" id="coinBtn">🪙</button>
-      <div class="coin-label">+<span id="tapPow">1</span> per tap</div>
-      <div class="buy-row">
-        <button class="buy-amt sel" data-amt="1">×1</button>
-        <button class="buy-amt" data-amt="10">×10</button>
-        <button class="buy-amt" data-amt="25">×25</button>
-        <button class="buy-amt" data-amt="max">MAX</button>
-      </div>
-      <button class="btn prestige-btn" id="btnPrestige" disabled>✨ Prestige +0 🪙</button>
-      <div class="pbar"><div class="pfill" id="pfill"></div></div>
-      <div class="coin-label" id="pNext">Next 🪙 at 1.00M</div>
-      <div class="coin-label" id="pPrev"></div>
-      <button class="btn" id="btnCaravan" style="display:none">🛒 Trade Caravan</button>
-      <div class="coin-label" id="chestRow">🎁 Chests: <span id="chestCount">0</span></div>
-      <button class="btn" id="btnChest" style="display:none">📦 Open Chest</button>
-      <button class="btn" id="btnTrib" style="display:none;background:linear-gradient(135deg,#0ea5e9,#6d28d9)">☀️ Daily Tribute</button>
-    </div>
-    <div class="list-col" id="buildings"></div>
-  </div>
-</div>
-
-<div class="screen" id="s-over">
-  <div class="logo">✨</div>
-  <h1 class="title">PRESTIGE!</h1>
-  <div class="ps-title" id="psGained">+0 🪙</div>
-  <div class="ps-stats">
-    <div class="ps-row"><span>Coins this run</span><b id="psCoins">0</b></div>
-    <div class="ps-row"><span>All-time earned</span><b id="psLifetime">0</b></div>
-    <div class="ps-row"><span>Total golden coins</span><b id="psGold">0</b></div>
-    <div class="ps-row"><span>New income multiplier</span><b id="psMult">×1</b></div>
-  </div>
-  <p class="tip">Each golden coin gives +10% income forever. The empire starts over — but stronger!</p>
-  <button class="btn btn-big" id="btnContinue">▶ Keep Building</button>
-</div>
-
-<div class="modal" id="offlineModal">
-  <div class="modal-box">
-    <h2>⏳ Welcome back!</h2>
-    <p id="offlineMsg">While you were away…</p>
-    <button class="btn btn-big" id="btnOfflineOk">💰 Collect</button>
-  </div>
-</div>
-
-<script src="kit/playkit.js"></script>
+<script src="assets/idle/empire.js"></script>
+<script src="kit/ik-core.js"></script>
+<script src="kit/ik-iso.js"></script>
+<script src="kit/ik-idle.js"></script>
 <script>
-
-(function(){
+(function () {
 'use strict';
-var DEFS=[
-  {n:'Cursor',c:15,i:0.1,e:'🖱️'},
-  {n:'Clicker',c:100,i:1,e:'👆'},
-  {n:'Bot',c:1100,i:8,e:'🤖'},
-  {n:'Factory',c:12000,i:47,e:'🏭'},
-  {n:'Bank',c:130000,i:260,e:'🏦'},
-  {n:'Lab',c:1400000,i:1400,e:'🔬'},
-  {n:'Rocket',c:20000000,i:7800,e:'🚀'},
-  {n:'Planet',c:330000000,i:44000,e:'🪐'},
-  {n:'Galaxy',c:5100000000,i:260000,e:'🌌'},
-  {n:'Empire',c:75000000000,i:1600000,e:'👑'}
+var IK = window.IK, $ = IK.$, fmt = IK.fmt;
+var A = new IK.Atlas('assets/idle/empire.webp', window.IK_ATLAS.empire);
+
+/* ---------- the ten buildings, from a market stall to a harbour ---------- */
+var G = [
+  { name: 'Market Stall', cost: 15, inc: 0.1, spr: 'market', desc: 'Fresh fruit by the crate.', verb: 'Build' },
+  { name: 'Cottage', cost: 100, inc: 1, spr: 'cottage', desc: 'Families pay rent.', verb: 'Build' },
+  { name: 'Bakery', cost: 1100, inc: 8, spr: 'bakery', desc: 'Warm bread every morning.', verb: 'Build' },
+  { name: 'Boutique', cost: 12000, inc: 47, spr: 'boutique', desc: 'Hats, scarves, gifts.', verb: 'Build' },
+  { name: 'Café', cost: 130000, inc: 260, spr: 'cafe', desc: 'Tea and cake in the sun.', verb: 'Build', lvl: 3 },
+  { name: 'Chapel', cost: 1.4e6, inc: 1400, spr: 'chapel', desc: 'Weddings and fairs.', verb: 'Build', lvl: 4 },
+  { name: 'Library', cost: 2e7, inc: 7800, spr: 'study_hall', desc: 'Every book pays a fee.', verb: 'Build', lvl: 6 },
+  { name: 'Town Hall', cost: 3.3e8, inc: 44000, spr: 'clocktower', desc: 'Taxes, ribbons, clocks.', verb: 'Build', lvl: 8 },
+  { name: 'Skyscraper', cost: 5.1e9, inc: 260000, spr: 'skyscraper', desc: 'Offices above the clouds.', verb: 'Build', lvl: 10 },
+  { name: 'Grand Harbour', cost: 7.5e10, inc: 1.6e6, spr: 'harbour', desc: 'Ships from every sea.', verb: 'Build', lvl: 12 }
 ];
-var S={coins:0,lifetime:0,alltime:0,owned:[0,0,0,0,0,0,0,0,0,0],gold:0,buy:1,deeds:[],trades:0,chests:0,trib:0,tribs:0,taps:0,tapRew:0,last:Date.now()};
-var TAPC=[250,1000,5000,20000];
-var DEEDS=[
-  {n:'First Strike',d:function(){return S.alltime>=1e3;}},
-  {n:'Coin Hoarder',d:function(){return S.alltime>=1e5;}},
-  {n:'Millionaire',d:function(){return S.alltime>=1e6;}},
-  {n:'Billionaire',d:function(){return S.alltime>=1e9;}},
-  {n:'Trillionaire',d:function(){return S.alltime>=1e12;}},
-  {n:'Builder',d:function(){var t=0,i;for(i=0;i<DEFS.length;i++){t+=S.owned[i];}return t>=50;}},
-  {n:'Magnate',d:function(){var t=0,i;for(i=0;i<DEFS.length;i++){t+=S.owned[i];}return t>=150;}},
-  {n:'Full Board',d:function(){var i;for(i=0;i<DEFS.length;i++){if(S.owned[i]<1){return false;}}return true;}},
-  {n:'Limitless',d:function(){return S.gold>=10;}},
-  {n:'Empire Forever',d:function(){return S.gold>=50;}}
+G.forEach(function (g) { g.ico = function (px) { return A.icon(g.spr, px, 6); }; });
+var LOT = [{ i: 3, j: 2 }, { i: 3, j: 1 }, { i: 2, j: 2 }, { i: 2, j: 1 }, { i: 1, j: 2 }, { i: 2, j: 0 }, { i: 0, j: 2 }, { i: 1, j: 0 }, { i: 0, j: 1 }, { i: 0, j: 0 }];   // where each tier stands
+var FOUNTAIN = { i: 1, j: 1 };
+var DECOR = [
+  { n: 'pine', i: 3, j: 0, s: 1 }, { n: 'tree', i: 3, j: 3, s: 1 }, { n: 'treepink', i: 0, j: 3, s: 1 }, { n: 'orange_tree', i: 2, j: 3, s: 0.95 }, { n: 'flower_box', i: 1, j: 3, s: 1 },
+  { n: 'bench', i: 1.45, j: 1.5, s: 0.9 }, { n: 'lantern', i: 1.5, j: 0.55, s: 1.2 }, { n: 'lantern', i: 0.55, j: 1.5, s: 1.2 }, { n: 'mailbox', i: 3.4, j: 1.6, s: 1 }, { n: 'crate', i: 3.3, j: 2.55, s: 1 }, { n: 'hay_bales', i: 3, j: 0.05, s: 0.5 }
 ];
-var mult=1,rows=[],rowsBuilt=false,disp=0,lastTick=0,inGame=false,rushT=0,rushNext=0,carDue=0,carEnd=0,carStake=0,tribDay=-1;
-var AC=null,muted=localStorage.getItem('ie_muted')==='1';
-var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),coach=null,codes={};
-function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
-function did(n){if(coach){coach.did(n);}}
-function cheated(){return !!(SDK&&SDK.cheated);}
-function $(id){return document.getElementById(id);}
-var elCoins=$('coins'),elPersec=$('persec'),elGold=$('gold'),elTapPow=$('tapPow'),elPB=$('btnPrestige'),elPfill=$('pfill'),elPNext=$('pNext'),elPPrev=$('pPrev');
-function setText(el,v){if(el.textContent!==v){el.textContent=v;}}
-function setTxt(el,v){setText(el,v);}
-function show(id){var i,s=document.querySelectorAll('.screen');for(i=0;i<s.length;i++){s[i].classList.remove('s-active');}$(id).classList.add('s-active');}
-function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
-function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
-const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
-const SFXMAP={buy:'tap',coin:'coin',mile:'levelup',prestige:'win',error:'buzz'};
-function sfx(n,p){
-  if(muted){return;}
-  var m=SFXMAP[n]||n,a=SFXP[m];
-  if(a){try{a.currentTime=0;var q=a.play();if(q&&q.catch){q.catch(function(){});}}catch(e){}return;}
-  if(n==='coin'){tone(420+((p||0)%9)*22,0.07,'square',0.07);}
-  else if(n==='buy'){tone(523.25,0.09,'triangle',0.14);tone(659.25,0.09,'triangle',0.14,0.07);tone(783.99,0.14,'triangle',0.14,0.14);}
-  else if(n==='mile'){tone(659.25,0.12,'triangle',0.15);tone(880,0.12,'triangle',0.15,0.1);tone(1046.5,0.2,'triangle',0.15,0.2);}
-  else if(n==='prestige'){tone(392,0.14,'triangle',0.16);tone(523.25,0.14,'triangle',0.16,0.12);tone(659.25,0.14,'triangle',0.16,0.24);tone(783.99,0.14,'triangle',0.16,0.36);tone(1046.5,0.4,'triangle',0.16,0.48);}
-  else if(n==='error'){tone(150,0.2,'sawtooth',0.1);}
-}
-function vib(p){try{if(navigator.vibrate){navigator.vibrate(p);}}catch(e){}}
-var toastEl=null,toastTimer=0;
-function toast(txt){
-  if(!toastEl){toastEl=document.createElement('div');toastEl.className='toast';document.body.appendChild(toastEl);}
-  else if(!toastEl.parentNode){document.body.appendChild(toastEl);}
-  toastEl.textContent=txt;
-  toastEl.style.animation='none';void toastEl.offsetWidth;toastEl.style.animation='';
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){if(toastEl.parentNode){toastEl.parentNode.removeChild(toastEl);}},1900);
-}
-function fmt(n){
-  if(!isFinite(n)){return '∞';}
-  if(n<0){return '-'+fmt(-n);}
-  if(n<1000){
-    if(n%1===0){return String(n);}
-    return n<100?n.toFixed(1):String(Math.floor(n));
+
+/* ---------- upgrades the tree adds on top of the per-building chains ---------- */
+var UPS = [
+  { id: 'wish1', name: 'Lucky Coin', desc: 'Each tap +2', cost: 200, eff: { tapAdd: 2 }, kind: 'tap', ico: function (p) { return IK.ico.coin(p * 0.8); }, lvl: 2 },
+  { id: 'wish2', name: 'Golden Coin', desc: 'Taps ×2', cost: 3000, eff: { tapMul: 2 }, kind: 'tap', ico: function (p) { return IK.ico.coin(p * 0.8); }, req: function (S) { return S.ups.wish1; }, reqText: 'Buy Lucky Coin first' },
+  { id: 'crier', name: 'Town Crier', desc: 'A helper taps once a second', cost: 1500, eff: { auto: 1 }, kind: 'auto', ico: function (p) { return IK.ico.star(p * 0.8); }, lvl: 3, reqText: 'Reach level 3' },
+  { id: 'tax1', name: 'Fair Taxes', desc: 'All income ×1.25', cost: 25000, eff: { all: 1.25 }, kind: 'all', ico: function (p) { return IK.ico.gem(p * 0.8); }, req: function (S, E) { return E.totalOwned() >= 15; }, reqText: 'Own 15 buildings' },
+  { id: 'storehouse', name: 'Storehouse', desc: 'Away earnings last 4 hours longer', cost: 400000, eff: { capH: 4 }, kind: 'time', ico: function (p) { return G[1].ico(p); }, lvl: 5 },
+  { id: 'wish3', name: 'Wishing Well Blessing', desc: 'Taps add 1% of income per second', cost: 60000, eff: { tapPct: 0.01 }, kind: 'tap', ico: function (p) { return IK.ico.coin(p * 0.8); }, req: function (S) { return S.ups.wish2; }, reqText: 'Buy Golden Coin first' },
+  { id: 'signs', name: 'Painted Signs', desc: 'Visitors arrive 50% more often', cost: 800000, eff: { luck: 1.5 }, kind: 'luck', ico: function (p) { return IK.ico.gift(p * 0.8); }, lvl: 6 },
+  { id: 'tax2', name: 'Merchant Guild', desc: 'All income ×1.5', cost: 2e6, eff: { all: 1.5 }, kind: 'all', ico: function (p) { return IK.ico.gem(p * 0.8); }, req: function (S) { return S.ups.tax1; }, reqText: 'Buy Fair Taxes first' },
+  { id: 'heralds', name: 'Royal Heralds', desc: 'Four more helper taps a second', cost: 5e5, eff: { auto: 4 }, kind: 'auto', ico: function (p) { return IK.ico.star(p * 0.8); }, req: function (S) { return S.ups.crier; }, reqText: 'Buy Town Crier first' },
+  { id: 'mason', name: 'Stonemasons\' Union', desc: 'Buildings cost 10% less', cost: 1e7, eff: { disc: 0.9 }, kind: 'disc', ico: function (p) { return G[5].ico(p); }, lvl: 8 },
+  { id: 'wish4', name: 'Royal Blessing', desc: 'Taps ×3', cost: 4e6, eff: { tapMul: 3 }, kind: 'tap', ico: function (p) { return IK.ico.crown(p * 0.8); }, req: function (S) { return S.ups.wish3; }, reqText: 'Buy Wishing Well Blessing first' },
+  { id: 'tax3', name: 'Trade Routes', desc: 'All income ×2', cost: 3e8, eff: { all: 2 }, kind: 'all', ico: function (p) { return G[9].ico(p); }, req: function (S) { return S.ups.tax2; }, reqText: 'Buy Merchant Guild first' },
+  { id: 'caravanserai', name: 'Caravanserai', desc: 'Away earnings +20%', cost: 6e7, eff: { eff: 0.2 }, kind: 'time', ico: function (p) { return IK.ico.cart(p * 0.8); }, req: function (S) { return S.ups.storehouse; }, reqText: 'Buy Storehouse first' },
+  { id: 'wish5', name: 'Tap Whisperer', desc: 'Taps add 3% more of income', cost: 3e8, eff: { tapPct: 0.03 }, kind: 'tap', ico: function (p) { return IK.ico.crown(p * 0.8); }, req: function (S) { return S.ups.wish4; }, reqText: 'Buy Royal Blessing first' },
+  { id: 'tax4', name: 'Royal Charter', desc: 'All income ×3', cost: 5e10, eff: { all: 3 }, kind: 'all', ico: function (p) { return IK.ico.crown(p * 0.8); }, req: function (S) { return S.ups.tax3; }, reqText: 'Buy Trade Routes first' }
+];
+
+/* ---------- crowns shop ---------- */
+var PERKS = [
+  { id: 'treasury', name: 'Royal Treasury', desc: 'Start every age with 1,000 coins', max: 5, cost: function (l) { return [2, 4, 7, 11, 16][l]; }, eff: { start: 1000 }, ico: function (p) { return IK.ico.coin(p * 0.8); } },
+  { id: 'quick', name: 'Quick Builders', desc: 'Buildings cost 5% less', max: 5, cost: function (l) { return [3, 6, 10, 15, 21][l]; }, eff: { disc: 0.95 }, ico: function (p) { return G[2].ico(p); } },
+  { id: 'gold', name: 'Golden Touch', desc: 'Taps ×2', max: 3, cost: function (l) { return [3, 8, 20][l]; }, eff: { tapMul: 2 }, ico: function (p) { return IK.ico.star(p * 0.8); } },
+  { id: 'merch', name: 'Wandering Merchants', desc: 'Visitors arrive 30% more often', max: 4, cost: function (l) { return [2, 4, 8, 14][l]; }, eff: { luck: 1.3 }, ico: function (p) { return IK.ico.gift(p * 0.8); } },
+  { id: 'granary', name: 'Grand Storehouse', desc: 'Away earnings last 4 hours longer', max: 4, cost: function (l) { return [2, 5, 9, 14][l]; }, eff: { capH: 4, eff: 0.05 }, ico: function (p) { return G[1].ico(p); } },
+  { id: 'heir', name: 'Heirloom Stalls', desc: 'Keep 5 Market Stalls after a decree', max: 4, cost: function (l) { return [2, 3, 5, 8][l]; }, eff: { keep: 5 }, ico: function (p) { return G[0].ico(p); } },
+  { id: 'legacy', name: 'Legacy of Kings', desc: 'All income ×1.25', max: 3, cost: function (l) { return [5, 12, 30][l]; }, eff: { all: 1.25 }, ico: function (p) { return IK.ico.crown(p * 0.8); } }
+];
+
+/* ---------- deeds ---------- */
+function anyTier(n) { return function (S) { return Math.max.apply(null, S.owned) >= n; }; }
+var ACH = [
+  { id: 'first', name: 'First Coins', desc: 'Earn 1,000 coins in all', tier: 'bronze', test: function (S) { return S.alltime >= 1e3; }, prog: function (S) { return [S.alltime, 1e3]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'hoard', name: 'Coin Hoarder', desc: 'Earn 100K coins', tier: 'bronze', test: function (S) { return S.alltime >= 1e5; }, prog: function (S) { return [S.alltime, 1e5]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'mill', name: 'Millionaire', desc: 'Earn 1M coins', tier: 'silver', test: function (S) { return S.alltime >= 1e6; }, prog: function (S) { return [S.alltime, 1e6]; }, ico: function (p) { return IK.ico.coin(p) } },
+  { id: 'bill', name: 'Billionaire', desc: 'Earn 1B coins', tier: 'silver', test: function (S) { return S.alltime >= 1e9; }, prog: function (S) { return [S.alltime, 1e9]; }, ico: function (p) { return IK.ico.gem(p) } },
+  { id: 'trill', name: 'Trillionaire', desc: 'Earn 1T coins', tier: 'gold', test: function (S) { return S.alltime >= 1e12; }, prog: function (S) { return [S.alltime, 1e12]; }, ico: function (p) { return IK.ico.gem(p) } },
+  { id: 'builder', name: 'Builder', desc: 'Own 50 buildings at once', tier: 'bronze', test: function (S, E) { return E.totalOwned() >= 50; }, prog: function (S, E) { return [E.totalOwned(), 50]; }, ico: function (p) { return G[1].ico(p); } },
+  { id: 'magnate', name: 'Magnate', desc: 'Own 150 buildings at once', tier: 'silver', test: function (S, E) { return E.totalOwned() >= 150; }, prog: function (S, E) { return [E.totalOwned(), 150]; }, ico: function (p) { return G[7].ico(p); } },
+  { id: 'board', name: 'Full Board', desc: 'Own at least one of every building', tier: 'silver', test: function (S) { return S.owned.every(function (n) { return n > 0; }); }, prog: function (S) { return [S.owned.filter(function (n) { return n > 0; }).length, 10]; }, ico: function (p) { return G[9].ico(p); } },
+  { id: 'crowns10', name: 'Limitless', desc: 'Hold 10 crowns', tier: 'silver', test: function (S) { return S.prem >= 10; }, prog: function (S) { return [S.prem, 10]; }, ico: function (p) { return IK.ico.crown(p); } },
+  { id: 'crowns50', name: 'Empire Forever', desc: 'Hold 50 crowns', tier: 'gold', test: function (S) { return S.prem >= 50; }, prog: function (S) { return [S.prem, 50]; }, ico: function (p) { return IK.ico.crown(p); } },
+  { id: 'taps', name: 'Fountain Friend', desc: 'Tap the fountain 500 times', tier: 'bronze', test: function (S) { return S.stats.taps >= 500; }, prog: function (S) { return [S.stats.taps, 500]; }, ico: function (p) { return IK.ico.star(p); } },
+  { id: 'chests', name: 'Treasure Hunter', desc: 'Open 5 chests', tier: 'bronze', test: function (S) { return S.stats.chests >= 5; }, prog: function (S) { return [S.stats.chests, 5]; }, ico: function (p) { return IK.ico.gift(p); } },
+  { id: 'visitors', name: 'Good Host', desc: 'Greet 10 visitors', tier: 'bronze', test: function (S) { return S.stats.critters >= 10; }, prog: function (S) { return [S.stats.critters, 10]; }, ico: function (p) { return IK.ico.gift(p); } },
+  { id: 'century', name: 'Century', desc: 'Own 100 of one building', tier: 'silver', test: anyTier(100), prog: function (S) { return [Math.max.apply(null, S.owned), 100]; }, ico: function (p) { return G[2].ico(p); } },
+  { id: 'lvl10', name: 'Rising Star', desc: 'Reach level 10', tier: 'silver', test: function (S) { return S.lvl >= 10; }, prog: function (S) { return [S.lvl, 10]; }, ico: function (p) { return IK.ico.star(p); } },
+  { id: 'decree', name: 'First Decree', desc: 'Crown a new age', tier: 'silver', test: function (S) { return S.runs >= 1; }, prog: function (S) { return [S.runs, 1]; }, ico: function (p) { return IK.ico.crown(p); } },
+  { id: 'trader', name: 'Trade Master', desc: 'Send 5 caravans', tier: 'bronze', test: function (S) { return S.stats.trades >= 5; }, prog: function (S) { return [S.stats.trades, 5]; }, ico: function (p) { return IK.ico.cart(p); } },
+  { id: 'streak3', name: 'Regular', desc: 'Play 3 days in a row', tier: 'bronze', test: function (S) { return S.daily && S.daily.best >= 3; }, prog: function (S) { return [S.daily ? S.daily.best : 0, 3]; }, ico: function (p) { return IK.ico.scroll(p); } },
+  { id: 'quests', name: 'Goal Getter', desc: 'Finish 10 daily goals', tier: 'silver', test: function (S) { return S.stats.quests >= 10; }, prog: function (S) { return [S.stats.quests, 10]; }, ico: function (p) { return IK.ico.trophy(p); } },
+  { id: 'harbour', name: 'Harbour Master', desc: 'Build the Grand Harbour', tier: 'gold', test: function (S) { return S.owned[9] > 0; }, prog: function (S) { return [S.owned[9], 1]; }, ico: function (p) { return G[9].ico(p); } }
+];
+
+var POOL = [
+  { id: 'tap', kind: 'tap', text: 'Tap the fountain {n} times', goals: [40, 100, 220] },
+  { id: 'buy', kind: 'buy', text: 'Build {n} buildings', goals: [8, 20, 40] },
+  { id: 'earn', kind: 'earn', text: 'Earn {n} coins', goals: function (E) { var r = Math.max(60, E.income()); return [r * 150, r * 500, r * 1500]; } },
+  { id: 'upg', kind: 'upgrade', text: 'Buy {n} upgrades', goals: [1, 2, 4] },
+  { id: 'crit', kind: 'critter', text: 'Greet {n} visiting merchants', goals: [1, 2, 3] }
+];
+
+/* ================= the scene: a golden-hour island, drawn from rendered 3D sprites ================= */
+function makeScene(E) {
+  var S = E.S, cv = $('scene');
+  var st = new IK.Stage(cv, draw, 2);
+  var iso = new IK.Iso(st, { N: 4, M: 4, tex: ['mountain_grass', 'plaza_stone', 'dirt_track', 'rock'] });
+  var built = [], coins = [], dust = [], critter = null, bounce = 0, coinT = 0;
+  st.onResize = function (W, H) { iso.layout(W, H); };
+  iso.layout(st.w || 390, st.h || 300);
+
+  function ground(cx) {
+    var dirt = iso.pattern(cx, 'dirt_track'), stone = iso.pattern(cx, 'plaza_stone');
+    LOT.forEach(function (L) { cx.globalAlpha = 0.92; iso.pad(cx, L.i, L.j, dirt || '#a9773f', 'rgba(70,40,12,.55)', 0.1); cx.globalAlpha = 1; });
+    cx.fillStyle = dirt || '#a9773f'; cx.fillRect(256 + 100, 0, 56, 4 * 256); cx.fillRect(0, 256 + 100, 4 * 256, 56);
+    iso.pad(cx, 1, 1, stone || '#a7a7a0', 'rgba(60,50,40,.6)', 0.03);
   }
-  var u=['K','M','B','T','Qa','Qi'],i=-1;
-  while(n>=1000&&i<u.length-1){n/=1000;i++;}
-  var s;
-  if(n>=100){s=n.toFixed(0);}
-  else if(n>=10){s=n.toFixed(1);}
-  else{s=n.toFixed(2);}
-  return s+u[i];
-}
-function fmtTime(sec){
-  sec=Math.floor(sec);
-  var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60);
-  if(h>0){return h+'h '+m+'m';}
-  if(m>0){return m+'m';}
-  return sec+'s';
-}
-function num(v,f){v=+v;return isFinite(v)&&v>=0?v:f;}
-function milestoneMult(o){
-  if(o>=100){return 8;}
-  if(o>=50){return 4;}
-  if(o>=25){return 2;}
-  return 1;
-}
-function deedCount(){
-  var n=0,i;
-  for(i=0;i<DEEDS.length;i++){if(S.deeds[i]){n++;}}
-  return n;
-}
-function deedMult(){return 1+0.02*deedCount();}
-function checkDeeds(){
-  var i,a=0;
-  for(i=0;i<DEEDS.length;i++){
-    if(!S.deeds[i]&&DEEDS[i].d()){S.deeds[i]=true;a++;toast('🏅 Deed: '+DEEDS[i].n+' +2%');sfx('mile');}
+  function spawnCoin(tier) {
+    var L = LOT[tier], p = iso.cellXY(L.i, L.j), s = A.size(G[tier].spr);
+    var top = (s ? (s.ay + 4) : 60) * iso.sprS * iso.sc;
+    coins.push({ x: p.x + (Math.random() - 0.5) * 20 * iso.sc, y: p.y - top * 0.7, vy: -22 - Math.random() * 12, t: 0, life: 1.4 });
+    if (coins.length > 30) coins.shift();
   }
-  if(a){save();setTxt($('startDeeds'),deedCount()+'/10 (+'+(deedCount()*2)+'%)');}
-  return a;
-}
-function incomePerSec(){
-  var t=0,i;
-  for(i=0;i<DEFS.length;i++){t+=DEFS[i].i*S.owned[i]*milestoneMult(S.owned[i]);}
-  return t*mult*deedMult();
-}
-function tapPower(){return (1+S.owned[0]*0.5)*mult*(rushT>0?2:1)*(codes.MIDAS?10:1);}
-function costOf(i,amt){
-  var b=DEFS[i],o=S.owned[i];
-  return b.c*Math.pow(1.15,o)*(Math.pow(1.15,amt)-1)/0.15;
-}
-function maxAfford(i){
-  var c0=DEFS[i].c*Math.pow(1.15,S.owned[i]);
-  if(S.coins<c0){return 0;}
-  var n=Math.floor(Math.log(S.coins*0.15/c0+1)/Math.log(1.15));
-  if(n<1){n=1;}
-  while(n>1&&costOf(i,n)>S.coins){n--;}
-  while(costOf(i,n+1)<=S.coins){n++;}
-  return n;
-}
-function prestigeGain(){return Math.floor(Math.sqrt(S.lifetime/1e6));}
-function save(){
-  if(cheated()){return;}
-  S.last=Date.now();
-  try{localStorage.setItem('ie_state',JSON.stringify(S));}catch(e){}
-}
-function load(){
-  try{
-    var raw=localStorage.getItem('ie_state');
-    if(raw){
-      var d=JSON.parse(raw),i;
-      S.coins=num(d.coins,0);S.lifetime=num(d.lifetime,0);S.alltime=num(d.alltime,0);S.gold=Math.floor(num(d.gold,0));S.last=num(d.last,Date.now());
-      S.buy=(d.buy===1||d.buy===10||d.buy===25||d.buy===-1)?d.buy:1;
-      for(i=0;i<DEFS.length;i++){S.owned[i]=Math.floor(num(d.owned&&d.owned[i],0));}
-      var dd=Array.isArray(d.deeds)?d.deeds:[];
-      for(i=0;i<DEEDS.length;i++){S.deeds[i]=dd[i]===true;}
-      S.trades=Math.floor(num(d.trades,0));
-      S.chests=Math.floor(num(d.chests,0));
-      S.trib=Math.floor(num(d.trib,0));S.tribs=Math.floor(num(d.tribs,0));
-      S.taps=Math.floor(num(d.taps,0));S.tapRew=Math.floor(num(d.tapRew,0));
-    }
-  }catch(e){}
-  mult=Math.pow(1.1,S.gold);
-}
-function offlineProgress(){
-  var away=(Date.now()-S.last)/1000;
-  if(away<=60){return;}
-  var capped=Math.min(away,8*3600);
-  var gain=incomePerSec()*0.5*capped;
-  if(gain<=0){return;}
-  S.coins+=gain;S.lifetime+=gain;S.alltime+=gain;
-  save();
-  $('offlineMsg').innerHTML='You were away for <b>'+fmtTime(away)+'</b>'+(away>capped?' <b>(8h cap)</b>':'')+'.<br>Your empire earned <b>'+fmt(gain)+'</b> coins at 50% rate ('+fmt(incomePerSec()*0.5)+'/s).';
-  $('btnOfflineOk').textContent='💰 Collect '+fmt(gain);
-  $('offlineModal').classList.add('open');
-}
-var cv=$('fx'),cx=cv.getContext('2d'),P=[],PFree=[],PMAX=420,FW=0,FH=0,fxDrawn=false;
-var GOLDS=['#fde68a','#fbbf24','#f59e0b','#fff7e0'];
-function getP(){if(PFree.length){return PFree.pop();}if(P.length<PMAX){return {};}}
-function killP(i){var q=P[i];P[i]=P[P.length-1];P.pop();PFree.push(q);}
-function resizeFx(){
-  var dpr=Math.min(window.devicePixelRatio||1,2);
-  FW=window.innerWidth;FH=window.innerHeight;
-  cv.width=FW*dpr;cv.height=FH*dpr;
-  cv.style.width=FW+'px';cv.style.height=FH+'px';
-  cx.setTransform(dpr,0,0,dpr,0,0);
-}
-function burst(x,y,n,spd,grav,life,size){
-  var k,a,v,p;
-  if(RM){return;}
-  for(k=0;k<n;k++){
-    p=getP();if(!p){break;}
-    a=Math.random()*6.2832;v=spd*(0.3+Math.random()*0.7);
-    p.x=x;p.y=y;p.vx=Math.cos(a)*v;p.vy=Math.sin(a)*v-spd*0.25;p.g=grav;
-    p.life=life*(0.6+Math.random()*0.6);p.t=0;p.s=size*(0.6+Math.random()*0.8);
-    p.c=GOLDS[(Math.random()*GOLDS.length)|0];
-    P.push(p);
-  }
-}
-function confetti(){
-  var k,p;
-  if(RM){return;}
-  for(k=0;k<36;k++){
-    p=getP();if(!p){break;}
-    p.x=Math.random()*FW;p.y=-10;p.vx=(Math.random()-0.5)*90;p.vy=60+Math.random()*120;
-    p.g=240;p.life=1.1+Math.random()*0.7;p.t=0;p.s=2.5+Math.random()*3;
-    p.c=GOLDS[(Math.random()*GOLDS.length)|0];
-    P.push(p);
-  }
-}
-var FP=[],FPi=0;
-function floater(x,y,txt){
-  var f;
-  if(FP.length<12){f=document.createElement('div');f.className='float';document.body.appendChild(f);FP.push(f);}
-  else{f=FP[FPi];FPi=(FPi+1)%FP.length;}
-  f.textContent=txt;
-  f.style.left=(x-16)+'px';
-  f.style.top=(y-30)+'px';
-  f.style.animation='none';void f.offsetWidth;f.style.animation='';
-}
-var coinRect=null;
-function cacheRects(){try{coinRect=$('coinBtn').getBoundingClientRect();}catch(e){coinRect=null;}}
-var lastFrame=0,uiAcc=0,lastPW='';
-function frame(ts){
-  if(!lastFrame){lastFrame=ts;}
-  var dt=Math.min((ts-lastFrame)/1000,0.05);lastFrame=ts;
-  logicStep();
-  if(P.length||fxDrawn){
-    cx.clearRect(0,0,FW,FH);
-    fxDrawn=P.length>0;
-    var i,p;
-    for(i=P.length-1;i>=0;i--){
-      p=P[i];p.t+=dt;
-      if(p.t>=p.life){killP(i);continue;}
-      p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
-      var a=1-p.t/p.life;
-      cx.globalAlpha=a;cx.fillStyle=p.c;
-      cx.beginPath();cx.arc(p.x,p.y,p.s*(0.5+a*0.5),0,6.2832);cx.fill();
-    }
-    cx.globalAlpha=1;
-  }
-  var diff=S.coins-disp;
-  if(Math.abs(diff)<0.5){disp=S.coins;}else{disp+=diff*Math.min(1,dt*10);}
-  setText(elCoins,fmt(disp));
-  if(inGame){
-    uiAcc+=dt;
-    if(uiAcc>=0.1){uiAcc=0;updateHudFrame();}
-  }
-  requestAnimationFrame(frame);
-}
-function updatePBar(){
-  var g=prestigeGain(),lo=g*g*1e6,hi=(g+1)*(g+1)*1e6;
-  var pr=(S.lifetime-lo)/(hi-lo);
-  if(!(pr>=0)){pr=0;}if(pr>1){pr=1;}
-  var w=(pr*100).toFixed(1)+'%';
-  if(lastPW!==w){lastPW=w;elPfill.style.width=w;}
-  elPfill.classList.toggle('full',g>=1);
-  setText(elPNext,'Next 🪙 at '+fmt(hi));
-  setText(elPPrev,g>=1?'✨ Now: ×'+mult.toFixed(2)+' → ×'+Math.pow(1.1,S.gold+g).toFixed(2)+' income':'');
-}
-function renderBuildings(){
-  if(rowsBuilt){return;}
-  rowsBuilt=true;
-  var bc=$('buildings');bc.innerHTML='';rows=[];
-  var i;
-  for(i=0;i<DEFS.length;i++){
-    (function(i){
-      var row=document.createElement('div');
-      row.className='brow';
-      var own=document.createElement('div');
-      own.className='owned';own.textContent=S.owned[i];
-      var inf=document.createElement('div');
-      inf.className='info';
-      inf.innerHTML='<div class="nm">'+DEFS[i].e+' '+DEFS[i].n+'</div><div class="dt"></div>';
-      var dt=inf.querySelector('.dt');
-      var buy=document.createElement('button');
-      buy.className='buy';
-      buy.addEventListener('click',function(){buyBuilding(i);});
-      row.appendChild(own);
-      row.appendChild(inf);
-      row.appendChild(buy);
-      bc.appendChild(row);
-      rows.push({row:row,own:own,inf:inf,dt:dt,buy:buy,stars:null,no:false});
-    })(i);
-  }
-}
-function updateRows(){
-  var i,r,amt,c,mm,s,stars,ok;
-  for(i=0;i<rows.length;i++){
-    r=rows[i];
-    amt=S.buy===-1?Math.max(1,maxAfford(i)):S.buy;
-    c=costOf(i,amt);
-    setText(r.own,String(S.owned[i]));
-    mm=milestoneMult(S.owned[i]);
-    s=fmt(DEFS[i].i)+' coins/s each · now '+fmt(DEFS[i].i*S.owned[i]*mm*mult)+'/s';
-    setText(r.dt,s);
-    stars=mm>=8?'★★★':mm>=4?'★★':mm>=2?'★':'';
-    if(mm>=2&&!r.stars){
-      r.stars=document.createElement('span');
-      r.stars.className='stars';
-      r.inf.appendChild(r.stars);
-    }
-    if(r.stars){setText(r.stars,stars?' '+stars:'');}
-    s=(S.buy===-1?'MAX×':'×')+amt+' · '+fmt(c);
-    setText(r.buy,s);
-    ok=S.coins>=c;
-    if(ok&&r.no){r.no=false;r.buy.classList.remove('no');r.buy.classList.remove('afford');void r.buy.offsetWidth;r.buy.classList.add('afford');}
-    else if(!ok&&!r.no){r.no=true;r.buy.classList.add('no');}
-  }
-}
-function buyBuilding(i){
-  var amt=S.buy===-1?maxAfford(i):S.buy;
-  if(amt<1){sfx('error');vib(30);return;}
-  var c=costOf(i,amt);
-  if(S.coins<c){sfx('error');vib(30);return;}
-  var before=S.owned[i];
-  S.coins-=c;
-  S.owned[i]+=amt;
-  sfx('buy');vib(12);did('buy');
-  if(Math.random()<0.07){
-    S.chests++;
-    setTxt($('chestCount'),S.chests);
-    toast('🎁 A treasure chest dropped!');
-    sfx('pop');
-    if(S.chests===5||S.chests===15||S.chests===30){toast('🎁 TREASURE HOARDER ×'+S.chests+'!');sfx('mile');}
-    save();
-  }
-  var r=rows[i];
-  if(r){
-    r.row.classList.remove('flash');
-    void r.row.offsetWidth;
-    r.row.classList.add('flash');
-    try{
-      var rc=r.row.getBoundingClientRect();
-      burst(rc.left+rc.width/2,rc.top+rc.height/2,12,140,220,0.7,3);
-    }catch(e){}
-  }
-  var ol=before>=100?3:before>=50?2:before>=25?1:0;
-  var nl=S.owned[i]>=100?3:S.owned[i]>=50?2:S.owned[i]>=25?1:0;
-  if(nl>ol){toast('⭐ Milestone! '+DEFS[i].n+' ×'+milestoneMult(S.owned[i]));sfx('mile');confetti();vib([15,40,15]);}
-  updateRows();
-  updateHud();
-}
-function tapMilestone(){
-  var k=S.tapRew|0;
-  if(k<TAPC.length&&S.taps>=TAPC[k]){
-    S.tapRew=k+1;
-    var bonus=Math.max(100,Math.floor(incomePerSec()*20));
-    S.coins+=bonus;
-    toast('👆 '+TAPC[k]+' TAPS! +'+fmt(bonus)+' coins');
-    sfx('mile');vib([15,40,15]);confetti();
-    save();
-  }
-  if(S.taps%500===0){toast('👆 '+S.taps+' taps!');sfx('pop');setTxt($('startTaps'),S.taps);}
-}
-function tapCoin(e){
-  var tp=tapPower();
-  S.coins+=tp;S.lifetime+=tp;S.alltime+=tp;
-  S.taps++;tapMilestone();did('tap');
-  var cb=$('coinBtn');
-  cb.classList.remove('pop');
-  void cb.offsetWidth;
-  cb.classList.add('pop');
-  sfx('coin',Math.floor(S.coins));
-  vib(8);
-  var x=e&&e.clientX,y=e&&e.clientY;
-  if(x===undefined||x===0&&y===0){
-    if(!coinRect){cacheRects();}
-    if(coinRect){x=coinRect.left+coinRect.width/2;y=coinRect.top+coinRect.height/2;}
-  }
-  if(x!==undefined){
-    burst(x,y,8,150,260,0.6,3);
-    floater(x,y,'+'+fmt(tp));
-  }
-  updateHud();
-}
-function startTrade(){
-  if(carEnd||S.coins<1000){sfx('error');vib(30);return;}
-  var stake=Math.min(S.coins,Math.max(1000,Math.floor(S.coins*0.25)));
-  S.coins-=stake;
-  carStake=stake;
-  carEnd=Date.now()+60000;
-  sfx('tap');vib(14);
-  toast('🛒 Caravan departed with '+fmt(stake)+' coins · returns in 60s');
-  cacheRects();
-  save();
-  updateHud();
-}
-function openChest(){
-  if(!S.chests){sfx('error');return;}
-  var loot=Math.max(1,Math.floor(incomePerSec()*30*(0.5+Math.random()*1.5)));
-  S.chests--;
-  S.coins+=loot;
-  setTxt($('chestCount'),S.chests);
-  setTxt($('startChest'),S.chests);
-  toast('📦 Chest opened: +'+fmt(loot)+' coins!');
-  sfx('levelup');vib(18);
-  if(coinRect){
-    burst(coinRect.left+coinRect.width/2,coinRect.top+coinRect.height/2,14,170,260,0.7,3);
-    floater(coinRect.left+coinRect.width/2,coinRect.top,'+'+fmt(loot)+' 📦');
-  }
-  updateHud();
-  save();
-}
-function dayIdx(){return Math.floor(Date.now()/86400000);}
-function claimTrib(){
-  var d=dayIdx();
-  if(S.trib===d){sfx('error');return;}
-  var reward=Math.max(50,Math.floor(incomePerSec()*60));
-  S.coins+=reward;
-  S.trib=d;S.tribs++;
-  setTxt($('startTrib'),S.tribs);
-  toast('☀️ Daily tribute: +'+fmt(reward)+' coins!');
-  sfx('win');vib([15,40,15]);confetti();
-  floater(FW/2,FH*0.3,'+'+fmt(reward)+' ☀️');
-  if(S.tribs===7||S.tribs===30||S.tribs===100){toast('☀️ DEVOTED ×'+S.tribs+' days!');sfx('mile');}
-  updateHud();
-  save();
-  refreshTrib();
-}
-function refreshTrib(){
-  var b=$('btnTrib');
-  if(!b){return;}
-  if(S.trib===dayIdx()){b.style.display='none';}
-  else{b.style.display='';}
-}
-function doPrestige(){
-  if(carEnd){carEnd=0;carStake=0;toast('🛒 Your caravan was lost in the reset…');}
-  var g=prestigeGain();
-  if(g<1){sfx('error');return;}
-  sfx('prestige');vib([20,50,20,50,40]);
-  burst(FW/2,FH/2,80,260,120,1.2,4);
-  confetti();
-  $('psGained').textContent='+'+g+' 🪙';
-  $('psCoins').textContent=fmt(S.lifetime);
-  $('psLifetime').textContent=fmt(S.alltime);
-  S.gold+=g;
-  mult=Math.pow(1.1,S.gold);
-  $('psGold').textContent=S.gold;
-  $('psMult').textContent='×'+mult.toFixed(2);
-  S.coins=0;S.lifetime=0;
-  var i;
-  for(i=0;i<DEFS.length;i++){S.owned[i]=0;}
-  save();
-  show('s-over');
-  inGame=false;
-  scene('over',{score:g});
-  renderBuildings();
-  updateRows();
-  updateHud();
-}
-function updateHud(){
-  setText(elPersec,fmt(incomePerSec()));
-  setText(elGold,String(S.gold));
-  setText(elTapPow,fmt(tapPower()));
-  var g=prestigeGain();
-  setText(elPB,'✨ Prestige +'+g+' 🪙');
-  if(elPB.disabled!==(g<1)){elPB.disabled=g<1;}
-  elPB.classList.toggle('ready',g>=1);
-  updateRows();
-}
-function logicStep(){
-  var nowT=Date.now(),dt=(nowT-lastTick)/1000;
-  lastTick=nowT;
-  if(!(dt>0)||!inGame){return;}
-  var rate=1;
-  if(dt>60){
-    dt=Math.min(dt,8*3600);rate=0.5;
-    if(dt>300){toast('⏳ Welcome back! +'+fmt(incomePerSec()*0.5*dt));}
-  }
-  if(rushT>0){
-    rushT=Math.max(0,rushT-dt);
-    if(rushT===0){$('coinBtn').classList.remove('rush');}
-  }
-  if(rushT===0&&nowT>=rushNext){
-    rushT=12;rushNext=nowT+(45+Math.random()*45)*1000;
-    toast('✨ GOLDEN RUSH! ×2 taps (12s)');
-    sfx('levelup');
-    $('coinBtn').classList.add('rush');
-  }
-  if(carEnd&&nowT>=carEnd){
-    var pay=Math.floor(carStake*(1.5+Math.random()*0.9));
-    S.coins+=pay;
-    carEnd=0;carStake=0;
-    S.trades++;
-    setTxt($('startCar'),S.trades);
-    toast('💰 Caravan delivered +'+fmt(pay)+' coins!');
-    sfx('win');vib([20,40,20,40,30]);
-    confetti();
-    floater(FW/2,FH*0.35,'+'+fmt(pay)+' 🛒');
-    if(S.trades===5||S.trades===15||S.trades===30){toast('🛒 TRADE MASTER ×'+S.trades+'!');sfx('mile');}
-    save();
-    carDue=nowT+(150+Math.random()*150)*1000;
-  }
-  if(!carEnd&&carDue&&nowT>=carDue){
-    if(S.coins>=1000){
-      carDue=0;
-      toast('🛒 The Caravan has arrived!');
-      sfx('whoosh');
-      $('btnCaravan').style.display='';
-    }else{
-      carDue=nowT+30000;
-    }
-  }
-  if(tribDay!==dayIdx()){tribDay=dayIdx();refreshTrib();}
-  var inc=incomePerSec()*dt*rate;
-  if(inc>0){S.coins+=inc;S.lifetime+=inc;S.alltime+=inc;}
-  checkDeeds();
-}
-function updateHudFrame(){
-  setText(elPersec,fmt(incomePerSec()));
-  var g=prestigeGain();
-  setText(elPB,'✨ Prestige +'+g+' 🪙');
-  if(elPB.disabled!==(g<1)){elPB.disabled=g<1;}
-  elPB.classList.toggle('ready',g>=1);
-  updateRows();
-  updatePBar();
-  var nowT=Date.now();
-  var bc=$('btnCaravan'),bk=$('btnChest');
-  if(carEnd){
-    bc.style.display='';
-    bc.disabled=true;
-    setText(bc,'⏳ Caravan returns in '+Math.max(0,Math.ceil((carEnd-nowT)/1000))+'s');
-  }else if(carDue===0&&S.coins>=1000){
-    bc.style.display='';
-    bc.disabled=false;
-    setText(bc,'🛒 Trade Caravan');
-  }else{
-    bc.style.display='none';
-  }
-  if(S.chests>0){
-    bk.style.display='';
-    bk.disabled=false;
-    setText(bk,'📦 Open Chest ×'+S.chests);
-  }else{
-    bk.style.display='none';
-  }
-}
-function startGame(teach){
-  $('offlineModal').classList.remove('open');
-  show('s-game');
-  renderBuildings();
-  disp=S.coins;
-  inGame=true;
-  lastTick=Date.now();
-  rushNext=Date.now()+(45+Math.random()*45)*1000;
-  carDue=Date.now()+(150+Math.random()*150)*1000;
-  setTxt($('chestCount'),S.chests);
-  cacheRects();
-  refreshTrib();
-  updateHud();
-  scene('play');
-  if(coach){coach.stop(true);coach=null;}
-  if(window.PlayKit&&(teach===true||!PlayKit.seen('ie_tut'))){
-    coach=PlayKit.coach({key:'ie_tut',theme:{panel:'#241a06',fg:'#fde68a',accent:'#fbbf24'},steps:[
-      {text:'Tap the big coin to earn coins.',target:'#coinBtn',on:'tap'},
-      {text:'Buy a building when you can afford one (a Cursor costs 15). Buildings earn coins every second, even while you are away.',target:'#buildings',on:'buy'},
-      {text:'Own 25, 50 or 100 of a building to double its output. At 1M coins earned, Prestige for golden coins: +10% income each, forever.',target:'#btnPrestige'}
-    ]});
-  }
-}
-function refreshStart(){
-  $('startGold').textContent=S.gold;$('startMult').textContent=mult.toFixed(2);$('startAll').textContent=fmt(S.alltime);
-  $('startDeeds').textContent=deedCount()+'/10 (+'+(deedCount()*2)+'%)';$('startCar').textContent=S.trades;$('startChest').textContent=S.chests;
-  $('startTrib').textContent=S.tribs;$('startTaps').textContent=S.taps;
-}
-function toTitle(){save();inGame=false;if(coach){coach.stop(true);coach=null;}$('offlineModal').classList.remove('open');refreshStart();$('btnPlay').textContent='▶ Continue';show('s-start');scene('title');}
-function payback(i){var inc=DEFS[i].i*milestoneMult(S.owned[i]+1)*mult*deedMult();return costOf(i,1)/inc;}
-function sdkHint(){
-  if(!inGame){return 'Press Play, tap the coin, and buy buildings: they earn coins every second.';}
-  if(prestigeGain()>=3){return 'Prestige now for '+prestigeGain()+' golden coins: your income goes up '+Math.round((Math.pow(1.1,prestigeGain())-1)*100)+'% forever.';}
-  var i,bi=-1,bp=Infinity,pb;
-  for(i=0;i<DEFS.length;i++){if(i>0&&S.owned[i-1]===0){break;}pb=payback(i);if(pb<bp){bp=pb;bi=i;}}
-  if(bi<0){return 'Tap the coin to earn your first 15 coins, then buy a Cursor.';}
-  var c=costOf(bi,1),next=S.owned[bi]<25?25:S.owned[bi]<50?50:S.owned[bi]<100?100:0;
-  var tip=DEFS[bi].e+' '+DEFS[bi].n+' pays for itself fastest (about '+fmtTime(bp)+').';
-  if(S.coins>=c){return 'Buy a '+DEFS[bi].n+' now: '+tip;}
-  return 'Save up '+fmt(c-S.coins)+' more coins for a '+tip+(next&&next-S.owned[bi]<=5?' Only '+(next-S.owned[bi])+' more to its ×2 milestone!':'');
-}
-function code(c){
-  var inc=incomePerSec();
-  if(c==='GOLDRAIN'){var g=Math.max(1e6,inc*600);S.coins+=g;S.lifetime+=g;S.alltime+=g;}
-  else if(c==='MIDAS'){codes.MIDAS=1;}
-  else if(c==='TIMEWARP'){var h=inc*3600;S.coins+=h;S.lifetime+=h;S.alltime+=h;}
-  else{return {ok:false};}
-  if(window.PlayKit){PlayKit.codes(true);}
-  if(inGame){updateHud();}
-  return {ok:true,message:{GOLDRAIN:'Gold rain: +'+fmt(Math.max(1e6,inc*600))+' coins',MIDAS:'Midas touch: every tap is worth 10 times more',TIMEWARP:'Time warp: one hour of income right now (+'+fmt(inc*3600)+')'}[c]+'. Codes on: this session is not saved.'};
-}
-function init(){
-  load();
-  checkDeeds();
-  $('startGold').textContent=S.gold;
-  $('startMult').textContent=mult.toFixed(2);
-  $('startAll').textContent=fmt(S.alltime);
-  $('startDeeds').textContent=deedCount()+'/10 (+'+(deedCount()*2)+'%)';
-  $('startCar').textContent=S.trades;
-  $('startChest').textContent=S.chests;
-  $('startTrib').textContent=S.tribs;
-  $('startTaps').textContent=S.taps;
-  $('chestCount').textContent=S.chests;
-  var hasSave=false;
-  try{hasSave=!!localStorage.getItem('ie_state');}catch(e){}
-  $('btnPlay').textContent=hasSave?'▶ Continue':'▶ Play';
-  var amts=document.querySelectorAll('.buy-amt'),i;
-  for(i=0;i<amts.length;i++){
-    var v0=amts[i].getAttribute('data-amt');
-    var n0=v0==='max'?-1:parseInt(v0,10);
-    if(n0===S.buy){amts[i].classList.add('sel');}else{amts[i].classList.remove('sel');}
-  }
-  $('btnPlay').addEventListener('click',function(){sfx('buy');startGame();});
-  $('btnHow').addEventListener('click',function(){sfx('buy');startGame(true);});
-  $('btnReset').addEventListener('click',function(){
-    if(!confirm('Start a new run? Buildings and coins reset (golden coins are kept).')){return;}
-    S.coins=0;S.lifetime=0;S.last=Date.now();
-    var j;
-    for(j=0;j<DEFS.length;j++){S.owned[j]=0;}
-    save();
-    $('startGold').textContent=S.gold;
-    sfx('buy');
-    startGame();
-  });
-  $('btnContinue').addEventListener('click',function(){sfx('buy');startGame();});
-  $('btnPrestige').addEventListener('click',doPrestige);
-  $('btnCaravan').addEventListener('click',startTrade);
-  $('btnChest').addEventListener('click',openChest);
-  $('btnTrib').addEventListener('click',claimTrib);
-  $('btnOfflineOk').addEventListener('click',function(){
-    $('offlineModal').classList.remove('open');
-    sfx('prestige');
-    startGame();
-  });
-  $('coinBtn').addEventListener('click',function(e){tapCoin(e);});
-  for(i=0;i<amts.length;i++){
-    amts[i].addEventListener('click',function(){
-      var j,all=document.querySelectorAll('.buy-amt');
-      for(j=0;j<all.length;j++){all[j].classList.remove('sel');}
-      this.classList.add('sel');
-      var v=this.getAttribute('data-amt');
-      S.buy=v==='max'?-1:parseInt(v,10);
-      sfx('coin',1);
-      updateHud();
+
+  function draw(cx, dt, t, W, H) {
+    var sc = iso.sc, ss = iso.sprS * sc;
+    if (W !== iso.w || H !== iso.h) iso.layout(W, H);
+    cx.clearRect(0, 0, W, H);
+    iso.backdrop(cx, dt, t);
+    iso.ground(cx, ground);
+    var items = [];
+    DECOR.forEach(function (d) { items.push({ d: d.i + d.j, kind: 'decor', n: d.n, i: d.i, j: d.j, s: d.s }); });
+    items.push({ d: FOUNTAIN.i + FOUNTAIN.j, kind: 'fountain' });
+    LOT.forEach(function (L, tier) { items.push({ d: L.i + L.j + 0.05, kind: 'lot', tier: tier, i: L.i, j: L.j }); });
+    if (critter) items.push({ d: critter.d, kind: 'critter' });
+    items.sort(function (p, q) { return p.d - q.d; });
+    var hi = E.highest();
+    items.forEach(function (it) {
+      if (it.kind === 'decor') { var p = iso.cellXY(it.i, it.j); A.draw(cx, it.n, p.x, p.y, ss * it.s); }
+      else if (it.kind === 'fountain') {
+        var p2 = iso.cellXY(FOUNTAIN.i, FOUNTAIN.j), sq = bounce > 0 ? 1 + Math.sin(bounce * 20) * 0.05 * bounce / 0.3 : 1;
+        cx.save(); cx.translate(p2.x, p2.y); cx.scale(sq, 2 - sq); A.draw(cx, 'fountain', 0, 0, ss * 1.05); cx.restore();
+        if (E.inGame && S.stats.taps < 3) iso.chip(cx, 'TAP!', p2.x, p2.y - 92 * sc + Math.sin(t * 4) * 3, true);
+      } else if (it.kind === 'lot') {
+        var tier = it.tier, g = G[tier], p3 = iso.cellXY(it.i, it.j), owned = S.owned[tier], bd = built[tier];
+        if (owned > 0) {
+          var k2 = 1;
+          if (bd && bd.t < 0.6) { var u = bd.t / 0.6; k2 = u < 0.6 ? 0.5 + 0.7 * (u / 0.6) : 1.2 - 0.2 * ((u - 0.6) / 0.4); bd.t += dt; }
+          else if (bd && bd.b > 0) { k2 = 1 + 0.06 * Math.sin(bd.b * 18) * (bd.b / 0.25); bd.b -= dt; }
+          cx.save(); cx.translate(p3.x, p3.y); cx.scale(k2, Math.max(0.9, Math.min(1.05, 2 - k2))); A.draw(cx, g.spr, 0, 0, ss); cx.restore();
+          iso.chip(cx, '×' + owned, p3.x, p3.y + 15 * sc, false);
+          if (owned >= 25) { var st2 = owned >= 100 ? 3 : owned >= 50 ? 2 : 1, star = '★★★'.slice(0, st2); cx.font = '800 13px "DM Sans", sans-serif'; cx.textAlign = 'center'; cx.strokeStyle = 'rgba(40,20,0,.8)'; cx.lineWidth = 3; cx.strokeText(star, p3.x, p3.y + 31 * sc); cx.fillStyle = '#ffd45a'; cx.fillText(star, p3.x, p3.y + 31 * sc); }
+        } else {
+          var can = E.canBuy(tier), nextUp = tier === hi + 1 && can;
+          iso.drawGhost(cx, A, g.spr, p3.x, p3.y, ss, nextUp ? 0.5 + 0.12 * Math.sin(t * 3) : 0.2);
+          if (nextUp) {
+            cx.strokeStyle = 'rgba(255,224,130,' + (0.6 + 0.3 * Math.sin(t * 4)) + ')'; cx.lineWidth = 2.5; cx.setLineDash([7, 5]); iso.diamond(cx, p3.x, p3.y, 0.9); cx.stroke(); cx.setLineDash([]);
+            iso.chip(cx, S.coins >= E.cost(tier, 1) ? 'BUILD!' : 'NEXT', p3.x, p3.y - 6 * sc + Math.sin(t * 4) * 2, S.coins >= E.cost(tier, 1));
+          } else if (tier > hi + 1 || !E.unlocked(tier)) { cx.fillStyle = 'rgba(255,255,255,.6)'; cx.font = '800 14px "DM Sans", sans-serif'; cx.textAlign = 'center'; cx.fillText(E.unlocked(tier) ? '?' : 'Lv ' + g.lvl, p3.x, p3.y + 4); }
+        }
+      } else if (it.kind === 'critter') {
+        var c = critter; A.draw(cx, 'truck', c.x, c.y, ss * 1.05);
+        iso.chip(cx, 'TAP!', c.x, c.y - 46 * sc + Math.sin(t * 6) * 3, true);
+      }
     });
+    coinT -= dt;
+    if (E.inGame && coinT <= 0) {
+      if (E.income() > 0) {
+        var ws = [], wsum = 0, i2; for (i2 = 0; i2 < G.length; i2++) { var r = E.genRate(i2); ws.push(r); wsum += r; }
+        var pick = Math.random() * wsum, ti = 0; for (i2 = 0; i2 < ws.length; i2++) { pick -= ws[i2]; if (pick <= 0) { ti = i2; break; } }
+        spawnCoin(ti); coinT = 0.45 + Math.random() * 0.5;
+      } else coinT = 1;
+    }
+    for (var c2 = coins.length - 1; c2 >= 0; c2--) {
+      var co = coins[c2]; co.t += dt; if (co.t > co.life) { coins.splice(c2, 1); continue; }
+      co.y += co.vy * dt; var al = co.t < 0.15 ? co.t / 0.15 : co.t > co.life - 0.4 ? (co.life - co.t) / 0.4 : 1;
+      cx.globalAlpha = al; cx.fillStyle = '#8a5a12'; cx.beginPath(); cx.arc(co.x, co.y + 1, 7, 0, 6.2832); cx.fill(); cx.fillStyle = '#f2c14e'; cx.beginPath(); cx.arc(co.x, co.y, 7, 0, 6.2832); cx.fill(); cx.fillStyle = 'rgba(255,255,255,.6)'; cx.beginPath(); cx.arc(co.x - 2, co.y - 2, 2.5, 0, 6.2832); cx.fill(); cx.globalAlpha = 1;
+    }
+    for (var d2 = dust.length - 1; d2 >= 0; d2--) { var du = dust[d2]; du.t += dt; if (du.t > du.life) { dust.splice(d2, 1); continue; } var f = du.t / du.life; cx.globalAlpha = 0.5 * (1 - f); cx.fillStyle = '#eadcc0'; cx.beginPath(); cx.arc(du.x + du.vx * du.t, du.y + du.vy * du.t, du.r * (0.6 + f), 0, 6.2832); cx.fill(); cx.globalAlpha = 1; }
+    bounce = Math.max(0, bounce - dt);
+    if (critter) {
+      critter.t += dt; critter.x += critter.vx * dt; critter.y += critter.vx * 0.5 * dt; critter.d = 5.5;
+      if (critter.t > 16 || critter.x > W + 60) { critter = null; E.critterOut = false; }
+    }
+    iso.light(cx, dt, t);
   }
-  $('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('ie_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';});
-  $('muteBtn').textContent=muted?'🔇':'🔊';
-  setInterval(save,5000);
-  window.addEventListener('beforeunload',save);
-  document.addEventListener('visibilitychange',function(){if(document.hidden){save();}});
-  window.addEventListener('resize',function(){resizeFx();cacheRects();});
-  window.addEventListener('scroll',cacheRects,true);
-  resizeFx();
-  offlineProgress();
-  disp=S.coins;
-  requestAnimationFrame(frame);
-  scene('title');
-  if(SDK){SDK.init({
-    pauseButton:'tr',
-    onRestart:function(){startGame();},
-    onExit:toTitle,
-    onTutorial:function(){startGame(true);},
-    onHint:sdkHint,
-    onCheat:code
-  });}
+
+  function hitFountain(p) { var c = iso.cellXY(FOUNTAIN.i, FOUNTAIN.j), s = A.size('fountain'); if (!s) return false; var k = iso.sprS * iso.sc, r = Math.max(s.w, s.h) * k * 0.55; return Math.abs(p.x - c.x) < r && p.y > c.y - s.h * k && p.y < c.y + 20 * iso.sc; }
+  return {
+    stage: st,
+    pointer: function (cxp, cyp) {
+      var p = st.toLocal(cxp, cyp), sc = iso.sc, k = iso.sprS * sc;
+      if (critter && Math.abs(p.x - critter.x) < 46 * sc && Math.abs(p.y - (critter.y - 20 * sc)) < 46 * sc) {
+        var cc = st.toClient(critter.x, critter.y - 30 * sc); E.critterTapped('truck', cc.x, cc.y); critter = null; E.critterOut = false; return;
+      }
+      for (var tier = 0; tier < LOT.length; tier++) {
+        if (S.owned[tier] <= 0) continue;
+        var L = LOT[tier], c = iso.cellXY(L.i, L.j), s = A.size(G[tier].spr); if (!s) continue;
+        var hh = s.h * k * 0.9, ww = s.w * k * 0.5;
+        if (Math.abs(p.x - c.x) < ww && p.y < c.y + 12 * sc && p.y > c.y - hh + 6 * sc && !hitFountain(p)) {
+          IK.sfx('tap'); built[tier] = built[tier] || {}; built[tier].b = 0.25; IK.fx.pop(E.rows[tier].row, 0.02);
+          IK.toast(G[tier].name + ' ×' + S.owned[tier] + ': ' + fmt(E.genRate(tier) * E.globalMul()) + ' coins per second', { icon: G[tier].ico(24) });
+          E.switchTab('build'); var row = E.rows[tier].row; if (row && row.scrollIntoView) { try { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { row.scrollIntoView(); } }
+          return;
+        }
+      }
+      var f = iso.cellXY(FOUNTAIN.i, FOUNTAIN.j), cl = st.toClient(f.x, f.y - 56 * sc), onF = hitFountain(p);
+      bounce = 0.3; E.tapMain(onF ? cl.x : cxp, onF ? cl.y : cyp);
+      IK.fx.burst(cl.x, cl.y, { n: 8, speed: 210, angle: -Math.PI / 2, spread: 1.5, grav: 520, shape: 'coin', size: 4.5, colors: ['#f2c14e', '#ffe08a'] });
+    },
+    update: function () {},
+    onBuy: function (i, n, first) {
+      built[i] = built[i] || {}; if (first) built[i].t = 0; else built[i].b = 0.25;
+      var L = LOT[i], p = iso.cellXY(L.i, L.j), sc = iso.sc;
+      for (var q = 0; q < (first ? 14 : 5); q++) dust.push({ x: p.x + (Math.random() - 0.5) * 40 * sc, y: p.y + (Math.random() - 0.3) * 10 * sc, vx: (Math.random() - 0.5) * 30, vy: -12 - Math.random() * 20, r: 5 + Math.random() * 6, t: 0, life: 0.7 + Math.random() * 0.4 });
+      var c = st.toClient(p.x, p.y - 30 * sc); IK.fx.burst(c.x, c.y, { n: first ? 24 : 10, speed: 200, shape: 'star', size: 4 });
+    },
+    onLevel: function () {},
+    spawnCritter: function () {
+      if (critter) return false;
+      var q = iso.cellXY(0, 3), sc = iso.sc;
+      critter = { x: q.x - 90 * sc, y: q.y + 6 * sc, vx: 60 + Math.random() * 20, t: 0, d: 5.5 };
+      IK.toast('A delivery truck rolls in. Tap it!', { icon: IK.ico.cart(22) });
+      IK.sfx('whoosh', { volume: 0.5 });
+      return true;
+    },
+    onCaravan: function (kind) { if (kind === 'go') IK.sfx('whoosh', { volume: 0.4 }); }
+  };
 }
-init();
+
+/* ================= the game ================= */
+var E = new IK.Idle({
+  id: 'idle-empire', name: 'Idle Empire', saveKey: 'ie_state', muteKey: 'ie_muted',
+  cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
+  gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL,
+  tapBase: 1, tapName: 'fountain', workers: 'townsfolk', critterName: 'The merchant',
+  tabs: [
+    { id: 'build', label: 'Build', ico: IK.ico.hammer },
+    { id: 'ups', label: 'Upgrades', ico: IK.ico.up },
+    { id: 'goals', label: 'Goals', ico: IK.ico.scroll },
+    { id: 'crown', label: 'Crown', ico: IK.ico.crown }
+  ],
+  tabLevels: { ups: 2, goals: 3, crown: 5 },
+  levelInfo: { 2: { kind: 'Unlocked', text: 'Upgrades for your buildings' }, 3: { kind: 'Unlocked', text: 'Daily goals, gifts and visitors' }, 5: { kind: 'Unlocked', text: 'Royal Decree and the Crown shop' } },
+  prestige: { name: 'Crown', plural: 'Crowns', label: 'Royal Decree', tab: 'Crown', ico: function (px) { return IK.ico.crown(px); }, art: function (px) { return IK.ico.crown(px); }, unit: 1e6, coef: 3, per: 0.10, lore: 'Crown a new age. Your town starts over, and every crown adds 10% to all income forever.' },
+  levelArt: function () { return IK.ico.star(56); }, welcomeArt: function () { return G[2].ico(64); },
+  logo: 'IDLE<br>EMPIRE<small>MARKET TO METROPOLIS</small>', tagline: 'Tap the fountain, build a town and grow it into a harbour city.', pitch: 'A tiny town with a big future.',
+  howto: ['Tap the fountain to earn coins.', 'Build a Market Stall, then more buildings. Each one earns coins every second, even while you are away.', 'Own 25, 50 or 100 of a building to multiply its output. Buy upgrades to earn even more.', 'Reach 1M coins in one age, then a Royal Decree turns them into Crowns: a permanent income bonus and a shop of perks.'],
+  coach: function (E) {
+    return [
+      { text: 'Tap the fountain to make a wish and earn coins.', target: '#sceneWrap', on: 'tap' },
+      { text: 'Nice! Now build your first Market Stall.', target: function () { return E.rows[0].btn; }, on: 'buy' },
+      { text: 'Every building earns coins by itself, even when you are away. Keep building to level up and unlock new tabs.', target: '', on: null }
+    ];
+  },
+  makeScene: makeScene,
+  cheats: {
+    GOLDRAIN: function (E) { var g = Math.max(1e6, E.income() * 600); E.S.coins += g; E.S.lifetime += g; E.S.alltime += g; return 'Gold rain: +' + fmt(g) + ' coins.'; },
+    MIDAS: function (E) { E.codes.MIDAS = 1; return 'Midas touch: every tap is worth 10 times more.'; },
+    TIMEWARP: function (E) { var h = E.income() * 3600; E.S.coins += h; E.S.lifetime += h; E.S.alltime += h; return 'Time warp: one hour of income (+' + fmt(h) + ').'; }
+  },
+  /* old saves (v1) keep working: buildings, coins, golden coins -> crowns, deeds by position */
+  migrate: function (d, E) {
+    var o = { v: 2, coins: d.coins, lifetime: d.lifetime, alltime: d.alltime, owned: d.owned, prem: d.gold || 0, buy: d.buy, stats: { taps: d.taps || 0, trades: d.trades || 0 }, chests: d.chests || 0, last: d.last };
+    var ids = ['first', 'hoard', 'mill', 'bill', 'trill', 'builder', 'magnate', 'board', 'crowns10', 'crowns50'], ach = {};
+    (d.deeds || []).forEach(function (v, i) { if (v && ids[i]) ach[ids[i]] = 1; });
+    o.ach = ach; return o;
+  }
+});
+E.codes = {};
+window.__empire = E;
+E.boot($('root'));
 })();
 </script>
 </body>

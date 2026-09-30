@@ -16,3 +16,6 @@ Wood and paper grain in the UI are SVG turbulence filters generated in gk.css, n
 | --- | --- | --- |
 | `tex/plaster_c.jpg`, `tex/plaster_n.jpg` | Plaster001 (colour, normal GL) | Tower platforms (Helix Smash, Stack Ball), tinted per segment |
 | `tex/wood_c.jpg` | Wood066 (colour) | The pole in the middle of the tower |
+| `tex/grass.jpg` | Grass001 (colour) | Hole Swallow: lawns of Town Park |
+| `tex/paving.jpg` | PavingStones070 (colour) | Hole Swallow: paths, Bakery Lane cobbles, Old Plaza limestone |
+| `tex/asphalt.jpg` | Asphalt 026 C (colour) | Hole Swallow: Night Market road |

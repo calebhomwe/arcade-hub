@@ -7,8 +7,9 @@
  *   each frame: W.begin(); W.put(id, x, 0, z, yaw, s, ...); W.setHole(i, ...); W.end(); W.view(...); W.render(dt);
  *
  * Holes are real holes: a stencil disc keeps the ground from drawing inside the rim, and a dark
- * well below the ground shows props dropping into it. Props are toon shaded (3-step ramp) with a
- * rim light, instanced per model, and only the ones near the camera are drawn.
+ * well below the ground shows props dropping into it. Props use the warm look: standard materials with baked
+ * vertex-colour AO (High) or Lambert twins (Low), instanced per model, and only the ones near the camera are drawn.
+ * The legacy toon() (ramp + rim) stays exported for the games that still import it.
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -24,9 +25,32 @@ function ramp() {
 }
 const RAMP = ramp();
 
-/** Prop material (the export name is legacy): a warm, slightly rough standard material with baked vertex-colour AO;
- *  m.userData.lo is the cheap Lambert twin that the Low tier draws. Kenney's untextured kits store their palette as sRGB numbers in a linear slot. */
+/** Toon material with a soft rim light: the stylised look that Mini Life Sim and Bridge Race (neon-game-arcade) still import from here. */
 export function toon(src, rim = 0.35) {
+  const m = new THREE.MeshToonMaterial({
+    color: src.color ? src.color.clone() : new THREE.Color(1, 1, 1),
+    map: src.map || null, gradientMap: RAMP,
+    transparent: !!src.transparent, opacity: src.opacity == null ? 1 : src.opacity,
+  });
+  if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.anisotropy = 4; }
+  else if (!src.userData || !src.userData.linear) {
+    // Kenney's untextured kits store their palette as sRGB numbers in a linear slot: read them as sRGB
+    m.color.convertSRGBToLinear();
+    if (/^leaf/i.test(src.name || '')) m.color.setStyle('#4fae45');   // city green rather than the kit's mint
+  }
+  m.userData.rim = { value: rim };
+  m.onBeforeCompile = sh => {
+    sh.uniforms.rimK = m.userData.rim;
+    sh.fragmentShader = 'uniform float rimK;\n' + sh.fragmentShader.replace('#include <opaque_fragment>',
+      'float rimF = 1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0);\n' +
+      'outgoingLight += vec3(1.0, 0.97, 0.9) * pow(rimF, 3.0) * rimK;\n#include <opaque_fragment>');
+  };
+  m.customProgramCacheKey = () => 'toonrim';
+  return m;
+}
+/** Prop material of the warm look: a slightly rough standard material with baked vertex-colour AO (see bakeAO);
+ *  m.userData.lo is the cheap Lambert twin that the Low tier draws. HoleWorld.load() uses this one. */
+export function prop(src) {
   const col = src.color ? src.color.clone() : new THREE.Color(1, 1, 1);
   const tr = !!src.transparent, op = src.opacity == null ? 1 : src.opacity;
   const m = new THREE.MeshStandardMaterial({ color: col, map: src.map || null, roughness: 0.66, metalness: 0.0, envMapIntensity: 0.5, vertexColors: true, transparent: tr, opacity: op });
@@ -172,7 +196,7 @@ export class HoleWorld {
         const g = dequantize(o.geometry.clone()); g.applyMatrix4(o.matrixWorld);
         g.computeBoundingBox(); box.union(g.boundingBox);
         let m = mats.get(o.material);
-        if (!m) { m = toon(o.material); mats.set(o.material, m); }
+        if (!m) { m = prop(o.material); mats.set(o.material, m); }
         parts.push({ g, m });
       });
       if (!parts.length) continue;
