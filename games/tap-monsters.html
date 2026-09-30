@@ -201,7 +201,7 @@ function makeScene(E) {
         A.draw(cx, m.spr, 0, 0, k2); if (hitT > 0) iso.drawTint(cx, A, m.spr, 'rgba(255,255,255,.9)', 0, 0, k2, Math.min(0.7, hitT / 0.16)); cx.restore();
         // health bar and name plate
         var sz2 = A.size(m.spr), top = (sz2 ? sz2.ay : 90) * k2, bw = Math.min(190, W * 0.5), bx = c.x - bw / 2, by = c.y - top - 30;
-        by = Math.max(by, 108);
+        by = Math.max(by, 140);
         iso.rr(cx, bx - 2, by - 2, bw + 4, 20, 10); cx.fillStyle = 'rgba(8,16,34,.85)'; cx.fill(); cx.strokeStyle = boss ? '#f2c14e' : 'rgba(255,255,255,.35)'; cx.lineWidth = 1.5; cx.stroke();
         var pct = Math.max(0, X.hp / X.max);
         var hg = cx.createLinearGradient(0, by, 0, by + 16); hg.addColorStop(0, boss ? '#ff9a4d' : '#ff8a8a'); hg.addColorStop(1, boss ? '#d9491d' : '#d8323a');

@@ -19,7 +19,7 @@
   IK.coach = function (o) {
     var steps = o.steps, i = 0, card = null, ring = null, hand = null, done = false, tm = 0;
     function clear() { [card, ring, hand].forEach(function (e) { if (e && e.parentNode) e.parentNode.removeChild(e); }); card = ring = hand = null; }
-    function targetEl(s) { var t = typeof s.target === 'function' ? s.target() : s.target; return typeof t === 'string' ? D.querySelector(t) : t; }
+    function targetEl(s) { var t = typeof s.target === 'function' ? s.target() : s.target; if (!t) return null; return typeof t === 'string' ? D.querySelector(t) : t; }
     function place() {
       if (done) return;
       var s = steps[i]; if (!s) return;

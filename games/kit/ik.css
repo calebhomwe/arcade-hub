@@ -161,7 +161,7 @@ svg.ic{display:block;flex:none}
 .ik-kv b{color:var(--ik-gold1);font-weight:800;text-align:right}
 
 /* ---------- title: the live world with a wooden plaque ---------- */
-.ik-title{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:calc(var(--ik-sat) + 12px) 16px calc(var(--ik-sab) + 20px);text-align:center;background:linear-gradient(rgba(6,14,30,0) 0,rgba(6,14,30,0) 24%,rgba(7,15,32,.97) 46%)}
+.ik-title{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:calc(var(--ik-sat) + 12px) 16px calc(var(--ik-sab) + 20px);text-align:center;background:linear-gradient(rgba(6,14,30,0) 0,rgba(6,14,30,0) 16%,rgba(7,15,32,1) 32%)}
 .ik-title[hidden]{display:none}
 .ik-plaque{position:relative;padding:14px 26px 12px;border-radius:16px;border:2px solid #2a1607;margin-bottom:10px;background:linear-gradient(rgba(255,210,140,.16),rgba(0,0,0,.28)),url(../assets/idle/tex/planks_warm.jpg);background-size:auto,190px;box-shadow:0 6px 0 #1a0d04,0 12px 28px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,220,170,.35),inset 0 -3px 6px rgba(0,0,0,.45)}
 .ik-plaque:before,.ik-plaque:after{content:'';position:absolute;top:50%;width:9px;height:9px;margin-top:-4px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e8d29a,#6b5320);box-shadow:0 1px 0 rgba(0,0,0,.6)}
