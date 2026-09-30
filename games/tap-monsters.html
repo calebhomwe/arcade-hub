@@ -263,7 +263,7 @@ var E = new IK.Idle({
   id: 'tap-monsters', name: 'Tap Monsters', saveKey: 'tm_state', muteKey: 'tm_muted',
   cur: { name: 'gold', ico: function (px) { return IK.ico.coin(px); } },
   gens: G, growth: 1.5, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL, noPassive: true, rateUnit: ' dmg/s',
-  tapBase: 1, tapName: 'monster', workers: 'friends', critterName: 'The bird',
+  tapBase: 2, tapName: 'monster', workers: 'friends', critterName: 'The bird',
   genUps: { at: [10, 40, 75, 150, 250], mul: [2, 2, 2, 3, 3], costMul: 6, names: ['Better Food', 'Training', 'Battle Armour', 'Legend Gear', 'Hero Power'] },
   tabs: [{ id: 'build', label: 'Team', ico: IK.ico.trophy }, { id: 'ups', label: 'Upgrades', ico: IK.ico.up }, { id: 'goals', label: 'Goals', ico: IK.ico.scroll }, { id: 'crown', label: 'Ascend', ico: IK.ico.soul }],
   tabLevels: { ups: 2, goals: 3, crown: 5 },
@@ -274,7 +274,7 @@ var E = new IK.Idle({
   howto: ['Tap the monster to hit it. Beat it to earn gold.', 'Spend gold to adopt friends: they fight for you every second, even while you are away.', 'Every tenth stage is a boss with 10 times the health and 20 times the gold.', 'Beat stage after stage, then Ascend for souls: a permanent damage bonus and a shop of perks. Fill the Monster Dex as you go.'],
   coach: function (E) {
     return [
-      { text: 'Tap the monster to hit it. Beat it to earn gold.', target: '#sceneWrap', on: 'tap' },
+      { text: 'Tap the monster to hit it. Beat it twice to earn 15 gold.', target: '#sceneWrap', on: 'tap', when: function () { return E.S.coins >= E.cost(0, 1); } },
       { text: 'Gold! Now adopt your first friend, a Kitty.', target: function () { return E.rows[0].btn; }, on: 'buy' },
       { text: 'Friends keep fighting by themselves, even when you are away. Every tenth stage is a boss.', target: '', on: null }
     ];

@@ -29,8 +29,8 @@
       if (r && r.width) {
         if (ring) { ring.style.display = ''; ring.style.left = (r.left - 5) + 'px'; ring.style.top = (r.top - 5) + 'px'; ring.style.width = (r.width + 10) + 'px'; ring.style.height = (r.height + 10) + 'px'; }
         if (hand) { hand.style.display = ''; hand.style.left = (r.left + r.width / 2 - 8) + 'px'; hand.style.top = (r.top + r.height - 14) + 'px'; }
-        top = (r.top + r.height / 2) > vh * 0.55;                   // target low on screen -> card goes on top
-      } else { if (ring) ring.style.display = 'none'; if (hand) hand.style.display = 'none'; }
+        top = (r.top + r.height / 2) > vh * 0.45;                   // target low on screen -> card goes on top
+      } else { top = true; if (ring) ring.style.display = 'none'; if (hand) hand.style.display = 'none'; }
       if (card) { card.style.display = ''; card.style.top = top ? ('calc(var(--ik-sat) + 64px)') : 'auto'; card.style.bottom = top ? 'auto' : ('calc(var(--ik-sab) + 74px)'); }
     }
     function show() {
@@ -46,7 +46,7 @@
     }
     function finish(completed) { if (done) return; done = true; clear(); W.clearInterval(tm); if (o.key) IK.ls.set('ik_coach_' + o.key, '1'); if (o.onDone) o.onDone(completed); }
     var api = {
-      did: function (ev) { if (done) return; var s = steps[i]; if (s && s.on === ev) { i++; show(); } },
+      did: function (ev) { if (done) return; var s = steps[i]; if (s && s.on === ev) { if (s.when && !s.when()) return; i++; show(); } },
       stop: function () { finish(false); },
       place: place,
       get active() { return !done; }
@@ -480,6 +480,7 @@
   P.offline = function (awaySec, fromLoad) {
     var E = this;
     if (awaySec < 60 || E.cheated) return;
+    if (E.cfg.offlineSheet) { E.cfg.offlineSheet(E, awaySec); return; }
     if (E.dirty !== false) E.recalc();
     var cap = E.mul.capH * 3600, used = Math.min(awaySec, cap), rate = E.income(), gain = Math.floor(rate * used * E.mul.eff);
     if (E.cfg.offlineGain) gain = E.cfg.offlineGain(E, used, gain);

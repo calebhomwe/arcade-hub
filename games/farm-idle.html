@@ -268,7 +268,7 @@ var E = new IK.Idle({
   id: 'farm-idle', name: 'Farm Idle Tycoon', saveKey: 'farmIdleSave_v2', muteKey: 'fi_muted',
   cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
   gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL,
-  tapBase: 1, tapName: 'cow', workers: 'farmhands', critterName: 'The butterfly',
+  tapBase: 3, tapName: 'cow', workers: 'farmhands', critterName: 'The butterfly',
   tabs: [{ id: 'build', label: 'Farm', ico: IK.ico.hammer }, { id: 'ups', label: 'Upgrades', ico: IK.ico.up }, { id: 'goals', label: 'Goals', ico: IK.ico.scroll }, { id: 'crown', label: 'Fair', ico: IK.ico.ribbon }],
   tabLevels: { ups: 2, goals: 3, crown: 5 },
   levelInfo: { 2: { kind: 'Unlocked', text: 'Upgrades for your farm' }, 3: { kind: 'Unlocked', text: 'Daily goals, gifts and butterflies' }, 5: { kind: 'Unlocked', text: 'The Grand Fair and the Ribbon shop' } },
@@ -278,7 +278,7 @@ var E = new IK.Idle({
   howto: ['Tap the cow to milk it and earn coins.', 'Plant a Wheat Field, then more fields, animals and buildings. Each one earns coins every second, even while you are away.', 'Own 25, 50 or 100 of one thing to multiply its output. Buy upgrades for more.', 'Reach 1M coins in one season, then enter the Grand Fair for blue ribbons: a permanent bonus and a shop of perks.'],
   coach: function (E) {
     return [
-      { text: 'Tap the cow to milk it and earn coins.', target: '#sceneWrap', on: 'tap' },
+      { text: 'Tap the cow to milk it. Keep tapping until you have 15 coins.', target: '#sceneWrap', on: 'tap', when: function () { return E.S.coins >= E.cost(0, 1); } },
       { text: 'Great! Now plant your first Wheat Field.', target: function () { return E.rows[0].btn; }, on: 'buy' },
       { text: 'Every field and animal earns coins by itself, even when you are away. Keep growing to level up and unlock new tabs.', target: '', on: null }
     ];

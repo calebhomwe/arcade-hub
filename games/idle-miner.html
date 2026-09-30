@@ -21,7 +21,7 @@
 'use strict';
 var IK = window.IK, $ = IK.$, fmt = IK.fmt;
 var A = new IK.Atlas('assets/idle/farm.webp', window.IK_ATLAS.farm);
-var TEX = {}; ['soil_dirt', 'rock', 'mountain_grass', 'planks_warm'].forEach(function (n) { TEX[n] = IK.img('assets/idle/tex/' + n + '.jpg'); });
+var TEX = {}; ['soil_tilled', 'rock', 'mountain_grass', 'planks_warm'].forEach(function (n) { TEX[n] = IK.img('assets/idle/tex/' + n + '.jpg'); });
 function gemIco(c1, c2) { return function (px) { return '<svg class="ic" viewBox="0 0 32 32" width="' + px + '" height="' + px + '" aria-hidden="true"><defs><linearGradient id="g' + c1.slice(1) + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs><path d="M8 6h16l5 7-13 15L3 13z" fill="url(#g' + c1.slice(1) + ')" stroke="rgba(0,0,0,.55)" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 13h26M12 6l-3 7 7 15 7-15-3-7" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.2"/></svg>'; }; }
 var ORE = [['Copper Seam', '#f0a066', '#b4551e'], ['Iron Vein', '#c9d3e0', '#6c7b8e'], ['Silver Lode', '#ffffff', '#9fb0c4'], ['Gold Reef', '#fff0a0', '#c98a10'], ['Ruby Cavern', '#ff8a92', '#a8182a'], ['Sapphire Grotto', '#9cc8ff', '#1f58b8'], ['Emerald Depths', '#9af5b4', '#1d8a44'], ['Diamond Core', '#f0ffff', '#5cc8f0']];
 var COST = [15, 100, 1100, 12000, 130000, 1.4e6, 2e7, 3.3e8], INC = [0.1, 1, 8, 47, 260, 1400, 7800, 44000];
@@ -104,7 +104,7 @@ function makeScene(E) {
   function draw(cx, dt, t, W, H) {
     w = W; h = H; cx.clearRect(0, 0, W, H);
     var built = 0; for (var i = 0; i < G.length; i++) if (S.owned[i] > 0) built = i + 1;
-    var shown = Math.min(G.length, built + 1), surf = Math.min(96, H * 0.3);
+    var shown = Math.min(G.length, built + 1), surf = Math.min(96, H * 0.3); if (built === 0) shown = 0;
     var target = Math.max(0, (shown - 2.6) * RH); scrollY += (target - scrollY) * Math.min(1, dt * 3);
     if (shake > 0) { shake -= dt; cx.save(); cx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4); }
     // sky and surface
@@ -115,7 +115,7 @@ function makeScene(E) {
     if (sy > -surf) { var gy = surf + sy; var gr = pattern(cx, 'mountain_grass'); cx.fillStyle = gr || '#5b8f3c'; cx.fillRect(0, gy - 10, W, 14); A.draw(cx, 'silos', W - 70, gy - 2, 0.30); A.draw(cx, 'barn', 88, gy, 0.30); A.draw(cx, 'crate', 150, gy, 0.3); }
     // cutaway rock
     var top = surf + sy + 4; if (top < 0) top = 0;
-    var soil = pattern(cx, 'soil_dirt'), rock = pattern(cx, 'rock');
+    var soil = pattern(cx, 'soil_tilled'), rock = pattern(cx, 'rock');
     cx.save(); cx.beginPath(); cx.rect(0, top, W, H - top); cx.clip();
     cx.fillStyle = soil || '#6a4a2b'; cx.fillRect(0, top, W, H); cx.fillStyle = rock || '#444'; cx.globalAlpha = 0.55; cx.fillRect(0, surf + sy + RH * 2, W, H); cx.globalAlpha = 1;
     var dark = cx.createLinearGradient(0, surf + sy, 0, surf + sy + RH * 9); dark.addColorStop(0, 'rgba(30,14,4,0)'); dark.addColorStop(1, 'rgba(6,4,14,.72)'); cx.fillStyle = dark; cx.fillRect(0, top, W, H);
@@ -151,6 +151,14 @@ function makeScene(E) {
     if (Math.random() < dt * Math.min(4, E.income() > 0 ? 1.5 : 0) && built) coinsUp.push({ x: ex, y: Math.max(20, surf + sy - 10), t: 0 });
     for (i = coinsUp.length - 1; i >= 0; i--) { var c = coinsUp[i]; c.t += dt; if (c.t > 1.2) { coinsUp.splice(i, 1); continue; } cx.globalAlpha = 1 - c.t / 1.2; cx.fillStyle = '#8a5a12'; cx.beginPath(); cx.arc(c.x + 22, c.y - c.t * 28 + 1, 7, 0, 6.28); cx.fill(); cx.fillStyle = '#f2c14e'; cx.beginPath(); cx.arc(c.x + 22, c.y - c.t * 28, 7, 0, 6.28); cx.fill(); cx.globalAlpha = 1; }
     if (cart) { cart.t += dt; cart.x += 78 * dt; var cy = surf + sy - 4; if (cy < 40) cy = 40; if (cart.x > W + 40 || cart.t > 14) { cart = null; E.critterOut = false; } else { cx.fillStyle = '#4a3a30'; rr(cx, cart.x - 16, cy - 16, 32, 16, 3); cx.fill(); cx.fillStyle = '#f2c14e'; cx.beginPath(); cx.ellipse(cart.x, cy - 16, 13, 6, 0, Math.PI, 0); cx.fill(); cx.fillStyle = '#222'; cx.beginPath(); cx.arc(cart.x - 9, cy + 1, 4, 0, 6.28); cx.arc(cart.x + 9, cy + 1, 4, 0, 6.28); cx.fill(); chip(cx, 'TAP!', cart.x, cy - 34 + Math.sin(t * 6) * 2, true); cart.y = cy; } }
+    if (built === 0) {                                                   // nothing dug yet: a big ore boulder in an open cave to tap
+      var bx2 = W / 2, by2 = H * 0.62, rk2 = pattern(cx, 'rock'), bg2 = cx.createRadialGradient(bx2 - 20, by2 - 30, 4, bx2, by2, 90); bg2.addColorStop(0, '#9a8f86'); bg2.addColorStop(1, '#3c3532');
+      cx.fillStyle = 'rgba(0,0,0,.35)'; cx.beginPath(); cx.ellipse(bx2, by2 + 46, 92, 14, 0, 0, 6.28); cx.fill();
+      cx.fillStyle = bg2; cx.beginPath(); cx.moveTo(bx2 - 86, by2 + 44); cx.quadraticCurveTo(bx2 - 96, by2 - 10, bx2 - 50, by2 - 40); cx.quadraticCurveTo(bx2, by2 - 70, bx2 + 56, by2 - 34); cx.quadraticCurveTo(bx2 + 100, by2 - 6, bx2 + 84, by2 + 44); cx.closePath(); cx.fill();
+      if (rk2) { cx.globalAlpha = 0.35; cx.fillStyle = rk2; cx.fill(); cx.globalAlpha = 1; }
+      [[-40, -8, '#f0a066'], [10, -30, '#f0a066'], [42, 6, '#ffd070'], [-6, 14, '#ffd070']].forEach(function (g) { cx.fillStyle = g[2]; cx.beginPath(); cx.moveTo(bx2 + g[0], by2 + g[1] - 10); cx.lineTo(bx2 + g[0] + 9, by2 + g[1]); cx.lineTo(bx2 + g[0], by2 + g[1] + 10); cx.lineTo(bx2 + g[0] - 9, by2 + g[1]); cx.closePath(); cx.fill(); cx.fillStyle = 'rgba(255,255,255,.7)'; cx.fillRect(bx2 + g[0] - 2, by2 + g[1] - 6, 3, 3); });
+      [[30, H * 0.45], [W - 30, H * 0.45]].forEach(function (l) { var gl = cx.createRadialGradient(l[0], l[1], 0, l[0], l[1], 46); gl.addColorStop(0, 'rgba(255,214,120,.55)'); gl.addColorStop(1, 'rgba(255,190,80,0)'); cx.fillStyle = gl; cx.fillRect(l[0] - 46, l[1] - 46, 92, 92); cx.fillStyle = '#3a2508'; cx.fillRect(l[0] - 3, l[1] - 10, 6, 20); cx.fillStyle = '#ffd070'; cx.beginPath(); cx.arc(l[0], l[1] - 12, 6, 0, 6.28); cx.fill(); });
+    }
     if (E.inGame && S.stats.taps < 3) chip(cx, 'TAP THE ROCK!', W / 2, H * 0.55 + Math.sin(t * 4) * 3, true);
     if (shake > 0) cx.restore();
     var wm = cx.createRadialGradient(W * 0.2, 0, 0, W * 0.2, 0, W); wm.addColorStop(0, 'rgba(255,215,140,.14)'); wm.addColorStop(1, 'rgba(255,215,140,0)'); cx.fillStyle = wm; cx.fillRect(0, 0, W, H);
@@ -173,7 +181,7 @@ function makeScene(E) {
 var E = new IK.Idle({
   id: 'idle-miner', name: 'Idle Miner', saveKey: 'im_state', muteKey: 'im_muted',
   cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
-  gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL, tapBase: 1, tapName: 'rock', workers: 'miners', critterName: 'The cart',
+  gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL, tapBase: 3, tapName: 'rock', workers: 'miners', critterName: 'The cart',
   tabs: [{ id: 'build', label: 'Mine', ico: IK.ico.hammer }, { id: 'ups', label: 'Upgrades', ico: IK.ico.up }, { id: 'goals', label: 'Goals', ico: IK.ico.scroll }, { id: 'crown', label: 'Blast', ico: IK.ico.gem }],
   tabLevels: { ups: 2, goals: 3, crown: 5 },
   levelInfo: { 2: { kind: 'Unlocked', text: 'Upgrades for your mine' }, 3: { kind: 'Unlocked', text: 'Daily goals, gifts and gold carts' }, 5: { kind: 'Unlocked', text: 'Deep Blast and the Gem shop' } },
@@ -181,7 +189,7 @@ var E = new IK.Idle({
   levelArt: function () { return IK.ico.star(56); }, welcomeArt: function () { return G[3].ico(64); },
   logo: 'IDLE<br>MINER<small>DIG DEEP · FIND GEMS</small>', tagline: 'Tap the rock, dig new shafts and hire miners who work all day, even while you sleep.', pitch: 'One pickaxe, eight shafts, endless gems.',
   howto: ['Tap the rock to dig and earn coins.', 'Dig your first shaft, then more. Every level you buy makes that shaft earn more, even while you are away.', 'Own 25, 50 or 100 levels of a shaft to multiply its output. Buy upgrades for even more.', 'Reach 1M coins in one mine, then a Deep Blast turns them into gems: a permanent bonus and a shop of perks.'],
-  coach: function (E) { return [{ text: 'Tap the rock to dig and earn coins.', target: '#sceneWrap', on: 'tap' }, { text: 'Now dig your first shaft.', target: function () { return E.rows[0].btn; }, on: 'buy' }, { text: 'Miners work by themselves, even when you are away. Dig deeper to level up.', target: '', on: null }]; },
+  coach: function (E) { return [{ text: 'Tap the rock to dig. Keep tapping until you have 15 coins.', target: '#sceneWrap', on: 'tap', when: function () { return E.S.coins >= E.cost(0, 1); } }, { text: 'Now dig your first shaft.', target: function () { return E.rows[0].btn; }, on: 'buy' }, { text: 'Miners work by themselves, even when you are away. Dig deeper to level up.', target: '', on: null }]; },
   makeScene: makeScene,
   cheats: {
     GOLDRAIN: function (E) { var g = Math.max(1e6, E.income() * 600); E.S.coins += g; E.S.lifetime += g; E.S.alltime += g; return 'Gold rain: +' + fmt(g) + ' coins.'; },

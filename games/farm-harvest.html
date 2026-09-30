@@ -418,6 +418,10 @@ var E = new IK.Idle({
     if (nx) return { t: 'Reach level ' + nx.lvl + ' for ' + nx.name, s: (li.need - Math.floor(li.into)) + ' XP to the next level', p: li.pct, r: 'New crop', ready: false, tab: 'orders' };
     return { t: 'Keep your farm growing', s: 'Fill orders and fill the barn', p: 0.5, r: '', ready: false, tab: 'orders' };
   },
+  offlineSheet: function (E, away) {
+    var X = E.S.x, now = IK.now(), ripe = 0, grow = 0; X.plots.forEach(function (p) { if (p) { if (cropStage(p, now) === 3) ripe++; else grow++; } });
+    E.queueSheet(function () { IK.sheet({ art: A.icon('barn', 64, 2), title: 'WELCOME BACK!', sub: 'Your farm kept growing while you were away.', body: '<div class="ik-kv"><span>Away for</span><b>' + IK.fmtTime(away) + '</b></div><div class="ik-kv"><span>Crops ripe now</span><b>' + ripe + '</b></div><div class="ik-kv"><span>Still growing</span><b>' + grow + '</b></div>', actions: [{ label: ripe ? 'Go harvest!' : 'Back to the farm', cls: 'acc', sound: 'reward' }] }); });
+  },
   makeScene: makeScene,
   cheats: {
     HOTMONEY: function (E) { E.S.coins += 100000; return '+100,000 coins.'; },

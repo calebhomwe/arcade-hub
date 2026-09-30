@@ -240,7 +240,7 @@ var E = new IK.Idle({
   id: 'idle-empire', name: 'Idle Empire', saveKey: 'ie_state', muteKey: 'ie_muted',
   cur: { name: 'coins', ico: function (px) { return IK.ico.coin(px); } },
   gens: G, growth: 1.15, ups: UPS, perks: PERKS, ach: ACH, dailyPool: POOL,
-  tapBase: 1, tapName: 'fountain', workers: 'townsfolk', critterName: 'The merchant',
+  tapBase: 3, tapName: 'fountain', workers: 'townsfolk', critterName: 'The merchant',
   tabs: [
     { id: 'build', label: 'Build', ico: IK.ico.hammer },
     { id: 'ups', label: 'Upgrades', ico: IK.ico.up },
@@ -255,7 +255,7 @@ var E = new IK.Idle({
   howto: ['Tap the fountain to earn coins.', 'Build a Market Stall, then more buildings. Each one earns coins every second, even while you are away.', 'Own 25, 50 or 100 of a building to multiply its output. Buy upgrades to earn even more.', 'Reach 1M coins in one age, then a Royal Decree turns them into Crowns: a permanent income bonus and a shop of perks.'],
   coach: function (E) {
     return [
-      { text: 'Tap the fountain to make a wish and earn coins.', target: '#sceneWrap', on: 'tap' },
+      { text: 'Tap the fountain to earn coins. Keep tapping until you have 15.', target: '#sceneWrap', on: 'tap', when: function () { return E.S.coins >= E.cost(0, 1); } },
       { text: 'Nice! Now build your first Market Stall.', target: function () { return E.rows[0].btn; }, on: 'buy' },
       { text: 'Every building earns coins by itself, even when you are away. Keep building to level up and unlock new tabs.', target: '', on: null }
     ];

@@ -117,9 +117,9 @@
     fx.start();
   };
   fx.confetti = function (n) {
-    if (RM || !fx.cx) return;
+    if (RM || !fx.cx || fx.P.length > 90) return;
     var cols = ['#f4c54e', '#f08a3c', '#f5ecd0', '#8ec5f0', '#e46d5c', '#9ad06a'];
-    for (var k = 0; k < (n || 34); k++) {
+    for (var k = 0; k < Math.min(n || 34, 26); k++) {
       var p = getP(); if (!p) break;
       p.x = Math.random() * fx.w; p.y = -10 - Math.random() * 40; p.vx = (Math.random() - 0.5) * 120; p.vy = 80 + Math.random() * 160; p.g = 260;
       p.life = 1.3 + Math.random() * 0.9; p.t = 0; p.s = 4 + Math.random() * 4; p.c = cols[(Math.random() * cols.length) | 0]; p.shape = 'conf'; p.rot = Math.random() * 6; p.vr = (Math.random() - 0.5) * 12; p.tx = null;
@@ -233,7 +233,7 @@
   IK.toast = function (msg, o) {
     o = o || {};
     if (!toastBox) { toastBox = IK.h('div', 'ik-toasts'); toastBox.setAttribute('role', 'status'); toastBox.setAttribute('aria-live', 'polite'); D.body.appendChild(toastBox); }
-    while (toasts.length >= 3) { var old = toasts.shift(); if (old.el.parentNode) old.el.parentNode.removeChild(old.el); }
+    while (toasts.length >= 2) { var old = toasts.shift(); if (old.el.parentNode) old.el.parentNode.removeChild(old.el); }
     var el = IK.h('div', 'ik-toast' + (o.kind ? ' ' + o.kind : ''));
     el.innerHTML = (o.icon ? '<span class="ik-toast-ico">' + o.icon + '</span>' : '') + '<span>' + esc(msg) + '</span>';
     toastBox.appendChild(el);
