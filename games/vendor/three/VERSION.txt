@@ -1,0 +1,1 @@
+three.js r180 (MIT), vendored build: three.module.min.js + three.core.min.js, jsm/loaders/GLTFLoader.js, jsm/utils/BufferGeometryUtils.js, jsm/libs/meshopt_decoder.module.js (meshoptimizer, MIT). Pinned; no CDN at run time.

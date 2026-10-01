@@ -2,85 +2,94 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/jsm/"}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2b5384">
 <title>Stack Ball</title>
+<link rel="stylesheet" href="./kit3d/gk.css">
 <style>
+  :root { --gk-a:#ffc12e; --gk-a2:#ff8a1c; --gk-a3:#b95a00; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#070a16; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-  body { position:fixed; inset:0; overscroll-behavior:none; }
-  canvas { position:fixed; inset:0; display:block; touch-action:none; }
-  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:10; text-align:center; padding:24px; background:radial-gradient(120% 120% at 50% 20%, rgba(40,22,10,.92), rgba(7,10,22,.97)); }
-  .hidden { display:none !important; }
-  h1 { font-size:clamp(34px,8vw,64px); font-weight:900; letter-spacing:1px; background:linear-gradient(180deg,#fff,#fcd34d); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 18px rgba(251,191,36,.55)); }
-  .sub { color:#9aa3c7; font-size:clamp(14px,3.4vw,18px); max-width:440px; line-height:1.5; }
-  .sub b { color:#fcd34d; }
-  button { font-size:clamp(22px,5vw,30px); font-weight:800; padding:16px 44px; border:none; border-radius:18px; cursor:pointer; color:#1c1204; background:linear-gradient(180deg,#fcd34d,#d97706); box-shadow:0 0 26px rgba(251,191,36,.55), inset 0 2px 0 rgba(255,255,255,.35); transition:transform .08s; }
-  button:active { transform:scale(.94); }
-  .score-big { font-size:clamp(40px,10vw,72px); font-weight:900; color:#fff; text-shadow:0 0 24px rgba(251,191,36,.9); }
-  .best { color:#4ade80; font-size:clamp(16px,4vw,22px); font-weight:700; }
-  .hud { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px; pointer-events:none; }
-  .pill { background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); backdrop-filter:blur(6px); border-radius:14px; padding:8px 14px; color:#fef3c7; font-weight:800; font-size:clamp(16px,4vw,22px); box-shadow:0 0 16px rgba(251,191,36,.3); }
-  .pill small { display:block; font-size:11px; color:#9aa3c7; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
-  .topbtns { position:fixed; top:0; right:0; z-index:20; display:flex; gap:10px; padding:14px 16px; }
-  .iconbtn { width:52px; height:52px; border-radius:14px; border:1px solid rgba(251,191,36,.4); background:rgba(10,12,26,.65); color:#fef3c7; font-size:22px; cursor:pointer; box-shadow:0 0 14px rgba(251,191,36,.3); }
-  #hub { position:fixed; top:14px; left:16px; z-index:20; color:#fde68a; text-decoration:none; font-weight:800; font-size:18px; padding:12px 16px; border-radius:12px; background:rgba(10,12,26,.65); border:1px solid rgba(251,191,36,.35); }
-  @media (orientation:landscape) and (max-height:480px) { h1{font-size:34px} button{padding:12px 34px;font-size:22px} }
+  html,body { width:100%; height:100%; overflow:hidden; background:#2b5384; font-family:var(--gk-body); }
+  body { position:fixed; inset:0; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
+  canvas#c { position:fixed; inset:0; display:block; touch-action:none; }
+  #fx { position:fixed; inset:0; pointer-events:none; z-index:4; overflow:hidden; }
+  .gk-logo .l2 { color:#ffe37a; }
+  #hud .stars3 { display:flex; gap:3px; justify-content:flex-end; pointer-events:none; }
+  #hud .stars3 svg { width:30px; height:30px; transition:transform .2s; }
+  #hud .stars3 svg.lit { animation:gk-starpop .5s cubic-bezier(.2,1.6,.4,1) both; }
+  #hud .stars3 svg.fail { opacity:.45; filter:grayscale(1); }
 </style>
 </head>
-<body>
+<body class="gk">
 <canvas id="c"></canvas>
-<div class="hud hidden" id="hud">
-  <div class="pill"><small>Score</small><span id="score">0</span></div>
-  <div class="pill"><small>Depth</small><span id="depth">0</span></div>
-  <div class="pill"><small>Best</small><span id="best">0</span></div>
-</div>
-<div class="topbtns hidden" id="topbtns"><button class="iconbtn" id="mute">🔊</button></div>
-<a id="hub" href="../index.html">← Hub</a>
-<div class="overlay" id="start">
-  <h1>STACK BALL</h1>
-  <div class="sub">Tap to <b>smash down</b> through the rotating platforms — tap again mid-air to <b>slam</b> faster! Land on a <b style="color:#0a0a0f;background:#fff;padding:0 4px;border-radius:4px">black</b> segment = game over. Dodge the gaps & collect 💎 gems!</div>
-  <div class="sub" style="margin:-4px 0 0">🔥 Best slam streak: <b id="chainBestVal">0</b> · chain slams for +5 bonuses</div>
-  <div class="sub" style="margin:-4px 0 0">😅 Close calls: <b id="closeBestVal">0</b> · land right next to a black segment</div>
-  <div class="sub" style="margin:-4px 0 0">💎 Gems banked: <b id="gemTotalVal">0</b> · 📿 <b id="gemRankVal">Trinketeer</b> — bank gems to climb ranks</div>
-  <div class="sub" style="margin:-4px 0 0">🗼 Best depth: <b id="depthBestVal">0</b> · 🔥 <b id="dayStreakVal">0</b>d streak (best <b id="dayBestVal">0</b>)</div>
-  <button id="playBtn">▶ PLAY</button>
-</div>
-<div class="overlay hidden" id="gameover">
-  <h1>CRACKED!</h1>
-  <div class="score-big" id="finalScore">0</div>
-  <div class="best" id="finalBest">Best: 0</div>
-  <div class="best" id="finalChain">🔥 Best slam streak: 0</div>
-  <div class="best" id="finalClose">😅 Close calls: 0</div>
-  <div class="best" id="finalGems" style="color:#67e8f9">💎 Gems banked: 0 · 📿 Trinketeer</div>
-  <div class="best" id="finalDepth" style="color:#a78bfa">🗼 Best depth: 0 · 🔥 0d streak (best 0)</div>
-  <button id="restartBtn">↻ PLAY AGAIN</button>
-</div>
-<script>
+<div id="fx"></div>
+<div class="gk-flash" id="flash"></div>
+<div class="gk-combo gk-out" id="comboBig"></div>
 
-'use strict';
+<div class="gk-hud gk-hidden" id="hud">
+  <div class="gk-row">
+    <div id="lvlbar" style="flex:1;min-width:0"></div>
+    <button class="gk-ib" id="mute" type="button" aria-label="Sound"></button>
+  </div>
+  <div class="gk-row">
+    <div style="display:flex;gap:8px;min-width:0">
+      <span class="gk-chip" id="gemChip"></span>
+      <span class="gk-chip dim" id="parChip" style="display:none"></span>
+      <span class="gk-chip dim" id="depthChip" style="display:none"></span>
+    </div>
+    <div class="stars3" id="stars3"></div>
+  </div>
+  <div class="gk-score gk-out" id="scoreBig">0</div>
+</div>
+
+<div class="gk-screen" id="start">
+  <div class="gk-tb"><a class="gk-ib" id="hub" href="../index.html" aria-label="Back to the hub"></a><span class="sp"></span><span class="gk-chip" id="coinChip"></span><button class="gk-ib" id="mute2" type="button" aria-label="Sound"></button></div>
+  <h1 class="gk-logo">Stack<span class="l2">Ball</span></h1>
+  <div class="gk-seg" id="modeSeg" role="tablist"><button type="button" data-m="level" class="on">LEVELS</button><button type="button" data-m="endless">ENDLESS</button></div>
+  <div id="picker"></div>
+  <div id="endlessInfo" class="gk-goals gk-hidden"></div>
+  <div class="gk-goals row" id="goals"></div>
+  <button class="gk-btn green wide throb" id="playBtn" type="button"></button>
+  <div class="gk-menu"><button class="gk-btn sm dark" id="skinBtn" type="button"></button></div>
+  <div id="dailyHost"></div>
+  <div id="weekHost"></div>
+  <button class="gk-btn xs dark" id="gfxBtn" type="button" aria-label="Graphics quality">GRAPHICS: HIGH</button>
+</div>
+
+<div class="gk-screen dim center gk-hidden" id="gameover">
+  <div class="gk-card">
+    <div class="gk-head" id="ovHead"><h2 id="ovTitle">LEVEL 1</h2></div>
+    <div class="gk-stars" id="ovStars"></div>
+    <div><div class="gk-big gk-out" id="finalScore">0</div><div class="gk-cap">Score <span class="gk-newbest gk-hidden" id="newBest">NEW BEST</span></div></div>
+    <div class="gk-stat" id="ovStat"></div>
+    <div class="gk-goals card" id="ovGoals"></div>
+    <div id="ovNote" class="gk-note"></div>
+    <button class="gk-btn green wide" id="restartBtn" type="button"></button>
+    <div class="gk-menu"><button class="gk-btn sm dark" id="againBtn" type="button"></button><button class="gk-btn sm dark" id="menuBtn" type="button"></button></div>
+  </div>
+</div>
+<script type="module">
+import { TowerWorld, REDUCED, skinTexture } from './kit3d/tower3d.js';
+import { GK } from './kit3d/gk.js';
+
 const KEY = 'stack-ball-best';
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
 const $ = id => document.getElementById(id);
-let W = 0, H = 0, DPR = 1, bgCan = null;
-function buildBg() {
-  bgCan = document.createElement('canvas');
-  bgCan.width = Math.max(1, Math.round(W * DPR));
-  bgCan.height = Math.max(1, Math.round(H * DPR));
-  const b = bgCan.getContext('2d');
-  b.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const g = b.createRadialGradient(W / 2, H * 0.4, 10, W / 2, H * 0.4, Math.max(W, H) * 0.8);
-  g.addColorStop(0, '#2a1c0c'); g.addColorStop(1, '#070a16');
-  b.fillStyle = g; b.fillRect(0, 0, W, H);
-}
+let W = 0, H = 0;
+let GFX = 'high';
+try { const g = localStorage.getItem(KEY + '-gfx'); GFX = g === 'low' ? 'low' : g === 'high' ? 'high' : 'auto'; } catch (e) { GFX = 'auto'; }
+const T = new TowerWorld(canvas, { quality: GFX, style: 'stack', colors: {}, skyTop: '#2b5384', skyLow: '#f5bd85' });
+GFX = T.quality;   // 'auto' starts on Low when WebGL runs on the CPU
+T.deadly = '#16181f';
+T.bands = [['#c8643c', '#b0532f'], ['#2f9a9a', '#268080'], ['#e0b040', '#c69a2c'], ['#7aa872', '#628f5c'], ['#8a5a92', '#734a7c'], ['#d9834a', '#c36f38']];
+canvas.addEventListener('webglcontextlost', e => e.preventDefault());
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
-  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  T.resize();
   layout();
-  buildBg();
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 80));
@@ -91,81 +100,81 @@ function ensureAudio() {
   if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
-function beep(freq, dur, type, vol, slideTo) {
-  if (muted || !audioCtx) return;
-  const t = audioCtx.currentTime;
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = type || 'sine';
-  o.frequency.setValueAtTime(freq, t);
-  if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + dur);
-  g.gain.setValueAtTime(vol || 0.2, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(t); o.stop(t + dur);
-}
-function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+const buzz = ms => GK.haptic(ms);
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+GK.hooks.sfx = sfx;
+
+/* ---------- progression: levels, worlds, stars, skins, daily goal ---------- */
+const SKINS = [
+  { id:'sky',    name:'Azure',     css:'radial-gradient(circle at 35% 28%,#e8fbff,#4aa8d8 45%,#0f5f8a)', color:'#4aa8d8', cost:0 },
+  { id:'bubble', name:'Bubblegum', css:'repeating-linear-gradient(90deg,#ff9fd0 0 10px,#fff 10px 20px)', color:'#ffffff', tex:['stripes','#ffffff','#ff8cc6'], cost:{ stars:3 } },
+  { id:'tiger',  name:'Tiger',     css:'repeating-linear-gradient(90deg,#ffb020 0 12px,#ff7a1a 12px 24px)', color:'#ffffff', tex:['stripes','#ffc23a','#ff7a1a'], cost:{ coins:60 } },
+  { id:'soccer', name:'Soccer',    css:'radial-gradient(circle at 35% 30%,#fff,#e8e8e8 50%,#5b5b7a 52%,#5b5b7a 60%,#fff 62%)', color:'#ffffff', tex:['checker','#ffffff','#5b5b7a'], cost:{ coins:90 } },
+  { id:'ice',    name:'Ice',       css:'linear-gradient(160deg,#fff,#bfe9ff 40%,#5fb6e8 60%,#eafaff)', color:'#cfeeff', rough:0.06, metal:0.6, glow:0.08, trail:'#bfe9ff', cost:{ coins:140 } },
+  { id:'ember',  name:'Ember',     css:'radial-gradient(circle at 40% 35%,#ffd36b,#ff6a00 45%,#7a1300)', color:'#ff5a00', emissive:'#ff3d00', glow:0.65, rough:0.5, trail:'#ff7a1a', cost:{ level:8 } },
+  { id:'nova',   name:'Nova',      css:'radial-gradient(circle at 30% 30%,#c9a7ff,#5b2fd0 45%,#140a3a)', color:'#ffffff', tex:['galaxy','#3a1c8f','#0f0a33'], glow:0.25, emissive:'#5b2fd0', cost:{ stars:12 } },
+  { id:'rainbow',name:'Rainbow',   css:'conic-gradient(#ff5a6e,#ffd23f,#5cec8c,#3fa8ff,#b48bff,#ff5a6e)', color:'#ffffff', tex:['swirl','#ff7ad0','#7ad0ff'], cost:{ streak:3 } },
+  { id:'gold',   name:'Gold',      css:'radial-gradient(circle at 35% 28%,#fff,#ffd23f 40%,#ff8a1c 75%,#b95a00)', color:'#ffd23f', metal:0.85, rough:0.15, glow:0.3, emissive:'#ff9d00', trail:'#ffe37a', cost:{ stars:30 } },
+];
+const WORLDS = [
+  { name:'Terracotta', sky:['#2b5384','#f5bd85'], glow:'#ffb464', sun:'#ffc78a', pole:'#f0dcc4', hemi:['#9db9de','#8c5d3f'], decor:'#ffe2c0', bands:[['#c8643c','#b0532f'],['#2f9a9a','#268080'],['#e0b040','#c69a2c'],['#7aa872','#628f5c'],['#8a5a92','#734a7c'],['#d9834a','#c36f38']] },
+  { name:'Rose Garden',      sky:['#4a3a7c','#f4b3a6'], glow:'#ffa88a', sun:'#ffbe98', pole:'#fff0e8', hemi:['#c4b0e8','#8a5a6a'], decor:'#ffd8d0', bands:[['#d97a8c','#c4607a'],['#e8b04a','#d19a34'],['#6fa8a0','#5a908a'],['#9a7ac0','#8464a8'],['#e8946a','#d47c54']] },
+  { name:'Deep Sea',         sky:['#0d5f8c','#bfe8ea'], glow:'#fff0b8', sun:'#fff1d6', pole:'#f2fbff', hemi:['#bfe4ff','#4b7a8a'], decor:'#ffffff', bands:[['#3aa898','#2a8f80'],['#e8b45a','#d09a3c'],['#d8687a','#c0506a'],['#6c8ad0','#5673b8'],['#b9dfe6','#9cc8d2']] },
+  { name:'Ember Night',      sky:['#150f36','#c8583a'], glow:'#ff9a5a', sun:'#ffa868', pole:'#f2d8c0', hemi:['#8f7fd0','#5a2f2a'], decor:'#ff9a78', bands:[['#3fa0c8','#2e88ae'],['#d9466e','#c0345a'],['#9ac83c','#82ae2c'],['#f0a030','#d88a20'],['#8a5ad0','#7448b8']] },
+  { name:'Sandy Cove',       sky:['#2a7fa0','#f2deb0'], glow:'#ffe3a0', sun:'#ffd7a0', pole:'#fff6e6', hemi:['#b8e0f0','#8a6a4a'], decor:'#fff0d0', bands:[['#e8945a','#d47c44'],['#4aa0b8','#388aa0'],['#e8c860','#d2b048'],['#c8687c','#b25268'],['#7ab08a','#639a74']] },
+];
+const P = GK.progress('stack-ball', {
+  perWorld: 10, worlds: WORLDS, skins: SKINS, dailyReward: 60,
+  daily: [
+    { id:'gems',  icon:'gem',   text:n => 'Collect ' + n + ' gems',        targets:[15, 25, 40] },
+    { id:'smash', icon:'bolt',  text:n => 'Smash ' + n + ' platforms',      targets:[40, 70, 110] },
+    { id:'slam',  icon:'flame', text:n => 'Slam ' + n + ' times',           targets:[10, 18, 30] },
+    { id:'wins',  icon:'flag',  text:n => 'Clear ' + n + ' levels',         targets:[2, 3, 4] },
+  ],
+});
+let MODE = P.d.mode === 'endless' ? 'endless' : 'level';
+let LEVEL = Math.min(P.d.level, P.d.pick || P.d.level);
+let SPEC = null;
+let RNG = Math.random;
+const mulberry = a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+function levelSpec(L) {
+  const len = Math.min(70, 12 + L * 2);
+  return { L, len, maxDead: Math.min(5, 2 + Math.floor(L / 6)), spin: Math.min(1.7, 1 + (L - 1) * 0.03), slamGoal: Math.min(8, 2 + Math.floor(L / 4)), par: Math.round(len * 0.7 + 6), seed: L * 6151 + 29 };
+}
+let BALLCOL = '#4aa8d8';
+function applySkin() {
+  const s = P.current(); if (!s) return;
+  T.skin({ color: s.color, emissive: s.emissive, glow: s.glow, rough: s.rough, metal: s.metal, trail: s.trail || s.color, map: s.tex ? skinTexture(s.tex[0], s.tex[1], s.tex[2]) : null });
+  BALLCOL = s.tex ? s.tex[2] : (s.trail || s.color);
+}
+function applyWorld(L) {
+  const w = P.world(L);
+  T.setTheme({ sky: w.sky, glow: w.glow, sun: w.sun, pole: w.pole, hemi: w.hemi, decor: w.decor, bands: w.bands });
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', w.sky[0]);
+}
 
 const TAU = Math.PI * 2, SEGS = 8;
-const BLACK = '#0e1017';
+const BLACK = '#16181f';
 const SAFE = ['#22d3ee', '#a855f7', '#f472b6', '#facc15', '#34d399', '#38bdf8'];
 let GAP, rx, ry, ballR, cx, desired;
-let ballSpr = null, gemSpr = null, eliteSpr = null;
-function buildBallSprite() {
-  const pad = 26, S = Math.ceil((ballR + pad) * 2);
-  ballSpr = document.createElement('canvas');
-  ballSpr.width = S; ballSpr.height = S;
-  const x = ballSpr.getContext('2d');
-  const g = x.createRadialGradient(S / 2 - ballR * 0.3, S / 2 - ballR * 0.3, ballR * 0.1, S / 2, S / 2, ballR);
-  g.addColorStop(0, '#e0f2fe'); g.addColorStop(0.55, '#38bdf8'); g.addColorStop(1, '#0369a1');
-  x.shadowColor = '#38bdf8'; x.shadowBlur = 18;
-  x.fillStyle = g;
-  x.beginPath(); x.arc(S / 2, S / 2, ballR, 0, TAU); x.fill();
-  x.shadowBlur = 0;
-  x.fillStyle = 'rgba(255,255,255,.75)';
-  x.beginPath(); x.arc(S / 2 - ballR * 0.35, S / 2 - ballR * 0.4, ballR * 0.24, 0, TAU); x.fill();
-}
-function buildGemSprite() {
-  const pad = 20, S = (10 + pad) * 2;
-  gemSpr = document.createElement('canvas');
-  gemSpr.width = S; gemSpr.height = S;
-  const x = gemSpr.getContext('2d');
-  x.shadowColor = '#22d3ee'; x.shadowBlur = 14;
-  x.fillStyle = '#22d3ee';
-  x.beginPath(); x.moveTo(S / 2, S / 2 - 10); x.lineTo(S / 2 + 6, S / 2); x.lineTo(S / 2, S / 2 + 10); x.lineTo(S / 2 - 6, S / 2); x.closePath(); x.fill();
-}
-function buildEliteSprite() {
-  const pad = 20, S = (14 + pad) * 2;
-  eliteSpr = document.createElement('canvas');
-  eliteSpr.width = S; eliteSpr.height = S;
-  const x = eliteSpr.getContext('2d');
-  x.shadowColor = '#fcd34d'; x.shadowBlur = 16;
-  x.fillStyle = '#fcd34d';
-  x.beginPath(); x.moveTo(S / 2, S / 2 - 14); x.lineTo(S / 2 + 9, S / 2); x.lineTo(S / 2, S / 2 + 14); x.lineTo(S / 2 - 9, S / 2); x.closePath(); x.fill();
-  x.shadowBlur = 0;
-  x.fillStyle = 'rgba(255,255,255,.9)';
-  x.beginPath(); x.arc(S / 2 - 4, S / 2 - 6, 2.2, 0, TAU); x.fill();
-}
 function layout() {
   GAP = Math.min(W, H) * 0.19;
   rx = Math.min(W, H) * 0.42;
   ry = Math.min(W, H) * 0.09;
-  ballR = Math.min(W, H) * 0.075;
+  ballR = Math.min(W, H) * 0.075 * (codes.BIGBALL ? 1.6 : 1);
   cx = W / 2;
-  desired = H * 0.30;
-  buildBallSprite();
-  buildGemSprite();
-  buildEliteSprite();
+  desired = H * 0.32;
+  T.metrics(GAP, ry, ballR);
 }
 
-let platforms = [], gems = [], particles = [], floaters = [], trail = [], rings = [], visBuf = [];
+let platforms = [], gems = [], trail = [], rings = [];
 const GEM_TIERS = [[3, 'Trinketeer'], [10, 'Gem Helper'], [25, 'Gem Crafter'], [60, 'Gem Curator'], [120, 'Gem Connoisseur'], [200, 'Gem Hoarder'], [320, 'Gem Lord']];
 function gemRankOf(n) { let r = GEM_TIERS[0][1]; for (const g of GEM_TIERS) { if (n >= g[0]) r = g[1]; } return r; }
-let gemTotal = 0, gemRank = 'Trinketeer';
+let gemTotal = 0, gemRank = 'Trinketeer', gemsRun = 0;
 let cur = 0, score = 0, best = 0, camY = 0;
 let phase = 'ready', by = 0, vy = 0, fallTarget = 0;
-let squash = 0, shake = 0, tGlobal = 0, slam = false, slamChain = 0, slamChainBest = 0;
+let squash = 0, shake = 0, tGlobal = 0, slam = false, slamChain = 0, slamChainBest = 0, runSlamBest = 0, runT = 0, hitStop = 0, lastSec = -1, star2 = false, star3ok = true;
 let closeCalls = 0, closeBest = 0;
 let depthBest = 0, dayStreak = 0, dayBest = 0, dayLast = -1;
 try { depthBest = parseInt(localStorage.getItem('stack-ball-depth') || '0', 10) || 0; } catch (e) {}
@@ -177,48 +186,55 @@ function bumpDays() {
   dayLast = today;
   if (dayStreak > dayBest) dayBest = dayStreak;
   try { localStorage.setItem('sb-days', JSON.stringify({ d: today, s: dayStreak, b: dayBest })); } catch (e) {}
-  if (dayStreak === 3 || dayStreak === 7 || dayStreak === 30) { addFloater('🔥 ' + dayStreak + '-DAY STREAK!', cx, desired - 120, '#fcd34d'); sfx('levelup'); }
+  if (dayStreak === 3 || dayStreak === 7 || dayStreak === 30) { GK.toast(dayStreak + '-day streak!', { icon: 'flame' }); }
 }
 
 try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
 try { slamChainBest = parseInt(localStorage.getItem('stack-ball-chain') || '0', 10) || 0; } catch (e) {}
 try { closeBest = parseInt(localStorage.getItem('stack-ball-close') || '0', 10) || 0; } catch (e) {}
+const SDK = window.ArcadeSDK || null;
+const RM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function scene(sc, extra) { try { if (SDK) SDK.state(Object.assign({ scene: sc }, extra || {})); } catch (e) {} }
+function cheated() { return !!(SDK && SDK.cheated); }
+const codes = {};
+let tutSeen = false, waiting = false, coach = null;
+try { tutSeen = localStorage.getItem('stack-ball-tut') === '1'; } catch (e) {}
 try { gemTotal = parseInt(localStorage.getItem('stack-ball-gems') || '0', 10) || 0; } catch (e) {}
 gemRank = gemRankOf(gemTotal);
 
-function rand(a, b) { return a + Math.random() * (b - a); }
-function py(i) { return i * GAP - camY; }
+const rand = (a, b) => a + RNG() * (b - a);
 function ballRestY(i) { return i * GAP - ry - ballR; }
-const PMAX = 220, FMAX = 16, pFree = [], fFree = [];
-function burst(x, y, color, n, speed) {
-  for (let i = 0; i < n; i++) {
-    let p = pFree.pop();
-    if (!p) { if (particles.length >= PMAX) return; p = {}; }
-    const a = Math.random() * TAU, s = rand(speed * 0.3, speed);
-    p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s;
-    p.life = rand(0.3, 0.7); p.t = 0; p.r = rand(2, 5); p.color = color;
-    particles.push(p);
-  }
-}
+function burst(x, y, color, n) { T.burstBall(color, T.quality === 'high' ? n : Math.ceil(n / 3)); }
+let popN = 0;
 function addFloater(text, x, y, color) {
-  let f = fFree.pop();
-  if (!f) { if (floaters.length >= FMAX) return; f = {}; }
-  f.text = text; f.x = x; f.y = y; f.t = 0; f.life = 0.9; f.color = color;
-  floaters.push(f);
+  if (popN > 8) return;
+  const b = T.ballScreen(), sx = Math.max(70, Math.min(W - 70, b.x + (x - cx) * 0.5)), sy = Math.max(120, b.y + (y - (by - camY)) * 0.7);
+  popN++; GK.pop(sx, sy, text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim(), { color, size: /NEW|STREAK|CLOSE|DEPTH/.test(text) ? 26 : 30 });
+  setTimeout(() => { popN--; }, 800);
 }
+function bigCombo(text, color) {
+  const e = $('comboBig'); e.textContent = text; e.style.color = color || '#fff';
+  if (!e.animate || RM) { e.style.opacity = '1'; setTimeout(() => { e.style.opacity = '0'; }, 500); return; }
+  e.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1.15)', offset: .25 }, { opacity: 1, transform: 'translate(-50%,-60%) scale(1)', offset: .7 }, { opacity: 0, transform: 'translate(-50%,-110%) scale(1)' }], { duration: 760, easing: 'ease-out' });
+}
+function flash() { const f = $('flash'); if (f.animate && !RM) f.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' }); }
+function flashPar() { const c = $('parChip'); c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse'); sfx('buzz'); }
 
+/* ---------- world generation ---------- */
 function makeSegs(i) {
   const seg = [];
   let dead = 0;
-  if (i >= 2) dead = Math.min(5, 1 + Math.floor((i - 1) / 2));
-  for (let k = 0; k < SEGS; k++) seg.push(SAFE[(Math.random() * SAFE.length) | 0]);
-  for (let n = 0; n < dead; n++) seg[(Math.random() * SEGS) | 0] = BLACK;
+  const cap = SPEC ? SPEC.maxDead : 5;
+  if (i >= 2) dead = Math.min(cap, 1 + Math.floor((i - 1) / 2));
+  for (let k = 0; k < SEGS; k++) seg.push(SAFE[(RNG() * SAFE.length) | 0]);
+  for (let n = 0; n < dead; n++) seg[(RNG() * SEGS) | 0] = BLACK;
   return seg;
 }
 function makePlatform(i) {
-  const gap = i > 2 && Math.random() < 0.09;
-  const ramp = 1 + Math.min(i, 90) / 140;
-  return { i, rot: Math.random() * TAU, rs: rand(0.4, 1.0) * ramp * (Math.random() < 0.5 ? -1 : 1), gap, broken: false, segs: gap ? [] : makeSegs(i) };
+  if (SPEC && i >= SPEC.len) return { i, rot: 0, rs: 0.6, gap: false, broken: false, finish: true, segs: new Array(SEGS).fill('fin1') };
+  const gap = i > 2 && RNG() < 0.09;
+  const ramp = (1 + Math.min(i, 90) / 140) * (SPEC ? SPEC.spin : 1);
+  return { i, rot: RNG() * TAU, rs: rand(0.4, 1.0) * ramp * (codes.SLOWSPIN ? 0.5 : 1) * (RNG() < 0.5 ? -1 : 1), gap, broken: false, segs: gap ? [] : makeSegs(i) };
 }
 function topColor(p) {
   const seg = TAU / SEGS;
@@ -231,115 +247,257 @@ function trimWorld() {
   while (gems.length && gems[0].i < cur - 24) gems.shift();
 }
 function nextSolid(i) { for (;;) { ensureWorld(i + 1); const p = platAt(i); if (p && !p.gap) return i; i++; } }
-
+function addGems(i) {
+  if (SPEC && i >= SPEC.len) return;
+  if (i >= 1 && RNG() < 0.32) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
+  if (i >= 15 && i % 15 === 0) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false, elite: true });
+}
 function initWorld() {
-  platforms = []; gems = []; particles = []; floaters = [];
-  for (let i = 0; i < 90; i++) platforms.push(makePlatform(i));
-  for (let i = 1; i < 90; i++) {
-    if (Math.random() < 0.32) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-  }
-  for (let i = 15; i < 90; i += 15) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false, elite: true });
+  RNG = SPEC ? mulberry(SPEC.seed) : Math.random;
+  platforms = []; gems = [];
+  const n = SPEC ? SPEC.len + 1 : 90;
+  for (let i = 0; i < n; i++) platforms.push(makePlatform(i));
+  for (let i = 1; i < n; i++) addGems(i);
+  T.setFloor(SPEC ? SPEC.len : null);
 }
 function ensureWorld(n) {
+  if (SPEC) return;
   while (platforms.length && platforms[platforms.length - 1].i <= n) {
     const i = platforms[platforms.length - 1].i + 1;
-    platforms.push(makePlatform(i));
-    if (Math.random() < 0.32) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false });
-    if (i % 15 === 0) gems.push({ i, off: rand(-ballR * 0.85, ballR * 0.85), collected: false, elite: true });
+    platforms.push(makePlatform(i)); addGems(i);
   }
 }
+
+/* ---------- HUD and screens ---------- */
+const ic = (n, px) => GK.icon(n, px);
+const bar = GK.levelBar($('lvlbar'));
+function paintChrome() {
+  $('hub').innerHTML = ic('home');
+  ['mute', 'mute2'].forEach(id => { $(id).innerHTML = ic(muted ? 'sndOff' : 'snd'); });
+  $('coinChip').innerHTML = ic('coin') + '<b>' + P.d.coins + '</b><i class="plus"></i>';
+  $('gemChip').innerHTML = ic('gem') + '<b id="gems">' + gemsRun + '</b>';
+  $('skinBtn').innerHTML = ic('bag') + 'SKINS' + (P.newSkins.length ? '<span class="gk-badge">' + P.newSkins.length + '</span>' : '');
+  paintPlay();
+}
+function paintPlay() { $('playBtn').innerHTML = ic('play') + (MODE === 'level' ? 'PLAY LEVEL ' + LEVEL : 'PLAY'); }
+function goalsFor(spec) {
+  const st = P.starsFor(spec.L);
+  return [
+    { s:1, t:'Reach the finish', ok: st >= 1 },
+    { s:2, t:'Slam streak x' + spec.slamGoal, ok: st >= 2 },
+    { s:3, t:'Finish in ' + spec.par + 's', ok: st >= 3 },
+  ];
+}
+function goalsHTML(list, res, row) {
+  return list.map(g => {
+    const ok = res ? res[g.s - 1] : g.ok;
+    if (row) return '<div class="g' + (ok ? ' done' : '') + '"><span class="gk-stars mini">' + ic(ok ? 'star' : 'starOff').repeat(g.s) + '</span><span>' + g.t + '</span></div>';
+    return '<div class="g' + (ok ? ' done' : '') + '">' + ic(ok ? 'star' : 'starOff') + '<span>' + g.t + '</span></div>';
+  }).join('');
+}
+function paintTitle() {
+  const lv = MODE === 'level';
+  $('picker').classList.toggle('gk-hidden', !lv); $('goals').classList.toggle('gk-hidden', !lv);
+  $('endlessInfo').classList.toggle('gk-hidden', lv);
+  $('modeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === MODE));
+  if (lv) {
+    applyWorld(LEVEL);
+    $('goals').innerHTML = goalsHTML(goalsFor(levelSpec(LEVEL)), null, true);
+  } else {
+    applyWorld(1);
+    $('endlessInfo').innerHTML = '<div class="g">' + ic('trophy') + '<span>Best score</span><span class="n">' + best + '</span></div><div class="g">' + ic('flag') + '<span>Best depth</span><span class="n">' + depthBest + '</span></div><div class="g">' + ic('flame') + '<span>Best slam streak</span><span class="n">' + slamChainBest + '</span></div><div class="g">' + ic('gem') + '<span>Gems banked · ' + gemRank + '</span><span class="n">' + gemTotal + '</span></div>';
+  }
+  paintPlay();
+  $('dailyHost').replaceChildren(GK.dailyStrip(P));
+  $('weekHost').replaceChildren(GK.weekRow(P));
+}
+const picker = GK.levelPicker($('picker'), P, { start: LEVEL, onChange: l => { LEVEL = l; P.d.pick = l; P.save(); paintTitle(); } });
+
+function updateHUD() {
+  $('scoreBig').textContent = score;
+  const g = $('gems'); if (g) g.textContent = gemsRun;
+  if (SPEC) bar.set(cur / SPEC.len); else { const d = $('depthChip'); d.style.display = ''; d.innerHTML = ic('flag') + '<b>' + cur + '</b>'; }
+}
+function bump(id) { const e = $(id); if (!e) return; e.classList.remove('pulse'); void e.offsetWidth; e.classList.add('pulse'); }
+function paintStars3() {
+  const s = $('stars3'); s.innerHTML = '';
+  const pc = $('parChip');
+  if (!SPEC) { pc.style.display = 'none'; return; }
+  s.innerHTML = ic('starOff') + ic(star2 ? 'star' : 'starOff') + ic(star3ok ? 'star' : 'starOff');
+  const k = s.querySelectorAll('svg'); if (!star3ok) k[2].classList.add('fail');
+  pc.style.display = '';
+  pc.innerHTML = ic('clock') + '<b>' + (star3ok ? Math.max(0, Math.ceil(SPEC.par - runT)) + 's' : 'late') + '</b>';
+}
+
 function startGame() {
+  SPEC = MODE === 'level' ? levelSpec(LEVEL) : null;
+  applyWorld(SPEC ? LEVEL : 1);
   initWorld();
   trail = []; rings = []; slam = false;
-  cur = 0; score = 0; squash = 0; shake = 0; vy = 0; slamChain = 0; closeCalls = 0;
+  cur = 0; score = 0; squash = 0; shake = 0; vy = 0; slamChain = 0; closeCalls = 0; gemsRun = 0; runSlamBest = 0; runT = 0; hitStop = 0; star2 = false; star3ok = true; lastSec = -1;
   by = ballRestY(0); camY = by - desired;
   phase = 'resting';
-  updateHUD();
-  $('hud').classList.remove('hidden');
-  $('topbtns').classList.remove('hidden');
-  $('start').classList.add('hidden');
-  $('gameover').classList.add('hidden');
-  floaters.push({ text: 'TAP TO SMASH!', x: cx, y: desired - ballR - 26, t: 0, life: 2.4, color: '#fcd34d' });
+  $('hud').classList.remove('gk-hidden');
+  $('lvlbar').style.display = SPEC ? '' : 'none'; $('depthChip').style.display = SPEC ? 'none' : '';
+  if (SPEC) { bar.levels(SPEC.L, SPEC.L + 1); bar.set(0); bar.done(false); }
+  $('start').classList.add('gk-hidden'); $('gameover').classList.add('gk-hidden');
+  paintChrome(); updateHUD(); paintStars3();
+  waiting = true;
+  if (coach) coach.remove();
+  coach = GK.coach(tutSeen ? 'Tap to smash' : 'Tap to smash down<small>Tap again in mid-air to slam faster. Coloured parts break. Landing on black ends the run.</small>');
+  scene('play', SPEC ? { level: SPEC.L } : undefined);
   bumpDays();
-  $('dayStreakVal').textContent = dayStreak;
-  $('dayBestVal').textContent = dayBest;
-  $('depthBestVal').textContent = depthBest;
 }
-function updateHUD() {
-  $('score').textContent = score;
-  $('depth').textContent = cur;
-  $('best').textContent = best;
+function toTitle() {
+  phase = 'ready'; waiting = false; slam = false; trail = []; rings = [];
+  if (coach) { coach.remove(); coach = null; }
+  ['gameover', 'hud'].forEach(id => $(id).classList.add('gk-hidden'));
+  SPEC = null; RNG = Math.random;
+  initWorld(); by = ballRestY(0); camY = by - desired;
+  LEVEL = Math.min(LEVEL, P.d.level); picker.set(LEVEL);
+  paintChrome(); paintTitle();
+  $('start').classList.remove('gk-hidden');
+  scene('title');
 }
-function endGame() {
-  const nb = score > best;
-  if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
-  $('finalScore').textContent = score;
-  $('finalBest').textContent = 'Best: ' + best + (nb ? '  🎉 NEW!' : '');
-  $('finalChain').textContent = '🔥 Best slam streak: ' + slamChainBest;
-  try { localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
-  $('finalClose').textContent = '😅 Close calls: ' + closeBest;
-  try { localStorage.setItem('stack-ball-close', String(closeBest)); } catch (e) {}
-  $('finalGems').textContent = '💎 Gems banked: ' + gemTotal + ' · 📿 ' + gemRank;
-  $('finalDepth').textContent = '🗼 Best depth: ' + depthBest + ' · 🔥 ' + dayStreak + 'd streak (best ' + dayBest + ')';
-  $('gameover').classList.remove('hidden');
+function sdkHint() {
+  if (phase === 'ready' || phase === 'dying') return 'Press Play, then tap to smash down through the tower.';
+  if (phase === 'falling') return slam ? 'Slamming! Get ready to tap again when you land.' : 'Tap again now to slam down faster.';
+  const i = nextSolid(cur + 1), p = platAt(i);
+  if (!p) return 'Tap to smash down.';
+  if (p.finish) return 'The finish star is next: smash to land on it!';
+  const save = p.rot; p.rot += p.rs * 0.25; const c = topColor(p); p.rot = save;
+  if (c === BLACK && !codes.STEELBALL) return 'Wait: a black part is coming round' + (i > cur + 1 ? ' on the platform after the gap' : ' below you') + '. Tap once a coloured part is at the front.';
+  return 'Safe below: smash now.' + (slamChain > 0 ? ' Keep slamming to grow your streak.' : ' Tap again mid-air to slam for bonus points.');
+}
+function code(c) {
+  if (c === 'STEELBALL') codes.STEELBALL = 1;
+  else if (c === 'SLOWSPIN') { codes.SLOWSPIN = 1; for (const p of platforms) p.rs *= 0.5; }
+  else if (c === 'BIGBALL') { codes.BIGBALL = 1; layout(); }
+  else return { ok: false };
+  return { ok: true, message: { STEELBALL: 'Steel ball: black parts break like the rest', SLOWSPIN: 'Slow spin: platforms turn at half speed', BIGBALL: 'Big ball: a giant ball that grabs gems from further away' }[c] + '. Codes on: this run will not set a best.' };
+}
+
+/* ---------- end of a run ---------- */
+function stat(iconName, val, label) { return '<div><b>' + ic(iconName) + '<span>' + val + '</span></b><span>' + label + '</span></div>'; }
+function showResult(win) {
+  const cht = cheated();
+  let nb = false, bestShow = best;
+  if (SPEC) {
+    P.d.scores = P.d.scores || {};
+    const pb = P.d.scores[SPEC.L] | 0;
+    nb = win && !cht && score > pb;
+    if (nb) P.d.scores[SPEC.L] = score;
+    bestShow = Math.max(pb, nb ? score : 0);
+  } else {
+    nb = score > best && !cht;
+    if (nb) { best = score; try { localStorage.setItem(KEY, String(best)); } catch (e) {} }
+    bestShow = best;
+  }
+  try { if (!cht) localStorage.setItem('stack-ball-chain', String(slamChainBest)); } catch (e) {}
+  try { if (!cht) localStorage.setItem('stack-ball-close', String(closeBest)); } catch (e) {}
+  const head = $('ovHead'), starsEl = $('ovStars'), note = $('ovNote');
+  let coins = 0, res = [false, false, false], ns = 0, fx = null;
+  if (SPEC) {
+    if (win) {
+      res = [true, runSlamBest >= SPEC.slamGoal, runT <= SPEC.par]; ns = res.filter(Boolean).length;
+      coins = gemsRun + ns * 10 + SPEC.L;
+      fx = P.finishLevel(SPEC.L, ns, coins);
+      P.addDaily('wins', 1);
+      scene('over', { score, level: SPEC.L, stars: ns });
+    } else { scene('over', { score, level: SPEC.L }); coins = Math.floor(gemsRun / 2); P.addCoins(coins); }
+    head.className = 'gk-head ' + (win ? 'win' : 'lose');
+    $('ovTitle').textContent = win ? 'Level ' + SPEC.L + ' clear!' : 'Cracked!';
+    starsEl.style.display = ''; GK.stars(starsEl, ns, { animate: win, onStar: () => { if (win) T.confetti(8); } });
+    $('ovGoals').innerHTML = goalsHTML(goalsFor(SPEC), win ? res : [false, false, false]);
+    $('ovGoals').classList.remove('gk-hidden');
+    note.textContent = win ? (fx.gained > 0 ? 'New stars: +' + fx.gained : 'Replay for more stars') : 'You got ' + Math.round(cur / SPEC.len * 100) + '% of the way down. Try again!';
+  } else {
+    coins = gemsRun; P.addCoins(coins);
+    scene('over', { score });
+    head.className = 'gk-head lose'; $('ovTitle').textContent = 'Cracked!';
+    starsEl.style.display = 'none'; $('ovGoals').classList.add('gk-hidden');
+    note.textContent = 'Depth ' + cur + '  ·  Best slam streak ' + slamChainBest + '  ·  Close calls ' + closeBest;
+  }
+  $('finalScore').textContent = '0'; GK.countUp($('finalScore'), score, 700);
+  $('newBest').classList.toggle('gk-hidden', !nb);
+  $('ovStat').innerHTML = stat('coin', '+' + coins, 'Coins') + stat('gem', gemsRun, 'Gems') + stat('trophy', bestShow, 'Best');
+  const nextBtn = $('restartBtn');
+  if (SPEC && win) nextBtn.innerHTML = ic('play') + 'NEXT LEVEL'; else nextBtn.innerHTML = ic('replay') + 'TRY AGAIN';
+  nextBtn.dataset.mode = SPEC && win ? 'next' : 'again';
+  $('againBtn').innerHTML = ic('replay') + 'REPLAY'; $('againBtn').style.display = SPEC && win ? '' : 'none';
+  $('menuBtn').innerHTML = ic('home') + 'MENU';
+  $('hud').classList.add('gk-hidden');
+  $('gameover').classList.remove('gk-hidden');
+  P.bump('runs'); paintChrome();
+  if (coins) setTimeout(() => GK.fly({ x: W / 2, y: H * 0.45 }, $('ovStat').firstElementChild, Math.min(8, 2 + Math.floor(coins / 6)), 'coin'), 600);
+  const unlocked = P.takeNewSkins();
+  unlocked.forEach((s, k) => setTimeout(() => GK.toast('New ball: ' + s.name + '<small>Open Skins to use it</small>', { icon: 'gift' }), 1600 + k * 900));
+  if (win) setTimeout(() => GK.confetti(W / 2, H * 0.35, 70), 350);
 }
 function die() {
   if (phase === 'dying') return;
   phase = 'dying';
   const sy = by - camY;
-  burst(cx, sy, '#fca5a5', 26, 380);
-  burst(cx, sy, '#e2e8f0', 18, 260);
-  shake = 16;
+  burst(cx, sy, '#fca5a5', 26);
+  burst(cx, sy, '#e2e8f0', 18);
+  shake = 16; hitStop = 0.09; flash();
   buzz(60);
   sfx('lose');
-  setTimeout(endGame, 520);
+  setTimeout(() => showResult(false), 620);
+}
+function win() {
+  if (phase === 'won') return;
+  phase = 'won';
+  sfx('win'); buzz([20, 40, 30]); shake = 6;
+  T.confetti(70); T.ring('#ffd23f');
+  bigCombo('FINISH!', '#ffe37a');
+  if (coach) { coach.remove(); coach = null; }
+  bar.set(1); bar.done(true);
+  setTimeout(() => showResult(true), 1050);
+}
+function dailyDone() {
+  GK.toast('Daily goal done! +' + (P.cfg.dailyReward || 60) + ' coins', { icon: 'check' });
+  P.d.daily.toasted = true; P.save(); GK.confetti(W / 2, H * 0.3, 40);
 }
 function shatter(i) {
-  const p = platAt(i); if (!p || p.broken) return;
+  const p = platAt(i); if (!p || p.broken || p.finish) return;
   p.broken = true;
-  const sy = py(i);
-  for (let n = 0; n < 16; n++) {
-    let q = pFree.pop();
-    if (!q) { if (particles.length >= PMAX) break; q = {}; }
-    const a = Math.random() * TAU;
-    q.x = cx + Math.cos(a) * rx * Math.random();
-    q.y = sy - ry + Math.random() * ry * 2;
-    q.vx = Math.cos(a) * rand(60, 280);
-    q.vy = Math.sin(a) * rand(60, 280) - 60;
-    q.life = rand(0.3, 0.65); q.t = 0; q.r = rand(2, 6);
-    q.color = p.segs[(Math.random() * SEGS) | 0] || '#64748b';
-    particles.push(q);
-  }
+  T.shatter(p);
   shake = Math.max(shake, 4);
 }
 function resolveLanding() {
   ensureWorld(fallTarget + 20);
   const p = platAt(fallTarget);
+  if (p.finish) { cur = fallTarget; phase = 'resting'; slam = false; vy = 0; squash = 1; trail = []; updateHUD(); win(); return; }
   const c = topColor(p);
-  if (c === BLACK) { die(); return; }
+  if (c === BLACK && !codes.STEELBALL) { die(); return; }
   const segA = TAU / SEGS;
   const aC0 = (-Math.PI / 2 - p.rot) % TAU;
   const k0 = Math.floor((aC0 < 0 ? aC0 + TAU : aC0) / segA) % SEGS;
   if (p.segs[(k0 + 1) % SEGS] === BLACK || p.segs[(k0 - 1 + SEGS) % SEGS] === BLACK) {
     closeCalls++;
     if (closeCalls > closeBest) closeBest = closeCalls;
-    addFloater('😅 CLOSE CALL!', cx, desired - 70, '#fda4af');
-    sfx('whoosh');
-    buzz(10);
-    if (closeCalls % 5 === 0) { addFloater('😅 ' + closeCalls + ' CLOSE CALLS!', cx, desired - 96, '#fda4af'); sfx('levelup'); }
+    addFloater('CLOSE CALL!', cx, desired - 70, '#fda4af');
+    sfx('whoosh'); buzz(10);
+    if (closeCalls % 5 === 0) { addFloater(closeCalls + ' CLOSE CALLS!', cx, desired - 96, '#fda4af'); sfx('levelup'); }
   }
   score += 1;
-  addFloater('+1', cx, by - camY - 34, '#fde68a');
-  sfx('hit');
-  buzz(12);
+  addFloater('+1', cx, by - camY - 34, '#ffffff');
+  sfx('hit'); buzz(12);
+  P.addDaily('smash', 1) && dailyDone();
   cur = fallTarget;
-  if (slam) { shake = Math.max(shake, 7); sfx('boom'); burst(cx, by - camY + ballR, '#fb923c', 14, 260); rings.push({ y: by - camY + ballR, t: 0 }); }
   if (slam) {
+    shake = Math.max(shake, 7); sfx('boom'); burst(cx, by - camY + ballR, '#fb923c', 14); T.ring('#fb923c');
+    hitStop = 0.03;
+    P.addDaily('slam', 1) && dailyDone();
     slamChain++;
+    if (slamChain > runSlamBest) runSlamBest = slamChain;
     if (slamChain > slamChainBest) slamChainBest = slamChain;
+    if (SPEC && !star2 && runSlamBest >= SPEC.slamGoal) { star2 = true; paintStars3(); $('stars3').children[1].classList.add('lit'); sfx('levelup'); bigCombo('STAR!', '#ffe37a'); }
+    else if (slamChain >= 2) bigCombo('SLAM x' + slamChain, '#ffb36b');
     if (slamChain % 5 === 0) {
       score += 5;
-      addFloater('🔥 ' + slamChain + ' SLAM STREAK! +5', cx, desired - 96, '#fbbf24');
+      addFloater(slamChain + ' SLAM STREAK! +5', cx, desired - 96, '#fbbf24');
       sfx('levelup');
       shake = Math.max(shake, 5);
     }
@@ -351,36 +509,46 @@ function resolveLanding() {
   vy = 0;
   squash = 1;
   trail = [];
-  burst(cx, by - camY + ballR, '#fcd34d', 10, 180);
-  rings.push({ y: by - camY + ballR, t: 0, col: '#fcd34d' });
+  T.splat(p, BALLCOL);
+  burst(cx, by - camY + ballR, '#ffffff', 10);
+  T.ring('#ffffff');
   shake = Math.max(shake, 2);
-  if (cur > 0 && cur % 10 === 0) {
+  if (!SPEC && cur > 0 && cur % 10 === 0) {
     addFloater('DEPTH ' + cur + '!', cx, desired - 60, '#fbbf24');
     sfx('levelup');
     shake = Math.max(shake, 5);
   }
-  if (cur > depthBest) {
+  if (!SPEC && cur > depthBest) {
     depthBest = cur;
-    try { localStorage.setItem('stack-ball-depth', String(depthBest)); } catch (e) {}
-    if (cur > 5) { addFloater('🗼 NEW DEPTH ' + cur + '!', cx, desired - 120, '#a78bfa'); sfx('levelup'); }
+    try { if (!cheated()) localStorage.setItem('stack-ball-depth', String(depthBest)); } catch (e) {}
+    if (cur > 5) { addFloater('NEW DEPTH ' + cur + '!', cx, desired - 120, '#c4b5fd'); sfx('levelup'); }
   }
-  updateHUD();
+  updateHUD(); $('scoreBig').classList.remove('bump'); void $('scoreBig').offsetWidth; $('scoreBig').classList.add('bump');
 }
 
-function update(dt) {
-  tGlobal += dt;
-  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+function update(rdt) {
+  let dt = rdt;
+  if (hitStop > 0) { hitStop -= rdt; dt = 0; }
+  tGlobal += rdt;
+  if (RM) shake = 0;
+  if (shake > 0) shake = Math.max(0, shake - 60 * rdt);
   if (squash > 0) squash = Math.max(0, squash - 6 * dt);
+  if ((phase === 'resting' || phase === 'falling') && !waiting) runT += dt;
+  if (SPEC && !waiting && phase !== 'won' && phase !== 'dying') {
+    const sec = Math.ceil(SPEC.par - runT);
+    if (star3ok && runT > SPEC.par) { star3ok = false; paintStars3(); flashPar(); }
+    else if (star3ok && sec !== lastSec) { lastSec = sec; const b = $('parChip').querySelector('b'); if (b) b.textContent = sec + 's'; }
+  }
   for (const p of platforms) { if (!p.broken && !p.gap) p.rot += p.rs * dt; }
 
-  if (phase === 'resting') {
+  if (phase === 'resting' || phase === 'won') {
     trimWorld();
     by = ballRestY(cur);
-    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+    camY += (by - desired - camY) * Math.min(1, 10 * rdt);
   } else if (phase === 'falling') {
     vy += GAP * 34 * dt;
     by += vy * dt;
-    camY += (by - desired - camY) * Math.min(1, 10 * dt);
+    camY += (by - desired - camY) * Math.min(1, 10 * rdt);
     trail.push(by);
     if (trail.length > 12) trail.shift();
     if (by + ballR >= fallTarget * GAP - ry) {
@@ -397,160 +565,63 @@ function update(dt) {
         gm.collected = true;
         score += 3;
         const gx = cx + gm.off, gsy = gwy - camY;
-        addFloater('+3 💎', gx, gsy, '#67e8f9');
-        sfx('coin');
-        buzz(14);
-        burst(gx, gsy, '#67e8f9', 10, 180);
-        rings.push({ y: gsy, t: 0, col: '#67e8f9' });
-        gemTotal++;
-        try { localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
+        addFloater('+3', gx, gsy, '#67e8f9');
+        sfx('coin'); buzz(14);
+        burst(gx, gsy, '#67e8f9', 10);
+        T.ring('#67e8f9');
+        gemTotal++; gemsRun++; bump('gemChip');
+        if (P.addDaily('gems', 1)) dailyDone();
+        try { if (!cheated()) localStorage.setItem('stack-ball-gems', String(gemTotal)); } catch (e) {}
         const gr = gemRankOf(gemTotal);
-        if (gr !== gemRank) { gemRank = gr; addFloater('🏅 ' + gemRank + '!', gx, gsy - 56, '#fcd34d'); sfx('levelup'); }
+        if (gr !== gemRank) { gemRank = gr; GK.toast('Gem rank: ' + gemRank, { icon: 'gem' }); }
         if (gm.elite) {
           score += 15;
-          addFloater('+15 ✨', gx, gsy - 30, '#fcd34d');
+          addFloater('+15', gx, gsy - 30, '#fcd34d');
           sfx('boom');
-          burst(gx, gsy, '#fcd34d', 16, 260);
-          rings.push({ y: gsy, t: 0, col: '#fcd34d' });
+          burst(gx, gsy, '#fcd34d', 16);
+          T.ring('#fcd34d');
         }
         updateHUD();
       }
     }
   }
-
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 520 * dt; p.vx *= 0.98;
-    if (p.t >= p.life) { pFree.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); }
-  }
-  for (let i = floaters.length - 1; i >= 0; i--) {
-    const f = floaters[i];
-    f.t += dt; f.y -= 42 * dt;
-    if (f.t >= f.life) { fFree.push(f); floaters[i] = floaters[floaters.length - 1]; floaters.pop(); }
-  }
-  for (let i = rings.length - 1; i >= 0; i--) {
-    rings[i].t += dt;
-    if (rings[i].t > 0.34) rings.splice(i, 1);
-  }
 }
 
-function drawPlatform(p, sy) {
-  const seg = TAU / SEGS;
-  ctx.fillStyle = 'rgba(0,0,0,.35)';
-  ctx.beginPath(); ctx.ellipse(cx, sy + ry * 0.18, rx, ry, 0, 0, TAU); ctx.fill();
-  for (let k = 0; k < SEGS; k++) {
-    const col = p.segs[k];
-    const a0 = p.rot + k * seg, a1 = p.rot + (k + 1) * seg;
-    if (col !== BLACK) {
-      ctx.globalAlpha = 0.3; ctx.fillStyle = col;
-      ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx + 6, ry + 6, 0, a0, a1); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.moveTo(cx, sy); ctx.ellipse(cx, sy, rx, ry, 0, a0, a1); ctx.closePath(); ctx.fill();
-  }
-  ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(cx, sy, rx, ry, 0, 0, TAU); ctx.stroke();
+// ---------- 3D drawing ----------
+function draw(dt) {
+  T.begin();
+  for (const p of platforms) T.platform(p);
+  for (const gm of gems) if (!gm.collected) T.item(gm.elite ? 'elite' : 'gem', gm.i * GAP - ry - ballR * 0.5, gm.off, tGlobal);
+  const stretch = phase === 'falling' ? Math.min(0.22, Math.max(0, vy) / (GAP * 16)) : 0;
+  T.ball(by, squash, stretch, { resting: phase === 'resting' || phase === 'ready' || phase === 'won', t: tGlobal, shield: false, magnet: false, hidden: phase === 'dying', trail: phase === 'falling' ? trail : [] });
+  T.end();
+  if (RM) shake = 0;
+  T.view(camY + desired, shake * 0.03);
+  T.render(dt);
 }
-function drawGem(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tGlobal * 1.5);
-  ctx.drawImage(gemSpr, -gemSpr.width / 2, -gemSpr.height / 2);
-  ctx.restore();
-}
-function drawEliteGem(x, y) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(tGlobal * 2.2);
-  const k = 1 + Math.sin(tGlobal * 5) * 0.08;
-  ctx.scale(k, k);
-  ctx.drawImage(eliteSpr, -eliteSpr.width / 2, -eliteSpr.height / 2);
-  ctx.restore();
-}
-function drawBall() {
-  let sy = by - camY;
-  if (phase === 'resting') sy += Math.sin(tGlobal * 7) * 2.5;
-  if (phase === 'falling') {
-    for (let i = 0; i < trail.length; i++) {
-      const a = (i + 1) / trail.length;
-      ctx.globalAlpha = a * 0.18;
-      ctx.fillStyle = '#38bdf8';
-      ctx.beginPath(); ctx.arc(cx, trail[i] - camY, ballR * (0.4 + 0.5 * a), 0, TAU); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
-  ctx.save();
-  ctx.translate(cx, sy);
-  let sx = 1 + squash * 0.3, syy = 1 - squash * 0.35;
-  if (phase === 'falling') { const k = Math.min(0.22, Math.max(0, vy) / (GAP * 16)); sx -= k; syy += k; }
-  ctx.scale(sx, syy);
-  ctx.drawImage(ballSpr, -ballSpr.width / 2, -ballSpr.height / 2);
-  ctx.restore();
-}
-function draw() {
-  ctx.drawImage(bgCan, 0, 0, W, H);
-  ctx.fillStyle = 'rgba(251,191,36,.05)';
-  ctx.fillRect(cx - rx - 18, 0, 12, H);
-  ctx.fillRect(cx + rx + 6, 0, 12, H);
-
-  ctx.save();
-  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
-
-  visBuf.length = 0;
-  for (const p of platforms) { if (p.broken || p.gap) continue; const sy = py(p.i); if (sy > -3 * GAP && sy < H + 3 * GAP) visBuf.push({ p, sy }); }
-  visBuf.sort((a, b) => a.sy - b.sy);
-  for (const v of visBuf) drawPlatform(v.p, v.sy);
-
-  for (const gm of gems) {
-    if (gm.collected) continue;
-    const sy = gm.i * GAP - ry - ballR * 0.5 - camY;
-    if (sy > -60 && sy < H + 60) {
-      if (gm.elite) drawEliteGem(cx + gm.off, sy + Math.sin(tGlobal * 3) * 3);
-      else drawGem(cx + gm.off, sy);
-    }
-  }
-
-  if (phase !== 'dying') drawBall();
-
-  for (const rg of rings) {
-    const k = rg.t / 0.34;
-    ctx.globalAlpha = (1 - k) * 0.7;
-    ctx.strokeStyle = rg.col || '#fb923c'; ctx.lineWidth = 3 * (1 - k) + 1;
-    ctx.beginPath(); ctx.ellipse(cx, rg.y, rx * (0.3 + 0.9 * k), ry * (0.3 + 0.9 * k), 0, 0, TAU); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-
-  for (const p of particles) {
-    const a = 1 - p.t / p.life;
-    ctx.globalAlpha = a;
-    ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.t / p.life), 0, TAU); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  for (const f of floaters) {
-    ctx.globalAlpha = 1 - f.t / f.life;
-    ctx.fillStyle = f.color;
-    ctx.font = '800 24px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText(f.text, f.x, f.y);
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
-}
+function paintGfx() { $('gfxBtn').textContent = 'GRAPHICS: ' + GFX.toUpperCase(); }
+$('gfxBtn').addEventListener('click', () => {
+  GFX = GFX === 'high' ? 'low' : 'high';
+  try { localStorage.setItem(KEY + '-gfx', GFX); } catch (e) {}
+  T.setQuality(GFX); paintGfx(); layout(); sfx('tap');
+});
+paintGfx();
+T.load('models/tower-items.glb').catch(() => {});
 
 let last = 0;
 function loop(ts) {
   const dt = Math.min(0.04, (ts - last) / 1000 || 0.016);
   last = ts;
   update(dt);
-  draw();
+  draw(dt);
   requestAnimationFrame(loop);
 }
 
 function tap(e) {
   e.preventDefault();
   ensureAudio();
+  if (SDK && SDK.paused) return;
+  if (phase === 'resting' && waiting) { waiting = false; if (coach) { coach.remove(); coach = null; } if (!tutSeen) { tutSeen = true; try { localStorage.setItem('stack-ball-tut', '1'); } catch (e) {} } }
   if (phase === 'resting') {
     shatter(cur);
     sfx('hit');
@@ -568,24 +639,53 @@ function tap(e) {
 }
 canvas.addEventListener('touchstart', tap, { passive: false });
 canvas.addEventListener('mousedown', tap);
+window.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'ArrowDown') && !e.repeat) { if (phase === 'resting' || phase === 'falling') tap(e); else e.preventDefault(); } });
 
-$('playBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
-$('restartBtn').addEventListener('click', () => { ensureAudio(); startGame(); });
-$('mute').addEventListener('click', () => { ensureAudio(); muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} });
+function begin() { ensureAudio(); startGame(); }
+$('playBtn').addEventListener('click', () => { sfx('tap'); begin(); });
+$('restartBtn').addEventListener('click', () => {
+  sfx('tap');
+  if ($('restartBtn').dataset.mode === 'next') { LEVEL = Math.min(P.d.level, LEVEL + 1); P.d.pick = LEVEL; P.save(); picker.set(LEVEL); }
+  begin();
+});
+$('againBtn').addEventListener('click', () => { sfx('tap'); begin(); });
+$('menuBtn').addEventListener('click', () => { sfx('tap'); toTitle(); });
+$('modeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  MODE = b.dataset.m; P.d.mode = MODE; P.save(); sfx('tap'); paintTitle();
+});
+function openSkins() {
+  sfx('tap'); P.takeNewSkins();
+  GK.shop({ prog: P, title: 'Ball skins', onEquip: () => { applySkin(); paintChrome(); }, onClose: () => { paintChrome(); } });
+}
+$('skinBtn').addEventListener('click', openSkins); $('coinChip').addEventListener('click', openSkins);
+function toggleMute() { ensureAudio(); muted = !muted; try { localStorage.setItem(KEY + '-mute', muted ? '1' : '0'); } catch (e) {} paintChrome(); }
+$('mute').addEventListener('click', toggleMute); $('mute2').addEventListener('click', toggleMute);
 
+// ?bot plays by itself (used by the health and progression tests): smash when the part under the next platform is safe, slam in the air
+if (/[?&]bot\b/.test(location.search)) setInterval(() => {
+  if (phase === 'falling') { if (!slam) tap({ preventDefault() {} }); return; }
+  if (phase !== 'resting') return;
+  if (waiting) { tap({ preventDefault() {} }); return; }
+  const i = nextSolid(cur + 1), p = platAt(i); if (!p) return;
+  const save = p.rot; p.rot += p.rs * 0.11; const c = topColor(p); p.rot = save;
+  if (p.finish || c !== BLACK || codes.STEELBALL) tap({ preventDefault() {} });
+}, 40);
 resize();
+applySkin();
 initWorld();
 by = ballRestY(0); camY = by - desired;
-$('mute').textContent = muted ? '🔇' : '🔊';
-updateHUD();
-$('chainBestVal').textContent = slamChainBest;
-$('closeBestVal').textContent = closeBest;
-$('gemTotalVal').textContent = gemTotal;
-$('gemRankVal').textContent = gemRank;
-$('depthBestVal').textContent = depthBest;
-$('dayStreakVal').textContent = dayStreak;
-$('dayBestVal').textContent = dayBest;
+paintChrome(); paintTitle();
 requestAnimationFrame(loop);
+scene('title');
+if (SDK) SDK.init({
+  pauseButton: 'bl',
+  onRestart: () => startGame(),
+  onExit: toTitle,
+  onTutorial: () => { tutSeen = false; startGame(); },
+  onHint: sdkHint,
+  onCheat: code
+});
 </script>
 </body>
 </html>

@@ -2,23 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Merge Blocks</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#b91c1c,#0f0f23 60%,#07070f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 h1{font-size:26px;font-weight:900;letter-spacing:-1px}
-.hud{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;font-weight:800;font-size:15px;align-items:center}
-.hud span{background:#1e293b;padding:8px 16px;border-radius:12px}
-.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:8px 12px;border-radius:12px;cursor:pointer;line-height:1}
+.hud{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px;font-weight:800;font-size:15px;align-items:center;max-width:min(96vw,460px)}
+.hud span{background:#1e293b;padding:8px 12px;border-radius:12px}
+.mute{background:#1e293b;border:none;color:#fff;font-size:15px;padding:0 12px;min-width:44px;min-height:44px;border-radius:12px;cursor:pointer;line-height:1}
 .nextbox{display:flex;align-items:center;gap:8px;background:#1e293b;padding:8px 16px;border-radius:12px;font-weight:800;font-size:15px}
 .nextbox b{display:inline-block;min-width:30px;padding:3px 8px;border-radius:8px;text-align:center;background:#fde68a;color:#1e293b}
 .cfloat{position:fixed;z-index:30;font-weight:900;font-size:15px;color:#facc15;text-shadow:0 2px 8px rgba(0,0,0,.6);pointer-events:none;animation:cf .7s ease-out forwards}
 .cfloat.chain{color:#fb923c}
 @keyframes cf{0%{opacity:0;translate:0 6px}20%{opacity:1}100%{opacity:0;translate:0 -26px}}
-#board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:min(92vw,400px,calc(100dvh - 112px));background:#1e293b;padding:8px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55);touch-action:manipulation}
+#board{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:min(92vw,400px,calc(100dvh - 190px));background:#1e293b;padding:8px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.55);touch-action:manipulation}
 #board.shake{animation:shakeX .3s}
 @keyframes shakeX{0%,100%{translate:0 0}25%{translate:-6px 0}50%{translate:5px 0}75%{translate:-3px 0}}
 .cell{aspect-ratio:1;background:#334155;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:clamp(16px,5.6vw,26px);color:#fff;position:relative;transition:background .15s}
@@ -29,6 +30,17 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 .btn:active{transform:scale(.94)}
 .best{color:#4ade80;font-weight:800}
 .hidden{display:none}
+.btn:focus-visible,.mute:focus-visible,.back:focus-visible,.seg button:focus-visible,#board:focus-visible{outline:3px solid #facc15;outline-offset:2px}
+.cell.hinted{box-shadow:inset 0 0 0 3px #facc15}
+.ov .sub{color:#cbd5e1;font-size:15px;line-height:1.5;padding:0 26px;max-width:420px}
+.seg{display:flex;gap:6px;background:#1e293b;border-radius:999px;padding:4px;flex-wrap:wrap;justify-content:center}
+.seg button{border:none;border-radius:999px;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;min-height:40px;padding:0 14px;cursor:pointer}
+.seg button.on{background:linear-gradient(90deg,#f87171,#facc15);color:#1c1024}
+.coach{display:flex;align-items:center;gap:10px;background:#facc15;color:#1c1024;font-weight:800;font-size:14px;border-radius:12px;padding:6px 8px 6px 14px;max-width:min(94vw,420px)}
+.coach.hidden{display:none}
+.coach button{border:none;border-radius:9px;background:rgba(0,0,0,.18);color:#1c1024;font-weight:900;font-size:13px;min-height:40px;min-width:52px;cursor:pointer;flex:none}
+.codes{position:fixed;top:62px;left:12px;z-index:10;background:#1e293b;color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px}
+@media (prefers-reduced-motion:reduce){#board.shake,.pop,.drop,#score.pp,.cfloat{animation:none}.cfloat{opacity:0}.cell{transition:none}}
 .pop{animation:pop .25s ease}
 .drop{animation:drop .22s cubic-bezier(.4,1.4,.6,1)}
 @keyframes pop{0%{scale:1}50%{scale:1.25}100%{scale:1}}
@@ -40,11 +52,15 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1>🧩 Merge Blocks</h1>
-<div class="hud"><span>Score: <b id="score">0</b></span><span>Best: <b class="best" id="best">0</b></span><span>🏅 <b id="megas">0</b></span><span>💎 <b id="medals">0</b>/3</span><span>🎖 Lv <b id="lv">1</b></span><span>🔥 <b id="streak">0</b></span><span class="nextbox">Next: <b id="next">2</b></span><button class="mute" id="undoBtn" aria-label="Undo last drop">↩</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
-<div id="board"></div>
+<div class="hud"><span>Score: <b id="score">0</b></span><span>Best: <b class="best" id="best">0</b></span><span>🏅 <b id="megas">0</b></span><span>💎 <b id="medals">0</b>/3</span><span>🎖 Lv <b id="lv">1</b></span><span>🔥 <b id="streak">0</b></span><span class="nextbox">Next: <b id="next">2</b></span><button class="mute" id="undoBtn" aria-label="Undo last drop">↩</button><button class="mute" id="hintBtn" aria-label="Hint">💡</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="coach hidden" id="coach"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
+<div id="board" tabindex="0" aria-label="Board: press 1 to 6 to drop in a column"></div>
+<div class="codes hidden" id="codesOn">CODES ON</div>
 <div class="ov" id="start">
   <h1>🧩 Merge Blocks</h1>
   <div style="color:#cbd5e1;font-size:15px;line-height:1.6">Tap a column to drop a block.<br>Equal neighbors merge into bigger numbers!</div>
+  <div class="seg" role="group" aria-label="Difficulty"><button data-d="easy">Easy</button><button data-d="normal">Normal</button><button data-d="hard">Hard</button><button data-d="daily">Daily drops</button></div>
+  <div class="sub" id="diffNote" style="font-size:13px"></div>
   <button class="btn" id="playBtn">▶ Play</button>
 </div>
 <div class="ov hidden" id="over">
@@ -60,9 +76,22 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 <script>
 
 const N=6;
-let grid=[],next=0,score=0,best=+localStorage.getItem('mergeBest')||0,locked=false,over=false,mergedIdxs=[],chain=0;
+const SDK=window.ArcadeSDK||null;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+function save(k,v){if(cheated())return;try{localStorage.setItem(k,v);}catch(e){}}
+// Difficulty: how many undos you get and which blocks can come next. Daily drops: the same blocks for everyone today.
+const DIFF={easy:{undo:3,max:2,note:'Blocks of 2 or 4 · 3 undos'},normal:{undo:1,max:2,note:'Blocks of 2 or 4 · 1 undo'},hard:{undo:0,max:3,note:'Blocks of 2, 4 or 8 · no undo'},daily:{undo:1,max:2,note:"Today's drops are the same for everyone · 1 undo"}};
+let diff='normal';try{diff=localStorage.getItem('mergeDiff')||'normal';}catch(e){}if(!DIFF[diff])diff='normal';
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function bestKey(){return diff==='normal'?'mergeBest':diff==='daily'?'mergeBest_daily_'+today():'mergeBest_'+diff;}
+let rngState=0;function seedRng(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}rngState=h>>>0;}
+function rng(){if(diff!=='daily')return Math.random();rngState=(rngState+0x6D2B79F5)>>>0;let t=rngState;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;}
+let undoLeft=1,infiniteUndo=false,peekNext=false,bigDrop=false;
+let grid=[],next=0,score=0,best=+localStorage.getItem(bestKey())||0,locked=false,over=false,mergedIdxs=[],chain=0;
 let muted=localStorage.getItem('gamesMuted')==='1';
-let drops=0,goldPending=false,megas=0,megaAll=+localStorage.getItem('mergeMegas')||0,snap=null,undoUsed=false;
+let drops=0,goldPending=false,megas=0,megaAll=+localStorage.getItem('mergeMegas')||0,snaps=[],undoUsed=false;
 let xp=+localStorage.getItem('mergeXp')||0,pstreak=+localStorage.getItem('mergeStreak')||0,lastScore=+localStorage.getItem('mergeLast')||0;
 let medals=[];try{medals=JSON.parse(localStorage.getItem('mergeMedals')||'[]')||[];}catch(e){medals=[];}
 let runBlocks=0,runsNs=+localStorage.getItem('mergeRuns')||0,lifeBlocks=+localStorage.getItem('mergeBlocks')||0;
@@ -86,16 +115,17 @@ const boardEl=document.getElementById('board'),cells=[],shown=new Array(N*N).fil
 for(let i=0;i<N*N;i++){const d=document.createElement('div');d.className='cell';boardEl.appendChild(d);cells.push(d);}
 let bRect=boardEl.getBoundingClientRect();
 window.addEventListener('resize',()=>{bRect=boardEl.getBoundingClientRect();});
-function newNext(){next=Math.random()<.5?1:2;const el=document.getElementById('next');el.textContent=Math.pow(2,next);el.style.background=colors[next];el.style.color=next<=2?'#1e293b':'#fff';}
+function newNext(){next=bigDrop?3:DIFF[diff].max===3?1+Math.floor(rng()*3):(rng()<.5?1:2);const el=document.getElementById('next');el.textContent=Math.pow(2,next);el.style.background=colors[next];el.style.color=next<=2?'#1e293b':'#fff';}
 function startGame(){
 initAudio();
-grid=Array(N*N).fill(0);score=0;locked=false;over=false;drops=0;goldPending=false;megas=0;snap=null;undoUsed=false;runBlocks=0;
+if(diff==='daily')seedRng('merge-'+today());best=+localStorage.getItem(bestKey())||0;document.getElementById('best').textContent=best;
+grid=Array(N*N).fill(0);score=0;locked=false;over=false;drops=0;goldPending=false;megas=0;snaps=[];undoUsed=false;runBlocks=0;undoLeft=DIFF[diff].undo;
 document.getElementById('score').textContent=0;
 document.getElementById('megas').textContent=0;
-document.getElementById('undoBtn').style.opacity='1';
+updUndo();
 document.getElementById('start').classList.add('hidden');
 document.getElementById('over').classList.add('hidden');
-newNext();render();
+newNext();render();scene('play');
 }
 function render(hlCol){
 for(let r=0;r<N;r++)for(let c=0;c<N;c++){
@@ -122,7 +152,8 @@ locked=true;
 initAudio();
 for(let r=N-1;r>=0;r--){
 if(grid[r*N+col]===0){
-    if(!undoUsed)snap={grid:grid.slice(),score:score,next:next,chain:chain,drops:drops,goldPending:goldPending,megas:megas};
+    snaps.push({grid:grid.slice(),score:score,next:next,chain:chain,drops:drops,goldPending:goldPending,megas:megas,rng:rngState});if(snaps.length>50)snaps.shift();
+    tutDropped();
     grid[r*N+col]=next;
     chain=0;
     drops++;goldPending=(drops%8===0);
@@ -136,7 +167,11 @@ return;
 }
 locked=false;
 sfx('buzz');
-boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');
+if(!RM){boardEl.classList.remove('shake');void boardEl.offsetWidth;boardEl.classList.add('shake');}
+const topCell=cells[col],tcr=topCell.getBoundingClientRect();
+const cf=document.createElement('div');cf.className='cfloat chain';cf.textContent='COLUMN FULL';
+cf.style.left=(tcr.left+tcr.width/2)+'px';cf.style.top=(tcr.top-4)+'px';cf.style.transform='translateX(-50%)';cf.style.fontSize='12px';
+document.body.appendChild(cf);setTimeout(()=>{if(cf.parentNode)cf.parentNode.removeChild(cf);},750);
 }
 function mergePass(){
 let count=0;mergedIdxs=[];
@@ -181,7 +216,7 @@ applyGravity();
 render();
 document.getElementById('score').textContent=score;
 popScore();
-if(score>best){best=score;localStorage.setItem('mergeBest',best);document.getElementById('best').textContent=best;}
+if(score>best&&!cheated()){best=score;localStorage.setItem(bestKey(),best);document.getElementById('best').textContent=best;}
 if(merged){
 chain++;
 runBlocks+=merged;
@@ -196,7 +231,7 @@ const b=document.createElement('div');b.className='cfloat chain';b.textContent='
 b.style.left='50%';b.style.top='28%';document.body.appendChild(b);
 setTimeout(()=>{if(b.parentNode)b.parentNode.removeChild(b);},750);}
 let nMed=0;mergedIdxs.forEach(m=>{const v=m.p;if(v>=512&&medals.indexOf(v)===-1){medals.push(v);nMed++;}});
-if(nMed){try{localStorage.setItem('mergeMedals',JSON.stringify(medals));}catch(e){}
+if(nMed){save('mergeMedals',JSON.stringify(medals));
 document.getElementById('medals').textContent=medals.length;
 const b3=document.createElement('div');b3.className='cfloat chain';b3.textContent='💎 '+medals[medals.length-1]+' BLOCK! ('+medals.length+'/3)';
 b3.style.left='50%';b3.style.top='31%';document.body.appendChild(b3);
@@ -221,55 +256,107 @@ if(full){endGame();return;}
     f.style.left='50%';f.style.top='34%';document.body.appendChild(f);
     setTimeout(()=>{if(f.parentNode)f.parentNode.removeChild(f);},750);
   }
-  locked=false;
+  locked=false;updUndo();
 }
 function endGame(){
 if(over)return;
-over=true;snd('over');
-if(score>best){best=score;localStorage.setItem('mergeBest',best);document.getElementById('best').textContent=best;}
+over=true;snd('over');scene('over',{score:score});
+if(score>best&&!cheated()){best=score;localStorage.setItem(bestKey(),best);document.getElementById('best').textContent=best;}
 document.getElementById('finScore').textContent=score;
 document.getElementById('finBest').textContent=best;
 document.getElementById('finMegas').textContent=megas;
-megaAll+=megas;localStorage.setItem('mergeMegas',megaAll);
+megaAll+=megas;save('mergeMegas',megaAll);
 document.getElementById('finMegaAll').textContent=megaAll;
 document.getElementById('finLv').textContent=lv;
 document.getElementById('finMedals').textContent=medals.length;
 runsNs++;lifeBlocks+=runBlocks;
-localStorage.setItem('mergeRuns',runsNs);
-localStorage.setItem('mergeBlocks',lifeBlocks);
+save('mergeRuns',runsNs);
+save('mergeBlocks',lifeBlocks);
 document.getElementById('finBlocks').textContent=lifeBlocks;
 document.getElementById('finRuns').textContent=runsNs;
 if(Math.floor(lifeBlocks/500)>Math.floor((lifeBlocks-runBlocks)/500)){
 const bl=document.createElement('div');bl.className='cfloat chain';bl.textContent='🧱 '+lifeBlocks+' BLOCKS!';
 bl.style.left='50%';bl.style.top='25%';document.body.appendChild(bl);
 setTimeout(()=>{if(bl.parentNode)bl.parentNode.removeChild(bl);},750);sfx('levelup');}
-localStorage.setItem('mergeXp',xp);
+save('mergeXp',xp);
 if(score>lastScore&&score>0){pstreak++;if(pstreak>=2){const sf=document.createElement('div');sf.className='cfloat chain';sf.textContent='🔥 HOT STREAK ×'+pstreak+'!';sf.style.left='50%';sf.style.top='22%';document.body.appendChild(sf);setTimeout(()=>{if(sf.parentNode)sf.parentNode.removeChild(sf);},750);}}
 else pstreak=0;
-lastScore=score;localStorage.setItem('mergeStreak',pstreak);localStorage.setItem('mergeLast',lastScore);
+lastScore=score;save('mergeStreak',pstreak);save('mergeLast',lastScore);
 document.getElementById('streak').textContent=pstreak;
 document.getElementById('finStreak').textContent=pstreak;
 setTimeout(()=>document.getElementById('over').classList.remove('hidden'),450);
 }
+const $=id=>document.getElementById(id);
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();fn();});el.addEventListener('click',e=>{if(e.detail===0)fn();});}
+function busy(){return !$('start').classList.contains('hidden')||(SDK&&SDK.paused);}
 boardEl.addEventListener('pointerdown',e=>{
+if(busy())return;bRect=boardEl.getBoundingClientRect();
 const col=Math.floor((e.clientX-bRect.left)/(bRect.width/N));
 if(col>=0&&col<N)drop(col);
 });
-document.getElementById('undoBtn').addEventListener('pointerdown',e=>{
-e.stopPropagation();
-if(undoUsed||over||locked||!snap)return;
-initAudio();
-grid=snap.grid.slice();score=snap.score;next=snap.next;chain=snap.chain;drops=snap.drops;goldPending=snap.goldPending;megas=snap.megas;snap=null;undoUsed=true;
-document.getElementById('score').textContent=score;
-document.getElementById('megas').textContent=megas;
-const el=document.getElementById('next');el.textContent=Math.pow(2,next);el.style.background=colors[next];el.style.color=next<=2?'#1e293b':'#fff';
-document.getElementById('undoBtn').style.opacity='0.4';
-render();
-sfx('whoosh');
+window.addEventListener('keydown',e=>{if(busy()||e.repeat)return;
+if(e.key>='1'&&e.key<='6')drop(+e.key-1);
+if(e.key==='z'||e.key==='Z'||e.key==='u'||e.key==='U')undo();
+if(e.key==='h'||e.key==='H')showHint();});
+/* ---- undo: the difficulty sets how many; the last drop and all its merges come back ---- */
+function updUndo(){const b=$('undoBtn');const n=infiniteUndo?'∞':undoLeft;b.textContent='↩'+(n?'':'');b.setAttribute('aria-label','Undo last drop ('+n+' left)');b.title='Undo ('+n+' left)';b.style.opacity=(infiniteUndo||undoLeft>0)&&snaps.length&&!over?'1':'0.4';}
+function undo(){if(over||locked||!snaps.length||(!infiniteUndo&&undoLeft<1))return;
+initAudio();const snap=snaps.pop();
+grid=snap.grid.slice();score=snap.score;next=snap.next;chain=snap.chain;drops=snap.drops;goldPending=snap.goldPending;megas=snap.megas;rngState=snap.rng;
+if(!infiniteUndo)undoLeft--;undoUsed=true;
+$('score').textContent=score;$('megas').textContent=megas;
+const el=$('next');el.textContent=Math.pow(2,next);el.style.background=colors[next];el.style.color=next<=2?'#1e293b':'#fff';
+updUndo();render();sfx('whoosh');}
+press($('undoBtn'),undo);
+/* ---- hint: plays every column in a copy of the board, merges and all ---- */
+function simulate(col){const g=grid.slice();let r=-1;for(let k=N-1;k>=0;k--)if(!g[k*N+col]){r=k;break;}if(r<0)return null;g[r*N+col]=next;let gain=0,chains=0;
+for(let guard=0;guard<40;guard++){let count=0;const done=new Set();
+for(let rr=N-1;rr>=0;rr--)for(let c=0;c<N;c++){const i=rr*N+c,v=g[i];if(!v||done.has(i))continue;
+if(rr<N-1&&g[i+N]===v&&!done.has(i+N)){g[i+N]++;g[i]=0;done.add(i+N);gain+=Math.pow(2,g[i+N]);count++;}
+else if(c<N-1&&g[i+1]===v&&!done.has(i+1)){g[i]++;g[i+1]=0;done.add(i);gain+=Math.pow(2,g[i]);count++;}}
+for(let c=0;c<N;c++){let w=N-1;for(let rr=N-1;rr>=0;rr--){const v=g[rr*N+c];if(v){if(w!==rr){g[w*N+c]=v;g[rr*N+c]=0;}w--;}}}
+if(!count)break;chains++;}
+const empty=g.filter(v=>!v).length;let tall=0;for(let c=0;c<N;c++){let h=0;for(let rr=0;rr<N;rr++)if(g[rr*N+c]){h=N-rr;break;}tall=Math.max(tall,h);}
+return {col,gain,chains,empty,tall,score:gain+empty*6-tall*4};}
+function bestCol(){let b=null;for(let c=0;c<N;c++){const s2=simulate(c);if(s2&&(!b||s2.score>b.score))b=s2;}return b;}
+function hint(){if(!$('start').classList.contains('hidden'))return 'Pick a difficulty and press Play.';if(over)return 'Game over: press Play Again.';
+const b=bestCol();if(!b)return 'Every column is full.';
+cells.forEach((d,i)=>d.classList.toggle('hinted',i%N===b.col));setTimeout(()=>cells.forEach(d=>d.classList.remove('hinted')),1800);
+return 'Drop the '+Math.pow(2,next)+' in column '+(b.col+1)+(b.gain?': it merges for +'+b.gain+(b.chains>1?' in a '+b.chains+'-step chain':''):': no merge is possible, and it keeps the stacks lowest')+'. '+b.empty+' squares stay free.';}
+function showHint(){if(busy())return;coach('💡 '+hint(),'OK');tut=0;}
+press($('hintBtn'),showHint);
+/* ---- first-game coach marks ---- */
+let tut=0,tutSeen=false;try{tutSeen=localStorage.getItem('mergeTut')==='1';}catch(e){}
+function coach(t,b){$('coachTxt').textContent=t;$('coachBtn').textContent=b||'Skip';$('coach').classList.remove('hidden');}
+function endTut(){tut=0;$('coach').classList.add('hidden');tutSeen=true;try{localStorage.setItem('mergeTut','1');}catch(e){}}
+press($('coachBtn'),()=>{if(tut)endTut();else $('coach').classList.add('hidden');});
+function startTut(){tut=1;coach('👆 Tap a column (or press 1 to 6): the Next block drops to the bottom of it.');}
+function tutDropped(){if(tut===1){tut=2;coach('Two touching blocks with the same number merge into one twice as big, and merges can chain.');}else if(tut===2){tut=3;coach('The game ends when every column is full. ↩ undoes a drop; 💡 picks the best column.','Got it');}else if(tut===3)endTut();}
+/* ---- title ---- */
+function paintDiff(){document.querySelectorAll('[data-d]').forEach(b=>{b.classList.toggle('on',b.dataset.d===diff);b.setAttribute('aria-pressed',String(b.dataset.d===diff));});const bk=+localStorage.getItem(bestKey())||0;$('diffNote').textContent=DIFF[diff].note+' · Best '+(bk||'–');}
+document.querySelectorAll('[data-d]').forEach(b=>press(b,()=>{diff=b.dataset.d;try{localStorage.setItem('mergeDiff',diff);}catch(e){}paintDiff();}));
+paintDiff();
+function begin(withTut){startGame();$('coach').classList.add('hidden');tut=0;if(withTut||!tutSeen)startTut();}
+function toTitle(){over=true;locked=false;$('over').classList.add('hidden');$('coach').classList.add('hidden');paintDiff();$('start').classList.remove('hidden');scene('title');}
+press($('playBtn'),()=>begin(false));
+press($('againBtn'),()=>begin(false));
+/* ---- codes: just for fun; a game with codes on saves no records ---- */
+const CODES={UNDOALL:'Undo all: unlimited undos',BIGDROP:'Big drop: every new block is an 8',CLEARTOP:'Clear top: the top two rows are wiped'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='UNDOALL'){infiniteUndo=true;updUndo();}
+if(c==='BIGDROP'){bigDrop=true;if(!over){next=3;const el=$('next');el.textContent=8;el.style.background=colors[3];el.style.color='#fff';}}
+if(c==='CLEARTOP'&&!over&&!locked){for(let i=0;i<2*N;i++)grid[i]=0;render();}
+return{ok:true,message:CODES[c]};}
+if(SDK)SDK.init({
+pauseButton:'br',pauseKeys:'p+esc',
+onRestart:()=>begin(false),
+onExit:toTitle,
+onTutorial:()=>begin(true),
+onHint:hint,
+onCheat:code,
 });
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
 grid=Array(N*N).fill(0);newNext();render();
+scene('title');
 </script>
 </body>
 </html>

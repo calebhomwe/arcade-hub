@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#120a24">
 <title>Hangman</title>
@@ -10,8 +11,8 @@
 html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#120a24;color:#f3ecff;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1000px 700px at 50% -10%,#3b1d6e 0%,transparent 60%),radial-gradient(800px 600px at 100% 110%,#1d4a6e 0%,transparent 55%),#120a24}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#c4b5fd;text-decoration:none;font-weight:700;font-size:16px;background:rgba(30,20,60,.85);border:1px solid rgba(196,181,253,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(167,139,250,.25)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(196,181,253,.35);background:rgba(30,20,60,.85);color:#fff;cursor:pointer}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#c4b5fd;text-decoration:none;font-weight:700;font-size:16px;background:rgba(30,20,60,.85);border:1px solid rgba(196,181,253,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(167,139,250,.25)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(196,181,253,.35);background:rgba(30,20,60,.85);color:#fff;cursor:pointer}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden}
 .screen.s-active{display:flex}
 .logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(167,139,250,.6));animation:bob 2.2s ease-in-out infinite}
@@ -65,6 +66,14 @@ canvas{display:block;width:150px;height:210px}
 .btn-big{font-size:24px;padding:16px 44px;min-height:60px}
 .btn-ghost{background:transparent;border:2px solid #4a3a7e;color:#b7a6e0;margin-top:12px}
 @media (min-width:700px){.title{font-size:56px}.key{max-width:52px;height:48px}}
+.lvl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.lvl-btn{font-size:15px;padding:10px 16px;min-height:44px;background:rgba(40,28,80,.75);border:1px solid #5b4a9e;box-shadow:none}
+.lvl-btn.sel{background:linear-gradient(135deg,#7c3aed,#db2777);border-color:#f0abfc}
+.lvl-btn small{display:block;font-size:12px;font-weight:700;opacity:.85}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.gu-row .btn{font-size:15px;padding:10px 18px;min-height:44px}
+@media (max-width:520px){#s-game{padding-top:62px}.keyboard{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px}.krow{display:contents}.key{flex:0 0 44px;max-width:none;order:var(--o)}}
+@media (prefers-reduced-motion:reduce){.logo,.lbl,.shake,.toast,.hud-item.jpop{animation:none!important}.float{animation-duration:.01s!important}.btn:active,.key:active{transform:none}}
 </style>
 </head>
 <body>
@@ -83,8 +92,14 @@ canvas{display:block;width:150px;height:210px}
     <button class="btn cat-btn" data-cat="sports">⚽ Sports</button>
     <button class="btn cat-btn" data-cat="tech">💻 Tech</button>
   </div>
+  <div class="cat-label">Word length</div>
+  <div class="lvl-row" id="lvlRow">
+    <button class="btn lvl-btn" data-l="S" type="button">Short<small>3–5 letters · ages 6–7</small></button>
+    <button class="btn lvl-btn" data-l="M" type="button">Medium<small>5–7 letters · ages 8–9</small></button>
+    <button class="btn lvl-btn" data-l="L" type="button">Long<small>7+ letters · ages 10+</small></button>
+  </div>
   <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best streak: <b id="startStreak">0</b></div>
-  <button class="btn cat-btn" id="btnAchOpen" style="margin-bottom:14px;">🏅 Achievements</button>
+  <div class="gu-row" id="guRow"><button class="btn cat-btn" id="btnAchOpen" type="button">🏅 Achievements</button><button class="btn cat-btn" id="btnHow" type="button">❓ Learn to play</button></div>
   <p class="tip">5 words per game · 💡 Hint costs 15 pts · ⏭ Skip reveals the word (no points) · Win streak multiplies your bonus · Type letters on a physical keyboard too!</p>
 </div>
 
@@ -131,18 +146,27 @@ canvas{display:block;width:150px;height:210px}
   <button class="btn btn-ghost" id="btnMenu">Change Category</button>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
 'use strict';
 var WORDS={
   animals:'cat dog elephant tiger lion zebra giraffe monkey dolphin penguin kangaroo panda rabbit fox wolf bear horse cow sheep snake eagle owl shark whale camel deer mouse turkey donkey'.split(' '),
-  food:'pizza burger pasta salad apple banana orange grape strawberry watermelon carrot tomato potato cheese bread rice noodle soup cake cookie chocolate egg bacon corn lemon peach'.split(' '),
-  sports:'soccer tennis basketball baseball football hockey golf cricket boxing swimming running cycling skiing surfing volleyball rugby karate judo bowling racing archery'.split(' '),
-  tech:'computer keyboard internet software hardware robot battery camera phone tablet laptop server network coding python java router screen printer speaker gadget drone'.split(' ')
+  food:'pizza burger pasta salad apple banana orange grape strawberry watermelon carrot tomato potato cheese bread rice noodle soup cake cookie chocolate egg bacon corn lemon peach pancake popcorn sandwich broccoli cucumber pineapple blueberry spaghetti cupcake avocado'.split(' '),
+  sports:'soccer tennis basketball baseball football hockey golf cricket boxing swimming running cycling skiing surfing volleyball rugby karate judo bowling racing archery polo darts yoga relay chess'.split(' '),
+  tech:'computer keyboard internet software hardware robot battery camera phone tablet laptop server network coding python java router screen printer speaker gadget drone app chip mouse cable'.split(' ')
 };
 var CATS={animals:'🐾 Animals',food:'🍕 Food',sports:'⚽ Sports',tech:'💻 Tech'};
 var ROUNDS=5;
+var LEVELS={S:[3,5],M:[5,7],L:[7,99]},LVL_NAME={S:'Short words (3–5 letters, ages 6–7)',M:'Medium words (5–7 letters, ages 8–9)',L:'Long words (7+ letters, ages 10+)'};
+var lvl='S';try{lvl=localStorage.getItem('hg_level')||'S';}catch(e){}if(!LEVELS[lvl]){lvl='S';}
+var SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm),runId=0,coach=null;
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function later(f,ms){var r=runId;setTimeout(function(){if(r===runId){f();}},ms);}
+function did(n){if(coach){coach.did(n);}}
+var LP=window.PlayKit?PlayKit.progress({key:'hg_progress',title:'Hangman',bands:LVL_NAME,unit:'words tried',theme:{panel:'#1e1440',fg:'#f3ecff',accent:'#c084fc'}}):null;
+function rec(ok){if(LP){LP.record(lvl,ok,word);}}
 var cat='animals',score=0,streak=0,best=0,bestStreak=0,mistakes=0,roundIdx=0,word='',guessed=[],busy=false,usedWords=[],missOnce=false;
 var perfectRun=0,bestPerfect=0,goldIdx=-1,firstGuess=true;
 var keyEls={};
@@ -200,16 +224,16 @@ function renderAchScreen(){
   }
   $('achStats').innerHTML='🏅 '+achCount()+'/'+ACH_INFO.length+' · 🎯 wins: <b>'+stats.wins+'</b> · 🎮 games: <b>'+stats.games+'</b>';
 }
-function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('hg_beststreak',String(bestStreak));}stats.wins++;stats.cats[cat]=1;saveStats();}
+function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('hg_beststreak',String(bestStreak));}stats.wins++;stats.cats[cat]=1;saveStats();rec(true);did('solve');}
 function ac(){if(!AC){var W=window;AC=new (W.AudioContext||W.webkitAudioContext)();}if(AC.state==='suspended'){AC.resume();}return AC;}
 function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac(),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a)return;try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 function toast(txt){var t=document.createElement('div');t.className='toast';t.textContent=txt;document.body.appendChild(t);setTimeout(function(){if(t.parentNode){t.parentNode.removeChild(t);}},1700);}
-function confetti(n){var cols=['#c4b5fd','#f0abfc','#fda4af','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function confetti(n){if(RM){return;}var cols=['#c4b5fd','#f0abfc','#fda4af','#34d399','#fbbf24'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
 var jflashEl=null;
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jflash(col){if(RM){return;}if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function drawStage(x,m){var H=220;
   x.beginPath();x.moveTo(25,H-15);x.lineTo(25,25);x.lineTo(105,25);x.lineTo(105,55);x.stroke();
@@ -221,8 +245,9 @@ function drawStage(x,m){var H=220;
   if(m>=6){x.beginPath();x.moveTo(105,145);x.lineTo(84,172);x.stroke();}
   if(m>=7){x.beginPath();x.moveTo(105,145);x.lineTo(126,172);x.stroke();}
 }
-function buildHangmanSprites(){var st,c,x;for(st=0;st<8;st++){c=document.createElement('canvas');c.width=160;c.height=220;x=c.getContext('2d');x.strokeStyle='#c4b5fd';x.lineWidth=4;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(167,139,250,.8)';x.shadowBlur=8;drawStage(x,st);stageSprites.push(c);}}
-function drawHangman(){elCtx.clearRect(0,0,160,220);elCtx.drawImage(stageSprites[mistakes],0,0);}
+var HD=Math.min(window.devicePixelRatio||1,2);
+function buildHangmanSprites(){var st,c,x;for(st=0;st<8;st++){c=document.createElement('canvas');c.width=160*HD;c.height=220*HD;x=c.getContext('2d');x.scale(HD,HD);x.strokeStyle='#c4b5fd';x.lineWidth=4;x.lineCap='round';x.lineJoin='round';x.shadowColor='rgba(167,139,250,.8)';x.shadowBlur=8;drawStage(x,st);stageSprites.push(c);}}
+function drawHangman(){elCtx.clearRect(0,0,160*HD,220*HD);elCtx.drawImage(stageSprites[mistakes],0,0);}
 function renderWord(){
   var i,n=word.length,d,ch;
   while(lblEls.length<n){d=document.createElement('div');elWordBox.appendChild(d);lblEls.push(d);}
@@ -248,7 +273,7 @@ function buildKeyboard(){
     for(i=0;i<rows[r].length;i++){
       var ch=rows[r][i];
       var b=document.createElement('button');
-      b.className='key';b.textContent=ch.toUpperCase();b.dataset.ch=ch;
+      b.className='key';b.style.setProperty('--o',String(ch.charCodeAt(0)-97));b.textContent=ch.toUpperCase();b.dataset.ch=ch;
       row.appendChild(b);
       keyEls[ch]=b;
     }
@@ -259,7 +284,9 @@ function buildKeyboard(){
 function resetKeyboard(){var ch;for(ch in keyEls){keyEls[ch].classList.remove('hit','miss');}}
 function newRound(){
   if(roundIdx>=ROUNDS){gameOver();return;}
-  var pool=WORDS[cat].slice().sort(function(a,b){return a.length-b.length;});
+  var rg=LEVELS[lvl],pool=WORDS[cat].filter(function(w){return w.length>=rg[0]&&w.length<=rg[1];});
+  if(pool.length<ROUNDS){pool=WORDS[cat].slice();}
+  pool.sort(function(a,b){return a.length-b.length;});
   var cut=Math.min(pool.length-2,Math.round(pool.length*roundIdx/ROUNDS));
   if(cut>0){pool=pool.slice(cut);}
   var w,avail=0,i2;
@@ -290,6 +317,7 @@ function guess(ch){
   if(busy){return;}
   var b=keyEls[ch];
   if(!b||b.classList.contains('hit')||b.classList.contains('miss')){return;}
+  did('guess');
   if(word.indexOf(ch)!==-1){
     b.classList.add('hit');
     guessed.push(ch);
@@ -308,7 +336,7 @@ function guess(ch){
       if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
       updateHud();
       roundIdx++;
-      setTimeout(newRound,1100);
+      later(newRound,1100);
     }
   }else{
     b.classList.add('miss');
@@ -319,14 +347,14 @@ function guess(ch){
     jflash('#fb7185');
     elWordBox.classList.remove('shake');void elWordBox.offsetWidth;elWordBox.classList.add('shake');
     if(mistakes>=7){
-      busy=true;streak=0;perfectRun=0;
+      busy=true;streak=0;perfectRun=0;rec(false);
       sfx('lose');
       var i;
       for(i=0;i<word.length;i++){lblEls[i].textContent=word[i].toUpperCase();lblEls[i].classList.add('lost');}
       toast('It was "'+word.toUpperCase()+'"');
       updateHud();
       roundIdx++;
-      setTimeout(newRound,1600);
+      later(newRound,1600);
     }
   }
 }
@@ -362,7 +390,7 @@ function useHint(){
     if(streak>=2){setTimeout(function(){toast('🔥 '+streak+' wins in a row!');},700);}
     updateHud();
     roundIdx++;
-    setTimeout(newRound,1100);
+    later(newRound,1100);
   }
 }
 function roseReveal(){
@@ -390,7 +418,7 @@ function roseReveal(){
     setTimeout(function(){toast('Solved! +'+gain+' pts');},400);
     updateHud();
     roundIdx++;
-    setTimeout(newRound,1100);
+    later(newRound,1100);
   }
   updateHud();
 }
@@ -400,14 +428,14 @@ function trackPerfectWin(){
 }
 function skipWord(){
   if(busy){return;}
-  busy=true;streak=0;perfectRun=0;
+  busy=true;streak=0;perfectRun=0;rec(false);
   sfx('buzz');
   var i;
   for(i=0;i<word.length;i++){lblEls[i].textContent=word[i].toUpperCase();lblEls[i].classList.add('lost');}
   toast('Skipped — it was "'+word.toUpperCase()+'"');
   updateHud();
   roundIdx++;
-  setTimeout(newRound,1400);
+  later(newRound,1400);
 }
 function gameOver(){
   sfx('lose');
@@ -421,8 +449,12 @@ function gameOver(){
   else{msg='Fewer mistakes = bigger bonuses. Try again!';}
   $('overMsg').textContent=msg;
   show('s-over');
+  scene('over',{score:score});
 }
-function startGame(c){
+function stopRun(){runId++;busy=true;if(coach){coach.stop(true);coach=null;}}
+function startGame(c,teach){
+  if(!WORDS[c]){c='animals';}
+  stopRun();
   cat=c;score=0;streak=0;roundIdx=0;usedWords=[];perfectRun=0;
   stats.games++;saveStats();
   $('catBox').textContent=CATS[cat];
@@ -430,9 +462,32 @@ function startGame(c){
   show('s-game');
   updateHud();
   newRound();
+  if(LP){LP.session();}
+  scene('play');
+  if(window.PlayKit&&(teach||!PlayKit.seen('hg_tut'))){
+    coach=PlayKit.coach({key:'hg_tut',theme:{panel:'#1e1440',fg:'#f3ecff',accent:'#c084fc'},steps:[
+      {text:'Guess a letter: tap it on the keyboard (or type it). Vowels like A and E are a good start.',target:'#keyboard',on:'guess'},
+      {text:'Right letters appear in the word. A wrong letter adds a line to the drawing. 7 wrong and the round is lost.',target:'.canvas-box'},
+      {text:'Stuck? 💡 Hint shows a letter for 15 points. Solve a word with no mistakes to earn a 🌹 token.',target:'.ctrl-row'},
+      {text:'Now find every letter in the word!',target:'#wordBox',on:'solve'}
+    ]});
+  }
+}
+function toTitle(){stopRun();loadBest();$('startBest').textContent=best;$('startStreak').textContent=bestStreak;show('s-start');scene('title');}
+function paintLvl(){var bs=document.querySelectorAll('.lvl-btn'),i;for(i=0;i<bs.length;i++){bs[i].classList.toggle('sel',bs[i].getAttribute('data-l')===lvl);}}
+function sdkHint(){
+  if(!elGameScr.classList.contains('s-active')||!word){return 'Pick a word length and a category, then guess letters. Start with vowels: A, E, I, O, U.';}
+  var left={},i,ch,best1='',n=0,vow=false;
+  for(i=0;i<word.length;i++){ch=word[i];if(guessed.indexOf(ch)===-1){left[ch]=(left[ch]||0)+1;}}
+  for(ch in left){n++;if(!best1||left[ch]>left[best1]){best1=ch;}}
+  if(!n){return 'You have found every letter!';}
+  for(i=0;i<guessed.length;i++){if('aeiou'.indexOf(guessed[i])!==-1){vow=true;}}
+  if(!vow&&/[aeiou]/.test(word)){return 'Every word needs vowels. Try A, E, I, O or U first.';}
+  return 'The word is one of the '+cat+' words and has '+word.length+' letters. Try "'+best1.toUpperCase()+'"'+(left[best1]>1?': it is in the word '+left[best1]+' times.':'.');
 }
 function init(){
   elScore=$('score');elStreak=$('streak');elRound=$('round');elPerfect=$('perfect');elBest=$('best');elMistakes=$('mistakes');elWordBox=$('wordBox');elGameScr=$('s-game');elTokens=$('tokens');elRose=$('btnRose');
+  $('canvas').width=160*HD;$('canvas').height=220*HD;
   elCtx=$('canvas').getContext('2d');
   buildHangmanSprites();
   buildKeyboard();
@@ -444,13 +499,13 @@ function init(){
   $('btnAchOpen').textContent='🏅 Achievements ' + achCount() + '/' + ACH_INFO.length;
   $('btnAchOpen').addEventListener('click',function(){sfx('tap');renderAchScreen();show('s-ach');});
   $('btnAchBack').addEventListener('click',function(){sfx('tap');$('btnAchOpen').textContent='🏅 Achievements ' + achCount() + '/' + ACH_INFO.length;show('s-start');});
-  var cbs=document.querySelectorAll('.cat-btn'),i;
+  var cbs=document.querySelectorAll('.cat-btn[data-cat]'),i;
   for(i=0;i<cbs.length;i++){
     cbs[i].addEventListener('click',function(){sfx('coin');startGame(this.getAttribute('data-cat'));});
   }
   $('btnAgain').addEventListener('click',function(){sfx('coin');startGame(cat);});
-  $('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
-  $('btnMenu2').addEventListener('click',function(){sfx('tap');show('s-start');});
+  $('btnMenu').addEventListener('click',function(){sfx('tap');toTitle();});
+  $('btnMenu2').addEventListener('click',function(){sfx('tap');toTitle();});
   $('btnHint').addEventListener('click',useHint);
   loadTokens();
   $('btnRose').addEventListener('click',roseReveal);
@@ -462,6 +517,19 @@ function init(){
     var k=e.key;
     if(/^[a-zA-Z]$/.test(k)){guess(k.toLowerCase());}
   });
+  var lbs=document.querySelectorAll('.lvl-btn');
+  for(i=0;i<lbs.length;i++){lbs[i].addEventListener('click',function(){lvl=this.getAttribute('data-l');try{localStorage.setItem('hg_level',lvl);}catch(e){}sfx('tap');paintLvl();});}
+  paintLvl();
+  if(LP){LP.button($('guRow'),'btn cat-btn');}
+  $('btnHow').addEventListener('click',function(){sfx('tap');startGame(cat,true);});
+  scene('title');
+  if(SDK){SDK.init({
+    pauseKeys:'esc',
+    onRestart:function(){startGame(cat);},
+    onExit:toTitle,
+    onTutorial:function(){startGame(cat,true);},
+    onHint:sdkHint
+  });}
 }
 init();
 })();

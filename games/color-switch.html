@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Color Switch</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(900px 600px at 50% -20%,#312e81,#0f0f23 60%,#07070f);display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none}
-.back{position:fixed;top:12px;left:14px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10}
+.back{position:fixed;top:6px;left:6px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:800;z-index:10;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
 .hud{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-size:32px;font-weight:900;z-index:5;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
 .hud.pop{animation:hudpop .28s cubic-bezier(.34,1.56,.64,1)}
 @keyframes hudpop{0%{transform:scale(1);text-shadow:0 2px 8px rgba(0,0,0,.5)}30%{transform:scale(1.42);text-shadow:0 0 22px rgba(167,139,250,.9)}100%{transform:scale(1);text-shadow:0 2px 8px rgba(0,0,0,.5)}}
@@ -43,6 +44,15 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 .best{color:#4ade80;font-weight:800}
 .nb{color:#facc15;font-size:14px;font-weight:900;letter-spacing:2px}
 .hidden{display:none}
+.sdk #muteBtn{right:62px}
+.hud small{display:block;font-size:12px;font-weight:800;letter-spacing:1px;opacity:.85}
+.codes{position:absolute;top:14px;right:14px;z-index:7;background:rgba(7,7,15,.74);color:#facc15;font-size:12px;font-weight:900;letter-spacing:2px;padding:5px 10px;border-radius:999px;pointer-events:none}
+#tut{background:rgba(7,7,15,.3);backdrop-filter:none;pointer-events:none;justify-content:flex-end;padding-bottom:40px;animation:none}
+#tut .card{background:rgba(7,7,15,.82);border-radius:16px;padding:12px 18px;max-width:350px}
+#tut .tap{font-size:40px;display:inline-block;animation:tapHint 1s ease-in-out infinite}
+#tut b{color:#facc15}
+@keyframes tapHint{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(8px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){#tut .tap{animation:none}body.kit-shake{animation:none!important}}
 </style>
 </head>
 <body>
@@ -50,7 +60,8 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 <button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <button class="mute hidden" id="pauseBtn" style="right:66px" aria-label="Pause">⏸</button>
 <div class="wrap">
-  <div class="hud" id="hud">0</div>
+  <div class="hud" id="hud"><span id="hudScore">0</span><small id="hudBest">BEST 0</small></div>
+  <div class="codes hidden" id="codesOn">CODES ON</div>
   <canvas id="cv" width="420" height="660"></canvas>
   <div class="ov" id="start">
     <h1>Color <span>Switch</span></h1>
@@ -72,6 +83,11 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
+  <div class="ov hidden" id="tut">
+    <div class="card"><span class="tap" aria-hidden="true">👆</span>
+    <div class="stat">Tap or press Space to <b>spin</b> the ball</div>
+    <div class="sub" id="tutMore">Each tap pushes the ball round the circle. When a ring closes in, be on the segment that matches your ball's colour. Your colour changes after every ring. 🌟 Gold rings pay +2.</div></div>
+  </div>
   <div class="ov hidden" id="pause">
     <h1>Paused</h1>
     <div class="sub">Tap or press P to resume</div>
@@ -82,6 +98,14 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=660,cx=W/2,cy=H/2+14,R=150;
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SDK=window.ArcadeSDK||null;if(SDK)document.documentElement.classList.add('sdk');
+function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function cheated(){return !!(SDK&&SDK.cheated);}
+let anyColor=false,slowRings=false,nineLives=false;
+const DPR=Math.min(window.devicePixelRatio||1,2);
+// Crisp on every screen: the backing store follows the CSS size times the pixel ratio.
+function fitCanvas(){const s=Math.min(1,innerWidth/W,innerHeight/H);cv.style.width=Math.round(W*s)+'px';cv.style.height=Math.round(H*s)+'px';cv.width=Math.round(W*s*DPR);cv.height=Math.round(H*s*DPR);ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);dirty=true;}
 function kitAt(px,py){const r=cv.getBoundingClientRect();return{x:r.left+px*r.width/W,y:r.top+py*r.height/H};}
 const colors=['#ef4444','#3b82f6','#22c55e','#facc15'];
 const otherColors=[[1,2,3],[0,2,3],[0,1,3],[0,1,2]];
@@ -91,6 +115,7 @@ const glowCache={};
 function glowSpr(hex){let s=glowCache[hex];if(!s){s=document.createElement('canvas');s.width=s.height=96;const g=s.getContext('2d');const r=g.createRadialGradient(48,48,4,48,48,48);r.addColorStop(0,rgba(hex,1));r.addColorStop(.4,rgba(hex,.8));r.addColorStop(1,rgba(hex,0));g.fillStyle=r;g.fillRect(0,0,96,96);glowCache[hex]=s;}return s;}
 function rd(k){const v=+localStorage.getItem(k);return Number.isFinite(v)&&v>0?v:0;}
 let state='ready',score=0,best=rd('colorBest'),t=0,shake=0,flash=0,bpop=0,dirty=true;
+fitCanvas();addEventListener('resize',fitCanvas);
 let a=-90,w=0,ballColor=0;
 let lives=1,heartGrace=0;const MAXL=3;
 let nearStreak=0,bestNear=+localStorage.getItem('csNear')||0,lifePass=+localStorage.getItem('csPass')||0;
@@ -109,7 +134,7 @@ if(!x2){if(texts.length>=MAXT)return;x2={};texts.push(x2);}
 x2.x=x;x2.y=y;x2.txt=txt;x2.c=c||'#fff';x2.life=1;}
 function fxAlive(arr){for(let i=0;i<arr.length;i++)if(arr[i].life>0)return true;return false;}
 let muted=localStorage.getItem('gamesMuted')==='1';
-document.getElementById('hud').textContent='0';
+document.getElementById('hudBest').textContent='BEST '+best;
 let AC;
 function initAudio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}}
 function tone(f,d,type,v){if(!AC)return;const t0=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);g.gain.setValueAtTime(v||.18,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d);}
@@ -133,18 +158,20 @@ showStats();
 function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rainbow?'CHAOS':'Classic');document.getElementById('startRB').textContent=bestRB;}
 document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();rainbow=!rainbow;updRb();});
 updRb();
-function showPauseBtn(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
-function startGame(){showPauseBtn(true);runs++;localStorage.setItem('csRuns',runs);score=0;goldRun=0;lives=2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;document.getElementById('hud').textContent='0';sfx('whoosh');layer(200,.25,'sine',.05,700);}
+let showPauseBtn=function(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
+function startGame(){state='play';showPauseBtn(true);runs++;if(!cheated())localStorage.setItem('csRuns',runs);score=0;goldRun=0;lives=nineLives?9:2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;setHud();sfx('whoosh');layer(200,.25,'sine',.05,700);scene('play');}
+function setHud(pop){document.getElementById('hudScore').textContent=score;document.getElementById('hudBest').textContent='BEST '+(cheated()?best:Math.max(best,score));if(!pop||RM)return;const hud=document.getElementById('hud');hud.classList.remove('pop');void hud.offsetWidth;hud.classList.add('pop');}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
 if(lives>1){lives--;heartGrace=1.6;sfx('hit');layer(300,.2,'sawtooth',.06,80);layer(150,.3,'square',.04,60,.08);const ba2=a*Math.PI/180;burst(cx+R*Math.cos(ba2),cy+R*Math.sin(ba2),18,'#f87171');shake=Math.max(shake,8);ftext(cx,cy-30,'💔','#f87171');return;}
 state='over';showPauseBtn(false);snd('die');shake=12;flash=1;
 for(let i=0;i<26;i++){const an=a/180*Math.PI+Math.random()*.8-.4;spawnPart(cx+R*Math.cos(an),cy+R*Math.sin(an),Math.cos(an)*(80+Math.random()*220),Math.sin(an)*(80+Math.random()*220)-80,colors[ballColor]);}
-const nb=score>best,prevBest=best;if(nb){best=score;localStorage.setItem('colorBest',best);}
-if(rainbow&&score>bestRB){bestRB=score;localStorage.setItem('colorBestRB',bestRB);}
-if(goldRun>goldBest){goldBest=goldRun;localStorage.setItem('csGold',goldBest);}
+const clean=!cheated(),nb=score>best&&clean,prevBest=best;if(nb){best=score;localStorage.setItem('colorBest',best);}
+if(clean&&rainbow&&score>bestRB){bestRB=score;localStorage.setItem('colorBestRB',bestRB);}
+if(clean&&goldRun>goldBest){goldBest=goldRun;localStorage.setItem('csGold',goldBest);}
+scene('over',{score:score});
 document.getElementById('finScore').textContent=score;document.getElementById('finBest').textContent=best;
-document.getElementById('finClose').textContent=bestNear;localStorage.setItem('csPass',lifePass);
+document.getElementById('finClose').textContent=bestNear;if(clean)localStorage.setItem('csPass',lifePass);
 document.getElementById('finPasses').textContent=lifePass;
 document.getElementById('finRB').textContent=bestRB;
 document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
@@ -154,6 +181,7 @@ else if(score>=40)Kit.win('🌈 CHROMA MASTER!',score+' rings · gold x'+goldRun
 else if(score>=20)Kit.win('SOLID RUN!',score+' rings · '+(40-score)+' to Chroma Master · Best '+best);
 else Kit.lose(score>0&&prevBest>0&&score>=prevBest-2?'SO CLOSE!':'GAME OVER','Score '+score+' · Best '+best);},450);}
 function update(dt){
+ if(RM){shake=0;flash=0;}
  t+=dt;if(shake>0)shake-=dt*30;if(flash>0)flash-=dt*2.5;if(bpop>0)bpop-=dt*4.5;if(heartGrace>0)heartGrace-=dt;
 for(let i=0;i<particles.length;i++){const p=particles[i];if(p.life<=0)continue;p.life-=dt*1.6;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=600*dt;}
 for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;x.life-=dt*1.1;x.y-=42*dt;}
@@ -164,23 +192,23 @@ a=(a+w*dt)%360;if(a<0)a+=360;
 trail[trailI]=a;trailI=(trailI+1)%TRAILN;if(trailN<TRAILN)trailN++;
  spawnT-=dt;
 if(spawnT<=0){spawnT=Math.max(.85,1.45-score*.018);rings.push({r:R+110,rot:Math.random()*360,rs:(30+Math.random()*45)*(1+Math.min(score,60)*.008),crossed:false,gold:Math.random()<Math.min(.2,.1+score*.002)});}
-const shrink=60+Math.min(score*1.2,28)+Math.min(Math.max(0,score-25)*.5,16);
+const shrink=(60+Math.min(score*1.2,28)+Math.min(Math.max(0,score-25)*.5,16))*(slowRings?.6:1);
 let wI=0;
 for(let i=0;i<rings.length;i++){
 const rg=rings[i];const prev=rg.r;rg.r-=shrink*dt;rg.rot=(rg.rot+rg.rs*dt)%360;
 if(!rg.crossed&&prev>=R&&rg.r<R){
 rg.crossed=true;
 const seg=((a-rg.rot)%360+360)%360;const idx=Math.floor(seg/90)%4;
-if(idx===ballColor){score++;lifePass++;snd('score');bpop=1;const hud=document.getElementById('hud');hud.textContent=score;hud.classList.remove('pop');void hud.offsetWidth;hud.classList.add('pop');
+if(idx===ballColor||anyColor){score++;lifePass++;snd('score');bpop=1;setHud(true);
 const ba=a*Math.PI/180;burst(cx+R*Math.cos(ba),cy+R*Math.sin(ba),14,colors[idx]);
 {const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kp=kitAt(cx+R*Math.cos(ba),cy+R*Math.sin(ba));Kit.hit(kp.x,kp.y,1);}}
 const db=Math.min(seg%90,90-seg%90);
 if(db<12){ftext(cx+R*Math.cos(ba),cy+R*Math.sin(ba)-26,'Close!','#fbbf24');snd('near');}
-if(db<12){nearStreak++;if(nearStreak>bestNear){bestNear=nearStreak;localStorage.setItem('csNear',bestNear);}if(nearStreak%3===0){ftext(cx,cy-120,'🔥 BULLSEYE x'+nearStreak,'#fbbf24');sfx('levelup');[1047,1320,1760].forEach(function(f,i){layer(f,.08,'sine',.04,f*1.2,i*.04);});}}else nearStreak=0;
+if(db<12){nearStreak++;if(nearStreak>bestNear&&!cheated()){bestNear=nearStreak;localStorage.setItem('csNear',bestNear);}if(nearStreak%3===0){ftext(cx,cy-120,'🔥 BULLSEYE x'+nearStreak,'#fbbf24');sfx('levelup');[1047,1320,1760].forEach(function(f,i){layer(f,.08,'sine',.04,f*1.2,i*.04);});}}else nearStreak=0;
 if((score===10||score===25||score===40)&&lives<MAXL){lives++;ftext(cx,cy-110,'+1 ❤','#f87171');sfx('levelup');[660,880,1100].forEach(function(f,i){layer(f,.12,'triangle',.045,f*1.2,i*.06);});}
 if(score%5===0){ftext(cx,cy-60,'COMBO x'+score,'#4ade80');snd('mile');shake=Math.max(shake,5);}
 ballColor=otherColors[ballColor][(Math.random()*3)|0];
-if(rg.gold){goldRun++;score+=2;const hg=document.getElementById('hud');hg.textContent=score;hg.classList.remove('pop');void hg.offsetWidth;hg.classList.add('pop');ftext(cx,cy-140,'🌟 GOLD +2','#fde047');sfx('coin');layer(1320,.07,'sine',.05);layer(1760,.07,'sine',.05,0,.07);layer(2640,.1,'sine',.04,0,.14);burst(cx,cy,10,'#fde047');{const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kg=kitAt(cx,cy);Kit.hit(kg.x,kg.y,2);}}}}
+if(rg.gold){goldRun++;score+=2;setHud(true);ftext(cx,cy-140,'🌟 GOLD +2','#fde047');sfx('coin');layer(1320,.07,'sine',.05);layer(1760,.07,'sine',.05,0,.07);layer(2640,.1,'sine',.04,0,.14);burst(cx,cy,10,'#fde047');{const kn=performance.now(),kl=document.getElementById('kitLayer');if(kn-kitLast>90&&(!kl||kl.children.length<90)){kitLast=kn;const kg=kitAt(cx,cy);Kit.hit(kg.x,kg.y,2);}}}}
 else die();
 }
 if(rg.r>=8)rings[wI++]=rg;
@@ -205,7 +233,7 @@ ctx.beginPath();ctx.arc(cx,cy,rg.r,s0,s1);ctx.stroke();
 if(rg.gold){ctx.strokeStyle='rgba(253,224,71,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,rg.r+9,0,7);ctx.stroke();}
 }
 ctx.save();ctx.translate(cx,cy);
-const br=(state==='ready'?1+Math.sin(t*3)*.06:1);ctx.scale(br,br);
+const br=(state==='ready'||state==='wait'?1+Math.sin(t*3)*.06:1);ctx.scale(br,br);
 ctx.fillStyle=colors[ballColor];
 ctx.beginPath();ctx.arc(0,0,12,0,7);ctx.fill();
 ctx.fillStyle='rgba(255,255,255,.9)';
@@ -223,7 +251,7 @@ ctx.font='900 20px system-ui,sans-serif';ctx.textAlign='center';
 for(let i=0;i<texts.length;i++){const x=texts[i];if(x.life<=0)continue;ctx.globalAlpha=Math.max(x.life,0);ctx.fillStyle=x.c;ctx.fillText(x.txt,x.x,x.y);}
 ctx.globalAlpha=1;ctx.textAlign='left';
 }
-function active(){return state==='ready'||state==='play'||shake>0||flash>0||fxAlive(particles)||fxAlive(texts);}
+function active(){return state==='ready'||state==='wait'||state==='play'||shake>0||flash>0||fxAlive(particles)||fxAlive(texts);}
 let last=performance.now();
 function loop(now){
 requestAnimationFrame(loop);
@@ -237,22 +265,59 @@ draw();ctx.restore();
 }
 requestAnimationFrame(loop);
 function setPaused(on){if(on&&state==='play'){state='paused';showPauseBtn(false);document.getElementById('pause').classList.remove('hidden');}else if(!on&&state==='paused'){state='play';showPauseBtn(true);document.getElementById('pause').classList.add('hidden');last=performance.now();}}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
-document.getElementById('pause').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(false);});
-document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(true);});
+const $=id=>document.getElementById(id);
+// With the arcade SDK loaded, its pause button and menu are the one pause (P, Esc, a hidden tab too).
+if(SDK){$('pauseBtn').remove();showPauseBtn=function(){};}
+else{document.addEventListener('visibilitychange',()=>{if(document.hidden)setPaused(true);});
+$('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(true);});}
+$('pause').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();setPaused(false);});
+let tutSeen=false;try{tutSeen=localStorage.getItem('csTut')==='1';}catch(e){}
+function resetScene(){rings=[];score=0;a=-90;w=0;ballColor=0;trailN=0;trailI=0;flash=0;shake=0;bpop=0;lives=nineLives?9:2;for(const p of particles)p.life=0;for(const x of texts)x.life=0;setHud();}
+// Get ready: the ball waits at the top of the circle until the first tap starts the run.
+function getReady(full){state='wait';['start','over','pause'].forEach(id=>$(id).classList.add('hidden'));resetScene();
+$('tutMore').classList.toggle('hidden',!full&&tutSeen);$('tut').classList.remove('hidden');}
+function go(){$('tut').classList.add('hidden');if(!tutSeen){tutSeen=true;try{localStorage.setItem('csTut','1');}catch(e){}}startGame();w=520;}
+function toTitle(){state='ready';['over','pause','tut'].forEach(id=>$(id).classList.add('hidden'));resetScene();showStats();$('start').classList.remove('hidden');scene('title');}
+function spin(){w=Math.min(w+520,780);bpop=1;snd('tap');}
 window.addEventListener('keydown',e=>{
+if(SDK&&SDK.paused)return;
 if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();initAudio();
-if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();w=520;}
-else if(state==='play'){w=Math.min(w+520,780);bpop=1;snd('tap');}
-else if(state==='paused')setPaused(false);}
-if(e.key==='p'||e.key==='Escape'){if(state==='play')setPaused(true);else if(state==='paused')setPaused(false);}});
+if(state==='ready')getReady(false);
+else if(state==='wait')go();
+else if(state==='play')spin();
+else if(state==='paused')setPaused(false);
+else if(state==='over'&&!$('over').classList.contains('hidden'))getReady(false);}
+if(e.key==='p'||e.key==='Escape'){if(SDK){if(!e.repeat)SDK.pause();return;}if(state==='play')setPaused(true);else if(state==='paused')setPaused(false);}});
 window.addEventListener('pointerdown',e=>{
-if(e.target.closest('.ov'))return;initAudio();
-if(state==='ready'){document.getElementById('start').classList.add('hidden');startGame();w=520;}
-else if(state==='play'){w=Math.min(w+520,780);bpop=1;snd('tap');}
+if(e.target.closest('.ov:not(#tut)')||e.target.closest('button,a,#arcade-sdk'))return;if(SDK&&SDK.paused)return;initAudio();
+if(state==='ready')getReady(false);
+else if(state==='wait')go();
+else if(state==='play')spin();
 });
-document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();document.getElementById('start').classList.add('hidden');startGame();});
-document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();Kit.click();initAudio();document.getElementById('over').classList.add('hidden');startGame();});
+// Buttons answer the pointer at once and the keyboard (Enter) through click.
+function press(el,fn){el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();initAudio();fn();});el.addEventListener('click',e=>{if(e.detail===0){initAudio();fn();}});}
+press($('playBtn'),()=>getReady(false));
+press($('againBtn'),()=>getReady(false));
+$('rbBtn').addEventListener('click',e=>{if(e.detail===0){rainbow=!rainbow;updRb();}});
+// Codes: just for fun; a run with a code on never replaces the saved best.
+const CODES={ANYCOLOR:'Any colour: every segment lets the ball through',SLOWRINGS:'Slow rings: rings close in 40% slower',NINELIVES:'Nine lives: runs start with 9 hearts'};
+function code(c){if(!CODES[c])return{ok:false};$('codesOn').classList.remove('hidden');
+if(c==='ANYCOLOR')anyColor=true;if(c==='SLOWRINGS')slowRings=true;if(c==='NINELIVES'){nineLives=true;lives=9;}return{ok:true,message:CODES[c]};}
+const NAMES=['red','blue','green','yellow'];
+function hint(){if(state==='wait')return 'Tap to start. Each tap pushes the ball round the circle; it slows down on its own.';if(state!=='play')return 'Press Play, then tap to spin the ball round the circle.';
+if(rainbow)return 'Chaos mode: your colour flickers, so watch the ball and match it just as the ring arrives.';
+const rg=rings.filter(r=>!r.crossed&&r.r>=R).sort((x,y)=>x.r-y.r)[0];if(!rg)return 'You need '+NAMES[ballColor]+'. A ring is on its way.';
+const mid=((rg.rot+ballColor*90+41)%360+360)%360,d=((mid-a)%360+360)%360;
+return 'You need '+NAMES[ballColor]+'. '+(d<35||d>325?'It is right under the ball now: let it glide.':d<150?'It is less than half a turn ahead: one tap.':'It is well round the circle: tap twice, quickly.');}
+if(SDK)SDK.init({
+pauseButton:'tr',
+onRestart:()=>getReady(false),
+onExit:toTitle,
+onTutorial:()=>getReady(true),
+onHint:hint,
+onCheat:code,
+});
+scene('title');
 </script>
 </body>
 </html>

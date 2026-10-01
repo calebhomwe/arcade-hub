@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Snake</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:radial-gradient(1000px 700px at 50% -10%,#166534,#0f0f23 55%,#07070f);display:flex;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
-.back{position:fixed;top:12px;left:14px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40}
-#muteBtn{position:fixed;top:10px;right:12px;z-index:40;background:linear-gradient(180deg,#273449,#1e293b);border:none;border-bottom:3px solid #0b1220;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.5)}
+.back{position:fixed;top:6px;left:6px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
+#muteBtn{position:fixed;top:6px;right:60px;z-index:40;background:linear-gradient(180deg,#273449,#1e293b);border:none;border-bottom:3px solid #0b1220;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.5)}
 #pauseBtn{position:fixed;top:64px;right:12px;z-index:40;background:linear-gradient(180deg,#273449,#1e293b);border:none;border-bottom:3px solid #0b1220;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.5)}
 #stage{flex:1;display:flex;flex-direction:column;width:100%;min-height:0}
 .top{text-align:center;padding:38px 10px 4px}
@@ -58,6 +59,10 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#166534,#0f0f23 55%,#07
 #count.show{opacity:1;animation:countpop .62s ease}
 @keyframes countpop{0%{scale:1.7;opacity:0}30%{opacity:1}100%{scale:1;opacity:1}}
 @media (max-height:430px){.ov{gap:8px;padding:10px}.ov h1{font-size:26px}.ov p{font-size:13px;line-height:1.35}.op{width:46px;height:46px;font-size:20px;border-radius:12px}.diff button{min-height:40px;padding:0 16px;font-size:14px}.btn{min-height:44px;padding:10px 36px;font-size:18px}.top{padding-top:30px}#dpad{grid-template-columns:repeat(3,42px);grid-auto-rows:42px;gap:6px}}
+.diff button small{display:block;font-size:12px;font-weight:700;opacity:.8}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.gu-row button{min-height:44px;padding:0 18px;border-radius:14px;border:2px solid #334155;background:#1e293b;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){#game.shake,#problem.pg,#problem.pr{animation:none!important}.hud span.jpop,#count.show,.popup,#msg.show{animation-duration:.01s!important}.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -89,6 +94,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#166534,#0f0f23 55%,#07
   <div class="diff" id="diff"></div>
   <div id="prog" style="font-size:14px;color:#cbd5e1"><b id="progLv">Lv 1</b> · <span id="progTitle">🎓 Rookie</span><div style="width:min(70vw,300px);height:8px;background:#1e293b;border-radius:999px;overflow:hidden;margin:6px auto 2px"><div id="xpfill" style="height:100%;width:0%;background:linear-gradient(90deg,#a78bfa,#38bdf8);border-radius:999px"></div></div><div id="progNext" style="font-size:12px;color:#94a3b8"></div></div>
   <button class="btn" id="playBtn">▶ Start</button>
+  <div class="gu-row" id="guRow"><button id="howBtn" type="button">❓ Learn to play</button></div>
 </div>
 <div class="ov hidden" id="over">
   <h1>💀 Game Over</h1>
@@ -107,9 +113,15 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#166534,#0f0f23 55%,#07
   <button data-dir="down" aria-label="Down">▼</button>
   <button data-dir="right" aria-label="Right">▶</button>
 </div>
+<script src="kit/playkit.js"></script>
 <script>
 
 const DIFF={easy:{add:[1,9],sub:[2,9],mul:[2,5],div:[2,5],tick:180,foodTtl:14},medium:{add:[4,20],sub:[4,20],mul:[3,9],div:[3,9],tick:140,foodTtl:12},hard:{add:[10,50],sub:[10,50],mul:[6,12],div:[6,12],tick:100,foodTtl:10},insane:{add:[25,120],sub:[25,120],mul:[9,19],div:[9,15],tick:75,foodTtl:8},max:{add:[50,400],sub:[50,400],mul:[12,25],div:[12,19],tick:55,foodTtl:7}};
+const SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm);
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+let coach=null,countTok=0,wantTeach=false,problemText='';function did(n){if(coach)coach.did(n);}function coachOn(){return !!(coach&&coach.active);}
+const AGES={easy:'ages 5–6',medium:'ages 7–8',hard:'ages 9–10',insane:'ages 11–12',max:'ages 13+'};
+const LP=window.PlayKit?PlayKit.progress({key:'mathSnakeReport',title:'Math Snake',bands:{easy:'Easy (ages 5–6)',medium:'Medium (ages 7–8)',hard:'Hard (ages 9–10)',insane:'Insane (ages 11–12)',max:'Max (ages 13+)'},unit:'answers',theme:{panel:'#0b2415',fg:'#e2e8f0',accent:'#4ade80'}}):null;
 function saveLS(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}
 function readLS(k,d){try{var v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}}
 const PROGKEY='mathSnakeProg';
@@ -121,7 +133,7 @@ function xpNeed(lv){return 80+(lv-1)*40;}
 function titleFor(lv){return lv>=12?'🌟 Mythic':lv>=10?'👑 Grandmaster':lv>=8?'💎 Master':lv>=6?'🥇 Elite':lv>=4?'🥈 Adept':lv>=2?'🥉 Cadet':'🎓 Rookie';}
 function progLv(){return PROG.level;}
 const COLS=16,ROWS=19,FOOD_COUNT=4;
-let difficulty='easy',state='ready',score=0,best=+readLS('mathSnakeBest','0')||0,lives=3,currentAns=0,streak=0;
+let difficulty='easy',state='ready',score=0,best=+readLS('mathSnakeBest','0')||0,lives=3,currentAns=0,streak=0,wrongPicks=0,hintActive=false;
 let selected={'+':true,'-':true,'×':true,'÷':true};
 const goldPool=[],goldens=[];let bonus=0,goldCd=8,sprGold=null;
 let chest=null,chestCd=15,sprChest=null;
@@ -143,7 +155,7 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;SFXP[n]=a}catch(e){}});
 const TONEF={tap:440,pop:660,coin:880,hit:220,boom:110,jump:520,whoosh:300,win:700,lose:180,buzz:140,levelup:760,tick:980};
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a){tone(TONEF[n]||440,.12,'sine',.12);return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function flashColor(col,o){flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
+function flashColor(col,o){if(RM)return;flash.style.background=col;flash.style.opacity=String(o);setTimeout(()=>{flash.style.opacity='0';},100);}
 function jpop(el){if(!el)return;el.classList.remove('jpop');void el.offsetWidth;el.classList.add('jpop');}
 function shakeCanvas(){canvas.classList.remove('shake');void canvas.offsetWidth;canvas.classList.add('shake');}
 function pulseProblem(ok){const cls=ok?'pg':'pr';problemEl.classList.remove('pg','pr');void problemEl.offsetWidth;problemEl.classList.add(cls);}
@@ -181,7 +193,7 @@ function getFood(x,y,value,correct){let f=foodPool.pop();if(!f)f={x:0,y:0,value:
 function getGold(x,y){let g=goldPool.pop();if(!g)g={x:0,y:0};g.x=x;g.y=y;return g;}
 function placeFoods(){
   const p=genProblem(),opts=genOptions(p.ans,FOOD_COUNT);
-  currentAns=p.ans;problemEl.textContent=p.text+' = ?';
+  currentAns=p.ans;problemText=p.text;problemEl.textContent=p.text+' = ?';wrongPicks=0;hintActive=false;
   while(foods.length){foodPool.push(foods.pop());}
   for(let i=0;i<FOOD_COUNT;i++){const c=emptyCell();foods.push(getFood(c.x,c.y,opts[i],opts[i]===p.ans));}
 }
@@ -285,6 +297,11 @@ function draw(){
   if(boardSprite)ctx.drawImage(boardSprite,0,0,W,H);
   for(const f of foods){
     const cx=ox+f.x*cell+cell/2,cy=oy+f.y*cell+cell/2,r=cell*0.42*(1+0.06*Math.sin(elapsed*4+f.x+f.y)),k=r/0.8;
+    if(hintActive&&f.correct){
+      const hr=r+3+Math.sin(elapsed*6)*2;
+      ctx.save();ctx.strokeStyle='#facc15';ctx.lineWidth=3;ctx.shadowColor='#facc15';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.arc(cx,cy,hr,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
     ctx.drawImage(sprFood,cx-k,cy-k,k*2,k*2);
     ctx.fillStyle='#0f172a';ctx.font='900 '+Math.round(r*1.1)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(f.value,cx,cy+1);
@@ -376,6 +393,7 @@ function tick(){
   const fi=foods.findIndex(f=>f.x===head.x&&f.y===head.y);
   if(fi>=0){
     const f=foods[fi];
+    if(LP)LP.record(difficulty,f.value===currentAns,problemText);
     if(f.value===currentAns){
         streak++;
         const pts=10*Math.min(streak,5);
@@ -398,6 +416,7 @@ function tick(){
       const c=emptyCell();foods.push(getFood(c.x,c.y,f.value,false));
       foodPool.push(f);
       pulseProblem(false);
+      wrongPicks++;if(wrongPicks>=2)hintActive=true;
       loseLife();
     }
   }else{
@@ -414,13 +433,14 @@ function gameOver(){
   trophyName=trophyOf(foodsEaten);
   document.getElementById('finTrophy').textContent=trophyName||'🎖 Rookie';
   document.getElementById('finEaten').textContent=foodsEaten;
-  setTimeout(()=>document.getElementById('over').classList.remove('hidden'),500);
+  scene('over',{score:score});
+  setTimeout(()=>{if(state==='over')document.getElementById('over').classList.remove('hidden');},500);
 }
 function loadProg(){try{const d=JSON.parse(localStorage.getItem(PROGKEY));if(d&&typeof d==='object'){PROG.level=Math.max(1,Math.floor(+d.level)||1);PROG.xp=Math.max(0,Math.floor(+d.xp)||0);}}catch(e){}}
 function saveProg(){saveLS(PROGKEY,JSON.stringify(PROG));}
 function nextUnlockTxt(){for(const t of TIERS){if(UNLOCK[t[0]]>PROG.level)return 'Next unlock: '+t[1]+' at Lv '+UNLOCK[t[0]];}return 'All tiers unlocked!';}
 function renderProg(){document.getElementById('progLv').textContent='Lv '+PROG.level;document.getElementById('progTitle').textContent=titleFor(PROG.level);document.getElementById('xpfill').style.width=Math.min(100,PROG.xp/xpNeed(PROG.level)*100)+'%';document.getElementById('progNext').textContent=nextUnlockTxt();}
-function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];});}
+function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];const sm=document.createElement('small');sm.textContent=AGES[TIERS[i][0]];b.appendChild(sm);});}
 function gainXP(n){PROG.xp+=n;while(PROG.xp>=xpNeed(PROG.level)){PROG.xp-=xpNeed(PROG.level);PROG.level++;popup('LEVEL UP! Lv '+PROG.level,ox+COLS*cell/2+canvasRect.left,oy+ROWS*cell/2+canvasRect.top,'#a78bfa');sfx('levelup');}saveProg();renderProg();refreshDiffLocks();}
 function enterPause(){state='pause';document.getElementById('pause').classList.remove('hidden');}
 function curTick(){
@@ -432,7 +452,8 @@ function loop(ts){
   requestAnimationFrame(loop);
   if(prevTs>0)elapsed+=Math.min(0.1,(ts-prevTs)/1000);
   prevTs=ts;
-  if(state==='play'){
+  if(state==='play'&&coachOn()){lastTs=ts;}
+  else if(state==='play'){
     const dt=Math.min(0.1,(ts-lastTs)/1000);lastTs=ts;
     acc+=dt*1000;
     let step=curTick();
@@ -455,26 +476,43 @@ function loop(ts){
   draw();
 }
 function startGame(){
-  if(state==='countdown')return;
+  if(coach){coach.stop(true);coach=null;}
   bonus=0;goldCd=8;goldens.length=0;goldPool.length=0;bonusEl.textContent=0;frenzy=0;frenzyT=0;updateFrenzyUI();
   chest=null;chestCd=15;
   score=0;lives=3;streak=0;acc=0;lastTs=0;resetSnake();placeFoods();updateHUD();
   document.getElementById('start').classList.add('hidden');
   document.getElementById('over').classList.add('hidden');
-  state='countdown';showCount(3);
+  document.getElementById('pause').classList.add('hidden');
+  state='countdown';countTok++;showCount(3,countTok);
+  if(LP)LP.session();
+  scene('play');
 }
-function showCount(n){
-  if(document.hidden){setTimeout(()=>showCount(n),300);return;}
+function toTitle(){countTok++;if(coach){coach.stop(true);coach=null;}state='ready';document.getElementById('count').classList.remove('show');['over','pause'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('start').classList.remove('hidden');renderProg();refreshDiffLocks();scene('title');}
+function teach(){
+  if(!window.PlayKit)return;
+  coach=PlayKit.coach({key:'ms_tut',theme:{panel:'#0b2415',fg:'#e2e8f0',accent:'#4ade80'},steps:[
+    {text:'Work out the sum at the top of the screen.',target:'#problem'},
+    {text:'Steer the snake: swipe, use the arrow buttons or the arrow keys. Try a turn now. The snake waits while these tips are up.',target:'#game',on:'steer',place:'top'},
+    {text:'Eat the number with the answer. A wrong number or a wall costs a heart. Miss twice and the right number glows.',target:'#game',place:'top'}
+  ]});
+}
+function sdkHint(){
+  if(state!=='play'&&state!=='countdown')return 'Pick the kinds of sums and a level, then press Start. Steer the snake onto the answer.';
+  return ((window.PlayKit&&PlayKit.mathHint(problemText))||'Work out '+problemText+'.')+' Then steer to that number.';
+}
+function showCount(n,tok){
+  if(tok!==countTok)return;
+  if(document.hidden){setTimeout(()=>showCount(n,tok),300);return;}
   const c=document.getElementById('count');
-  if(n>0){c.textContent=n;c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('tick');setTimeout(()=>showCount(n-1),620);}
-  else{c.textContent='GO!';c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('coin');setTimeout(()=>{c.classList.remove('show');state='play';lastTs=performance.now();},560);}
+  if(n>0){c.textContent=n;c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('tick');setTimeout(()=>showCount(n-1,tok),620);}
+  else{c.textContent='GO!';c.classList.remove('show');void c.offsetWidth;c.classList.add('show');sfx('coin');setTimeout(()=>{if(tok!==countTok)return;c.classList.remove('show');state='play';lastTs=performance.now();if(wantTeach||!(window.PlayKit&&PlayKit.seen('ms_tut'))){wantTeach=false;teach();}},560);}
 }
 function steer(nx,ny){
   if(state!=='play')return;
   if(nx===-dir.x&&ny===-dir.y)return;
   if(nx===dir.x&&ny===dir.y)return;
   nextDir={x:nx,y:ny};
-  sfx('tap');
+  sfx('tap');did('steer');
 }
 let sx=0,sy=0;
 canvas.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;initAudio();});
@@ -506,11 +544,23 @@ const opsBox=document.getElementById('ops');
 const diffBox=document.getElementById('diff');
 TIERS.forEach(d=>{const b=document.createElement('button');b.textContent=d[1];if(d[0]===difficulty)b.classList.add('on');b.addEventListener('pointerdown',e=>{e.stopPropagation();if(progLv()<UNLOCK[d[0]])return;difficulty=d[0];[...diffBox.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');});diffBox.appendChild(b);});
 window.addEventListener('resize',resize);
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){enterPause();}});
+if(!SDK)document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){enterPause();}});
 document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.stopPropagation();if(state==='play')enterPause();});
+// The arcade SDK's pause button and menu replace the game's own when it is loaded.
+if(SDK)document.getElementById('pauseBtn').remove();
 document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('pause').classList.add('hidden');state='play';lastTs=performance.now();});
 loadProg();renderProg();refreshDiffLocks();
 buildSprites();resize();resetSnake();placeFoods();updateHUD();requestAnimationFrame(loop);
+if(LP)LP.button(document.getElementById('guRow'));
+document.getElementById('howBtn').addEventListener('click',()=>{initAudio();wantTeach=true;startGame();});
+scene('title');
+if(SDK)SDK.init({
+  pauseButton:'tr',
+  onRestart:()=>{wantTeach=false;startGame();},
+  onExit:toTitle,
+  onTutorial:()=>{wantTeach=true;startGame();},
+  onHint:sdkHint
+});
 </script>
 </body>
 </html>

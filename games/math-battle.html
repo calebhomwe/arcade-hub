@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Math Battle</title>
 <style>
@@ -20,8 +21,8 @@ body{background:radial-gradient(900px 620px at 50% -10%,rgba(194,65,12,.55),rgba
 .ember:nth-child(6){left:80%;width:6px;height:6px;background:#fb923c;animation-duration:10.5s,2.3s;animation-delay:-6s,-.4s}
 .ember:nth-child(7){left:92%;width:4px;height:4px;background:#facc15;animation-duration:8.5s,1.7s;animation-delay:-4s,-1.3s}
 .vig{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 92% at 50% 42%,rgba(0,0,0,0) 52%,rgba(0,0,0,.5) 100%)}
-.back{position:fixed;top:12px;left:14px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40}
-#muteBtn{position:fixed;top:10px;right:12px;z-index:40;background:#1e293b;border:none;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.back{position:fixed;top:6px;left:6px;color:#cbd5e1;text-decoration:none;font-size:15px;font-weight:800;z-index:40;display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:10px}
+#muteBtn{position:fixed;top:6px;right:60px;z-index:40;background:#1e293b;border:none;color:#fff;font-size:20px;width:48px;height:48px;border-radius:14px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 #wrap{width:100%;max-width:520px;flex:1;display:flex;flex-direction:column;padding:40px 12px 12px;gap:10px;min-height:0;overflow:hidden auto}
 h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;text-align:center;background:linear-gradient(90deg,#fb923c,#facc15,#4ade80);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 8px rgba(251,146,60,.45)) drop-shadow(0 0 20px rgba(250,204,21,.3))}
 .bar-wrap{background:#1e293b;border-radius:14px;padding:10px 12px;position:relative}
@@ -83,6 +84,11 @@ h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;tex
 .buy:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(74,222,128,.2)}
 .buy:disabled{background:#334155;border-bottom-color:#1e293b;color:#94a3b8;cursor:not-allowed;box-shadow:none;transform:none}
 @media (max-height:430px){#wrap{padding-top:30px;gap:6px}h1.title{font-size:16px}.bar-wrap{padding:6px 10px}#memoji{font-size:40px}#mname{font-size:14px;margin:0 0 4px}#question{font-size:26px}#combo{min-height:16px;font-size:14px}.ans{min-height:44px;font-size:20px}#shopBtn{min-height:40px;padding:8px 26px;font-size:15px}.ov{gap:8px;padding:10px}.ov h1{font-size:26px}.ov p{font-size:13px;line-height:1.35}.btn{min-height:44px;padding:10px 36px;font-size:18px}}
+#trophyBtn,#medalBtn{min-height:44px}
+.diff button small{display:block;font-size:12px;font-weight:700;opacity:.8}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.gu-row button{min-height:44px;padding:0 18px;border-radius:14px;border:2px solid #334155;background:#1e293b;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.shake,.hitflash,.spawn,.squash,.ember,.float{animation:none!important}#shopBtn:active,#trophyBtn:active,#medalBtn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -128,6 +134,7 @@ h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;tex
   <div class="best" id="startBest"></div>
   <div class="diff" id="diff"></div>
   <button class="btn" id="playBtn">▶ Start Adventure</button>
+  <div class="gu-row" id="guRow"><button id="howBtn" type="button">❓ Learn to play</button></div>
 </div>
 <div class="ov hidden" id="shop">
   <h1>🛒 Shop</h1>
@@ -145,9 +152,15 @@ h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;tex
   <button class="btn" id="restartBtn" style="background:#1e293b;color:#facc15;font-size:17px;padding:12px 36px;box-shadow:none">🔄 New Run</button>
 </div>
 <div class="ov hidden" id="pause"><h1>⏸ Paused</h1><button class="btn" id="resumeBtn">▶ Resume</button></div>
+<script src="kit/playkit.js"></script>
 <script>
 
 const DIFF={easy:{add:[1,9],sub:[2,9],mul:[2,5],div:[2,5],gap:9},medium:{add:[4,20],sub:[4,20],mul:[3,9],div:[3,9],gap:7},hard:{add:[10,50],sub:[10,50],mul:[6,12],div:[6,12],gap:6},insane:{add:[25,120],sub:[25,120],mul:[9,19],div:[9,15],gap:4.5},max:{add:[50,400],sub:[50,400],mul:[12,25],div:[12,19],gap:3.5}};
+const SDK=window.ArcadeSDK||null,RM=!!(window.PlayKit&&PlayKit.rm);
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+let coach=null,problemText='';function did(n){if(coach)coach.did(n);}function coachOn(){return !!(coach&&coach.active);}
+const AGES={easy:'ages 5–6',medium:'ages 7–8',hard:'ages 9–10',insane:'ages 11–12',max:'ages 13+'};
+const LP=window.PlayKit?PlayKit.progress({key:'mathBattleReport',title:'Math Battle',bands:{easy:'Easy (ages 5–6)',medium:'Medium (ages 7–8)',hard:'Hard (ages 9–10)',insane:'Insane (ages 11–12)',max:'Max (ages 13+)'},unit:'answers',theme:{panel:'#141b2d',fg:'#e2e8f0',accent:'#facc15'}}):null;
 function saveLS(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}
 const TIERS=[['easy','EASY'],['medium','MEDIUM'],['hard','HARD'],['insane','INSANE'],['max','MAX MAX']];
 const UNLOCK={easy:1,medium:1,hard:3,insane:6,max:10};
@@ -220,9 +233,9 @@ function tone(f,d,type,v){if(!AC||muted)return;const t0=AC.currentTime,o=AC.crea
 const SFXP={};['tap','pop','coin','hit','boom','jump','whoosh','win','lose','buzz','levelup','tick'].forEach(function(n){try{var a=new Audio('assets/sfx/'+n+'.wav');a.preload='auto';a.volume=0.5;a.addEventListener('error',function(){delete SFXP[n];});SFXP[n]=a}catch(e){}});
 const TONEF={tap:440,pop:660,coin:880,hit:220,boom:110,jump:520,whoosh:300,win:700,lose:180,buzz:140,levelup:760,tick:980};
 function sfx(n){if(muted)return;var a=SFXP[n];if(!a){tone(TONEF[n]||440,.12,'sine',.12);return;}try{a.currentTime=0;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
-function confetti(n){var cols=['#facc15','#fb923c','#4ade80','#a78bfa','#38bdf8'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function confetti(n){if(RM)return;var cols=['#facc15','#fb923c','#4ade80','#a78bfa','#38bdf8'],i;for(i=0;i<n;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 var jflashEl=null;
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jflash(col){if(RM)return;if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.3';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function attack(){return 5+P.sword*2+(P.level-1)*2;}
@@ -253,7 +266,7 @@ const EL={};
 ['php','pmax','phpbar','phpghost','xpbar','lvl','gold','memoji','mname','mhp','mmax','mhpbar','mhpghost','kills','combo','question','pstage','mstage','startBest','finKills','finLvl','finGold','finBest','reviveBtn','swordCost','shieldCost','potionCost','swordLv','shieldLv','buySword','buyShield','buyPotion','start','over','shop','muteBtn'].forEach(id=>{EL[id]=document.getElementById(id);});
 function newQuestion(){
   const p=genProblem(),opts=genOptions(p.ans,4);
-  currentAns=p.ans;EL.question.textContent=p.text+' = ?';
+  currentAns=p.ans;problemText=p.text;EL.question.textContent=p.text+' = ?';
   for(let i=0;i<4;i++){ansBtns[i].textContent=opts[i];ansBtns[i].classList.remove('good','bad');}
   qStart=Date.now();
 }
@@ -269,7 +282,7 @@ function floatText(txt,el,color,crit){
   d.style.animation='none';void d.offsetWidth;d.style.animation='';
   setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d);floatPool.push(d);},800);
 }
-function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+function shake(el){if(RM)return;el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
 function flashMonster(){EL.memoji.classList.remove('hitflash');void EL.memoji.offsetWidth;EL.memoji.classList.add('hitflash');}
 function renderAll(){
   EL.php.textContent=Math.max(0,P.hp);EL.pmax.textContent=maxHP();
@@ -387,11 +400,13 @@ function onDeath(){
   EL.finLvl.textContent=P.level;
   EL.finGold.textContent=P.gold;
   EL.finBest.textContent=bestKills;
-  setTimeout(()=>EL.over.classList.remove('hidden'),500);
+  scene('over',{score:kills});
+  setTimeout(()=>{if(state==='over')EL.over.classList.remove('hidden');},500);
 }
 function answer(v){
   if(state!=='play'||lock)return;
   lock=true;
+  if(LP)LP.record(difficulty,v===currentAns,problemText);did('answer');
   for(let i=0;i<4;i++){if(+ansBtns[i].textContent===currentAns)ansBtns[i].classList.add('good');}
   if(v===currentAns){onCorrect();}
   else{
@@ -421,7 +436,26 @@ function startGame(){
   EL.start.classList.add('hidden');
   EL.over.classList.add('hidden');
   EL.shop.classList.add('hidden');
+  document.getElementById('pause').classList.add('hidden');
+  ['trophy','medal'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   spawnMonster();renderAll();newQuestion();
+  if(LP)LP.session();
+  scene('play');
+  if(coach){coach.stop(true);coach=null;}
+  if(window.PlayKit&&(wantTeach||!PlayKit.seen('mbt_tut'))){
+    wantTeach=false;
+    coach=PlayKit.coach({key:'mbt_tut',theme:{panel:'#141b2d',fg:'#e2e8f0',accent:'#facc15'},steps:[
+      {text:'Solve the sum to attack the monster.',target:'#question'},
+      {text:'Tap the right answer (or press 1 to 4). A wrong answer lets the monster hit you. The monster waits while these tips are up.',target:'#answers',on:'answer'},
+      {text:'The monster also attacks every few seconds, so keep answering. Spend gold in the Shop on a sword, a shield or a potion.',target:'#shopBtn'}
+    ]});
+  }
+}
+let wantTeach=false;
+function toTitle(){if(coach){coach.stop(true);coach=null;}state='ready';lock=false;['over','shop','pause','trophy','medal'].forEach(id=>document.getElementById(id).classList.add('hidden'));EL.start.classList.remove('hidden');EL.startBest.textContent=bestKills?('🏆 Best: '+bestKills+' kills'):'';renderProg();scene('title');}
+function sdkHint(){
+  if(state!=='play'&&state!=='shop')return 'Pick a level and press Start Adventure. Answer sums to attack the monster.';
+  return ((window.PlayKit&&PlayKit.mathHint(problemText))||'Work out '+problemText+'.')+' Then tap that answer to attack.';
 }
 function buy(item){
   if(state!=='shop')return;
@@ -478,7 +512,7 @@ window.addEventListener('keydown',e=>{
 });
 const diffBox=document.getElementById('diff');
 TIERS.forEach(d=>{const b=document.createElement('button');b.textContent=d[1];if(d[0]===difficulty)b.classList.add('on');b.addEventListener('pointerdown',e=>{e.stopPropagation();if(progLv()<UNLOCK[d[0]])return;difficulty=d[0];[...diffBox.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');});diffBox.appendChild(b);});
-function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];});}
+function refreshDiffLocks(){[...diffBox.children].forEach((b,i)=>{b.textContent=(progLv()<UNLOCK[TIERS[i][0]]?'🔒 ':'')+TIERS[i][1];const sm=document.createElement('small');sm.textContent=AGES[TIERS[i][0]];b.appendChild(sm);});}
 function renderProg(){document.getElementById('startTitle').textContent='Lv '+P.level+' · '+titleFor(P.level);refreshDiffLocks();}
 load();loadMedAll();renderAll();newQuestion();
 EL.startBest.textContent=bestKills?('🏆 Best: '+bestKills+' kills'):'';
@@ -486,9 +520,19 @@ let mgot=0;for(let i=0;i<MEDALS.length;i++){if(medAll.got[MEDALS[i][0]])mgot++;}
 if(mgot>0)EL.startBest.textContent+=' · 🎖 '+mgot+' medals';
 if(sharp>0)EL.startBest.textContent+=' · 🎯 Sharp runs: '+sharp;
 renderProg();
-setInterval(()=>{if(state==='play'||state==='shop'){monT-=.25;if(monT<=0){monsterHit();monT=DIFF[difficulty].gap;}}},250);
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';document.getElementById('pause').classList.remove('hidden');}});
+setInterval(()=>{if((state==='play'||state==='shop')&&!coachOn()){monT-=.25;if(monT<=0){monsterHit();monT=DIFF[difficulty].gap;}}},250);
+if(!SDK)document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';document.getElementById('pause').classList.remove('hidden');}});
 document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPropagation();document.getElementById('pause').classList.add('hidden');state='play';});
+if(LP)LP.button(document.getElementById('guRow'));
+document.getElementById('howBtn').addEventListener('click',()=>{initAudio();wantTeach=true;startGame();});
+scene('title');
+if(SDK)SDK.init({
+  pauseButton:'tr',
+  onRestart:()=>resetRun(),
+  onExit:toTitle,
+  onTutorial:()=>{wantTeach=true;startGame();},
+  onHint:sdkHint
+});
 </script>
 </body>
 </html>

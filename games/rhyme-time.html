@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#070a14">
 <title>Rhyme Time</title>
@@ -10,8 +11,8 @@
 html,body{height:100%}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#070a14;color:#e9edff;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(1100px 700px at 50% -10%,#15305e 0%,transparent 60%),radial-gradient(800px 600px at 105% 110%,#4a1663 0%,transparent 55%),#070a14}
-.hub{position:fixed;top:10px;left:10px;z-index:50;color:#7dd3fc;text-decoration:none;font-weight:700;font-size:16px;background:rgba(13,20,40,.85);border:1px solid rgba(125,211,252,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(34,211,238,.25)}
-.mute{position:fixed;top:10px;right:10px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(125,211,252,.35);background:rgba(13,20,40,.85);color:#fff;cursor:pointer}
+.hub{position:fixed;top:10px;left:10px;z-index:50;display:inline-flex;align-items:center;min-height:44px;color:#7dd3fc;text-decoration:none;font-weight:700;font-size:16px;background:rgba(13,20,40,.85);border:1px solid rgba(125,211,252,.35);padding:8px 14px;border-radius:12px;box-shadow:0 0 12px rgba(34,211,238,.25)}
+.mute{position:fixed;top:10px;right:60px;z-index:50;width:44px;height:44px;font-size:22px;border-radius:12px;border:1px solid rgba(125,211,252,.35);background:rgba(13,20,40,.85);color:#fff;cursor:pointer}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;overflow-y:auto;overflow-x:hidden}
 .screen.s-active{display:flex}
 .logo{font-size:64px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(232,121,249,.6));animation:bob 2.2s ease-in-out infinite}
@@ -28,7 +29,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .track-name{font-size:13px;color:#67e8f9;margin-top:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .track-name.err{color:#fb7185}
 .bpm-row{display:flex;align-items:center;gap:12px;justify-content:center;font-size:15px;font-weight:800;color:#9fb3d9}
-.bpm-row input[type=range]{width:180px;accent-color:#e879f9}
+.bpm-row input[type=range]{width:180px;height:40px;accent-color:#e879f9}
 .bpm-val{color:#e879f9;min-width:64px;text-align:left}
 .best-box{font-size:16px;color:#9fb3d9;background:rgba(20,30,60,.7);border:1px solid #2a3a66;padding:10px 22px;border-radius:14px;margin-bottom:14px}
 .best-box b{color:#fbbf24}
@@ -58,7 +59,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 #rhymeInput.shake{animation:shakeX .4s}
 #btnDrop{min-width:110px}
 @keyframes shakeX{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
-.last-line{min-height:22px;font-size:14px;font-weight:700;color:#9fb3d9;margin-bottom:4px}
+.last-line{min-height:40px;font-size:14px;font-weight:700;color:#9fb3d9;margin-bottom:4px;line-height:1.3}
 .last-line.bad{color:#fb7185}
 .last-line.good{color:#34d399}
 .ctrl-row{display:flex;gap:12px;margin:8px 0 20px}
@@ -73,6 +74,14 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
 .btn-ghost{background:transparent;border:2px solid #334;color:#9fb3d9;margin-top:12px}
 @media (min-width:700px){.title{font-size:56px}.seed{font-size:64px}}
 @media (max-height:430px){.logo{display:none}.title{font-size:26px;margin-bottom:4px}.sub{font-size:12px;margin-bottom:8px}.beat-box{padding:8px 12px;margin-bottom:8px}.best-box{padding:6px 14px;font-size:13px;margin-bottom:8px}.tip{font-size:11px;margin-bottom:8px}.btn{padding:9px 16px;font-size:15px;min-height:38px}.btn-big{font-size:18px;padding:10px 28px;min-height:44px}.btn-ghost{margin-top:6px}.score-big{font-size:40px;margin:2px 0}#s-game{padding-top:18px}.hud{margin:6px 0 4px;gap:6px}.hud-item{padding:4px 10px;font-size:13px;min-width:52px}.seed{font-size:34px;margin:2px 0 8px;min-height:40px}.in-row{margin:4px 0 8px}#rhymeInput{font-size:17px;padding:8px 8px}.ctrl-row{margin:4px 0 10px}}
+.lvl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.lvl-btn{font-size:15px;padding:10px 14px;min-height:44px;background:rgba(13,20,40,.85);border:1px solid rgba(125,211,252,.35);box-shadow:none}
+.lvl-btn.sel{background:linear-gradient(135deg,#0ea5e9,#a855f7);border-color:#e879f9}
+.lvl-btn small{display:block;font-size:12px;font-weight:700;opacity:.85}
+.gu-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.gu-row .btn{font-size:15px;padding:10px 18px;min-height:44px}
+@media (max-width:620px){#s-game{padding-top:62px}}
+@media (prefers-reduced-motion:reduce){.logo,.seed.pop,.shake,#rhymeInput.shake,.bar.flash,.beat-dot{animation:none!important}.float{animation-duration:.01s!important}.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -99,7 +108,13 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
     <input type="file" id="beatFile" accept="audio/*" style="display:none">
   </div>
   <div class="best-box">🏆 Best score: <b id="startBest">0</b> · 🔥 Best chain: <b id="startStreak">0</b> · 🎤 Deepest round: <b id="startRound">0</b></div>
+  <div class="lvl-row" id="lvlRow">
+    <button class="btn lvl-btn" data-l="S" type="button">Starter<small>short words · ages 6–7</small></button>
+    <button class="btn lvl-btn" data-l="C" type="button">Climb<small>gets harder · ages 8–9</small></button>
+    <button class="btn lvl-btn" data-l="P" type="button">Pro<small>long words · ages 10+</small></button>
+  </div>
   <button class="btn btn-big" id="btnStart">▶ START RAPPING</button>
+  <div class="gu-row" id="guRow" style="margin-top:12px"><button class="btn btn-ghost" id="btnHow" type="button">❓ Learn to play</button></div>
   <p class="tip">💡 Type any word that rhymes and hit DROP · ⏭ Skip saves your life but kills the chain · ❤️ 3 misses and the mic drops · 🔥 Chain multiplier up to +30 · 🚫 No repeats allowed</p>
 </div>
 
@@ -134,6 +149,7 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background
   <button class="btn btn-ghost" id="btnMenu">Change Beat</button>
 </div>
 
+<script src="kit/playkit.js"></script>
 <script>
 
 (function(){
@@ -308,6 +324,16 @@ var FAMS=[
 'radio studio',
 'river giver shiver deliver'
 ];
+var SDK=window.ArcadeSDK||null,RM=false,coach=null,runId=0;
+function scene(sc,extra){try{if(SDK)SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function did(n){if(coach){coach.did(n);}}
+function coachOn(){return !!(coach&&coach.active);}
+function later(f,ms){var r=runId;setTimeout(function(){if(r===runId){f();}},ms);}
+var lvl='C';try{lvl=localStorage.getItem('rt_level')||'C';}catch(e){}if('SCP'.indexOf(lvl)<0||lvl.length!==1){lvl='C';}
+var BANDS={E:'Short words like CAT and SUN',M:'Medium words like CLOUD and HOUSE',H:'Long words like BUBBLE and ROCKET'};
+var LP=null;
+function seedBand(w){return HARD.indexOf(w)!==-1?'H':MID.indexOf(w)!==-1?'M':'E';}
+function rec(ok){if(LP){LP.record(seedBand(seed),ok,seed);}}
 var FAMIDX={};
 (function(){var i,j,w;for(i=0;i<FAMS.length;i++){var f=FAMS[i].split(' ');for(j=0;j<f.length;j++){w=f[j];if(FAMIDX[w]===undefined){FAMIDX[w]=i;}}}})();
 var VOWELS='aeiouy';
@@ -377,19 +403,25 @@ if(!/[bcdfghjklmnpqrstvwxz]/.test(ka)){return false;}
 return ka===kb;
 }
 function sampleRhyme(w){var fi=FAMIDX[w];if(fi===undefined){return null;}var f=FAMS[fi].split(' '),i,c;for(i=0;i<f.length;i++){c=f[i];if(c!==w){return c;}}return null;}
-function confetti(n){var cols=['#e879f9','#a78bfa','#22d3ee','#34d399','#fbbf24'],i,m=Math.min(n,24);for(i=0;i<m;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
+function confetti(n){if(RM){return;}var cols=['#e879f9','#a78bfa','#22d3ee','#34d399','#fbbf24'],i,m=Math.min(n,24);for(i=0;i<m;i++){(function(){var c=document.createElement('div');c.className='confetti';c.style.left=(Math.random()*100)+'%';c.style.background=cols[(Math.random()*cols.length)|0];c.style.animationDuration=(0.9+Math.random()*0.9)+'s';c.style.animationDelay=(Math.random()*0.3)+'s';document.body.appendChild(c);setTimeout(function(){if(c.parentNode){c.parentNode.removeChild(c);}},2400);})();}}
 function floatText(txt){var f=document.createElement('div');f.className='float';f.textContent=txt;f.style.left=(42+Math.random()*16)+'%';document.body.appendChild(f);setTimeout(function(){if(f.parentNode){f.parentNode.removeChild(f);}},1100);}
-function jflash(col){if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
+function jflash(col){if(RM){return;}if(!jflashEl){jflashEl=document.createElement('div');jflashEl.className='jflash';document.body.appendChild(jflashEl);}jflashEl.style.background=col;jflashEl.style.transition='none';jflashEl.style.opacity='.32';void jflashEl.offsetWidth;jflashEl.style.transition='';jflashEl.style.opacity='0';}
 function updateHud(){elScore.textContent=score;elStreak.textContent=streak>0?streak+' (+'+(Math.min(streak,10)*3)+')':'0';var h='',i;for(i=0;i<3;i++){h+=i<lives?'♥':'♡';}elLives.textContent=h;elBest.textContent=best;}
 function updateBar(){var pct=Math.max(0,(timeLeft/timeTotal)*100);elBar.style.width=pct+'%';if(pct<30){elBar.classList.add('low');}else{elBar.classList.remove('low');}}
 function setLast(txt,cls){elLast.textContent=txt||'\u00a0';elLast.className='last-line'+(cls?' '+cls:'');}
-function pool(){if(round<5){return EASY;}if(round<12){return EASY.concat(MID);}return MID.concat(HARD);}
+function pool(){if(lvl==='S'){return EASY;}if(lvl==='P'){return MID.concat(HARD);}if(round<5){return EASY;}if(round<12){return EASY.concat(MID);}return MID.concat(HARD);}
 function pickSeed(){var p=pool(),w,g=0;do{w=p[(Math.random()*p.length)|0];g++;}while((w===seed||used[w])&&g<40);return w;}
 function nextRound(){
 round++;
 seed=pickSeed();
+var fi=FAMIDX[seed];
+if(fi!==undefined){
+  var fam=FAMS[fi].split(' '),hasAnswer=false,k;
+  for(k=0;k<fam.length;k++){if(fam[k]!==seed&&!used[fam[k]]){hasAnswer=true;break;}}
+  if(!hasAnswer){for(k=0;k<fam.length;k++){if(fam[k]!==seed){delete used[fam[k]];}}}
+}
 used[seed]=1;
-timeTotal=Math.max(8,14-round*0.3);
+timeTotal=lvl==='S'?Math.max(12,18-round*0.2):Math.max(8,14-round*0.3);
 timeLeft=timeTotal;
 busy=false;
 elSeed.textContent=seed.toUpperCase();
@@ -413,7 +445,7 @@ if(!isRhyme(seed,w)){miss(w);return;}
 hit(w);
 }
 function hit(w){
-busy=true;
+busy=true;rec(true);did('submit');
 used[w]=1;
 elInput.value='';
 var speed=Math.max(0,Math.round((timeLeft/timeTotal)*10));
@@ -430,10 +462,10 @@ floatText('+'+gain);
 setLast(w.toUpperCase()+' ✔ RHYMES WITH '+seed.toUpperCase(),'good');
 if(streak>=3&&streak%3===0){sfx('levelup');setTimeout(function(){floatText('🔥 CHAIN '+streak+'!');},260);}
 updateHud();
-setTimeout(nextRound,820);
+later(nextRound,820);
 }
 function miss(w){
-busy=true;
+busy=true;rec(false);did('submit');
 elInput.value='';
 lives--;streak=0;
 sfx('buzz');
@@ -441,18 +473,18 @@ jflash('#fb7185');
 updateHud();
 var ex=sampleRhyme(seed);
 setLast(w.toUpperCase()+' ✘ no rhyme'+(ex?' — e.g. '+ex.toUpperCase():''),'bad');
-if(lives<=0){setTimeout(gameOver,950);return;}
-setTimeout(nextRound,1050);
+if(lives<=0){later(gameOver,950);return;}
+later(nextRound,1050);
 }
 function timeOut(){
-busy=true;lives--;streak=0;
+busy=true;lives--;streak=0;rec(false);
 sfx('buzz');
 elBar.classList.add('flash');
 var ex=sampleRhyme(seed);
 setLast('⏰ TOO SLOW'+(ex?' — e.g. '+ex.toUpperCase():''),'bad');
 updateHud();
-if(lives<=0){setTimeout(gameOver,950);return;}
-setTimeout(function(){elBar.classList.remove('flash');nextRound();},1150);
+if(lives<=0){later(gameOver,950);return;}
+later(function(){elBar.classList.remove('flash');nextRound();},1150);
 }
 function skipWord(){
 if(!playing||busy||paused){return;}
@@ -469,7 +501,7 @@ rafId=requestAnimationFrame(loop);
 if(paused){lastT=t;return;}
 var dt=(t-lastT)/1000;lastT=t;
 if(dt>0.25){dt=0.25;}
-if(!busy){
+if(!busy&&!coachOn()){
 var ps=Math.floor(timeLeft);
 timeLeft-=dt;
 var ns=Math.floor(timeLeft);
@@ -479,7 +511,9 @@ updateBar();
 }
 beatPulse();
 }
-function startGame(){
+function stopRun(){runId++;playing=false;if(rafId){cancelAnimationFrame(rafId);rafId=null;}if(schedId){clearInterval(schedId);schedId=null;}stopBeat();if(coach){coach.stop(true);coach=null;}}
+function startGame(teach){
+stopRun();
 score=0;streak=0;lives=3;round=0;used={};
 loadBest();
 show('s-game');
@@ -493,6 +527,15 @@ nextRound();
 lastT=performance.now();
 if(rafId){cancelAnimationFrame(rafId);}
 rafId=requestAnimationFrame(loop);
+if(LP){LP.session();}
+scene('play');
+if(window.PlayKit&&(teach===true||!PlayKit.seen('rt_tut'))){
+coach=PlayKit.coach({key:'rt_tut',theme:{panel:'#0d1428',fg:'#e9edff',accent:'#e879f9'},steps:[
+{text:'Read the word. A rhyme ends with the same sound: CAT rhymes with HAT and BAT.',target:'#seed'},
+{text:'Type a word that rhymes and tap DROP (or press Enter).',target:'.in-row',on:'submit'},
+{text:'Beat the time bar at the top. ⏭ Pass skips a word but breaks your chain. The bar waits while these tips are up.',target:'.ctrl-row'}
+]});
+}
 }
 function gameOver(){
 playing=false;
@@ -510,6 +553,7 @@ else if(round<=2){msg='Listen to the beat, then let the rhymes flow.';}
 else{msg='Solid flow. Push for a longer chain next time!';}
 $('overMsg').textContent=msg;
 show('s-over');
+scene('over',{score:score});
 }
 function setMode(m){
 mode=m;
@@ -544,7 +588,7 @@ $('startStreak').textContent=bestStreak;
 $('startRound').textContent=bestRound;
 $('btnStart').addEventListener('click',function(){sfx('coin');startGame();});
 $('btnAgain').addEventListener('click',function(){sfx('coin');startGame();});
-$('btnMenu').addEventListener('click',function(){sfx('tap');show('s-start');});
+$('btnMenu').addEventListener('click',function(){sfx('tap');toTitle();});
 $('btnDrop').addEventListener('click',function(){sfx('tap');submitRhyme();});
 $('btnSkip').addEventListener('click',skipWord);
 $('btnBuiltin').addEventListener('click',function(){setMode('builtin');sfx('tap');});
@@ -559,6 +603,30 @@ if(!playing){return;}
 if(document.hidden){paused=true;if(trackEl){try{trackEl.pause();}catch(e){}}}
 else{paused=false;lastT=performance.now();if(mode==='builtin'&&AC){nextBeatTime=AC.currentTime+0.05;beatAnchor=nextBeatTime;beatIdx=0;}if(trackEl){try{var p=trackEl.play();if(p&&p.catch){p.catch(function(){});}}catch(e){}}}
 });
+paintLvl();
+var lbs=document.querySelectorAll('.lvl-btn'),q;
+for(q=0;q<lbs.length;q++){lbs[q].addEventListener('click',function(){lvl=this.getAttribute('data-l');try{localStorage.setItem('rt_level',lvl);}catch(e){}sfx('tap');paintLvl();});}
+if(window.PlayKit){RM=PlayKit.rm;LP=PlayKit.progress({key:'rt_progress',title:'Rhyme Time',bands:BANDS,unit:'rhymes tried',theme:{panel:'#0d1428',fg:'#e9edff',accent:'#e879f9'}});LP.button($('guRow'),'btn btn-ghost');}
+$('btnHow').addEventListener('click',function(){sfx('tap');startGame(true);});
+scene('title');
+if(SDK){SDK.init({
+onRestart:function(){startGame();},
+onExit:toTitle,
+onTutorial:function(){startGame(true);},
+onHint:sdkHint
+});}
+}
+function paintLvl(){var bs=document.querySelectorAll('.lvl-btn'),i;for(i=0;i<bs.length;i++){bs[i].classList.toggle('sel',bs[i].getAttribute('data-l')===lvl);}}
+function toTitle(){stopRun();loadBest();$('startBest').textContent=best;$('startStreak').textContent=bestStreak;$('startRound').textContent=bestRound;show('s-start');scene('title');}
+function sdkHint(){
+if(!playing||!seed){return 'Pick a level and start. When a word appears, type a word that ends with the same sound.';}
+var fi=FAMIDX[seed],cands=[],k;
+if(fi!==undefined){var fam=FAMS[fi].split(' ');for(k=0;k<fam.length;k++){if(fam[k]!==seed&&!used[fam[k]]){cands.push(fam[k]);}}}
+if(!cands.length){return 'Say '+seed.toUpperCase()+' out loud and swap its first sound for another one.';}
+var c=cands[(Math.random()*cands.length)|0],n=0;
+while(n<c.length&&n<seed.length&&c.charAt(c.length-1-n)===seed.charAt(seed.length-1-n)){n++;}
+var tail=n>=2?seed.slice(seed.length-n).toUpperCase():'';
+return (tail?'Rhymes for '+seed.toUpperCase()+' often end in "'+tail+'". ':'Listen to the last sound of '+seed.toUpperCase()+'. ')+'Try a '+c.length+'-letter word that starts with "'+c.charAt(0).toUpperCase()+'".';
 }
 init();
 })();
