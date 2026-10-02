@@ -525,11 +525,11 @@
       '</div>' +
       '<div class="ik-sidebtns"><button class="ik-glassbtn" id="btnMute" type="button" aria-label="Sound on or off"></button></div>' +
       '<div class="ik-chips" id="chips"></div>' +
-      '<button class="ik-goal" id="quest" type="button"><span class="q"><b id="qT">Next goal</b><small id="qS"></small><div class="ik-bar good"><i id="qBar"></i></div></span><span class="rw" id="qR"></span></button>' +
+      '<button class="ik-goal" id="quest" type="button"><span class="q"><b id="qT">Next goal</b><small id="qS"></small><small class="q2" id="qM"></small><div class="ik-bar good"><i id="qBar"></i></div></span><span class="rw" id="qR"></span></button>' +
       '</section>' +
       '<main class="ik-panels" id="panels"></main>' +
       '<nav class="ik-tabs" id="tabs" role="tablist"></nav>';
-    ['wallet', 'cur', 'rate', 'premW', 'prem', 'btnMute', 'lvN', 'lvBar', 'lvT', 'sceneWrap', 'scene', 'chips', 'quest', 'qT', 'qS', 'qBar', 'qR', 'panels', 'tabs'].forEach(function (id) { E.el[id] = $(id); });
+    ['wallet', 'cur', 'rate', 'premW', 'prem', 'btnMute', 'lvN', 'lvBar', 'lvT', 'sceneWrap', 'scene', 'chips', 'quest', 'qT', 'qS', 'qM', 'qBar', 'qR', 'panels', 'tabs'].forEach(function (id) { E.el[id] = $(id); });
     E.el.pills = app.querySelector('.ik-pills');
     // tabs and panels
     c.tabs.forEach(function (t) {
@@ -553,6 +553,17 @@
     // events
     E.el.btnMute.addEventListener('click', function () { IK.muted = !IK.muted; IK.ls.set(c.muteKey, IK.muted ? '1' : '0'); E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted(22) : IK.ico.speaker(22); if (!IK.muted) IK.sfx('button'); });
     E.el.btnMute.innerHTML = IK.muted ? IK.ico.muted(22) : IK.ico.speaker(22);
+    // the hub link asks before it leaves, so a stray tap mid-play never throws away the session
+    var backBtn = $('btnBack');
+    if (backBtn) backBtn.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (E.backGuard) return; E.backGuard = true; setTimeout(function () { E.backGuard = false; }, 400);
+      E.save();
+      IK.sheet({ title: 'LEAVE THE GAME?', sub: 'Everything you built is saved on this device.', actions: [
+        { label: 'Keep playing', cls: 'go' },
+        { label: 'Leave to the arcade hub', cls: 'ghost', onClick: function () { setTimeout(function () { W.location.href = backBtn.getAttribute('href'); }, 30); } }
+      ] });
+    });
     E.el.quest.addEventListener('click', function () { IK.sfx('tap'); if (E.goalTab) E.switchTab(E.goalTab, true); if (E.goalAct) E.goalAct(); });
     E.el.premW.addEventListener('click', function () { E.switchTab('crown', true); });
     // title
@@ -601,9 +612,14 @@
     var E = this, S = E.S, c = E.cfg;
     $('btnPlay').textContent = S.alltime > 0 || S.xp > 0 ? 'Continue' : 'Play';
     var h1 = '<span class="ik-stat">Level <b>' + S.lvl + '</b></span>';
+    h1 += '<span class="ik-stat">Badges <b>' + E.achCount() + '/' + E.cfg.ach.length + '</b></span>';
     if (S.prem) h1 += '<span class="ik-stat">' + esc(c.prestige.plural) + ' <b>' + S.prem + '</b></span>';
     if (S.alltime) h1 += '<span class="ik-stat">All-time <b>' + fmt(S.alltime) + '</b></span>';
     var st = (S.daily && S.daily.streak) || 0; if (st > 1) h1 += '<span class="ik-stat">Streak <b>' + st + ' days</b></span>';
+    if (S.daily && S.daily.quests && S.daily.quests.length) {
+      var done = 0; S.daily.quests.forEach(function (q) { if (q.done) done++; });
+      h1 += '<span class="ik-stat">Goals today <b>' + done + '/' + S.daily.quests.length + '</b></span>';
+    }
     if (!h1) h1 = '<span class="ik-stat">' + esc(c.pitch || '') + '</span>';
     $('tStats').innerHTML = h1;
   };
@@ -845,6 +861,22 @@
     var w = Math.round(g.p * 100) + '%'; if (L.get('qB') !== w) { L.set('qB', w); q.qBar.style.width = w; }
     q.quest.classList.toggle('ready', !!g.ready);
     E.goalReady = !!g.ready;
+    E.updateMeta();
+  };
+
+  /* the always-on progress strip under the goal: today's goals, the streak and the badges,
+   * so the systems worth coming back for are on screen even before the tabs unlock */
+  P.updateMeta = function () {
+    var E = this, S = E.S, d = S.daily, txt = '';
+    if (d && d.quests && d.quests.length) {
+      var done = 0; d.quests.forEach(function (q) { if (q.done) done++; });
+      txt += 'Goals today ' + done + '/' + d.quests.length + ' · Streak ' + (d.streak || 0);
+      if (!E.tabOpen('goals')) txt += ' · Goals tab at level ' + E.tabLevel('goals');
+    }
+    txt += (txt ? ' · ' : '') + 'Badges ' + E.achCount() + '/' + E.cfg.ach.length;
+    if (E.hasTab('ups') && !E.tabOpen('ups')) txt += ' · Upgrades at level ' + E.tabLevel('ups');
+    if (S.chests > 0) txt += ' · ' + S.chests + ' treasure chest' + (S.chests > 1 ? 's' : '') + ' to open';
+    if (E.txt.get('qM') !== txt) { E.txt.set('qM', txt); E.el.qM.textContent = txt; }
   };
 
   P.updateHud = function () {

@@ -92,8 +92,10 @@
   };
   fx.resize = function () {
     if (!fx.cv) return;
+    var w = W.innerWidth, h = W.innerHeight;
+    if (w === fx.w && h === fx.h) return;                                 // scrollbar toggles fire resize with the same pixels: keep the backing store
     fx.dpr = Math.min(W.devicePixelRatio || 1, 2);
-    fx.w = W.innerWidth; fx.h = W.innerHeight;
+    fx.w = w; fx.h = h;
     fx.cv.width = Math.round(fx.w * fx.dpr); fx.cv.height = Math.round(fx.h * fx.dpr);
     fx.cv.style.width = fx.w + 'px'; fx.cv.style.height = fx.h + 'px';
     fx.cx.setTransform(fx.dpr, 0, 0, fx.dpr, 0, 0);

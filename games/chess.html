@@ -2838,6 +2838,39 @@ function pieceScaleFactor() {
   return (sqSize * 0.88) / king.h;
 }
 (function loadPieceImages() {
+  // Load without blocking the main thread: one piece of pixel work per macrotask, one
+  // coalesced redraw per batch (a burst of 12 onload handlers used to freeze the page).
+  let boxCache = {};
+  try { boxCache = JSON.parse(localStorage.getItem('chess_pbox_v1') || '{}') || {}; } catch (e) { boxCache = {}; }
+  const jobs = [];
+  let redrawQueued = false;
+  function queueRedraw() {
+    if (redrawQueued) return;
+    redrawQueued = true;
+    setTimeout(() => { redrawQueued = false; pieceSpriteCache = {}; draw(); }, 0);
+  }
+  function saveBoxes() { try { localStorage.setItem('chess_pbox_v1', JSON.stringify(boxCache)); } catch (e) {} }
+  function pump() {
+    const j = jobs.shift();
+    if (!j) { prewarm(0); return; }
+    try {
+      const ck = j.key + ':' + j.img.naturalWidth;
+      if (boxCache[ck] && boxCache[ck].w) PIECE_BOX[j.piece] = boxCache[ck];
+      else {
+        const box = alphaBox(j.img);
+        if (box) { PIECE_BOX[j.piece] = box; boxCache[ck] = box; saveBoxes(); }
+      }
+    } catch (e) {}
+    queueRedraw();
+    setTimeout(pump, 0);
+  }
+  function prewarm(i) {   // build each recoloured source once, off the play path
+    const all = [];
+    for (const p in PIECE_FILES) for (const colour of [0, 1]) all.push((colour << 3) | Number(p));
+    if (i >= all.length) return;
+    try { pieceSource(all[i]); } catch (e) {}
+    setTimeout(() => prewarm(i + 1), 0);
+  }
   for (const p in PIECE_FILES) {
     for (const colour of [0, 1]) {
       const piece = (colour << 3) | Number(p);
@@ -2846,10 +2879,8 @@ function pieceScaleFactor() {
       img.decoding = 'async';
       img.onload = () => {
         PIECE_IMG[piece] = img;
-        const box = alphaBox(img);
-        if (box) PIECE_BOX[piece] = box;
-        pieceSpriteCache = {};
-        draw();
+        jobs.push({ piece, img, key });
+        if (jobs.length === 1) setTimeout(pump, 0);
       };
       img.onerror = () => {};
       img.src = 'assets/pieces/' + key + '.png';

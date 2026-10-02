@@ -60,7 +60,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 <button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <button class="mute hidden" id="pauseBtn" style="right:66px" aria-label="Pause">⏸</button>
 <div class="wrap">
-  <div class="hud" id="hud"><span id="hudScore">0</span><small id="hudBest">BEST 0</small></div>
+  <div class="hud" id="hud"><span id="hudScore">0</span><small id="hudBest">BEST 0</small><small id="pkHud"></small></div>
   <div class="codes hidden" id="codesOn">CODES ON</div>
   <canvas id="cv" width="420" height="660"></canvas>
   <div class="ov" id="start">
@@ -80,6 +80,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Bullseye Best: <b class="best" id="finClose">0</b></div>
     <div class="stat">🌈 Chaos Best: <b class="best" id="finRB">0</b></div>
     <div class="stat" style="font-size:14px;color:#94a3b8">Lifetime rings: <b id="finPasses">0</b></div>
+  <div class="stat" style="color:#fde68a" id="pkEarn"></div>
     <div class="nb hidden" id="newBest">★ NEW BEST ★</div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
@@ -94,13 +95,14 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
   </div>
 </div>
 <script src="kit/juicekit.js"></script>
+<script src="kit/progkit.js"></script>
 <script>
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=660,cx=W/2,cy=H/2+14,R=150;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SDK=window.ArcadeSDK||null;if(SDK)document.documentElement.classList.add('sdk');
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function scene(sc,extra){try{if(window.__PROG){extra=extra||{};if(extra.level==null)extra.level=window.__PROG.lv();if(extra.stars==null)extra.stars=window.__PROG.stars();}SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
 function cheated(){return !!(SDK&&SDK.cheated);}
 let anyColor=false,slowRings=false,nineLives=false;
 const DPR=Math.min(window.devicePixelRatio||1,2);
@@ -148,6 +150,41 @@ else if(n==='near'){sfx('whoosh');layer(980,.18,'sine',.05,180);layer(1560,.06,'
 else if(n==='mile'){sfx('levelup');[523,659,784,1047].forEach(function(f,i){layer(f,.1,'triangle',.045,f*1.25,i*.05);});}
 else if(n==='die'){sfx('lose');layer(220,.4,'sawtooth',.07,70);layer(160,.5,'square',.045,55,.15);}}
 function ftext(x,y,txt,c){spawnText(x,y,txt,c);}
+/* ---- progression: Level/XP, coins, stars, daily challenge, ball skins, goals (P01) ---- */
+const PROG=ProgKit.create({
+key:'cs_prog_v1',accent:'#a78bfa',cheated:cheated,sfx:n=>snd(n==='levelup'?'mile':n==='coin'?'score':n==='win'?'mile':n==='buzz'?'die':'tap'),
+skins:[
+ {id:'classic',name:'Classic',cost:0,sw:['#ef4444','#3b82f6','#22c55e'],pal:['#ef4444','#3b82f6','#22c55e','#facc15']},
+ {id:'neon',name:'Neon',cost:30,sw:['#f0abfc','#22d3ee','#a3e635'],pal:['#f0abfc','#22d3ee','#a3e635','#fde047']},
+ {id:'pastel',name:'Pastel',cost:30,sw:['#fda4af','#93c5fd','#86efac'],pal:['#fda4af','#93c5fd','#86efac','#fde68a']},
+ {id:'ember',name:'Ember',cost:60,sw:['#fb923c','#ef4444','#fbbf24'],pal:['#fb923c','#ef4444','#fbbf24','#f87171']},
+ {id:'jewel',name:'Jewel',cost:90,sw:['#38bdf8','#a78bfa','#34d399'],pal:['#38bdf8','#a78bfa','#34d399','#fbbf24']},
+ {id:'gold',name:'Gold Rush',cost:0,req:{stat:'maxScore',v:25,text:'Score 25 in one run'},sw:['#facc15','#fde047','#eab308'],pal:['#facc15','#fde047','#eab308','#fef08a']},
+],
+goals:[
+ {id:'s10',txt:'Score 10 in one run',stat:'maxScore',kind:'max',target:10,rw:15},
+ {id:'s25',txt:'Score 25 in one run',stat:'maxScore',kind:'max',target:25,rw:30},
+ {id:'s50',txt:'Score 50 in one run',stat:'maxScore',kind:'max',target:50,rw:60},
+ {id:'b3',txt:'Hit a x3 bullseye streak',stat:'near',kind:'max',target:3,rw:20},
+ {id:'r10',txt:'Play 10 runs',stat:'runs',kind:'sum',target:10,rw:20},
+ {id:'g12',txt:'Catch 12 gold rings',stat:'gold',kind:'sum',target:12,rw:25},
+],
+dailies:[
+ {id:'d12',txt:'Score 12 in one run today',stat:'maxScore',kind:'max',target:12,rw:25},
+ {id:'d20',txt:'Score 20 in one run today',stat:'maxScore',kind:'max',target:20,rw:30},
+ {id:'dg4',txt:'Catch 4 gold rings today',stat:'gold',kind:'sum',target:4,rw:25},
+ {id:'dr5',txt:'Play 5 runs today',stat:'runs',kind:'sum',target:5,rw:20},
+],
+achievements:[
+ {id:'first',icon:'🎯',txt:'Finish your first run',test:d=>d.runs>=1},
+ {id:'s15',icon:'🌈',txt:'Score 15 in one run',test:d=>(d.stats.maxScore||0)>=15},
+ {id:'s30',icon:'💜',txt:'Score 30 in one run',test:d=>(d.stats.maxScore||0)>=30},
+ {id:'bull',icon:'🎯',txt:'x3 bullseye streak',test:d=>(d.stats.near||0)>=3},
+ {id:'skin1',icon:'🎨',txt:'Own a ball skin',test:d=>d.unlocked.length>=1},
+ {id:'s3',icon:'📅',txt:'Play 3 days in a row',test:d=>d.streak>=3},
+],
+onSkin:sk=>{if(sk.pal)colors.splice.apply(colors,[0,colors.length].concat(sk.pal));},
+});
 function burst(x,y,n,c){for(let i=0;i<n;i++){const an=Math.random()*Math.PI*2,sp=60+Math.random()*220;spawnPart(x,y,Math.cos(an)*sp,Math.sin(an)*sp,c);}}
 function refreshMute(){document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';}
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();initAudio();muted=!muted;try{localStorage.setItem('gamesMuted',muted?'1':'0')}catch(e){}refreshMute();});
@@ -159,7 +196,7 @@ function updRb(){document.getElementById('rbBtn').textContent='🌈 Mode: '+(rai
 document.getElementById('rbBtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();Kit.click();rainbow=!rainbow;updRb();});
 updRb();
 let showPauseBtn=function(on){document.getElementById('pauseBtn').classList[on?'remove':'add']('hidden');}
-function startGame(){state='play';showPauseBtn(true);runs++;if(!cheated())localStorage.setItem('csRuns',runs);score=0;goldRun=0;lives=nineLives?9:2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;setHud();sfx('whoosh');layer(200,.25,'sine',.05,700);scene('play');}
+function startGame(){state='play';showPauseBtn(true);PROG.beginRun();runs++;if(!cheated())localStorage.setItem('csRuns',runs);score=0;goldRun=0;lives=nineLives?9:2;heartGrace=0;a=-90;w=420;ballColor=0;rings=[];trailN=0;trailI=0;flash=0;bpop=0;rbT=.85;for(const p of particles)p.life=0;for(const x of texts)x.life=0;spawnT=1;setHud();sfx('whoosh');layer(200,.25,'sine',.05,700);scene('play');}
 function setHud(pop){document.getElementById('hudScore').textContent=score;document.getElementById('hudBest').textContent='BEST '+(cheated()?best:Math.max(best,score));if(!pop||RM)return;const hud=document.getElementById('hud');hud.classList.remove('pop');void hud.offsetWidth;hud.classList.add('pop');}
 function die(){if(state!=='play')return;
 if(heartGrace>0)return;
@@ -175,6 +212,9 @@ document.getElementById('finClose').textContent=bestNear;if(clean)localStorage.s
 document.getElementById('finPasses').textContent=lifePass;
 document.getElementById('finRB').textContent=bestRB;
 document.getElementById('newBest').classList[nb?'remove':'add']('hidden');
+if(clean){PROG.stat('maxScore',score);PROG.event('runs',1);
+const res=PROG.awardRun({coins:score+goldRun*2+(nb?10:0),xp:score*3+goldRun*4,best:score});
+document.getElementById('pkEarn').textContent='+'+res.coins+' 🪙 coins · +'+res.xp+' XP'+(res.levelUp?' · ⭐ LEVEL '+res.levelUp+'!':'');}
 setTimeout(()=>{document.getElementById('over').classList.remove('hidden');showStats();
 if(nb)Kit.win('NEW BEST!',score+' rings · prev '+prevBest+' · Bullseye '+bestNear);
 else if(score>=40)Kit.win('🌈 CHROMA MASTER!',score+' rings · gold x'+goldRun+' (best '+goldBest+') · Best '+best);
@@ -205,6 +245,8 @@ const ba=a*Math.PI/180;burst(cx+R*Math.cos(ba),cy+R*Math.sin(ba),14,colors[idx])
 const db=Math.min(seg%90,90-seg%90);
 if(db<12){ftext(cx+R*Math.cos(ba),cy+R*Math.sin(ba)-26,'Close!','#fbbf24');snd('near');}
 if(db<12){nearStreak++;if(nearStreak>bestNear&&!cheated()){bestNear=nearStreak;localStorage.setItem('csNear',bestNear);}if(nearStreak%3===0){ftext(cx,cy-120,'🔥 BULLSEYE x'+nearStreak,'#fbbf24');sfx('levelup');[1047,1320,1760].forEach(function(f,i){layer(f,.08,'sine',.04,f*1.2,i*.04);});}}else nearStreak=0;
+if(rg.gold){PROG.event('gold',1);}
+if(nearStreak>0){PROG.stat('near',nearStreak);}
 if((score===10||score===25||score===40)&&lives<MAXL){lives++;ftext(cx,cy-110,'+1 ❤','#f87171');sfx('levelup');[660,880,1100].forEach(function(f,i){layer(f,.12,'triangle',.045,f*1.2,i*.06);});}
 if(score%5===0){ftext(cx,cy-60,'COMBO x'+score,'#4ade80');snd('mile');shake=Math.max(shake,5);}
 ballColor=otherColors[ballColor][(Math.random()*3)|0];
@@ -317,6 +359,7 @@ onTutorial:()=>getReady(true),
 onHint:hint,
 onCheat:code,
 });
+PROG.mount(document.getElementById('start'));PROG.mountHud(document.getElementById('pkHud'));
 scene('title');
 </script>
 </body>

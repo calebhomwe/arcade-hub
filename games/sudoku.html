@@ -80,7 +80,7 @@ h1{font-size:18px}
 <a class="back" href="../index.html">← Hub</a>
 <button class="mute" id="muteBtn">🔊</button>
 <h1>Sudoku</h1>
-<div class="hud"><span>❌ <b id="errs">0</b></span><span>⏱ <b id="time">0:00</b></span><span id="diffTag">Easy</span></div>
+<div class="hud"><span>❌ <b id="errs">0</b></span><span>⏱ <b id="time">0:00</b></span><span id="diffTag">Easy</span><span>LV <b id="pkLv">1</b></span><span>🪙 <b id="pkCoins">0</b></span></div>
 <div id="grid"></div>
 <div id="pad"></div>
 <div class="tools">
@@ -117,6 +117,7 @@ h1{font-size:18px}
 <canvas id="fx"></canvas>
 <div class="toast hidden" id="toast" role="status"><span id="toastTxt"></span><button id="toastBtn">OK</button></div>
 <div class="codes hidden" id="codesOn">CODES ON</div>
+<script src="kit/progkit.js"></script>
 <script>
 
 const BASE=[
@@ -126,7 +127,7 @@ const BASE=[
 const CLUES={easy:42,medium:34,hard:28,daily:34};
 const SDK=window.ArcadeSDK||null;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function scene(sc,extra){try{if(window.__PROG){extra=extra||{};if(extra.level==null)extra.level=window.__PROG.lv();if(extra.stars==null)extra.stars=window.__PROG.stars();}SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
 function cheated(){return !!(SDK&&SDK.cheated);}
 // The daily puzzle is built from a seed, so everyone gets the same grid today.
 let RAND=Math.random;
@@ -199,6 +200,7 @@ function dayKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function ovOpen(){return !document.getElementById('start').classList.contains('hidden')||!document.getElementById('over').classList.contains('hidden');}
 function newGame(d){
 diff=d||diff;
+PROG.beginRun();
 document.getElementById('diffTag').textContent=diff[0].toUpperCase()+diff.slice(1);
 if(diff==='daily')RAND=seeded('sudoku-'+dayKey(new Date()));
 sol=gen().flat();
@@ -279,7 +281,7 @@ initAudio();
 if(notesMode){if(!user[sel]){snap();notes[sel]^=1<<(k-1);sfx('tap');render();}return;}
 if(user[sel]===k)return;
 snap();
-if(k===sol[sel]){sfx('pop');popIdx=sel;}
+if(k===sol[sel]){sfx('pop');popIdx=sel;PROG.addXp(2);PROG.addCoins(1);PROG.event('placed',1);paintPk();}
 else{errors++;document.getElementById('errs').textContent=errors;sfx('buzz');shake();jflash('#f87171');}
 if(k===sol[sel]){placementStreak++;if(placementStreak>maxStreak)maxStreak=placementStreak;if(placementStreak===10)sfx('levelup');}
 else{placementStreak=0;}
@@ -298,7 +300,7 @@ if(done||sel<0||given[sel]||ovOpen())return;
 initAudio();
 if(user[sel]===sol[sel]){sfx('tap');return;}
 sfx('whoosh');
-hints++;snap();
+hints++;snap();PROG.addXp(1);PROG.event('placed',1);paintPk();
 user[sel]=sol[sel];notes[sel]=0;
 for(const p of PEERS[sel])notes[p]&=~(1<<(sol[sel]-1));
 popIdx=sel;
@@ -310,6 +312,40 @@ let badges=[];
 const BADGE_KEYS={perfect:'🧼',blitz:'⚡',hardclear:'🏆',streak10:'🔥',purist:'🧠'};
 const SOLVE_TIERS=[[1,'Solver'],[5,'Grid Finisher'],[15,'Number Whisperer'],[30,'Sudoku Knight'],[60,'Sudoku Master'],[120,'Sudoku Sage'],[250,'Sudoku Empath']];
 function solveRankOf(n){let r=SOLVE_TIERS[0][1];for(const t of SOLVE_TIERS){if(n>=t[0])r=t[1];}return r;}
+/* ---- progression: Level/XP, coins, stars, daily challenge, grid themes, goals (P01) ---- */
+let pkStyle=null;
+const PROG=ProgKit.create({
+key:'sudo_prog_v1',accent:'#38bdf8',cheated:cheated,sfx:n=>sfx(n),
+skins:[
+ {id:'classic',name:'Classic Blue',cost:0,sw:['#16233c','#3b82f6','#facc15'],css:''},
+ {id:'mint',name:'Mint',cost:30,sw:['#12302a','#10b981','#7ddba8'],css:'#grid{background:#0c1f18;border-color:#2f5d4d}.c{background:#12302a;border-color:#2f5d4d;color:#d9f2e6}.c.given{color:#7ddba8}.c.sel{background:#10b981;color:#052e22;box-shadow:inset 0 0 0 2px #a7f3d0}.c.hl{background:#164b3c}.c.same{background:#1d5c49}#pad .nb{background:#12302a;color:#d9f2e6}#pad .nb.empty{color:#475569}'},
+ {id:'sakura',name:'Sakura',cost:30,sw:['#3a1f2e','#ec4899','#fda4af'],css:'#grid{background:#2a1520;border-color:#8a4a63}.c{background:#3a1f2e;border-color:#8a4a63;color:#ffe4ef}.c.given{color:#fda4af}.c.sel{background:#ec4899;color:#4a0d24;box-shadow:inset 0 0 0 2px #fbcfe8}.c.hl{background:#4c2739}.c.same{background:#5d3145}#pad .nb{background:#3a1f2e;color:#ffe4ef}#pad .nb.empty{color:#475569}'},
+ {id:'slate',name:'Slate',cost:60,sw:['#292524','#d6d3d1','#fbbf24'],css:'#grid{background:#1c1917;border-color:#57534e}.c{background:#292524;border-color:#57534e;color:#e7e5e4}.c.given{color:#fbbf24}.c.sel{background:#d6d3d1;color:#1c1917;box-shadow:inset 0 0 0 2px #fff}.c.hl{background:#3b3735}.c.same{background:#44403c}#pad .nb{background:#292524;color:#e7e5e4}'},
+ {id:'midnight',name:'Midnight',cost:0,req:{stat:'solved',v:10,text:'Solve 10 puzzles'},sw:['#0b1120','#facc15','#38bdf8'],css:'#grid{background:#020617;border-color:#1e3a8a}.c{background:#0b1120;border-color:#1e3a8a;color:#cbd5e1}.c.given{color:#fde047}.c.sel{background:#facc15;color:#020617;box-shadow:inset 0 0 0 2px #fef9c3}.c.hl{background:#12233f}.c.same{background:#1b2f55}#pad .nb{background:#0b1120;color:#cbd5e1}#pad .nb.empty{color:#475569}.tool{background:#0b1120;color:#cbd5e1}'},
+],
+goals:[
+ {id:'sv1',txt:'Solve your first puzzle',stat:'solved',kind:'sum',target:1,rw:20},
+ {id:'sv10',txt:'Solve 10 puzzles',stat:'solved',kind:'sum',target:10,rw:40},
+ {id:'p500',txt:'Place 500 correct numbers',stat:'placed',kind:'sum',target:500,rw:35},
+ {id:'cl1',txt:'Solve with no mistakes',stat:'clean',kind:'max',target:1,rw:25},
+ {id:'h5',txt:'Solve the Hard difficulty',stat:'hardwin',kind:'max',target:1,rw:50},
+],
+dailies:[
+ {id:'dp40',txt:'Place 40 correct numbers today',stat:'placed',kind:'sum',target:40,rw:25},
+ {id:'dp90',txt:'Place 90 correct numbers today',stat:'placed',kind:'sum',target:90,rw:30},
+ {id:'ds1',txt:'Solve one puzzle today',stat:'solvedDay',kind:'max',target:1,rw:30},
+ {id:'ds2',txt:'Solve two puzzles today',stat:'solvedDay',kind:'max',target:2,rw:40},
+],
+achievements:[
+ {id:'first',icon:'🧩',txt:'Solve your first puzzle',test:d=>(d.stats.solved||0)>=1},
+ {id:'sv25',icon:'🏅',txt:'Solve 25 puzzles',test:d=>(d.stats.solved||0)>=25},
+ {id:'cl10',icon:'🧠',txt:'10 no-mistake solves',test:d=>(d.stats.clean||0)>=10},
+ {id:'skin1',icon:'🎨',txt:'Own a grid theme',test:d=>d.unlocked.length>=1},
+ {id:'s3',icon:'📅',txt:'Play 3 days in a row',test:d=>d.streak>=3},
+],
+onSkin:sk=>{if(!pkStyle){pkStyle=document.createElement('style');document.head.appendChild(pkStyle);}pkStyle.textContent=sk.css||'';},
+});
+function paintPk(){const a=document.getElementById('pkLv'),b=document.getElementById('pkCoins');if(a)a.textContent=PROG.lv();if(b)b.textContent=PROG.coins();}
 function loadBadges(){try{const r=localStorage.getItem('sudoBadges');if(r){badges=JSON.parse(r);if(!(badges instanceof Array))badges=[];}}catch(e){badges=[];}}
 function earnBadge(b){if(badges.indexOf(b)!==-1)return false;badges.push(b);try{localStorage.setItem('sudoBadges',JSON.stringify(badges));}catch(e){}return true;}
 function win(){
@@ -347,6 +383,10 @@ if(clean&&secs<=(BLITZ[diff]||BLITZ.medium)&&earnBadge('blitz'))newB+=BADGE_KEYS
 if(clean&&diff==='hard'&&earnBadge('hardclear'))newB+=BADGE_KEYS.hardclear;
 if(clean&&maxStreak>=10&&earnBadge('streak10'))newB+=BADGE_KEYS.streak10;
 if(purist&&earnBadge('purist'))newB+=BADGE_KEYS.purist;
+if(clean){PROG.event('solved',1);PROG.stat('solvedDay',1);if(errors===0)PROG.stat('clean',1);if(diff==='hard')PROG.stat('hardwin',1);
+const res=PROG.awardRun({coins:Math.max(5,25-errors*2-hints*2)+(diff==='hard'?15:diff==='medium'?8:0),xp:20+(errors===0?15:0)+(diff==='hard'?25:0)});
+paintPk();
+document.getElementById('puristLine').textContent+=' · +'+res.coins+' 🪙 · +'+res.xp+' XP'+(res.levelUp?' · ⭐ LEVEL '+res.levelUp+'!':'');}
 const have=badges.map(b=>BADGE_KEYS[b]).join(' ');
 document.getElementById('badgeLine').textContent=newB?('🎉 NEW BADGES: '+newB+' · '+have):(badges.length?('🏅 '+have):'');
 confetti();
@@ -468,6 +508,7 @@ try{solvedTotal=parseInt(localStorage.getItem('sudo_solved')||'0',10)||0;}catch(
 try{puristRuns=parseInt(localStorage.getItem('sudo_purist')||'0',10)||0;}catch(e){}
 try{lifeSecs=parseInt(localStorage.getItem('sudo_life')||'0',10)||0;}catch(e){}
 buildUI();
+PROG.mount(document.getElementById('start'));paintPk();
 showStart();
 </script>
 </body>

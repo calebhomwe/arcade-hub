@@ -52,7 +52,7 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
 <body>
 <a class="back" href="../index.html">← Hub</a>
 <h1>🧩 Merge Blocks</h1>
-<div class="hud"><span>Score: <b id="score">0</b></span><span>Best: <b class="best" id="best">0</b></span><span>🏅 <b id="megas">0</b></span><span>💎 <b id="medals">0</b>/3</span><span>🎖 Lv <b id="lv">1</b></span><span>🔥 <b id="streak">0</b></span><span class="nextbox">Next: <b id="next">2</b></span><button class="mute" id="undoBtn" aria-label="Undo last drop">↩</button><button class="mute" id="hintBtn" aria-label="Hint">💡</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
+<div class="hud"><span>Score: <b id="score">0</b></span><span>Best: <b class="best" id="best">0</b></span><span>🏅 <b id="megas">0</b></span><span>💎 <b id="medals">0</b>/3</span><span>🎖 Lv <b id="lv">1</b></span><span>🪙 <b id="pkCoins">0</b> coins</span><span>🔥 <b id="streak">0</b></span><span class="nextbox">Next: <b id="next">2</b></span><button class="mute" id="undoBtn" aria-label="Undo last drop">↩</button><button class="mute" id="hintBtn" aria-label="Hint">💡</button><button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button></div>
 <div class="coach hidden" id="coach"><span id="coachTxt"></span><button id="coachBtn">Skip</button></div>
 <div id="board" tabindex="0" aria-label="Board: press 1 to 6 to drop in a column"></div>
 <div class="codes hidden" id="codesOn">CODES ON</div>
@@ -69,16 +69,18 @@ h1{font-size:26px;font-weight:900;letter-spacing:-1px}
   <div style="font-size:16px">Best: <b class="best" id="finBest">0</b></div>
   <div style="font-size:16px">🏅 Megas: <b id="finMegas">0</b> · All-time: <b class="best" id="finMegaAll">0</b></div>
   <div style="font-size:16px">🎖 Level: <b id="finLv">1</b> · 🔥 Streak: <b id="finStreak">0</b></div>
+  <div style="font-size:15px;color:#fde68a" id="pkEarn"></div>
   <div style="font-size:16px">💎 Medals: <b id="finMedals">0</b>/3</div>
   <div style="font-size:16px">🧱 All-time: <b id="finBlocks">0</b> blocks · <b id="finRuns">0</b> games</div>
   <button class="btn" id="againBtn">Play Again</button>
 </div>
+<script src="kit/progkit.js"></script>
 <script>
 
 const N=6;
 const SDK=window.ArcadeSDK||null;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function scene(sc,extra){try{if(window.__PROG){extra=extra||{};if(extra.level==null)extra.level=window.__PROG.lv();if(extra.stars==null)extra.stars=window.__PROG.stars();}SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
 function cheated(){return !!(SDK&&SDK.cheated);}
 function save(k,v){if(cheated())return;try{localStorage.setItem(k,v);}catch(e){}}
 // Difficulty: how many undos you get and which blocks can come next. Daily drops: the same blocks for everyone today.
@@ -97,6 +99,42 @@ let medals=[];try{medals=JSON.parse(localStorage.getItem('mergeMedals')||'[]')||
 let runBlocks=0,runsNs=+localStorage.getItem('mergeRuns')||0,lifeBlocks=+localStorage.getItem('mergeBlocks')||0;
 function lvOf(v){return Math.floor(v/300)+1;}
 let lv=lvOf(xp);
+/* ---- progression: coins, stars, daily challenge, board skins, goals (P01) ---- */
+const PROG=ProgKit.create({
+key:'merge_prog_v1',accent:'#facc15',cheated:cheated,xp0:xp,need:()=>300,
+sfx:n=>sfx(n==='levelup'?'levelup':n==='coin'?'coin':n==='win'?'levelup':n==='buzz'?'buzz':'tap'),
+skins:[
+ {id:'classic',name:'Classic',cost:0,sw:['#fde68a','#fb923c','#f87171'],pal:{}},
+ {id:'sunset',name:'Sunset',cost:30,sw:['#fdba74','#f87171','#facc15'],pal:{2:'#fef3c7',3:'#fdba74',4:'#fb923c',5:'#f87171',6:'#ef4444',7:'#dc2626',8:'#facc15',9:'#fbbf24',10:'#f59e0b',11:'#d97706'}},
+ {id:'jewel',name:'Jewel',cost:30,sw:['#38bdf8','#a78bfa','#34d399'],pal:{2:'#e0f2fe',3:'#7dd3fc',4:'#38bdf8',5:'#0ea5e9',6:'#818cf8',7:'#a78bfa',8:'#34d399',9:'#10b981',10:'#059669',11:'#fcd34d'}},
+ {id:'mono',name:'Slate',cost:60,sw:['#cbd5e1','#94a3b8','#64748b'],pal:{2:'#f1f5f9',3:'#e2e8f0',4:'#cbd5e1',5:'#94a3b8',6:'#64748b',7:'#475569',8:'#facc15',9:'#fbbf24',10:'#f59e0b',11:'#d97706'}},
+ {id:'neon',name:'Neon',cost:90,sw:['#4ade80','#22d3ee','#f0abfc'],pal:{2:'#bbf7d0',3:'#4ade80',4:'#22d3ee',5:'#38bdf8',6:'#818cf8',7:'#f0abfc',8:'#f472b6',9:'#fb7185',10:'#fbbf24',11:'#facc15'}},
+ {id:'aurora',name:'Aurora',cost:0,req:{stat:'maxScore',v:400,text:'Score 400 in one game'},sw:['#86efac','#67e8f9','#c4b5fd'],pal:{2:'#d9f99d',3:'#86efac',4:'#67e8f9',5:'#22d3ee',6:'#93c5fd',7:'#c4b5fd',8:'#a78bfa',9:'#f0abfc',10:'#f9a8d4',11:'#fde68a'}},
+],
+goals:[
+ {id:'mg1',txt:'Make a mega merge (32+)',stat:'megam',kind:'max',target:1,rw:15},
+ {id:'mg5',txt:'Make 5 mega merges in one game',stat:'megam',kind:'max',target:5,rw:30},
+ {id:'m512',txt:'Merge a 512 block',stat:'p512',kind:'max',target:1,rw:40},
+ {id:'sc300',txt:'Score 300 in one game',stat:'maxScore',kind:'max',target:300,rw:30},
+ {id:'r10',txt:'Play 10 games',stat:'runs',kind:'sum',target:10,rw:20},
+ {id:'mg500',txt:'Make 500 merges in total',stat:'merges',kind:'sum',target:500,rw:35},
+],
+dailies:[
+ {id:'dm25',txt:'Make 25 merges today',stat:'merges',kind:'sum',target:25,rw:25},
+ {id:'dm3',txt:'Make 3 mega merges today',stat:'megam',kind:'sum',target:3,rw:25},
+ {id:'ds300',txt:'Score 300 in one game today',stat:'maxScore',kind:'max',target:300,rw:30},
+ {id:'dr3',txt:'Play 3 games today',stat:'runs',kind:'sum',target:3,rw:20},
+],
+achievements:[
+ {id:'first',icon:'🧩',txt:'Finish your first game',test:d=>d.runs>=1},
+ {id:'mm5',icon:'🏅',txt:'5 mega merges in one game',test:d=>(d.stats.megam||0)>=5},
+ {id:'m256',icon:'💎',txt:'Merge a 256 block',test:d=>(d.stats.p512||0)>=1||(d.stats.p256||0)>=1},
+ {id:'skin1',icon:'🎨',txt:'Own a board skin',test:d=>d.unlocked.length>=1},
+ {id:'s3',icon:'📅',txt:'Play 3 days in a row',test:d=>d.streak>=3},
+],
+onSkin:sk=>{for(var k2 in sk.pal)colors[k2]=sk.pal[k2];for(var i2=0;i2<shown.length;i2++)shown[i2]=-1;render();},
+});
+function paintCoins(){const el=document.getElementById('pkCoins');if(el)el.textContent=PROG.coins();}
 document.getElementById('best').textContent=best;
 document.getElementById('lv').textContent=lv;
 document.getElementById('streak').textContent=pstreak;
@@ -119,6 +157,7 @@ function newNext(){next=bigDrop?3:DIFF[diff].max===3?1+Math.floor(rng()*3):(rng(
 function startGame(){
 initAudio();
 if(diff==='daily')seedRng('merge-'+today());best=+localStorage.getItem(bestKey())||0;document.getElementById('best').textContent=best;
+PROG.beginRun();
 grid=Array(N*N).fill(0);score=0;locked=false;over=false;drops=0;goldPending=false;megas=0;snaps=[];undoUsed=false;runBlocks=0;undoLeft=DIFF[diff].undo;
 document.getElementById('score').textContent=0;
 document.getElementById('megas').textContent=0;
@@ -217,20 +256,23 @@ render();
 document.getElementById('score').textContent=score;
 popScore();
 if(score>best&&!cheated()){best=score;localStorage.setItem(bestKey(),best);document.getElementById('best').textContent=best;}
+PROG.stat('maxScore',score);
 if(merged){
 chain++;
 runBlocks+=merged;
-xp+=mergedIdxs.reduce((n,m)=>n+m.p,0);
+const xpGain=mergedIdxs.reduce((n,m)=>n+m.p,0);
+xp+=xpGain;save('mergeXp',xp);
+PROG.addXp(xpGain);PROG.addCoins(Math.ceil(mergedIdxs.length/2));PROG.event('merges',mergedIdxs.length);paintCoins();
 const nLv=lvOf(xp);
 if(nLv>lv){lv=nLv;document.getElementById('lv').textContent=lv;sfx('levelup');
 const b2=document.createElement('div');b2.className='cfloat chain';b2.textContent='🎖 LEVEL '+lv+'!';b2.style.left='50%';b2.style.top='46%';document.body.appendChild(b2);
 setTimeout(()=>{if(b2.parentNode)b2.parentNode.removeChild(b2);},750);}
 const ms=mergedIdxs.reduce((n,m)=>m.p>=32?n+1:n,0);
-if(ms){megas+=ms;sfx('levelup');document.getElementById('megas').textContent=megas;
+if(ms){megas+=ms;sfx('levelup');document.getElementById('megas').textContent=megas;PROG.event('megam',ms);PROG.stat('megam',megas);
 const b=document.createElement('div');b.className='cfloat chain';b.textContent='🏅 MEGA ×'+ms+'!';
 b.style.left='50%';b.style.top='28%';document.body.appendChild(b);
 setTimeout(()=>{if(b.parentNode)b.parentNode.removeChild(b);},750);}
-let nMed=0;mergedIdxs.forEach(m=>{const v=m.p;if(v>=512&&medals.indexOf(v)===-1){medals.push(v);nMed++;}});
+let nMed=0;mergedIdxs.forEach(m=>{const v=m.p;if(v>=512){PROG.stat('p512',1);}if(v>=256){PROG.stat('p256',1);}if(v>=512&&medals.indexOf(v)===-1){medals.push(v);nMed++;}});
 if(nMed){save('mergeMedals',JSON.stringify(medals));
 document.getElementById('medals').textContent=medals.length;
 const b3=document.createElement('div');b3.className='cfloat chain';b3.textContent='💎 '+medals[medals.length-1]+' BLOCK! ('+medals.length+'/3)';
@@ -274,6 +316,8 @@ save('mergeRuns',runsNs);
 save('mergeBlocks',lifeBlocks);
 document.getElementById('finBlocks').textContent=lifeBlocks;
 document.getElementById('finRuns').textContent=runsNs;
+if(!cheated()){PROG.event('runs',1);const res=PROG.awardRun({coins:Math.floor(score/40),xp:0,best:score});paintCoins();
+document.getElementById('pkEarn').textContent='+'+res.coins+' 🪙 coins earned this game'+(res.levelUp?' · ⭐ LEVEL '+res.levelUp+'!':'');}
 if(Math.floor(lifeBlocks/500)>Math.floor((lifeBlocks-runBlocks)/500)){
 const bl=document.createElement('div');bl.className='cfloat chain';bl.textContent='🧱 '+lifeBlocks+' BLOCKS!';
 bl.style.left='50%';bl.style.top='25%';document.body.appendChild(bl);
@@ -338,6 +382,7 @@ document.querySelectorAll('[data-d]').forEach(b=>press(b,()=>{diff=b.dataset.d;t
 paintDiff();
 function begin(withTut){startGame();$('coach').classList.add('hidden');tut=0;if(withTut||!tutSeen)startTut();}
 function toTitle(){over=true;locked=false;$('over').classList.add('hidden');$('coach').classList.add('hidden');paintDiff();$('start').classList.remove('hidden');scene('title');}
+PROG.mount(document.getElementById('start'));paintCoins();
 press($('playBtn'),()=>begin(false));
 press($('againBtn'),()=>begin(false));
 /* ---- codes: just for fun; a game with codes on saves no records ---- */

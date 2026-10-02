@@ -30,7 +30,7 @@
     var span = (I.N + I.M) * I.HW;                                         // island width at scale 1
     I.sc = Math.min(W2 / (span + 30), (H2 - 96) / ((I.N + I.M) * I.HH + 46));
     I.ox = W2 / 2 + ((I.o.shiftX || 0) * I.sc); I.oy = Math.max(84, H2 * 0.5 - 40 * I.sc);
-    I.bgc = null;
+    I.bgc = null; I.grDirty = true;                                        // re-paint the cached ground next frame
   };
   P.rr = function (cx, x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); };
   P.pattern = function (cx, name) { var r = this.tex[name]; if (!r || !r.ok) return null; return this.pat[name] || (this.pat[name] = cx.createPattern(r.img, 'repeat')); };
@@ -98,9 +98,25 @@
     for (var q = 0; q < 14; q++) { var sx = ((q * 97) % 100) / 100 * W2, sy = H2 * 0.46 + ((q * 53) % 100) / 100 * H2 * 0.5, ph = Math.sin(t * 1.6 + q * 2.1); if (ph > 0.3) cx.fillRect(sx, sy, 8 * I.sc * ph, 1.3); }
     cx.restore();
   };
-  /* the island: cliff faces under the grass, then whatever fn draws in tile space */
+  /* the island: cliff faces under the grass, then whatever fn draws in tile space.
+   * The static art (cliffs, grass, fields) is painted once into an offscreen canvas and blitted
+   * every frame afterwards; it is re-painted only when the island is laid out again. Without the
+   * cache these pattern + gradient fills over the whole island cost ~40% of the CPU budget on a
+   * software rasteriser every single frame. */
   P.ground = function (cx, fn) {
+    var I = this;
+    if (!I.grc || I.grDirty) { I.grDirty = false; I.paintGround(fn); }
+    if (I.grc) cx.drawImage(I.grc, 0, 0, I.w, I.h);
+  };
+  P.paintGround = function (fn) {
     var I = this, sc = I.sc, N = I.N, M = I.M, HW = I.HW, HH = I.HH, ox = I.ox, oy = I.oy;
+    var dpr = Math.max(1, Math.min(I.st.dpr || 1, 2));
+    var c = I.grc || (I.grc = D.createElement('canvas'));
+    var pw = Math.max(1, Math.round(I.w * dpr)), ph = Math.max(1, Math.round(I.h * dpr));
+    if (c.width !== pw || c.height !== ph) { c.width = pw; c.height = ph; }
+    var cx = c.getContext('2d');
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, I.w, I.h);
     var a = HW * sc / 256, b = HH * sc / 256;
     var right = { x: ox + N * HW * sc, y: oy + N * HH * sc }, bot = { x: ox + (N - M) * HW * sc, y: oy + (N + M) * HH * sc }, left = { x: ox - M * HW * sc, y: oy + M * HH * sc };
     var th = 30 * sc;

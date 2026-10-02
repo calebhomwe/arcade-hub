@@ -365,7 +365,7 @@ function startLevel(n, opts) {
   var wait = opts && opts.quick ? 700 : 1500;
   setTimeout(function () {
     if (state !== 'ready') return;
-    $('ready').classList.remove('on'); state = 'play'; KKs.banner('Go!'); lastTs = 0; startLoop();
+    $('ready').classList.remove('on'); state = 'play'; KKs.ui.banner('Go!'); lastTs = 0; startLoop();
     if (!P.flag('tutMole') && cfg.n === 1) startTutorial();
   }, wait);
 }
@@ -455,7 +455,7 @@ function whack(m, hi) {
   if (m.k === 'gold' || m.k === 'king') { KKs.shake(field, 6); KKs.fx.burst(cx, cy, 'ring', 1); }
   hitstop = m.k === 'mole' ? 35 : 60;
   chCombo.set(combo); $('combo').classList.toggle('on', combo >= 3);
-  if (combo === 5) KKs.banner('Great!'); else if (combo === 10) KKs.banner('Awesome!'); else if (combo === 20) KKs.banner('Amazing!');
+  if (combo === 5) KKs.ui.banner('Great!'); else if (combo === 10) KKs.ui.banner('Awesome!'); else if (combo === 20) KKs.ui.banner('Amazing!');
   setGoalBar();
   if (tut && tut.stage === 'mole') { tut.hold = false; endTut(); KKs.ui.toast('Nice whack! Keep going!', 'party-popper'); P.flag('tutMole', true); }
   try { SDK && SDK.state({ scene: 'play', score: points, level: cur }); } catch (e) {}

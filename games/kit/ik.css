@@ -62,6 +62,7 @@ svg.ic{display:block;flex:none}
 .ik-goal .q{flex:1;min-width:0}
 .ik-goal .q b{display:block;font:700 16px/1.15 var(--ik-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ik-goal .q small{display:block;font:500 14px var(--ik-ui);color:var(--ik-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ik-goal .q small.q2{font:600 12px var(--ik-ui);letter-spacing:.2px;color:var(--ik-dim);opacity:.95}
 .ik-goal .q .ik-bar{margin-top:4px;height:7px}
 .ik-goal .rw{flex:none;font:800 14px var(--ik-ui);color:#3a2508;background:linear-gradient(var(--ik-gold1),var(--ik-gold2));border-radius:10px;padding:3px 9px;border:1px solid #8a5a12}
 .ik-goal.ready{border-color:var(--ik-gold2);animation:ikGlow 1.3s ease-in-out infinite}

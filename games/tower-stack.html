@@ -41,7 +41,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
 <a class="back" href="../index.html">← Hub</a>
 <button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
 <div class="wrap">
-  <div class="hud"><span id="hud">0</span><span id="bestHud">BEST 0</span><div id="comboHud"></div><div id="heartHud"></div></div>
+  <div class="hud"><span id="hud">0</span><span id="bestHud">BEST 0</span><div id="comboHud"></div><div id="heartHud"></div><div id="pkHud"></div></div>
   <div class="codes hidden" id="codesOn">CODES ON</div>
   <canvas id="cv" width="420" height="700"></canvas>
   <div class="ov" id="start">
@@ -56,6 +56,7 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="stat">Height: <b id="finScore">0</b></div>
     <div class="stat">Best: <b class="best" id="finBest">0</b></div>
     <div class="stat">Perfect chain best: <b class="best" id="finCombo">0</b></div>
+  <div class="stat" style="color:#fde68a" id="pkEarn"></div>
     <button class="btn" id="againBtn">Play Again</button>
   </div>
   <div class="ov hidden" id="tut">
@@ -64,13 +65,14 @@ canvas{display:block;max-width:100vw;max-height:100dvh;border-radius:14px;box-sh
     <div class="sub">Only the part that lands on the tower stays. Drop it dead centre for a PERFECT.</div></div>
   </div>
 </div>
+<script src="kit/progkit.js"></script>
 <script>
 
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const W=420,H=700,BH=32,BASEY=H-110;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SDK=window.ArcadeSDK||null;
-function scene(sc,extra){try{SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
+function scene(sc,extra){try{if(window.__PROG){extra=extra||{};if(extra.level==null)extra.level=window.__PROG.lv();if(extra.stars==null)extra.stars=window.__PROG.stars();}SDK&&SDK.state(Object.assign({scene:sc},extra||{}));}catch(e){}}
 function cheated(){return !!(SDK&&SDK.cheated);}
 let slowmo=false,magnet=false,heartCode=false;
 const DPR=Math.min(window.devicePixelRatio||1,2);
@@ -96,6 +98,42 @@ if(n==='over')sfx('lose');
 if(n==='click')sfx('tap');
 if(n==='saved')sfx('boom');}
 function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
+/* ---- progression: Level/XP, coins, stars, daily challenge, skins, goals (P01) ---- */
+let TH={base:0,step:24};
+function hueFor(i){return (TH.base+i*TH.step)%360;}
+const PROG=ProgKit.create({
+key:'tower_prog_v1',accent:'#a78bfa',cheated:cheated,sfx:n=>snd(n),
+skins:[
+ {id:'classic',name:'Classic Rainbow',cost:0,sw:['#f87171','#fbbf24','#60a5fa'],hue:{base:0,step:24}},
+ {id:'sunset',name:'Sunset',cost:30,sw:['#fb923c','#f87171','#fbbf24'],hue:{base:8,step:17}},
+ {id:'ocean',name:'Ocean',cost:30,sw:['#38bdf8','#22d3ee','#3b82f6'],hue:{base:190,step:13}},
+ {id:'candy',name:'Candy',cost:60,sw:['#f472b6','#c084fc','#fb7185'],hue:{base:320,step:14}},
+ {id:'neon',name:'Neon',cost:90,sw:['#4ade80','#facc15','#22d3ee'],hue:{base:95,step:38}},
+ {id:'goldrush',name:'Gold Rush',cost:0,req:{stat:'maxH',v:30,text:'Reach height 30'},sw:['#facc15','#fde047','#eab308'],hue:{base:44,step:5}},
+],
+goals:[
+ {id:'h15',txt:'Reach height 15 in one run',stat:'maxH',kind:'max',target:15,rw:15},
+ {id:'h30',txt:'Reach height 30 in one run',stat:'maxH',kind:'max',target:30,rw:35},
+ {id:'c3',txt:'Chain 3 PERFECTs in a row',stat:'chain',kind:'max',target:3,rw:15},
+ {id:'c6',txt:'Chain 6 PERFECTs in a row',stat:'chain',kind:'max',target:6,rw:40},
+ {id:'r5',txt:'Play 5 runs',stat:'runs',kind:'sum',target:5,rw:15},
+ {id:'b150',txt:'Place 150 blocks in total',stat:'blocks',kind:'sum',target:150,rw:30},
+],
+dailies:[
+ {id:'d15',txt:'Reach height 15 today',stat:'maxH',kind:'max',target:15,rw:25},
+ {id:'d25',txt:'Reach height 25 today',stat:'maxH',kind:'max',target:25,rw:30},
+ {id:'d60',txt:'Drop 60 blocks today',stat:'blocks',kind:'sum',target:60,rw:25},
+ {id:'dc4',txt:'Chain 4 PERFECTs today',stat:'chain',kind:'max',target:4,rw:25},
+],
+achievements:[
+ {id:'first',icon:'🏗️',txt:'Build your first tower',test:d=>d.runs>=1},
+ {id:'h25',icon:'🗼',txt:'Stack 25 blocks high',test:d=>(d.stats.maxH||0)>=25},
+ {id:'c5',icon:'🔥',txt:'5 PERFECTs in a row',test:d=>(d.stats.chain||0)>=5},
+ {id:'skin1',icon:'🎨',txt:'Own a tower skin',test:d=>d.unlocked.length>=1},
+ {id:'s3',icon:'📅',txt:'Play 3 days in a row',test:d=>d.streak>=3},
+],
+onSkin:sk=>{TH=sk.hue||{base:0,step:24};},
+});
 const muteBtn=document.getElementById('muteBtn');
 function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
 muteBtn.addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;localStorage.setItem('towerMuted',muted?'1':'0');renderMute();});
@@ -171,7 +209,7 @@ try{const g=JSON.parse(localStorage.getItem('towerGhost')||'null');ghost=(g&&g.b
 catch(e){ghost=null;ghostLen=0;}
 }
 function refreshGhostHud(){document.getElementById('startGhost').textContent=ghostLen?ghostLen+' blocks':'off';}
-function startGame(){roundToken++;state='play';score=0;combo=0;hearts=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;if(heartCode)hearts=3;loadGhost();refreshGhostHud();hud();updCombo();updHearts();scene('play');}
+function startGame(){roundToken++;PROG.beginRun();state='play';score=0;combo=0;hearts=0;stack=[{cx:W/2,w:190}];slideW=190;slideX=W/2;slideDir=1;camY=0;camTarget=0;falling=null;floats=[];parts=[];flash=0;shake=0;goldT=0;goldOn=false;comboFlash=false;if(heartCode)hearts=3;loadGhost();refreshGhostHud();hud();updCombo();updHearts();scene('play');}
 function hud(){document.getElementById('hud').textContent=score;document.getElementById('bestHud').textContent='BEST '+(cheated()?best:Math.max(best,score));}
 function updCombo(){document.getElementById('comboHud').textContent=combo>1?'🔥 PERFECT x'+combo:'';}
 function updHearts(){document.getElementById('heartHud').textContent=hearts>0?'💜'.repeat(hearts):'💔';}
@@ -202,10 +240,10 @@ const perfect=Math.abs(slideX-top.cx)<(magnet?14:3);
 let newW=perfect?top.w:overlap;
 const newX=perfect?top.cx:(Math.max(top.cx-top.w/2,slideX-slideW/2)+Math.min(top.cx+top.w/2,slideX+slideW/2))/2;
 stack.push({cx:newX,w:newW,born:t});
-if(perfect){combo++;score+=2;flash=1;shake=5;snd('perfect');buzz(20);burst(newX,blockY+BH/2,'#fbbf24',16,190);floats.push({x:newX,y:blockY,life:1,txt:combo>1?'PERFECT x'+combo+' +2':'PERFECT +2'});
+if(perfect){combo++;PROG.stat('chain',combo);score+=2;flash=1;shake=5;snd('perfect');buzz(20);burst(newX,blockY+BH/2,'#fbbf24',16,190);floats.push({x:newX,y:blockY,life:1,txt:combo>1?'PERFECT x'+combo+' +2':'PERFECT +2'});
 if(!comboFlash&&combo>comboBest&&!cheated()){comboBest=combo;localStorage.setItem('towerComboBest',comboBest);comboFlash=true;snd('gold');floats.push({x:newX,y:blockY-52,life:1.4,txt:'NEW CHAIN RECORD!'});}
 if(combo>=3&&newW<190){newW=Math.min(190,newW+12);stack[stack.length-1].w=newW;floats.push({x:newX,y:blockY-26,life:1.2,txt:'WIDTH UP!'});burst(newX,blockY+BH/2,'#4ade80',10,150);}}
-else{combo=0;score++;shake=2.5;snd('drop');buzz(8);burst(newX,blockY+BH,'rgba(255,255,255,.8)',5,90);}
+else{combo=0;score++;PROG.event('blocks',1);shake=2.5;snd('drop');buzz(8);burst(newX,blockY+BH,'rgba(255,255,255,.8)',5,90);}
 if(goldOn){score+=3;snd('gold');burst(newX,blockY+BH/2,'#facc15',18,200);floats.push({x:newX,y:blockY-42,life:1.2,txt:'GOLD +3'});goldT=0;goldOn=false;}else{goldT++;if(goldT>=9)goldOn=true;}
 if(stack.length%12===0&&hearts<3){earnHeart();}
 if(heartCode&&hearts<3){hearts=3;updHearts();}
@@ -232,6 +270,11 @@ falling.vy+=2000*dt;falling.y+=falling.vy*dt;falling.rot+=falling.vr*dt;
 if(falling.y>H+120){
 state='over';
 const nb=score>best&&!cheated();if(nb){best=score;localStorage.setItem('towerBest',best);}
+let earn={coins:0,xp:0,levelUp:0};
+if(!cheated()){PROG.stat('maxH',score);
+const coins=Math.min(60,Math.round(score*1.2))+(nb?8:0);
+earn=PROG.awardRun({coins:coins,xp:score*2,best:score});
+document.getElementById('pkEarn').textContent='+'+earn.coins+' 🪙 coins · +'+earn.xp+' XP'+(earn.levelUp?' · ⭐ LEVEL '+earn.levelUp+'!':'');}
 scene('over',{score:score});
 if(stack.length>3&&!cheated()){
 const glen=+localStorage.getItem('towerGhostLen')||0;
@@ -267,7 +310,7 @@ const top=stack[stack.length-1];
 if(state==='play'&&top){ctx.strokeStyle='rgba(255,255,255,.10)';ctx.setLineDash([5,7]);ctx.beginPath();ctx.moveTo(top.cx,BASEY-stack.length*BH-60);ctx.lineTo(top.cx,BASEY);ctx.stroke();ctx.setLineDash([]);}
 stack.forEach((b,i)=>{
 const y=BASEY-(i+1)*BH;
-const hue=(i*24)%360;
+const hue=hueFor(i);
 let k=0;if(b.born!==undefined){const age=t-b.born;if(age<.16)k=1-age/.16;}
 if(k>0){
 const s=blockSprite(b.w,hue,false);
@@ -286,7 +329,7 @@ floats.forEach(f=>{const s=floatSprite(f.txt);ctx.globalAlpha=Math.max(0,f.life)
 ctx.globalAlpha=1;
 if(state==='play'||state==='ready'){
 const y=BASEY-stack.length*BH;
-const hue=(stack.length*24)%360;
+const hue=hueFor(stack.length);
 ctx.fillStyle='hsla('+hue+',70%,52%,.4)';
 ctx.fillRect(0,y,W,BH-5);
 if(goldOn){ctx.fillStyle='hsla(48,90%,55%,.28)';ctx.fillRect(0,y,W,BH-5);}
@@ -321,6 +364,7 @@ if(state==='play')place();
 });
 window.addEventListener('keydown',e=>{if(SDK&&SDK.paused)return;if(e.key!==' '&&e.key!=='Enter')return;if(e.target&&e.target.tagName==='BUTTON')return;e.preventDefault();
 if(state==='play')place();else if(state==='over'&&!$('over').classList.contains('hidden'))begin(false);else if(state==='ready'&&!$('start').classList.contains('hidden'))begin(false);});
+PROG.mount(document.getElementById('start'));PROG.mountHud(document.getElementById('pkHud'));
 $('playBtn').addEventListener('click',()=>{snd('click');begin(false);});
 $('againBtn').addEventListener('click',()=>{snd('click');begin(false);});
 // Codes: just for fun; a run with a code on never replaces the saved best.
