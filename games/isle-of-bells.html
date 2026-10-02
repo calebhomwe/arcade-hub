@@ -140,6 +140,7 @@
     <div class="big">🏝️</div>
     <div class="title">Isle of Bells</div>
     <p class="sub">A cozy island where fish bite, bugs buzz, trees giggle when shaken and four fuzzy villagers need a friend. Fish · bug · dig · farm · decorate — make it yours.</p>
+    <p class="sub" id="isleProg" style="color:#ffd86b;font-weight:800">📋 Villager quests · 🏅 8 island awards to unlock · 🌅 New daily tasks every day</p>
     <input type="text" id="nameIn" maxlength="10" placeholder="Your name, islander?">
     <div class="bagnote" style="margin:10px 0 4px">pick your look</div>
     <div class="row" id="avatarRow"></div>
@@ -1341,6 +1342,9 @@ function checkAwards(){
     }
   });
   if(n>0){ try{ localStorage.setItem(AWARD_KEY,JSON.stringify(got)); }catch(e){} }
+  var un=AWARDS.filter(function(a){return !got[a.id];});
+  window._awN=Object.keys(got).length;
+  window._awTxt=un.length?('Next: '+un[0].e+' '+un[0].ds):'All awards earned!';
 }
 
 /* ============================== SPEECH & TOAST ============================== */
@@ -2191,7 +2195,8 @@ function renderHud(){
   if(_hudCache.bc!==bc){ _hudCache.bc=bc; $("bagCount").textContent=bc; }
   var qEl=$("questChip");
   var qTxt="";
-  if(state.quest){ qTxt=state.quest.finished?"✨ Quest done — talk to "+villName(state.quest.vill)+"!":"📋 "+state.quest.prog+"/"+state.quest.goal; }
+  if(state.quest){ qTxt=state.quest.finished?"✨ Quest done — talk to "+villName(state.quest.vill)+"!":"📋 "+state.quest.text.replace("{n}",state.quest.goal)+" ("+state.quest.prog+"/"+state.quest.goal+")"; }
+  else if(!state.quest){ qTxt="🏅 "+(window._awN||0)+"/"+AWARDS.length+" awards · "+(window._awTxt||"Play to unlock"); }
   if(_hudCache.q!==qTxt){
     _hudCache.q=qTxt;
     qEl.textContent=qTxt;
@@ -2600,6 +2605,12 @@ if(SDK) SDK.init({
 load();
 init();
 dayBase=statSnap();
+renderHud();
+renderHud();
+if(!window._isleAuto){window._isleAuto=1;state.lastPlay=Date.now();save();setInterval(function(){try{state.lastPlay=Date.now();var aw=0;try{aw=Object.keys(JSON.parse(localStorage.getItem(AWARD_KEY)||'{}')).length}catch(e){}
+state.prog={level:state.day,xp:Math.floor((state.stats&&state.stats.bellsEarned||0)/40),coins:state.bells,stars:aw,daily:new Date().toISOString().slice(0,10),questsDone:(state.stats&&state.stats.questsDone)||0};
+try{localStorage.setItem('isleProg_v1',JSON.stringify({level:state.day,xp:state.prog.xp,coins:state.bells,stars:aw,daily:state.prog.daily,unlocks:aw,quest:state.prog.questsDone}));}catch(e){}
+save();}catch(e){}},5000);}
 scene($("ovIntro").classList.contains("hidden")?"play":"title");
 })();
 </script>

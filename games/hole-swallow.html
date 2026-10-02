@@ -287,7 +287,15 @@ function paintTitle() {
   paintPlay();
   $('dailyHost').replaceChildren(GK.dailyStrip(P));
   $('weekHost').replaceChildren(GK.weekRow(P));
+  hsProgChip();
 }
+/* Always-visible progression chip: level, coins and the daily goal, read out during play. */
+var progChip=document.createElement('div');
+progChip.id='progChip';
+progChip.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:46px;z-index:6;pointer-events:none;font:700 13px/1.3 system-ui;color:#fff;background:rgba(20,12,4,.78);border:1.5px solid #e8c66a;border-radius:14px;padding:4px 12px;white-space:nowrap;text-shadow:0 1px 2px #000';
+document.body.appendChild(progChip);
+function hsProgChip(){var i=P.dailyInfo();progChip.textContent='LV '+P.d.level+' · 🪙 '+Math.floor(P.d.coins)+' · '+(i?((i.done?'Daily done':'Daily')+': '+i.text+' '+i.val+'/'+i.target):'Daily goal pending');}
+hsProgChip();setInterval(function(){hsProgChip();try{P.d.lastPlay=Date.now();P.save();}catch(e){}},2000);
 const picker = GK.levelPicker($('picker'), P, { label: 'Mission', start: LEVEL, onChange: l => { LEVEL = l; P.d.pick = l; P.save(); paintTitle(); } });
 
 function startGame() {
