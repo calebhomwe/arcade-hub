@@ -2607,10 +2607,11 @@ init();
 dayBase=statSnap();
 renderHud();
 renderHud();
-if(!window._isleAuto){window._isleAuto=1;state.lastPlay=Date.now();save();setInterval(function(){try{state.lastPlay=Date.now();var aw=0;try{aw=Object.keys(JSON.parse(localStorage.getItem(AWARD_KEY)||'{}')).length}catch(e){}
-state.prog={level:state.day,xp:Math.floor((state.stats&&state.stats.bellsEarned||0)/40),coins:state.bells,stars:aw,daily:new Date().toISOString().slice(0,10),questsDone:(state.stats&&state.stats.questsDone)||0};
-try{localStorage.setItem('isleProg_v1',JSON.stringify({level:state.day,xp:state.prog.xp,coins:state.bells,stars:aw,daily:state.prog.daily,unlocks:aw,quest:state.prog.questsDone}));}catch(e){}
-save();}catch(e){}},5000);}
+if(!window._isleAuto){window._isleAuto=1;function isleMirror(){try{var aw=0;try{aw=Object.keys(JSON.parse(localStorage.getItem(AWARD_KEY)||'{}')).length}catch(e){}
+var prev=0;try{var pv=JSON.parse(localStorage.getItem('isleProg_v1')||'{}');prev=pv.plays||0;}catch(e){}
+if(!window._islePlayed){window._islePlayed=1;prev+=1;}
+localStorage.setItem('isleProg_v1',JSON.stringify({level:state.day,xp:Math.floor(((state.stats&&state.stats.bellsEarned)||0)/40),coins:state.bells,stars:aw,daily:new Date().toISOString().slice(0,10),unlocks:aw,quest:state.quest?1:0,plays:prev,lastAt:Date.now()}));}catch(e){}}
+isleMirror();setInterval(isleMirror,10000);}
 scene($("ovIntro").classList.contains("hidden")?"play":"title");
 })();
 </script>
