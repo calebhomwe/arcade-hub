@@ -239,8 +239,8 @@ class Progress {
     this.d = Object.assign(def, got && typeof got === 'object' && !Array.isArray(got) ? got : {});
     // a stale save may carry the wrong shape for a field; coerce what the class and the games index into
     const d = this.d, obj = v => v && typeof v === 'object' && !Array.isArray(v);
-    d.level = d.level >= 1 && isFinite(d.level) ? Math.floor(d.level) : 1;
-    d.coins = d.coins >= 0 && isFinite(d.coins) ? d.coins : 0;
+    d.level = typeof d.level === 'number' && isFinite(d.level) && d.level >= 1 ? Math.floor(d.level) : 1;
+    d.coins = typeof d.coins === 'number' && isFinite(d.coins) && d.coins >= 0 ? Math.floor(d.coins) : 0;
     if (!obj(d.stars)) d.stars = {}; if (!obj(d.totals)) d.totals = {}; if (!obj(d.seen)) d.seen = {};
     if (!Array.isArray(d.owned)) d.owned = first ? [first] : []; if (!Array.isArray(d.days)) d.days = [];
     if (typeof d.skin !== 'string') d.skin = first;
