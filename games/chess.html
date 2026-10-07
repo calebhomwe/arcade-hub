@@ -2756,7 +2756,7 @@ let teachMode = false;
 let juiceLevel = 15;
 let pendingPromo = null;
 let comboCount = 0;
-let theme = (function(){ try { return localStorage.getItem('cjs-theme') || 'emerald'; } catch (e) { return 'emerald'; } })();
+let theme = (function(){ try { const t = localStorage.getItem('cjs-theme'); return t && /^[a-z0-9-]+$/i.test(t) ? t : 'emerald'; } catch (e) { return 'emerald'; } })(); // a stale/garbled value would throw in classList.add and stop the script
 
 let particles = [];
 let shakeAmount = 0;
