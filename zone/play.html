@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f0f23">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<title>Learning zone</title>
+<link rel="stylesheet" href="zone.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+    <a class="back" href="index.html">← All games</a>
+  </div>
+  <div class="msg" id="err" hidden role="alert"></div>
+
+  <section class="fallback" id="fallback" hidden>
+    <h1>That game is not in this zone</h1>
+    <p id="fallbackMsg"></p>
+    <div id="fallbackTiles"></div>
+  </section>
+
+  <article id="game" hidden>
+    <div class="game-head">
+      <h1><span id="gIcon" aria-hidden="true"></span><span id="gTitle"></span></h1>
+      <div class="best" id="best" hidden></div>
+    </div>
+    <div class="frame-wrap" id="frameWrap">
+      <button class="exit" id="exitBtn" type="button">✕ Exit big screen</button>
+    </div>
+    <div class="frame-bar">
+      <button class="btn go" id="bigBtn" type="button">⛶ Play Big Screen</button>
+      <div class="tags" id="skills" aria-label="Skills"></div>
+    </div>
+    <div class="info">
+      <section class="box"><h2>Controls</h2><ul id="controls"></ul></section>
+      <section class="box"><h2>How to play</h2><p class="goal" id="goal"></p><ol id="howto"></ol></section>
+      <section class="box"><h2>Tips</h2><ul id="tips"></ul></section>
+      <section class="box also"><h2>You'll also like</h2><div id="also"></div></section>
+    </div>
+  </article>
+  <footer>Best scores are saved on this device only.</footer>
+</div>
+<script src="zone.js"></script>
+<script>
+(function () {
+  'use strict';
+  var Z = window.Zone, $ = function (id) { return document.getElementById(id); };
+  var id = new URLSearchParams(location.search).get('g') || '';
+  var game = null, frame = null;
+
+  function crumbs(d, g) {
+    var nav = $('crumbs');
+    nav.textContent = '';
+    nav.appendChild(Z.el('a', { href: 'index.html', text: d.zone.name }));
+    if (!g) return;
+    var sh = Z.shelfOf(d, g.shelf);
+    nav.appendChild(Z.el('span', { class: 'sep', 'aria-hidden': 'true', text: '›' }));
+    nav.appendChild(Z.el('a', { href: 'index.html?shelf=' + encodeURIComponent(sh.id), text: sh.name }));
+    nav.appendChild(Z.el('span', { class: 'sep', 'aria-hidden': 'true', text: '›' }));
+    nav.appendChild(Z.el('b', { text: g.title }));
+  }
+  function fill(listEl, items) {
+    listEl.textContent = '';
+    (items || []).forEach(function (t) { listEl.appendChild(Z.el('li', { text: t })); });
+  }
+  // The game's own saved best, read from this browser. Hidden when the game has no bestKey or nothing is saved yet.
+  function refreshBest() {
+    var v = game ? Z.readBest(game.bestKey) : null, b = $('best');
+    if (v == null) { b.hidden = true; b.textContent = ''; return; }
+    b.textContent = 'Best so far: ' + v;
+    b.hidden = false;
+  }
+
+  function fallback(d, msg) {
+    document.title = d.zone.name;
+    crumbs(d, null);
+    $('fallbackMsg').textContent = msg;
+    $('fallbackTiles').textContent = '';
+    $('fallbackTiles').appendChild(Z.tiles(d.games));
+    $('fallback').hidden = false;
+  }
+
+  function render(d) {
+    game = Z.byId(d, id);
+    if (!game) {
+      fallback(d, id ? 'There is no game called "' + id + '" here. Pick one of these instead:' : 'No game was chosen. Pick one of these:');
+      return;
+    }
+    document.title = game.title + ' · ' + d.zone.name;
+    crumbs(d, game);
+    $('gIcon').textContent = game.icon || '';
+    $('gTitle').textContent = game.title;
+    fill($('controls'), game.controls);
+    var how = (game.howToPlay || []).slice();
+    $('goal').textContent = how.shift() || '';
+    fill($('howto'), how);
+    fill($('tips'), game.tips);
+    var sk = $('skills');
+    (game.skills || []).forEach(function (s) { sk.appendChild(Z.el('span', { text: s })); });
+    var also = (game.alsoLike || []).map(function (x) { return Z.byId(d, x); }).filter(function (g) { return g && g.id !== game.id; });
+    $('also').appendChild(Z.tiles(also));
+    refreshBest();
+
+    frame = Z.el('iframe', { id: 'frame', name: 'game', title: game.title, src: '../games/' + game.file, allow: 'autoplay' });
+    $('frameWrap').appendChild(frame);
+    $('game').hidden = false;
+    // the arcade SDK inside the game posts {arcade:1, type:'state', scene:'over'} when a run ends: re-read the saved best then
+    window.addEventListener('message', function (e) {
+      var m = e.data;
+      if (e.source === frame.contentWindow && m && m.arcade === 1 && m.type === 'state') refreshBest();
+    });
+    bigScreen();
+  }
+
+  // Play Big Screen: fullscreen on the frame wrapper; when the browser refuses (or has no API, like iPhone Safari)
+  // the wrapper is pinned over the page instead. The exit control sits inside the wrapper so it is visible either way.
+  function bigScreen() {
+    var wrap = $('frameWrap'), btn = $('bigBtn'), exitBtn = $('exitBtn');
+    function pinned(on) { wrap.classList.toggle('big', on); document.body.classList.toggle('big-open', on); paint(); if (on) try { frame.focus(); } catch (e) {} }
+    function isOn() { return !!(document.fullscreenElement === wrap || document.webkitFullscreenElement === wrap || wrap.classList.contains('big')); }
+    function paint() { btn.textContent = isOn() ? '✕ Exit big screen' : '⛶ Play Big Screen'; }
+    function enter() {
+      var p = null;
+      try {
+        if (wrap.requestFullscreen) p = wrap.requestFullscreen();
+        else if (wrap.webkitRequestFullscreen) { wrap.webkitRequestFullscreen(); p = Promise.resolve(); }
+      } catch (e) { p = Promise.reject(e); }
+      if (!p) { pinned(true); return; }
+      Promise.resolve(p).then(function () { paint(); try { frame.focus(); } catch (e) {} }, function () { pinned(true); });
+    }
+    function leave() {
+      if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen(); } catch (e) {} }
+      else if (document.webkitFullscreenElement && document.webkitExitFullscreen) { try { document.webkitExitFullscreen(); } catch (e) {} }
+      if (wrap.classList.contains('big')) pinned(false);
+      paint();
+    }
+    btn.addEventListener('click', function () { if (isOn()) leave(); else enter(); });
+    exitBtn.addEventListener('click', leave);
+    ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (n) { document.addEventListener(n, paint); });
+    paint();
+  }
+
+  Z.load().then(render, function (err) { Z.showError($('err'), err); });
+})();
+</script>
+</body>
+</html>
