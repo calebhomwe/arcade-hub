@@ -346,7 +346,7 @@ function updateHud(){
   elTimeBar.style.width=pct+'%';
   if(pct<25){elTimeBar.classList.add('low');}else{elTimeBar.classList.remove('low');}
 }
-function tick(){if(busy||endless||coachOn()){return;}timeLeft-=0.1;if(timeLeft<=0){timeLeft=0;gameOver();return;}updateHud();}
+function tick(){if(busy||endless||coachOn()||document.hidden){return;}timeLeft-=0.1;if(timeLeft<=0){timeLeft=0;gameOver();return;}updateHud();}
 function startGame(es,teach){
   endless=!!es;wrongs=0;slip=0;
   $('heartsWrap').style.display=endless?'':'none';
