@@ -76,6 +76,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
   <p>Swipe or tap a lane to run through the <b>correct answer</b> gate!<br>Wrong gate = lose a ❤️. You have 3!</p>
   <div class="ops" id="ops"></div>
   <div class="diff" id="diff"></div>
+  <div class="best" id="startBest"></div>
   <div id="prog" style="font-size:14px;color:#cbd5e1"><b id="progLv">Lv 1</b> · <span id="progTitle">🎓 Rookie</span><div style="width:min(70vw,300px);height:8px;background:#1e293b;border-radius:999px;overflow:hidden;margin:6px auto 2px"><div id="xpfill" style="height:100%;width:0%;background:linear-gradient(90deg,#a78bfa,#38bdf8);border-radius:999px"></div></div><div id="progNext" style="font-size:12px;color:#94a3b8"></div></div>
   <button class="btn" id="playBtn">▶ Start</button>
   <div class="gu-row" id="guRow"><button id="howBtn" type="button">❓ Learn to play</button></div>
@@ -89,6 +90,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#0e7490,#0f0f23 55%,#07
   <div style="font-size:16px">💎 Gems: <b id="finGems" style="color:#fde047">0</b> · Bank: <b class="best" id="finGemBank">0</b></div>
   <button class="btn" id="reviveBtn" style="display:none">💎 Revive — 3 gems</button>
   <button class="btn" id="againBtn">Play Again</button>
+  <button class="btn" id="menuBtn" style="background:#1e293b;color:#cbd5e1;font-size:17px;padding:12px 36px;box-shadow:none">🏠 Menu</button>
 </div>
 <div class="ov hidden" id="pause"><h1>⏸ Paused</h1><button class="btn" id="resumeBtn">▶ Resume</button></div>
 <script src="kit/playkit.js"></script>
@@ -392,6 +394,7 @@ function gameOver(){
   state='over';sfx('lose');
   document.getElementById('finCheer').textContent=TRY[rnd(0,TRY.length-1)];
   if(score>best){best=score;saveLS('mathRunBest',best);}
+  document.getElementById('startBest').textContent=best?('🏆 Best: '+best):'';
   document.getElementById('finScore').textContent=score;
   document.getElementById('finBest').textContent=best;
   document.getElementById('finMedals').textContent=medalPts;
@@ -528,6 +531,7 @@ window.addEventListener('keydown',e=>{
 document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopPropagation();muted=!muted;saveLS('mathRunMuted',muted?'1':'0');document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';});
 document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();startGame();});
 document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
+document.getElementById('menuBtn').addEventListener('pointerdown',e=>{e.stopPropagation();toTitle();});
 document.getElementById('reviveBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();revive();});
 const opsBox=document.getElementById('ops');
 ['+','-','×','÷'].forEach(o=>{const b=document.createElement('button');b.className='op on';b.textContent=o;b.addEventListener('pointerdown',e=>{e.stopPropagation();selected[o]=!selected[o];b.classList.toggle('on',selected[o]);if(!Object.keys(selected).some(k=>selected[k])){selected[o]=true;b.classList.add('on');}});opsBox.appendChild(b);});
@@ -536,6 +540,7 @@ TIERS.forEach(d=>{const b=document.createElement('button');b.textContent=d[1];if
 window.addEventListener('resize',resize);
 if(!SDK)document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';pausePanel.classList.remove('hidden');}});
 document.getElementById('resumeBtn').addEventListener('pointerdown',e=>{e.stopPropagation();resumeGame();});
+document.getElementById('startBest').textContent=best?('🏆 Best: '+best):'';
 loadProg();renderProg();refreshDiffLocks();
 resize();requestAnimationFrame(loop);
 if(LP)LP.button(document.getElementById('guRow'));
