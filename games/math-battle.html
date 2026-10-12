@@ -150,6 +150,7 @@ h1.title{font-size:clamp(18px,5vw,24px);font-weight:900;letter-spacing:-.5px;tex
   <div style="font-size:15px;color:#94a3b8">🏆 Best: <b class="best" id="finBest">0</b> kills</div>
   <button class="btn" id="reviveBtn">❤️ Revive</button>
   <button class="btn" id="restartBtn" style="background:#1e293b;color:#facc15;font-size:17px;padding:12px 36px;box-shadow:none">🔄 New Run</button>
+  <button class="btn" id="menuBtn" style="background:#1e293b;color:#cbd5e1;font-size:17px;padding:12px 36px;box-shadow:none">🏠 Menu</button>
 </div>
 <div class="ov hidden" id="pause"><h1>⏸ Paused</h1><button class="btn" id="resumeBtn">▶ Resume</button></div>
 <script src="kit/playkit.js"></script>
@@ -491,6 +492,8 @@ EL.muteBtn.textContent=muted?'🔇':'🔊';
 document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();startGame();});
 EL.reviveBtn.addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();revive();});
 document.getElementById('restartBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();resetRun();});
+// Menu after a defeat: reload the last save (the same state a page reload gives) and show the title
+document.getElementById('menuBtn').addEventListener('pointerdown',e=>{e.stopPropagation();load();renderAll();toTitle();});
 document.getElementById('shopBtn').addEventListener('pointerdown',e=>{e.stopPropagation();if(state!=='play')return;state='shop';renderShop();EL.shop.classList.remove('hidden');});
 document.getElementById('shopClose').addEventListener('pointerdown',e=>{e.stopPropagation();if(state!=='shop')return;state='play';EL.shop.classList.add('hidden');});
 document.getElementById('trophyBtn').addEventListener('pointerdown',e=>{e.stopPropagation();if(state!=='play'&&state!=='shop')return;prevState=state;state='menu';renderTrophies();document.getElementById('trophy').classList.remove('hidden');sfx('tap');});
