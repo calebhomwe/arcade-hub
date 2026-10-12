@@ -20,3 +20,17 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: (python3 -m http.server 8080 > /tmp/server.log 2>&1 &) && sleep 1
       - run: node .github/smoke.mjs http://127.0.0.1:8080/ index.html games/*.html
+  # In That Zone (zone/): every catalog entry renders a tile, every game page loads clean with its
+  # Controls / How to play / Tips / Skills / also-like sections, the unknown-id page falls back, and
+  # nothing overflows at phone width. tools/zone-check.mjs serves the repo itself and exits 1 on any failure.
+  zone-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/zone-check.mjs
