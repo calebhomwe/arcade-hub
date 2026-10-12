@@ -105,6 +105,14 @@
     refreshBest();
 
     frame = Z.el('iframe', { id: 'frame', name: 'game', title: game.title, src: '../games/' + game.file, allow: 'autoplay' });
+    // Eight games carry their own "← Hub" link (href="../index.html"); inside the zone it would load the whole arcade into
+    // this frame, so hide it once the game document is in (same origin; the kids' kit games already hide theirs when framed).
+    frame.addEventListener('load', function () {
+      try {
+        var links = frame.contentDocument.querySelectorAll('a[href="../index.html"]');
+        for (var i = 0; i < links.length; i++) links[i].style.setProperty('display', 'none', 'important');
+      } catch (e) { /* no document to reach: nothing to hide */ }
+    });
     $('frameWrap').appendChild(frame);
     $('game').hidden = false;
     // the arcade SDK inside the game posts {arcade:1, type:'state', scene:'over'} when a run ends: re-read the saved best then

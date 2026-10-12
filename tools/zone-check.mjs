@@ -131,6 +131,12 @@ async function checkGame(g, viewport, label) {
       const inside = await frame.evaluate(() => ({ canvas: !!document.querySelector('canvas'), text: (document.body && document.body.innerText || '').trim().length })).catch(e => ({ err: e.message }));
       if (inside.err) problems.push('could not read the game document: ' + inside.err.split('\n')[0]);
       else if (!inside.canvas && !inside.text) problems.push('the game document has no canvas and an empty body');
+      // the games' own "← Hub" link (href="../index.html") must not be visible inside the zone: clicked there it loads the
+      // whole arcade into this frame while the page still names the game
+      const hub = await frame.evaluate(() => [...document.querySelectorAll('a[href="../index.html"]')]
+        .filter(a => { const cs = getComputedStyle(a), r = a.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0; })
+        .map(a => a.textContent.trim() || a.getAttribute('href'))).catch(() => []);
+      if (hub.length) problems.push('the game document shows a link to the arcade (../index.html) inside the frame: ' + hub.join(', '));
     }
     const info = await page.evaluate(() => {
       const txt = s => [...document.querySelectorAll(s)].map(e => e.textContent.trim()).filter(Boolean);
