@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>/* storage can be blocked (Safari private / cookies off): fall back to an in-memory store so the game still runs */try{localStorage.getItem('_')}catch(e){try{(function(){var m={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:function(k){return k in m?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}}})})()}catch(e2){}}</script>
 <script src="https://calebhomwe.github.io/arcade/assets/arcade-sdk.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#070a14">
@@ -351,7 +352,7 @@ var elScore,elStreak,elLives,elBest,elBar,elSeed,elInput,elRound,elBeatInfo,elBe
 function $(id){return document.getElementById(id);}
 function show(id){var i;if(!screenEls){screenEls=document.querySelectorAll('.screen');}for(i=0;i<screenEls.length;i++){screenEls[i].classList.remove('s-active');}$(id).classList.add('s-active');}
 function loadBest(){best=parseInt(localStorage.getItem('rt_best')||'0',10)||0;bestStreak=parseInt(localStorage.getItem('rt_beststreak')||'0',10)||0;bestRound=parseInt(localStorage.getItem('rt_bestround')||'0',10)||0;}
-function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;localStorage.setItem('rt_beststreak',String(bestStreak));}}
+function bumpStreak(){streak++;if(streak>bestStreak){bestStreak=streak;try{localStorage.setItem('rt_beststreak',String(bestStreak));}catch(e){}}}
 function applyMute(){if(beatGain&&AC){try{beatGain.gain.setTargetAtTime(muted?0:0.85,AC.currentTime,0.02);}catch(e){beatGain.gain.value=muted?0:0.85;}}if(trackEl){trackEl.volume=muted?0:0.65;}}
 function ac(){try{if(!AC){var W=window;var C=W.AudioContext||W.webkitAudioContext;if(!C){return null;}AC=new C();var comp=AC.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=20;comp.ratio.value=6;comp.attack.value=0.003;comp.release.value=0.25;comp.connect(AC.destination);beatGain=AC.createGain();beatGain.gain.value=muted?0:0.85;beatGain.connect(comp);var len=(AC.sampleRate*0.25)|0;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);var d=noiseBuf.getChannelData(0),i;for(i=0;i<len;i++){d[i]=Math.random()*2-1;}}if(AC.state==='suspended'){AC.resume();}return AC;}catch(e){return null;}}
 function tone(f,d,type,vol,when){if(muted){return;}try{var a=ac();if(!a){return;}var o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.value=f;var t=a.currentTime+(when||0);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.15,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+0.05);}catch(e){}}
@@ -453,8 +454,8 @@ var sb=Math.min(streak,10)*3;
 var gain=10+speed+sb;
 score+=gain;bumpStreak();
 if(speed>=8){score+=5;sfx('levelup');setTimeout(function(){floatText('⚡ FAST +5');},520);}
-if(score>best){best=score;localStorage.setItem('rt_best',String(best));}
-if(round>bestRound){bestRound=round;localStorage.setItem('rt_bestround',String(bestRound));}
+if(score>best){best=score;try{localStorage.setItem('rt_best',String(best));}catch(e){}}
+if(round>bestRound){bestRound=round;try{localStorage.setItem('rt_bestround',String(bestRound));}catch(e){}}
 sfx('coin');
 jflash('#34d399');
 confetti(14+Math.min(streak,10)*2);
@@ -594,9 +595,9 @@ $('btnSkip').addEventListener('click',skipWord);
 $('btnBuiltin').addEventListener('click',function(){setMode('builtin');sfx('tap');});
 $('btnTrack').addEventListener('click',function(){$('beatFile').click();});
 $('beatFile').addEventListener('change',onFile);
-$('bpmSlider').addEventListener('input',function(){bpm=parseInt(this.value,10)||92;$('bpmVal').textContent=bpm;localStorage.setItem('rt_bpm',String(bpm));});
+$('bpmSlider').addEventListener('input',function(){bpm=parseInt(this.value,10)||92;$('bpmVal').textContent=bpm;try{localStorage.setItem('rt_bpm',String(bpm));}catch(e){}});
 elInput.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submitRhyme();}});
-$('muteBtn').addEventListener('click',function(){muted=!muted;localStorage.setItem('rt_muted',muted?'1':'0');$('muteBtn').textContent=muted?'🔇':'🔊';applyMute();});
+$('muteBtn').addEventListener('click',function(){muted=!muted;try{localStorage.setItem('rt_muted',muted?'1':'0');}catch(e){}$('muteBtn').textContent=muted?'🔇':'🔊';applyMute();});
 $('muteBtn').textContent=muted?'🔇':'🔊';
 document.addEventListener('visibilitychange',function(){
 if(!playing){return;}

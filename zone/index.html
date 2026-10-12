@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f0f23">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<title>Arcade Hub</title>
+<link rel="stylesheet" href="zone.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="../index.html">← Back to the arcade</a>
+    <button class="btn go" id="randomBtn" type="button" disabled>🎲 Random game</button>
+  </div>
+  <header class="hero">
+    <h1 id="zoneName"></h1>
+    <p id="zoneTagline"></p>
+  </header>
+  <nav class="nav" id="nav" aria-label="Pick a skill"></nav>
+  <div class="msg" id="err" hidden role="alert"></div>
+  <main id="shelves"></main>
+  <footer>Every game runs in the browser: no sign-in, no download. Best scores are saved on this device only.</footer>
+</div>
+<script src="zone.js"></script>
+<script>
+(function () {
+  'use strict';
+  var Z = window.Zone, $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search), want = params.get('shelf') || 'all';
+
+  function render(d) {
+    document.title = d.zone.name;
+    $('zoneName').textContent = d.zone.name;
+    $('zoneTagline').textContent = d.zone.tagline || '';
+    var groups = Z.shelves(d), main = $('shelves'), nav = $('nav');
+    groups.forEach(function (grp) {
+      var sec = Z.el('section', { class: 'shelf', 'data-shelf': grp.shelf.id, id: grp.shelf.id });
+      var head = Z.el('div', { class: 'shelf-head' }, [
+        Z.el('h2', { text: grp.shelf.name }),
+        Z.el('span', { class: 'count', text: String(grp.games.length) + (grp.games.length === 1 ? ' game' : ' games') })
+      ]);
+      if (grp.shelf.blurb) head.appendChild(Z.el('p', { text: grp.shelf.blurb }));
+      sec.appendChild(head);
+      sec.appendChild(Z.tiles(grp.games));
+      main.appendChild(sec);
+    });
+    var choices = [{ id: 'all', name: 'All games' }].concat(groups.map(function (g) { return g.shelf; }));
+    choices.forEach(function (c) {
+      var b = Z.el('button', { type: 'button', text: c.name, 'data-filter': c.id });
+      b.addEventListener('click', function () { filter(c.id); });
+      nav.appendChild(b);
+    });
+    filter(choices.some(function (c) { return c.id === want; }) ? want : 'all');
+    var rnd = $('randomBtn');
+    rnd.disabled = false;
+    rnd.addEventListener('click', function () {
+      var g = d.games[Math.floor(Math.random() * d.games.length)];
+      location.href = 'play.html?g=' + encodeURIComponent(g.id);
+    });
+  }
+  function filter(id) {
+    Array.prototype.forEach.call(document.querySelectorAll('#nav button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-filter') === id ? 'true' : 'false'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.shelf'), function (s) { s.hidden = id !== 'all' && s.getAttribute('data-shelf') !== id; });
+  }
+  Z.load().then(render, function (err) { Z.showError($('err'), err); });
+})();
+</script>
+</body>
+</html>

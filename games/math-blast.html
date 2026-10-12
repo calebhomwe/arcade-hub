@@ -95,6 +95,7 @@ body{background:radial-gradient(1000px 700px at 50% -10%,#4338ca,#0f0f23 55%,#07
   <div style="font-size:15px;color:#fde047"><span id="finRank">🪙 Spark</span> · lifetime gold <b id="finGoldAll">0</b></div>
   <div style="font-size:14px;color:#94a3b8">🧠 <b id="finOps"></b></div>
   <button class="btn" id="againBtn">Play Again</button>
+  <button class="btn" id="menuBtn" style="background:#1e293b;color:#cbd5e1;font-size:17px;padding:12px 36px;box-shadow:none">🏠 Menu</button>
 </div>
 <div class="ov hidden" id="pause"><h1>⏸ Paused</h1><button class="btn" id="resumeBtn">▶ Resume</button></div>
 <script src="kit/playkit.js"></script>
@@ -487,6 +488,7 @@ document.getElementById('muteBtn').addEventListener('pointerdown',e=>{e.stopProp
 document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';
 document.getElementById('playBtn').addEventListener('pointerdown',e=>{e.stopPropagation();initAudio();startGame();});
 document.getElementById('againBtn').addEventListener('pointerdown',e=>{e.stopPropagation();startGame();});
+document.getElementById('menuBtn').addEventListener('pointerdown',e=>{e.stopPropagation();toTitle();});
 const opsBox=document.getElementById('ops');
 ['+','-','×','÷'].forEach(o=>{const b=document.createElement('button');b.className='op on';b.textContent=o;b.addEventListener('pointerdown',e=>{e.stopPropagation();selected[o]=!selected[o];b.classList.toggle('on',selected[o]);if(!Object.keys(selected).some(k=>selected[k])){selected[o]=true;b.classList.add('on');}});opsBox.appendChild(b);});
 const diffBox=document.getElementById('diff');

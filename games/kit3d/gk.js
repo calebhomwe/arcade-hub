@@ -236,8 +236,15 @@ class Progress {
     const first = cfg.skins && cfg.skins[0] ? cfg.skins[0].id : '';
     const def = { coins: 0, level: 1, stars: {}, skin: first, owned: first ? [first] : [], days: [], daily: { date: '', id: '', target: 0, val: 0, done: false }, totals: {}, seen: {} };
     const got = store.get(this.key, null);
-    this.d = Object.assign(def, got && typeof got === 'object' ? got : {});
-    if (!this.d.daily) this.d.daily = def.daily;
+    this.d = Object.assign(def, got && typeof got === 'object' && !Array.isArray(got) ? got : {});
+    // a stale save may carry the wrong shape for a field; coerce what the class and the games index into
+    const d = this.d, obj = v => v && typeof v === 'object' && !Array.isArray(v);
+    d.level = typeof d.level === 'number' && isFinite(d.level) && d.level >= 1 ? Math.floor(d.level) : 1;
+    d.coins = typeof d.coins === 'number' && isFinite(d.coins) && d.coins >= 0 ? Math.floor(d.coins) : 0;
+    if (!obj(d.stars)) d.stars = {}; if (!obj(d.totals)) d.totals = {}; if (!obj(d.seen)) d.seen = {};
+    if (!Array.isArray(d.owned)) d.owned = first ? [first] : []; if (!Array.isArray(d.days)) d.days = [];
+    if (typeof d.skin !== 'string') d.skin = first;
+    if (!obj(d.daily)) d.daily = def.daily;
     this.newSkins = [];
     this.touchDay();
     this.refreshUnlocks();

@@ -1,0 +1,255 @@
+{
+  "zone": {
+    "name": "In That Zone",
+    "tagline": "Maths first, then spelling and English: nine short learning games with a Controls box, a goal line and a Play Big Screen button on every page."
+  },
+  "shelves": [
+    { "id": "maths", "name": "Maths", "blurb": "Sums you pick (+ − × ÷) at the tier you pick, from EASY (ages 5–6) to MAX MAX (ages 13+)." },
+    { "id": "spelling", "name": "Spelling & English", "blurb": "Letters, words and rhymes, from 3-letter picture words to 9-letter spelling by ear." }
+  ],
+  "games": [
+    {
+      "id": "math-blast",
+      "file": "math-blast.html",
+      "title": "Math Blast",
+      "icon": "➗",
+      "shelf": "maths",
+      "tagline": "Four numbered bubbles rise up the screen; pop the one that answers the sum before it floats off the top, with 60 seconds on the clock.",
+      "skills": ["Addition / Subtraction", "Multiplication / Division", "Reaction Time"],
+      "controls": [
+        "Tap or click a bubble to pop it.",
+        "Keyboard: 1, 2, 3 and 4 pop the bubble in that lane, left to right.",
+        "Title screen: tap + − × ÷ to choose the kinds of sum and EASY to MAX MAX for the number range, then ▶ Start (60s). 🔊 top right mutes."
+      ],
+      "howToPlay": [
+        "Score as many points as you can before the 60-second clock runs out; a correct pop is worth 10 × your combo.",
+        "Read the sum at the top (for example 5 + 3 = ?).",
+        "Pop the bubble showing the answer. A wrong pop resets the combo and circles the right bubble for a moment.",
+        "A numbered bubble that escapes off the top costs 2 seconds; ❄ bubbles freeze the others for 3 seconds and +5 bubbles add 5 seconds."
+      ],
+      "tips": [
+        "Keep the combo going: every fifth pop in a row brings a cheer and the points keep stacking at 10 × combo.",
+        "Golden bubbles count towards a lifetime Gold rank shown on the title screen: Copper at 3, Silver at 12, Gold at 40.",
+        "Turn off the sum types you are not practising before you start; EASY adds numbers 1–9, MAX MAX adds 50–400."
+      ],
+      "bestKey": "mathBlastBest",
+      "alsoLike": ["math-run", "math-snake"]
+    },
+    {
+      "id": "math-run",
+      "file": "math-run.html",
+      "title": "Math Run",
+      "icon": "🏃",
+      "shelf": "maths",
+      "tagline": "Run down a three-lane track and steer into the gate showing the answer; you have three hearts and a wrong gate costs one.",
+      "skills": ["Addition / Subtraction", "Multiplication / Division", "Reaction Time"],
+      "controls": [
+        "Tap a lane, or swipe left and right, to change lane.",
+        "Keyboard: ← → or A and D move; Space or Enter starts, resumes and plays again.",
+        "Title screen: tap + − × ÷ for the kinds of sum and EASY to MAX MAX for the number range. 🔊 top right mutes."
+      ],
+      "howToPlay": [
+        "Pass as many answer gates as you can before all three hearts are gone; each correct gate is +1 score.",
+        "Work out the sum shown at the top of the track.",
+        "Move into the lane whose gate shows the answer before the row reaches your runner.",
+        "A wrong gate costs a heart and highlights the right gate for a second; a 🛡 shield picked up on the track blocks one mistake, and gold gates drop 💎 gems."
+      ],
+      "tips": [
+        "The track speeds up with your score and your streak (watch the Speed number in the HUD), so decide early rather than late.",
+        "Grab the 🛡 when it rolls down a lane: it absorbs the next wrong gate instead of a heart.",
+        "Gems bank across runs; with 3 in the bank a 💎 Revive button appears on the crash screen."
+      ],
+      "bestKey": "mathRunBest",
+      "alsoLike": ["math-snake", "math-battle"]
+    },
+    {
+      "id": "math-snake",
+      "file": "math-snake.html",
+      "title": "Math Snake",
+      "icon": "🐍",
+      "shelf": "maths",
+      "tagline": "Snake on a 16 × 19 board with four numbers lying on the grid; eat the one that answers the sum and keep clear of the walls and your own tail.",
+      "skills": ["Addition / Subtraction", "Multiplication / Division", "Problem Solving"],
+      "controls": [
+        "Swipe anywhere on the board to steer; on a touch screen there is also a ▲ ◀ ▼ ▶ pad at the bottom right.",
+        "Keyboard: arrow keys or W A S D steer. ⏸ (top right) pauses.",
+        "Title screen: tap + − × ÷ for the kinds of sum and EASY to MAX MAX for the number range."
+      ],
+      "howToPlay": [
+        "Keep eating the right number for as long as your three hearts last; a correct bite is worth 10 × your streak (the streak counts up to ×5).",
+        "Read the sum at the top. Four numbers sit on the board and one of them is the answer.",
+        "Steer the snake onto the right number: it grows by one segment and a new sum appears.",
+        "A wrong number, a wall or your own tail costs a heart and puts the snake back at the left edge; four correct in a row starts a 10-second ⚡ Frenzy, and ★ gold orbs are +25 bonus."
+      ],
+      "tips": [
+        "Miss the same sum twice and the right number gets a gold glow — follow the glow.",
+        "Wrong numbers wander to a new square after a while (14 s on EASY, 7 s on MAX MAX); the right one stays put.",
+        "Every fifth correct bite in a row gives a heart back when you are below three."
+      ],
+      "bestKey": "mathSnakeBest",
+      "alsoLike": ["math-battle", "math-blast"]
+    },
+    {
+      "id": "math-battle",
+      "file": "math-battle.html",
+      "title": "Math Battle",
+      "icon": "⚔️",
+      "shelf": "maths",
+      "tagline": "A monster fight where each right answer is a sword swing and each wrong one lets the monster hit you; a boss turns up every five kills.",
+      "skills": ["Mental Maths", "Multiplication / Division", "Problem Solving"],
+      "controls": [
+        "Tap or click one of the four answer buttons.",
+        "Keyboard: 1, 2, 3 and 4 pick an answer; Enter or Space starts, revives or starts a new run.",
+        "In the fight: 🛒 Shop, 🏆 Hunting Log and 🎖 War Medals open between swings. 🔊 top right mutes."
+      ],
+      "howToPlay": [
+        "Defeat as many monsters as you can in one run before your HP reaches zero; the Best counts kills.",
+        "Tap the answer to the sum under the monster. A right answer hits for (5 + 2 per Sword + 2 per level) × your combo, and the combo climbs to ×3.",
+        "A wrong answer costs you HP, and the monster also swings on its own every few seconds (9 s on EASY, 3.5 s on MAX MAX).",
+        "Kills pay gold and XP. Open the Shop to buy a 🗡️ Sword (+2 damage), 🛡️ Shield (+10 HP) or 🧪 Potion (full heal); when you fall, Revive for 25 gold or start a New Run."
+      ],
+      "tips": [
+        "Answer within 1.2 seconds to build a QUICK streak; 18% of hits are a CRIT for double damage.",
+        "Every fifth kill is a boss with 2.6 × HP whose special hits for double — drink a Potion before it arrives.",
+        "Your level, gold and gear are saved between visits, so the Shop upgrades carry over to the next run."
+      ],
+      "bestKey": "mathBattleBest",
+      "alsoLike": ["math-blast", "math-run"]
+    },
+    {
+      "id": "word-scramble",
+      "file": "word-scramble.html",
+      "title": "Word Scramble",
+      "icon": "🔤",
+      "shelf": "spelling",
+      "tagline": "A picture card is pinned to the chalkboard and its letters are jumbled on the desk; tap them into the slots to spell the word, five words a level across 15 levels.",
+      "skills": ["Spelling", "Phonics", "Vocabulary"],
+      "controls": [
+        "Tap a letter tile to drop it into the next empty slot; tap a placed tile to send it back to the tray.",
+        "Keyboard: type a letter to place it, Backspace takes the last one back, Space or Enter presses Play on the title.",
+        "Buttons under the tray: shuffle mixes the loose letters, 🔍 places the next letter as a hint, 🔊 says the word."
+      ],
+      "howToPlay": [
+        "Spell every word in the level (5 words, or 6 on a boss level) to earn stars: 4 clean words give three stars, 2 give two.",
+        "Look at the picture and tap 🔊 to hear the word.",
+        "Tap the letters in order. On levels 1–6 a wrong letter wobbles back to the tray; from level 7 the whole word is checked when the last slot fills.",
+        "Finish the level for stars, new letter tiles and prizes, then climb the 15-level map."
+      ],
+      "tips": [
+        "A clean word means no hint and no mistake — only clean words count towards stars.",
+        "Levels 1–3 are 3-letter words, 4–6 are four letters, and levels 13–15 reach 7–9 letters.",
+        "Stuck for 9 seconds and the next letter glows on its own."
+      ],
+      "bestKey": "ws_best",
+      "alsoLike": ["hangman", "missing-letter"]
+    },
+    {
+      "id": "hangman",
+      "file": "hangman.html",
+      "title": "Hangman",
+      "icon": "🪢",
+      "shelf": "spelling",
+      "tagline": "Five rounds per game: uncover the hidden word one letter at a time, because seven misses complete the drawing and lose the round.",
+      "skills": ["Spelling", "Vocabulary", "Problem Solving"],
+      "controls": [
+        "Tap letters on the on-screen keyboard, or type them on a real keyboard.",
+        "Round buttons: 💡 Hint reveals a letter for 15 points, 🌹 Reveal 1 spends a rose token, ⏭ Skip shows the word (no points), 🏠 Menu.",
+        "Title screen: pick a word length (Short, Medium, Long), then tap a category (🐾 Animals, 🍕 Food, ⚽ Sports, 💻 Tech) to start."
+      ],
+      "howToPlay": [
+        "Score as high as you can over 5 rounds; a solved word pays 10 + 8 per unused miss + 5 per win-streak point (the streak counts up to 5).",
+        "Guess letters: hits fill the word, misses add a line to the drawing. Seven misses and the round is lost and the word is shown.",
+        "Words get longer with each round.",
+        "A round with no misses earns a 🌹 rose token you can spend later to reveal a letter for free."
+      ],
+      "tips": [
+        "Start with vowels: the game's own hint nudges A, E, I, O, U before anything else.",
+        "One letter in each word is gold; if your very first guess lands on it you get +2.",
+        "Solve a word with zero misses to earn a rose token and progress towards the Perfectionist achievement."
+      ],
+      "bestKey": "hg_best",
+      "alsoLike": ["missing-letter", "spell-and-say"]
+    },
+    {
+      "id": "missing-letter",
+      "file": "missing-letter.html",
+      "title": "Missing Letter",
+      "icon": "❓",
+      "shelf": "spelling",
+      "tagline": "One letter has vanished from the word; pick it from four choices against a 60-second clock, with an emoji clue if you stall for 3 seconds.",
+      "skills": ["Spelling", "Phonics", "Reaction Time"],
+      "controls": [
+        "Tap or click one of the four letter buttons under the word.",
+        "Keyboard: 1, 2, 3, 4 pick a button, or type the letter itself.",
+        "Title screen: Climb (3 letters rising to 6), 3 letters, 5 letters or 6 letters, then ▶ Play or ♾ Endless mode. 🔊 top right mutes."
+      ],
+      "howToPlay": [
+        "Fill as many gaps as you can before the 60 seconds run out; a correct letter is 10 × your multiplier, and the multiplier rises by one every 4 in a row.",
+        "Read the word with the ? in it and say it out loud.",
+        "Tap the letter that belongs in the gap. A wrong tap shows the right letter, resets the combo and costs 2 seconds.",
+        "After 3 seconds without an answer an emoji clue appears above the word; ♾ Endless mode swaps the clock for 3 ❤️ hearts."
+      ],
+      "tips": [
+        "Answer within 2 seconds for a +5 slipstream bonus; one wrong answer forfeits the slipstream collected so far.",
+        "Three lightning answers in a run earn the 💨 SPEEDSTER medal; 10 words earn ⭐ WORD HERO; zero wrong earns 🎯 FLAWLESS.",
+        "In Climb, the words step up from 3 to 5 to 6 letters every 6 correct answers."
+      ],
+      "bestKey": "ml_best",
+      "alsoLike": ["spell-and-say", "rhyme-time"]
+    },
+    {
+      "id": "spell-and-say",
+      "file": "spell-and-say.html",
+      "title": "Spell & Say",
+      "icon": "🗣️",
+      "shelf": "spelling",
+      "tagline": "Hear a word spoken aloud, type it letter by letter and press ✓ to check; three wrong spellings end the run.",
+      "skills": ["Spelling", "Phonics", "Vocabulary"],
+      "controls": [
+        "Tap letters on the on-screen keyboard; ⌫ deletes the last letter and ✓ checks the word.",
+        "Keyboard: type the letters, Backspace deletes, Enter checks.",
+        "🔊 repeats the word, 🐢 says it extra slowly, 💡 shows the next letter once per word for −5 points."
+      ],
+      "howToPlay": [
+        "Spell as many words as you can on three hearts; a correct word is 10 points + 2 per streak point, up to +20.",
+        "Listen to the word. Tap 🔊 to hear it again or 🐢 for slow; if the device has no voice, the word flashes on screen for 1.5 seconds instead.",
+        "Fill every box, then tap ✓.",
+        "A wrong spelling turns the wrong boxes red, shows the right spelling, costs a heart and gives you the same word again."
+      ],
+      "tips": [
+        "Check within 4.5 seconds of hearing the word for ⚡ FAST +3.",
+        "Each word spelled for the first time is +5 and joins your word count; five words from one set (animals, food, nature, things, body, royal) earn a badge.",
+        "Spell 8 in a row to win a heart back. Tiers unlock with XP: MEDIUM at LV 2, HARD at LV 4, INSANE at LV 6, MAX MAX at LV 9."
+      ],
+      "bestKey": "ss_best",
+      "alsoLike": ["rhyme-time", "word-scramble"]
+    },
+    {
+      "id": "rhyme-time",
+      "file": "rhyme-time.html",
+      "title": "Rhyme Time",
+      "icon": "🎤",
+      "shelf": "spelling",
+      "tagline": "A word drops on the beat; type any word that rhymes with it before the bar at the top empties, no repeats allowed, three misses and the mic drops.",
+      "skills": ["Phonics", "Vocabulary", "Reaction Time"],
+      "controls": [
+        "Type your rhyme in the box, then tap 🎤 DROP or press Enter.",
+        "⏭ Pass skips the word but breaks your chain.",
+        "Title screen: Starter, Climb or Pro; the BPM slider (70–140) sets the built-in beat, or 🎵 Load your beat plays an audio file from your device. 🔊 top right mutes."
+      ],
+      "howToPlay": [
+        "Chain rhymes for as many rounds as you can on three hearts; a hit is 10 points + up to 10 for speed + 3 per chain link (the chain counts up to 10).",
+        "Read the word, for example CAT, and type one that ends with the same sound, such as HAT or FLAT.",
+        "Hit DROP before the bar runs out: 14 seconds shrinking as the rounds go on, 18 seconds on Starter.",
+        "A word that does not rhyme, or running out of time, costs a heart and shows an example rhyme; a word you already used is refused."
+      ],
+      "tips": [
+        "Drop with at least 80% of the bar left for ⚡ FAST +5.",
+        "Starter keeps to short words like CAT and SUN; Climb widens the pool at rounds 5 and 12; Pro mixes medium and long words like BUBBLE and ROCKET.",
+        "Above 110 BPM the built-in drums switch to a trap pattern with double-time hats; the time bar is the same at any BPM."
+      ],
+      "bestKey": "rt_best",
+      "alsoLike": ["word-scramble", "hangman"]
+    }
+  ]
+}
