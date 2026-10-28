@@ -1,0 +1,233 @@
+{
+  "namespace": "arcade-hub-mobile",
+  "games": [
+    {
+      "id": "hub-flappy-flight",
+      "title": "Flappy Flight",
+      "entry": "games/flappy-flight.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-dino-dash",
+      "title": "Dino Dash",
+      "entry": "games/dino-dash.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-color-switch",
+      "title": "Color Switch",
+      "entry": "games/color-switch.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-brick-breaker",
+      "title": "Brick Breaker",
+      "entry": "games/brick-breaker.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-game-2048",
+      "title": "2048",
+      "entry": "games/game-2048.html",
+      "start": "#mClassic"
+    },
+    {
+      "id": "hub-memory-match",
+      "title": "Memory Match",
+      "entry": "games/memory-match.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-sudoku",
+      "title": "Sudoku",
+      "entry": "games/sudoku.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-block-blast",
+      "title": "Block Blast",
+      "entry": "games/block-blast.html",
+      "start": "#mCls"
+    },
+    {
+      "id": "hub-minesweeper",
+      "title": "Minesweeper",
+      "entry": "games/minesweeper.html",
+      "start": "#mClassic"
+    },
+    {
+      "id": "hub-tower-stack",
+      "title": "Tower Stack",
+      "entry": "games/tower-stack.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-connect-four",
+      "title": "Connect Four",
+      "entry": "games/connect-four.html",
+      "start": "#mPlay"
+    },
+    {
+      "id": "hub-chess",
+      "title": "Chess",
+      "entry": "games/chess.html",
+      "start": "#ssPlay"
+    },
+    {
+      "id": "hub-tic-tac-toe",
+      "title": "Tic Tac Toe",
+      "entry": "games/tic-tac-toe.html",
+      "start": "#mPlay"
+    },
+    {
+      "id": "hub-simon-says",
+      "title": "Simon Says",
+      "entry": "games/simon-says.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-snake",
+      "title": "Snake",
+      "entry": "games/snake.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-whack-a-mole",
+      "title": "Whack-a-Mole",
+      "entry": "games/whack-a-mole.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-bubble-pop",
+      "title": "Bubble Pop",
+      "entry": "games/bubble-pop.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-merge-blocks",
+      "title": "Merge Blocks",
+      "entry": "games/merge-blocks.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-word-scramble",
+      "title": "Word Scramble",
+      "entry": "games/word-scramble.html",
+      "start": ".diff-btn.sel"
+    },
+    {
+      "id": "hub-hangman",
+      "title": "Hangman",
+      "entry": "games/hangman.html",
+      "start": ".cat-btn[data-cat=animals]"
+    },
+    {
+      "id": "hub-missing-letter",
+      "title": "Missing Letter",
+      "entry": "games/missing-letter.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-spell-and-say",
+      "title": "Spell & Say",
+      "entry": "games/spell-and-say.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-rhyme-time",
+      "title": "Rhyme Time",
+      "entry": "games/rhyme-time.html",
+      "start": "#btnStart"
+    },
+    {
+      "id": "hub-math-blast",
+      "title": "Math Blast",
+      "entry": "games/math-blast.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-math-run",
+      "title": "Math Run",
+      "entry": "games/math-run.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-math-snake",
+      "title": "Math Snake",
+      "entry": "games/math-snake.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-math-battle",
+      "title": "Math Battle",
+      "entry": "games/math-battle.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-idle-empire",
+      "title": "Idle Empire",
+      "entry": "games/idle-empire.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-tap-monsters",
+      "title": "Tap Monsters",
+      "entry": "games/tap-monsters.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-idle-miner",
+      "title": "Idle Miner",
+      "entry": "games/idle-miner.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-farm-harvest",
+      "title": "Farm Harvest",
+      "entry": "games/farm-harvest.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-farm-idle",
+      "title": "Farm Idle Tycoon",
+      "entry": "games/farm-idle.html",
+      "start": "#btnPlay"
+    },
+    {
+      "id": "hub-hole-swallow",
+      "title": "Hole Swallow",
+      "entry": "games/hole-swallow.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-knife-hit",
+      "title": "Knife Hit",
+      "entry": "games/knife-hit.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-helix-smash",
+      "title": "Helix Smash",
+      "entry": "games/helix-smash.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-stack-ball",
+      "title": "Stack Ball",
+      "entry": "games/stack-ball.html",
+      "start": "#playBtn"
+    },
+    {
+      "id": "hub-isle-of-bells",
+      "title": "Isle of Bells",
+      "entry": "games/isle-of-bells.html",
+      "start": "#playBtn"
+    }
+  ],
+  "shell": [
+    "index.html",
+    "sw.js",
+    "offline-worker.js"
+  ],
+  "repository": "arcade-hub"
+}
