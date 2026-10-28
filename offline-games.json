@@ -113,7 +113,7 @@
       "id": "hub-word-scramble",
       "title": "Word Scramble",
       "entry": "games/word-scramble.html",
-      "start": ".diff-btn.sel"
+      "start": "#playBtn"
     },
     {
       "id": "hub-hangman",
